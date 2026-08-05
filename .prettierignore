@@ -1,0 +1,9 @@
+node_modules
+package-lock.json
+
+# Authored prose is hand-formatted on purpose. Prettier reflows fenced code
+# blocks and rewrites emphasis markers, which is churn in a doc whose voice
+# is the point. These stay as written.
+CLAUDE.md
+ROADMAP.md
+docs/
