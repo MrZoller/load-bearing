@@ -29,6 +29,18 @@ export const BANNED_PATTERN = /import "node:fs"/;
 // own, so matching the first path segment does not catch them.
 export const LOOKALIKES = ["path-browserify", "fs-extra", "process-nextick"];
 
+// A triple-slash directive inside a string is inert data, not a directive.
+export const SAMPLE_SOURCE = '/// <reference types="node" />';
+
+// The exactly-specified members of Math are allowed — they are what an engine
+// that formats columns and sizes actually needs — as is a bare sort(), which
+// is UTF-16 code-unit order.
+export function column(width: number, used: number, names: string[]): string {
+  const pad = Math.max(0, Math.floor(width - used));
+  const area = Math.PI * Math.sqrt(width);
+  return names.sort().join(" ".repeat(pad)) + String(Math.round(area));
+}
+
 /** A regex full of slashes must not be read as a comment either. */
 const REPEATED_SLASHES = /\/{2,}/g;
 

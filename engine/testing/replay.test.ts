@@ -93,6 +93,7 @@ describe("fixture loading", () => {
       name: "sample",
       description: "sample",
       seed: "sample",
+      cartridge: null,
       events,
     });
 
@@ -115,5 +116,19 @@ describe("fixture loading", () => {
     expect(() => parseReplayFixture({ name: "sample" }, "sample")).toThrow(
       /"description" must be a string/,
     );
+  });
+
+  it("requires a cartridge key, which may be null but may not be absent", () => {
+    // Without this, a misspelled key replays as `cartridge: undefined`, the
+    // serializer drops the undefined property, and `fixtures:update` records a
+    // green baseline for two thirds of the input triple.
+    const fields = { name: "sample", description: "d", seed: "s", events: [] };
+
+    expect(() => parseReplayFixture(fields, "sample")).toThrow(
+      /"cartridge" is required/,
+    );
+    expect(() =>
+      parseReplayFixture({ ...fields, cartridge: null }, "sample"),
+    ).not.toThrow();
   });
 });

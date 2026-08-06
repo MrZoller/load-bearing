@@ -31,6 +31,10 @@
  * `fetch`, not `fetch(`. `const later = Date` and `const f = fetch` are the
  * same leak with an extra step.
  *
+ * `Math` is the one inversion: an allowlist of its exactly-specified members,
+ * because the engine genuinely needs `floor` and `max` while `random` and the
+ * implementation-approximated transcendentals have to go.
+ *
  * ## Adding an allowlist entry
  *
  * Don't, if there is any alternative. If there genuinely is not, add an entry
@@ -72,11 +76,56 @@ const TEST_FILE_PATTERN = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
  */
 export const CODE_RULES = [
   {
-    id: "math-random",
-    pattern: /\bMath\s*\.\s*random\b/g,
+    // An allowlist rather than a ban on `random`, for two reasons. Aliasing:
+    // `const { random } = Math` and `Math["random"]()` reach the same unseeded
+    // generator without ever spelling `Math.random`. And approximation: the
+    // spec leaves `sin`, `cos`, `tan`, `pow`, `exp`, `log`, `hypot`, and
+    // `cbrt` implementation-defined, and V8 and JavaScriptCore genuinely
+    // disagree — `Math.tan(1e300)` differs in the last two digits between
+    // Node and Safari, which invariant 3 requires the engine to run on both
+    // of. The members below are exact.
+    id: "math-nondeterministic",
+    pattern:
+      /\bMath\s*\.\s*(?!(?:abs|ceil|floor|round|trunc|sign|min|max|sqrt|imul|clz32|fround|PI|E|LN2|LN10|LOG2E|LOG10E|SQRT2|SQRT1_2)\b)\w*/g,
     invariant: "2 — determinism is non-negotiable",
     message:
-      "Math.random() is unseeded. Draw from the engine's seeded PRNG instead.",
+      "Only the exactly-specified members of Math are allowed. `random` is unseeded — " +
+      "draw from the engine's seeded PRNG. The transcendentals are implementation-" +
+      "approximated and differ between JS engines, so they cannot survive replay across " +
+      "browsers.",
+  },
+  {
+    // The half that closes aliasing without enumerating its spellings: any
+    // mention of `Math` that is not an immediate dotted access.
+    id: "math-alias",
+    pattern: /\bMath\b(?!\s*\.)/g,
+    invariant: "2 — determinism is non-negotiable",
+    message:
+      "Reference Math members directly. Aliasing, destructuring, or computed access " +
+      '(`const { random } = Math`, `Math["random"]`) routes around the member allowlist.',
+  },
+  {
+    id: "gc-timing",
+    pattern: /\b(?:WeakRef|FinalizationRegistry)\b/g,
+    invariant: "2 — determinism is non-negotiable",
+    message:
+      "Garbage-collection timing is not reproducible, so branching on `deref()` or a " +
+      "finalization callback lets identical event logs reduce differently. WeakMap and " +
+      "WeakSet are fine — they expose no iteration and no size, so GC is unobservable.",
+  },
+  {
+    // No global to ban for the prototype methods, so the method names are the
+    // only textual lever — and unlike `Date.now`, there is no deterministic
+    // sibling being sacrificed.
+    id: "locale-sensitive",
+    pattern:
+      /\b(?:Intl|toLocaleString|toLocaleDateString|toLocaleTimeString|localeCompare|toLocaleLowerCase|toLocaleUpperCase)\b/g,
+    invariant: "2 — determinism is non-negotiable",
+    message:
+      "Locale-sensitive formatting reads the host's locale, time zone, and ICU data, " +
+      "none of which CI can pin — `localeCompare` sorts å before z in Swedish and after " +
+      "it in German. Format and sort by hand; bare `sort()` is UTF-16 code-unit order " +
+      "and is fine.",
   },
   {
     id: "crypto-random",
@@ -556,10 +605,16 @@ export function scanSource(file, source) {
   }
 
   // Raw source, deliberately: these live inside comments, which `code` blanks.
+  // `withStrings` is the mask here, inverted from the specifier check above —
+  // it blanks comments and nothing else, so a blank at the match position
+  // means the text really was a comment. The same directive quoted inside a
+  // string literal survives in `withStrings`, and is inert.
   for (const rule of RAW_RULES) {
     rule.pattern.lastIndex = 0;
-    for (const match of source.matchAll(rule.pattern))
+    for (const match of source.matchAll(rule.pattern)) {
+      if (withStrings[match.index] !== " ") continue;
       record(rule, match.index);
+    }
   }
 
   for (const { specifier, index } of extractModuleSpecifiers(

@@ -76,7 +76,10 @@ build on:
 
 | rule                      | catches                                                            | invariant |
 | ------------------------- | ------------------------------------------------------------------ | --------- |
-| `math-random`             | `Math.random`                                                      | 2         |
+| `math-nondeterministic`   | every `Math` member outside the exact allowlist                    | 2         |
+| `math-alias`              | any `Math` reference that is not an immediate dotted access        | 2         |
+| `locale-sensitive`        | `Intl`, `toLocaleString`, `localeCompare`, `toLocale*`             | 2         |
+| `gc-timing`               | `WeakRef`, `FinalizationRegistry`                                  | 2         |
 | `crypto-random`           | the `crypto` global — `subtle.generateKey` as much as `randomUUID` | 2         |
 | `wall-clock-date`         | the `Date` global                                                  | 2         |
 | `wall-clock-performance`  | the `performance` global — `timeOrigin` as much as `now`           | 2         |
@@ -96,6 +99,23 @@ enumeration of members always misses one — `performance.timeOrigin` and
 
 `crypto`, `performance`, `process`, and the `node-global` set matter most,
 because they need no import: nothing in the file header hints they are there.
+
+**`Math` is the exception**, and inverted: `Math.floor`, `max`, `imul`, `PI`
+and the rest of the exactly-specified members are allowed, everything else is
+not. Two reasons. `random` is reachable without ever being spelled
+(`const { random } = Math`, `Math["random"]`), so `math-alias` bans any `Math`
+reference that is not an immediate dotted access. And the transcendentals —
+`sin`, `cos`, `tan`, `pow`, `exp`, `log`, `hypot`, `cbrt` — are
+implementation-approximated: `Math.tan(1e300)` differs in its last two digits
+between V8 and JavaScriptCore, which is a byte difference in `state.json`
+between a Chrome session and a Safari one. Invariant 3 requires the engine to
+run on both.
+
+**Consequence for issues #5, #9, and #10:** `ls` ordering, `ls -l` timestamps,
+and `git log` dates must be formatted and sorted by hand. `localeCompare` sorts
+`å` before `z` in Swedish and after it in German, so a directory listing would
+differ between a laptop and CI. A bare `sort()` is UTF-16 code-unit order and
+is fine.
 
 **Naming consequence:** because `process` is banned as a whole identifier,
 engine code must not name a local `process` — the simulated process model's

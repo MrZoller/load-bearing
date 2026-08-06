@@ -70,6 +70,14 @@ export function parseReplayFixture(
       throw new Error(`${path}: "${field}" must be a string`);
     }
   }
+  // `hasOwn`, not an undefined check: the cartridge is typed `unknown` until
+  // issue #3 gives it a schema, so `null` has to stay legal. Without this, a
+  // fixture that misspells the key replays with `cartridge: undefined`, the
+  // serializer drops the undefined property by JSON convention, and
+  // `fixtures:update` mints a green recording for two thirds of the triple.
+  if (!Object.hasOwn(parsed, "cartridge")) {
+    throw new Error(`${path}: "cartridge" is required, and may be null`);
+  }
   if (!Array.isArray(fixture.events)) {
     throw new Error(`${path}: "events" must be an array`);
   }

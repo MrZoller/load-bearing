@@ -188,8 +188,44 @@ function writeNumber(value: number, pointer: string): string {
   return Object.is(value, -0) ? "0" : String(value);
 }
 
-/** Own enumerable index keys, as `Object.keys` reports them. */
-const ARRAY_INDEX_KEY = /^(?:0|[1-9]\d*)$/;
+/**
+ * Own enumerable index keys, as `Object.keys` reports them.
+ *
+ * Spelling is not sufficient. An array index is `0 … 2**32 - 2`; assigning
+ * `a[4294967295]` leaves `length` at 0 and creates an ordinary property, so a
+ * key that merely looks numeric can still be state the element loop never
+ * visits.
+ */
+const MAX_ARRAY_INDEX = 4294967294;
+const ARRAY_INDEX_SPELLING = /^(?:0|[1-9]\d*)$/;
+
+function isArrayIndexKey(key: string): boolean {
+  return ARRAY_INDEX_SPELLING.test(key) && Number(key) <= MAX_ARRAY_INDEX;
+}
+
+/**
+ * Reject own properties `Object.keys` would not report.
+ *
+ * A non-enumerable property is state, and dropping it silently produces the
+ * same one-recording-two-states collision as a symbol key. It also bypasses
+ * the accessor check, since that check only ever sees keys `Object.keys`
+ * returned — so a single property flag would otherwise let a getter run during
+ * serialization after all.
+ */
+function assertAllOwnPropertiesEnumerable(
+  value: object,
+  pointer: string,
+  ignore: readonly string[] = [],
+): void {
+  const enumerable = new Set(Object.keys(value));
+  for (const key of Object.getOwnPropertyNames(value)) {
+    if (enumerable.has(key) || ignore.includes(key)) continue;
+    throw new CanonicalSerializeError(
+      pointer,
+      `non-enumerable property ${JSON.stringify(key)} would be dropped silently`,
+    );
+  }
+}
 
 /**
  * Reject arrays carrying anything the numeric elements do not cover.
@@ -217,8 +253,12 @@ function assertPlainArray(array: readonly unknown[], pointer: string): void {
     );
   }
 
+  // `length` is a non-enumerable own property of every array, and is the one
+  // that is not state.
+  assertAllOwnPropertiesEnumerable(array, pointer, ["length"]);
+
   for (const key of Object.keys(array)) {
-    if (!ARRAY_INDEX_KEY.test(key)) {
+    if (!isArrayIndexKey(key)) {
       throw new CanonicalSerializeError(
         pointer,
         `non-index property ${JSON.stringify(key)} would be dropped silently`,
@@ -293,6 +333,8 @@ function plainEntries(value: object, pointer: string): [string, unknown][] {
       `symbol-keyed property ${String(symbols[0])} would be dropped silently`,
     );
   }
+
+  assertAllOwnPropertiesEnumerable(value, pointer);
 
   return Object.keys(value)
     .sort()

@@ -181,6 +181,47 @@ describe("serialize rejections", () => {
     expect(() => serialize(Beam.from([1, 2]))).toThrow(/array subclass/);
   });
 
+  it("refuses a numeric key outside the array-index range", () => {
+    // Array indices stop at 2**32 - 2. Assigning past that makes an ordinary
+    // property that leaves `length` alone, so the element loop never visits
+    // it and the value would disappear.
+    const array: unknown[] = [];
+    Object.assign(array, { "4294967295": "past the end" });
+
+    expect(array).toHaveLength(0);
+    expect(() => serialize(array)).toThrow(/non-index property/);
+  });
+
+  it("refuses non-enumerable properties, which Object.keys omits", () => {
+    // Two states that differ only in a non-enumerable property would otherwise
+    // produce one identical recording.
+    const state = { seed: "abc" };
+    Object.defineProperty(state, "id", { value: 1, enumerable: false });
+
+    expect(() => serialize(state)).toThrow(/non-enumerable property "id"/);
+  });
+
+  it("refuses a non-enumerable accessor, which would bypass the accessor check", () => {
+    // The accessor check only sees keys Object.keys returned, so one property
+    // flag would otherwise let a getter run during serialization after all.
+    let reads = 0;
+    const state = { seed: "abc" };
+    Object.defineProperty(state, "id", {
+      enumerable: false,
+      get() {
+        reads += 1;
+        return reads;
+      },
+    });
+
+    expect(() => serialize(state)).toThrow(/non-enumerable property/);
+    expect(reads).toBe(0);
+  });
+
+  it("allows an array's own non-enumerable length", () => {
+    expect(serialize([1, 2])).toBe("[\n  1,\n  2\n]\n");
+  });
+
   it("refuses accessor properties rather than invoking them", () => {
     let reads = 0;
     const counter = {

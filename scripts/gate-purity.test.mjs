@@ -27,7 +27,7 @@ describe("purity gate", () => {
     const { violations } = collectViolations([SAMPLES]);
 
     expect(locations(violations)).toEqual([
-      [`${SAMPLES}/planted-after-url.ts`, 5, "math-random"],
+      [`${SAMPLES}/planted-after-url.ts`, 5, "math-nondeterministic"],
       [`${SAMPLES}/planted-aliased-globals.ts`, 5, "wall-clock-timer"],
       [`${SAMPLES}/planted-aliased-globals.ts`, 6, "wall-clock-performance"],
       [`${SAMPLES}/planted-aliased-globals.ts`, 7, "crypto-random"],
@@ -36,7 +36,7 @@ describe("purity gate", () => {
       [`${SAMPLES}/planted-ambient.ts`, 4, "crypto-random"],
       [`${SAMPLES}/planted-ambient.ts`, 5, "ambient-process"],
       [`${SAMPLES}/planted-ambient.ts`, 5, "wall-clock-timer"],
-      [`${SAMPLES}/planted-brace-in-comment.ts`, 6, "math-random"],
+      [`${SAMPLES}/planted-brace-in-comment.ts`, 6, "math-nondeterministic"],
       [`${SAMPLES}/planted-brace-in-comment.ts`, 7, "wall-clock-date"],
       [`${SAMPLES}/planted-builtin-subpath.ts`, 4, "node-builtin-import"],
       [`${SAMPLES}/planted-builtin-subpath.ts`, 5, "node-builtin-import"],
@@ -46,12 +46,19 @@ describe("purity gate", () => {
       [`${SAMPLES}/planted-dom.ts`, 3, "dom-global"],
       [`${SAMPLES}/planted-dom.ts`, 4, "dom-global"],
       [`${SAMPLES}/planted-dom.ts`, 5, "dom-global"],
-      [`${SAMPLES}/planted-extension.tsx`, 5, "math-random"],
+      [`${SAMPLES}/planted-extension.tsx`, 5, "math-nondeterministic"],
       [`${SAMPLES}/planted-interpolation.ts`, 5, "wall-clock-date"],
+      [`${SAMPLES}/planted-locale-and-gc.ts`, 4, "gc-timing"],
+      [`${SAMPLES}/planted-locale-and-gc.ts`, 5, "locale-sensitive"],
+      [`${SAMPLES}/planted-locale-and-gc.ts`, 6, "locale-sensitive"],
+      [`${SAMPLES}/planted-locale-and-gc.ts`, 7, "locale-sensitive"],
+      [`${SAMPLES}/planted-math.ts`, 4, "math-alias"],
+      [`${SAMPLES}/planted-math.ts`, 5, "math-alias"],
+      [`${SAMPLES}/planted-math.ts`, 6, "math-nondeterministic"],
       [`${SAMPLES}/planted-network.ts`, 3, "network"],
       [`${SAMPLES}/planted-node-import.ts`, 2, "node-builtin-import"],
       [`${SAMPLES}/planted-node-import.ts`, 3, "node-builtin-import"],
-      [`${SAMPLES}/planted-random.ts`, 3, "math-random"],
+      [`${SAMPLES}/planted-random.ts`, 3, "math-nondeterministic"],
       [`${SAMPLES}/planted-template-specifier.ts`, 6, "node-builtin-import"],
     ]);
   });
@@ -75,6 +82,86 @@ describe("purity gate", () => {
       ["sample.ts", 3, "crypto-random"],
       ["sample.ts", 4, "crypto-random"],
     ]);
+  });
+
+  it("allows the exact Math members and rejects the rest", () => {
+    // `sqrt` and `imul` are IEEE-exact; `tan` and `pow` are
+    // implementation-approximated and differ between V8 and JavaScriptCore.
+    expect(
+      scanSource(
+        "sample.ts",
+        "const a = Math.floor(Math.max(x, Math.imul(y, 2)));\nconst b = Math.PI * Math.sqrt(r);\n",
+      ),
+    ).toEqual([]);
+
+    expect(
+      locations(
+        scanSource(
+          "sample.ts",
+          "const a = Math.tan(x);\nconst b = Math.pow(x, 2);\n",
+        ),
+      ),
+    ).toEqual([
+      ["sample.ts", 1, "math-nondeterministic"],
+      ["sample.ts", 2, "math-nondeterministic"],
+    ]);
+  });
+
+  it("catches Math reached without a dotted access, however it is spelled", () => {
+    // The spellings an enumeration of aliasing forms would have to chase.
+    for (const source of [
+      "const { random } = Math;",
+      "const { random: draw } = Math;",
+      'const n = Math["random"]();',
+      "const n = Math?.random();",
+      "const m = Math;",
+      "const { ...m } = Math;",
+    ]) {
+      expect(locations(scanSource("sample.ts", `${source}\n`))).toEqual([
+        ["sample.ts", 1, "math-alias"],
+      ]);
+    }
+  });
+
+  it("catches locale-sensitive formatting and comparison", () => {
+    // `localeCompare` sorts å before z in Swedish and after it in German, so
+    // an `ls` listing would differ between a laptop and CI.
+    const violations = scanSource(
+      "sample.ts",
+      "const a = names.sort((x, y) => x.localeCompare(y));\nconst b = n.toLocaleString();\nconst c = new Intl.DateTimeFormat().format(0);\n",
+    );
+
+    expect(locations(violations)).toEqual([
+      ["sample.ts", 1, "locale-sensitive"],
+      ["sample.ts", 2, "locale-sensitive"],
+      ["sample.ts", 3, "locale-sensitive"],
+    ]);
+
+    // A bare sort() is UTF-16 code-unit order and is fine.
+    expect(scanSource("sample.ts", "const s = names.sort();\n")).toEqual([]);
+  });
+
+  it("catches references whose behaviour depends on garbage collection", () => {
+    const violations = scanSource(
+      "sample.ts",
+      "const r = new WeakRef(obj);\nconst f = new FinalizationRegistry(cb);\nconst m = new WeakMap();\n",
+    );
+
+    expect(locations(violations)).toEqual([
+      ["sample.ts", 1, "gc-timing"],
+      ["sample.ts", 2, "gc-timing"],
+    ]);
+  });
+
+  it("does not treat a triple-slash directive inside a string as a directive", () => {
+    // Inverse of the specifier guard: a raw-source match counts only where
+    // `withStrings` blanked it, which happens for comments and nothing else.
+    const violations = scanSource(
+      "sample.ts",
+      "export const sample = '/// <reference types=\"node\" />';\n",
+    );
+
+    expect(violations).toEqual([]);
   });
 
   it("catches Node globals that arrive with no import line", () => {
@@ -185,7 +272,7 @@ describe("purity gate", () => {
     );
 
     expect(locations(violations)).toEqual([
-      ["sample.ts", 1, "math-random"],
+      ["sample.ts", 1, "math-nondeterministic"],
       ["sample.ts", 2, "wall-clock-date"],
     ]);
   });
@@ -221,7 +308,11 @@ describe("purity gate", () => {
       violation.file.endsWith("planted-random.ts"),
     );
 
-    expect(hit).toMatchObject({ line: 3, column: 10, rule: "math-random" });
+    expect(hit).toMatchObject({
+      line: 3,
+      column: 10,
+      rule: "math-nondeterministic",
+    });
     expect(hit.snippet).toBe("return Math.random();");
     expect(hit.invariant).toContain("2");
   });
@@ -242,7 +333,9 @@ describe("purity gate", () => {
       'const u = "https://x.test/a";\nconst n = Math.random();\n',
     );
 
-    expect(locations(violations)).toEqual([["sample.ts", 2, "math-random"]]);
+    expect(locations(violations)).toEqual([
+      ["sample.ts", 2, "math-nondeterministic"],
+    ]);
   });
 
   it("catches both prefixed and bare Node built-in imports", () => {
@@ -283,19 +376,19 @@ describe("purity gate", () => {
 describe("purity gate allowlist", () => {
   it("suppresses only the named rule in the named file", () => {
     const allowlist = [
-      { file: "a.ts", rules: ["math-random"], reason: "sample" },
+      { file: "a.ts", rules: ["math-nondeterministic"], reason: "sample" },
     ];
     const violations = [
-      { file: "a.ts", rule: "math-random" },
+      { file: "a.ts", rule: "math-nondeterministic" },
       { file: "a.ts", rule: "dom-global" },
-      { file: "b.ts", rule: "math-random" },
+      { file: "b.ts", rule: "math-nondeterministic" },
     ];
 
     const { kept } = applyAllowlist(violations, allowlist);
 
     expect(kept).toEqual([
       { file: "a.ts", rule: "dom-global" },
-      { file: "b.ts", rule: "math-random" },
+      { file: "b.ts", rule: "math-nondeterministic" },
     ]);
   });
 
