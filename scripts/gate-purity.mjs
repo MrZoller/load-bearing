@@ -232,6 +232,32 @@ export const CODE_RULES = [
     // `Atomics.isLockFree(8)` is explicitly implementation- and
     // platform-dependent, and `SharedArrayBuffer` availability depends on the
     // host's cross-origin isolation. Both typecheck under ES2022.
+    // `declare const location: { href: string }` re-introduces a global the
+    // isolated tsconfig deliberately omits — it typechecks, and the emitted
+    // code reads a browser ambient that throws in bare Node. Type-only
+    // declarations (`declare type`, `declare interface`) are untouched.
+    id: "ambient-declaration",
+    pattern:
+      /\bdeclare\s+(?:const|let|var|function|class|global|namespace|module)\b/g,
+    invariant: "3 — the engine stays headless",
+    message:
+      "An ambient value declaration asserts a global exists without the type program " +
+      "having to agree. That is what tsconfig.engine.json's lib and types settings are " +
+      "for, and this would undo them one identifier at a time.",
+  },
+  {
+    // The canonical serializer decides a value is inert data by reading its
+    // prototype, so re-pointing one turns a Map with entries into something
+    // that serializes as `{}`. Detecting every altered built-in from outside
+    // is not cheap; stopping the engine from altering one is.
+    id: "prototype-mutation",
+    pattern: /\bsetPrototypeOf\b|\b__proto__\b/g,
+    invariant: "4 — the world lies consistently",
+    message:
+      "Re-pointing a prototype makes a value lie about what it is, and the serializer " +
+      "reads the prototype to decide whether a value is inert data.",
+  },
+  {
     id: "host-capability",
     pattern: /\bAtomics\b|\bSharedArrayBuffer\b/g,
     invariant: "2 — determinism is non-negotiable",
@@ -841,6 +867,28 @@ export const DYNAMIC_IMPORT_TARGET_RULE = {
     "or the allowlisted fixture loader. Import statically.",
 };
 
+/**
+ * Member names whose dotted form is banned, and which a string property name
+ * would otherwise reach.
+ *
+ * `(() => {})["constructor"]("return Date.now()")()` is the Function
+ * constructor: both the property name and the body are string literals, which
+ * the code view blanks, so nothing dotted ever appears. Matched against the
+ * strings-intact view with the code view as a mask, the same way import
+ * specifiers are.
+ */
+const COMPUTED_MEMBER_PATTERN =
+  /\[\s*(['"`])(constructor|stack|message|__proto__|prototype)\1\s*\]/g;
+
+export const COMPUTED_MEMBER_RULE = {
+  id: "computed-member",
+  invariant: "2 — determinism is non-negotiable",
+  message:
+    "Reaching a banned member through a string property name routes around the rule " +
+    "that bans its dotted spelling, because string contents are blanked before those " +
+    "rules run.",
+};
+
 export const SPECIFIER_ESCAPE_RULE = {
   id: "specifier-escape",
   invariant: "3 — the engine stays headless",
@@ -913,6 +961,18 @@ export function scanSource(file, source, allowlist = ALLOWLIST) {
       if (withStrings[match.index] !== " ") continue;
       record(rule, match.index);
     }
+  }
+
+  COMPUTED_MEMBER_PATTERN.lastIndex = 0;
+  for (const match of withStrings.matchAll(COMPUTED_MEMBER_PATTERN)) {
+    if (code[match.index] === " ") continue;
+    record(
+      {
+        ...COMPUTED_MEMBER_RULE,
+        message: `${match[2]}: ${COMPUTED_MEMBER_RULE.message}`,
+      },
+      match.index,
+    );
   }
 
   // A dynamic import or require whose argument is not a literal never reaches

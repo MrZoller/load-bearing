@@ -1,14 +1,23 @@
 name: CI
 
-# Every commit is checked exactly once. A branch push fires `pull_request`
-# (synchronize) once its PR is open, so listening to `push` on all branches as
-# well would double every run — and deduping those two events with a shared
-# concurrency group means the loser is *cancelled*, which GitHub reports as a
-# red check on a commit that passed. One trigger per context avoids both.
+# Every commit is checked exactly once, including commits pushed before a pull
+# request exists.
+#
+# `push` covers every branch, so work is checked from the first commit rather
+# than from whenever a PR happens to be opened. `pull_request` is then narrowed
+# to the events that are *not* a push — opening, reopening, and leaving draft —
+# because listening to `synchronize` as well would run every PR commit twice.
+# Deduping those two with a shared concurrency group is not equivalent: the
+# loser is cancelled, which GitHub reports as a red check on a commit that
+# passed.
+#
+# The gap this leaves is a fork PR, where pushes to the fork do not reach this
+# repository. There are no forks; if that changes, add `synchronize` back and
+# accept the duplicate runs on same-repo branches.
 on:
   push:
-    branches: [main]
   pull_request:
+    types: [opened, reopened, ready_for_review]
 
 # Superseded runs on the same branch are still cancelled — that is a genuinely
 # obsolete run, not a duplicate of a live one. The repository half of the key

@@ -53,7 +53,24 @@ const TRANSCRIPT_FILE = "transcript.txt";
  * numeric-prefixed so that order is also readable.
  */
 export function listReplayFixtures(): string[] {
-  return readdirSync(REPLAY_FIXTURE_ROOT, { withFileTypes: true })
+  const entries = readdirSync(REPLAY_FIXTURE_ROOT, { withFileTypes: true });
+
+  // A symlinked fixture directory reports `isDirectory() === false`, so it
+  // would be dropped from the list in silence — and the suite would stay green
+  // on the fixtures that remain, giving a newly added contract no replay
+  // coverage at all. Refusing loudly is the only outcome that says so.
+  const symlinked = entries
+    .filter((entry) => entry.isSymbolicLink())
+    .map((entry) => entry.name);
+  if (symlinked.length > 0) {
+    throw new Error(
+      `${REPLAY_FIXTURE_ROOT}: fixture entries must be real directories, but ` +
+        `${symlinked.join(", ")} ${symlinked.length === 1 ? "is a symlink" : "are symlinks"}. ` +
+        `A symlinked fixture is skipped silently and gets no replay coverage.`,
+    );
+  }
+
+  return entries
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();

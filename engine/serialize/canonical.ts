@@ -183,6 +183,79 @@ function writeNumber(value: number, pointer: string): string {
 }
 
 /**
+ * A key used only to probe a WeakMap/WeakSet without adding anything.
+ */
+const BRAND_KEY = {};
+
+/**
+ * Brand checks that read internal slots rather than the prototype chain.
+ *
+ * The plain-object test asks what a value's prototype is, and a prototype can
+ * be re-pointed: `Object.setPrototypeOf(map, Object.prototype)` turns a Map
+ * with entries into something that looks like inert data and reports no own
+ * properties, so it would serialize as `{}` — two different states, one
+ * recording. These probes ask the value itself.
+ *
+ * `Object.prototype.toString` covers the built-ins whose tag comes from an
+ * internal slot (Date, RegExp, Error, the boxed primitives) and survives a
+ * prototype swap. The collections carry no such tag, so each is probed with a
+ * method that throws unless the slot is really there.
+ *
+ * The gate's `prototype-mutation` rule is the other half, and the load-bearing
+ * one: engine code cannot re-point a prototype at all. This is the containment
+ * for a value that arrives some other way.
+ */
+const BRAND_PROBES: readonly (readonly [string, (value: object) => unknown])[] =
+  [
+    [
+      "Map",
+      (value) =>
+        Object.getOwnPropertyDescriptor(Map.prototype, "size")?.get?.call(
+          value,
+        ),
+    ],
+    [
+      "Set",
+      (value) =>
+        Object.getOwnPropertyDescriptor(Set.prototype, "size")?.get?.call(
+          value,
+        ),
+    ],
+    [
+      "WeakMap",
+      (value) =>
+        WeakMap.prototype.has.call(
+          value as WeakMap<object, unknown>,
+          BRAND_KEY,
+        ),
+    ],
+    [
+      "WeakSet",
+      (value) =>
+        WeakSet.prototype.has.call(value as WeakSet<object>, BRAND_KEY),
+    ],
+  ];
+
+/**
+ * The built-in a value really is, whatever its prototype claims, or
+ * `undefined` when it is ordinary data.
+ */
+function detectBrand(value: object): string | undefined {
+  const tag = Object.prototype.toString.call(value).slice(8, -1);
+  if (tag !== "Object") return tag;
+
+  for (const [name, probe] of BRAND_PROBES) {
+    try {
+      probe(value);
+      return name;
+    } catch {
+      // Not that built-in: the probe threw on a missing internal slot.
+    }
+  }
+  return undefined;
+}
+
+/**
  * Own enumerable index keys, as `Object.keys` reports them.
  *
  * Spelling is not sufficient. An array index is `0 … 2**32 - 2`; assigning
@@ -323,6 +396,16 @@ function plainEntries(value: object, pointer: string): [string, unknown][] {
     throw new CanonicalSerializeError(
       pointer,
       `${describePrototype(prototype)} is not a plain object; convert it to plain data before serializing`,
+    );
+  }
+
+  // The prototype says "plain object", so ask the value itself — a re-pointed
+  // prototype would otherwise let a Map with entries serialize as `{}`.
+  const brand = detectBrand(value);
+  if (brand !== undefined) {
+    throw new CanonicalSerializeError(
+      pointer,
+      `${brand} with a replaced prototype; its contents live in internal slots and cannot be serialized`,
     );
   }
 

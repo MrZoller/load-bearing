@@ -5,7 +5,9 @@ Two mechanisms do: the **purity gate** stops the engine from acquiring a source
 of nondeterminism, and **golden replay fixtures** prove that identical input
 still produces identical output.
 
-Both run in CI on every push and pull request (`.github/workflows/ci.yml`).
+Both run in CI on every push, and on a pull request when it opens
+(`.github/workflows/ci.yml` — one run per commit, from the first commit rather
+than from whenever a PR is opened).
 Locally, `npm run verify` runs the same four checks in the same order.
 
 ---
@@ -88,6 +90,9 @@ build on:
 | `computed-import-target`    | `import(x)` where `x` is not a literal                             | 3         |
 | `specifier-escape`          | a `\u` escape inside a module specifier                            | 3         |
 | `host-capability`           | `Atomics`, `SharedArrayBuffer`                                     | 2         |
+| `computed-member`           | `x["constructor"]`, `x["stack"]`, and the other banned members     | 2         |
+| `ambient-declaration`       | `declare const/function/global/…`                                  | 3         |
+| `prototype-mutation`        | `setPrototypeOf`, `__proto__`                                      | 4         |
 | `regexp-statics`            | `RegExp.$1`, `RegExp.lastMatch`, any `RegExp.` static              | 2         |
 | `global-object`             | `globalThis`                                                       | 3         |
 | `proxy-reflection`          | `Proxy`, `Reflect`                                                 | 2         |

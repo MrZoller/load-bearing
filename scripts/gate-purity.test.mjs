@@ -575,6 +575,55 @@ describe("purity gate", () => {
     ).toEqual([["engine/session.ts", 1, "specifier-escape"]]);
   });
 
+  it("catches a banned member reached through a string property name", () => {
+    // Both the property name and the body are string literals, which the code
+    // view blanks, so nothing dotted ever appears.
+    expect(
+      locations(
+        scanSource(
+          "engine/a.ts",
+          'const r = (() => {})["constructor"]("return 1")();\nconst s = err["stack"];\n',
+        ),
+      ),
+    ).toEqual([
+      ["engine/a.ts", 1, "computed-member"],
+      ["engine/a.ts", 2, "computed-member"],
+    ]);
+
+    // Ordinary indexing is untouched.
+    expect(scanSource("engine/a.ts", "const v = files[0];\n")).toEqual([]);
+  });
+
+  it("catches an ambient value declaration", () => {
+    // Re-introduces a global the isolated tsconfig deliberately omits, which
+    // then typechecks and throws in bare Node.
+    expect(
+      locations(
+        scanSource(
+          "engine/a.ts",
+          "declare const location: { href: string };\n",
+        ),
+      ),
+    ).toEqual([["engine/a.ts", 1, "ambient-declaration"]]);
+
+    // Type-only declarations assert nothing about the runtime.
+    expect(scanSource("engine/a.ts", "declare type X = string;\n")).toEqual([]);
+  });
+
+  it("catches prototype re-pointing, which makes a value lie about its type", () => {
+    expect(
+      locations(
+        scanSource(
+          "engine/a.ts",
+          "Object.setPrototypeOf(m, Object.prototype);\nconst p = o.__proto__;\n",
+        ),
+      ),
+    ).toEqual([
+      ["engine/a.ts", 1, "prototype-mutation"],
+      ["engine/a.ts", 2, "prototype-mutation"],
+    ]);
+  });
+
   it("catches host-capability globals", () => {
     expect(
       locations(

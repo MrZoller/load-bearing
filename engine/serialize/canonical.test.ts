@@ -104,6 +104,18 @@ describe("serialize rejections", () => {
     expect(reads).toBe(0);
   });
 
+  it("refuses a built-in whose prototype was replaced", () => {
+    // The prototype test alone would call this inert data with no own
+    // properties, and serialize a Map holding entries as `{}`.
+    const map: unknown = new Map([["a", 1]]);
+    Object.setPrototypeOf(map as object, Object.prototype);
+    expect(() => serialize(map)).toThrow(/Map with a replaced prototype/);
+
+    const set: unknown = new Set([1]);
+    Object.setPrototypeOf(set as object, Object.prototype);
+    expect(() => serialize(set)).toThrow(/Set with a replaced prototype/);
+  });
+
   it("refuses Map and Set", () => {
     expect(() => serialize({ m: new Map() })).toThrow(
       /Map is not a plain object/,
