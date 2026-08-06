@@ -74,25 +74,27 @@ To re-record a single fixture: `npm run fixtures:update -- 001-engine-smoke`.
 `npm run gate:purity` scans non-test sources under `engine/` and fails the
 build on:
 
-| rule                      | catches                                                            | invariant |
-| ------------------------- | ------------------------------------------------------------------ | --------- |
-| `math-nondeterministic`   | every `Math` member outside the exact allowlist                    | 2         |
-| `math-alias`              | any `Math` reference that is not an immediate dotted access        | 2         |
-| `locale-sensitive`        | `Intl`, `toLocaleString`, `localeCompare`, `toLocale*`             | 2         |
-| `gc-timing`               | `WeakRef`, `FinalizationRegistry`                                  | 2         |
-| `dynamic-eval`            | `eval`, `Function` (as value or type)                              | 2         |
-| `error-stack`             | `.stack`, `captureStackTrace`                                      | 2         |
-| `global-object`           | `globalThis`                                                       | 3         |
-| `crypto-random`           | the `crypto` global — `subtle.generateKey` as much as `randomUUID` | 2         |
-| `wall-clock-date`         | the `Date` global                                                  | 2         |
-| `wall-clock-performance`  | the `performance` global — `timeOrigin` as much as `now`           | 2         |
-| `wall-clock-timer`        | `setTimeout`, `setInterval`, `setImmediate`, and their `clear`s    | 2         |
-| `ambient-process`         | the `process` global                                               | 3         |
-| `node-global`             | `Buffer`, `__dirname`, `__filename`, `global`, `require`           | 3         |
-| `dom-global`              | `document`, `window`, `navigator`, `localStorage`, `jsdom`, …      | 3         |
-| `node-builtin-import`     | `node:fs`, bare `path`, `fs/promises`, and every other built-in    | 3         |
-| `ambient-types-reference` | `/// <reference types="…" />`                                      | 3         |
-| `network`                 | `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`              | 6         |
+| rule                        | catches                                                            | invariant |
+| --------------------------- | ------------------------------------------------------------------ | --------- |
+| `math-nondeterministic`     | every `Math` member outside the exact allowlist                    | 2         |
+| `math-alias`                | any `Math` reference that is not an immediate dotted access        | 2         |
+| `locale-sensitive`          | `Intl`, `toLocaleString`, `localeCompare`, `toLocale*`             | 2         |
+| `gc-timing`                 | `WeakRef`, `FinalizationRegistry`                                  | 2         |
+| `dynamic-eval`              | `eval`, `Function` (as value or type)                              | 2         |
+| `error-stack`               | `.stack`, `{ stack } =`, `captureStackTrace`                       | 2         |
+| `regexp-statics`            | `RegExp.$1`, `RegExp.lastMatch`, any `RegExp.` static              | 2         |
+| `global-object`             | `globalThis`                                                       | 3         |
+| `allowlisted-module-import` | a production import of an allowlisted module                       | 3         |
+| `crypto-random`             | the `crypto` global — `subtle.generateKey` as much as `randomUUID` | 2         |
+| `wall-clock-date`           | the `Date` global                                                  | 2         |
+| `wall-clock-performance`    | the `performance` global — `timeOrigin` as much as `now`           | 2         |
+| `wall-clock-timer`          | `setTimeout`, `setInterval`, `setImmediate`, and their `clear`s    | 2         |
+| `ambient-process`           | the `process` global                                               | 3         |
+| `node-global`               | `Buffer`, `__dirname`, `__filename`, `global`, `require`           | 3         |
+| `dom-global`                | `document`, `window`, `navigator`, `localStorage`, `jsdom`, …      | 3         |
+| `node-builtin-import`       | `node:fs`, bare `path`, `fs/promises`, and every other built-in    | 3         |
+| `ambient-types-reference`   | `/// <reference types="…" />`                                      | 3         |
+| `network`                   | `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`              | 6         |
 
 Every rule bans a whole global rather than a call site: `Date`, not `Date.now`;
 `crypto`, not `crypto.randomUUID`; `fetch`, not `fetch(`. `const later = Date`
@@ -213,6 +215,12 @@ of the harness (`replay.ts`) has no such dependency.
 
 Entries that point at a missing file, or that no longer suppress anything, fail
 the gate. An allowlist that rots is worse than no allowlist.
+
+The entry's justification is always some form of "nothing in the engine imports
+this", so `allowlisted-module-import` enforces exactly that: a production
+engine module importing an allowlisted file is a violation at the import, not
+at the allowlisted file. Note that `tsconfig.engine.json`'s `exclude` does not
+help here — TypeScript still follows an import into an excluded file.
 
 Adding a second entry should feel like a design decision worth arguing about,
 because it is one.

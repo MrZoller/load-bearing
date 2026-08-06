@@ -8,6 +8,7 @@ import {
   findStaleAllowlistEntries,
   prepareSource,
   runGate,
+  resolveRelativeSpecifier,
   scanSource,
   TEST_FILE_PATTERN,
 } from "./gate-purity.mjs";
@@ -66,6 +67,9 @@ describe("purity gate", () => {
       [`${SAMPLES}/planted-node-import.ts`, 2, "node-builtin-import"],
       [`${SAMPLES}/planted-node-import.ts`, 3, "node-builtin-import"],
       [`${SAMPLES}/planted-random.ts`, 3, "math-nondeterministic"],
+      [`${SAMPLES}/planted-regexp-and-postfix.ts`, 6, "wall-clock-performance"],
+      [`${SAMPLES}/planted-regexp-and-postfix.ts`, 7, "error-stack"],
+      [`${SAMPLES}/planted-regexp-and-postfix.ts`, 8, "regexp-statics"],
       [`${SAMPLES}/planted-template-specifier.ts`, 6, "node-builtin-import"],
     ]);
   });
@@ -169,13 +173,83 @@ describe("purity gate", () => {
   it("catches error stacks, which carry host formatting and local paths", () => {
     const violations = scanSource(
       "sample.ts",
-      "const a = new Error().stack;\ntry { f(); } catch (e) { log(e.stack); }\n",
+      "const a = new Error().stack;\ntry { f(); } catch (e) { log(e.stack); }\nconst { stack } = new Error();\n",
     );
 
     expect(locations(violations)).toEqual([
       ["sample.ts", 1, "error-stack"],
       ["sample.ts", 2, "error-stack"],
+      ["sample.ts", 3, "error-stack"],
     ]);
+  });
+
+  it("catches RegExp's realm-wide last-match statics", () => {
+    const violations = scanSource(
+      "sample.ts",
+      "const a = RegExp.$1;\nconst b = RegExp.lastMatch;\n",
+    );
+
+    expect(locations(violations)).toEqual([
+      ["sample.ts", 1, "regexp-statics"],
+      ["sample.ts", 2, "regexp-statics"],
+    ]);
+
+    // Constructing and using a regex is untouched.
+    expect(
+      scanSource("sample.ts", 'const re = new RegExp("a");\nre.test(s);\n'),
+    ).toEqual([]);
+  });
+
+  it("reads a division after a postfix operator as division, not a regex", () => {
+    // `x++ / performance.now() / 2` — the last meaningful character is `+`,
+    // which otherwise reads as an operator expecting an operand, so the
+    // scanner would blank from the first slash to the second and swallow the
+    // wall-clock read between them.
+    expect(
+      locations(
+        scanSource(
+          "sample.ts",
+          "const a = x++ / performance.now() / 2;\nconst b = y-- / Date.now() / 2;\n",
+        ),
+      ),
+    ).toEqual([
+      ["sample.ts", 1, "wall-clock-performance"],
+      ["sample.ts", 2, "wall-clock-date"],
+    ]);
+
+    // A real regex after an operator is still recognized as a regex.
+    expect(prepareSource("const re = /ab+/g;\n").code).not.toContain("ab+");
+  });
+
+  it("catches a production import of an allowlisted module", () => {
+    // Every allowlist entry's justification is "nothing in the engine imports
+    // this". Importing it is what makes that false — and the engine tsconfig's
+    // `exclude` does not help, since TypeScript still follows an import.
+    const violations = scanSource(
+      "engine/session.ts",
+      'import { loadReplayFixture } from "./testing/fixtures.js";\n',
+    );
+
+    expect(locations(violations)).toEqual([
+      ["engine/session.ts", 1, "allowlisted-module-import"],
+    ]);
+
+    expect(
+      scanSource("engine/session.ts", 'import { x } from "./version.js";\n'),
+    ).toEqual([]);
+  });
+
+  it("resolves relative specifiers back to their source file", () => {
+    expect(
+      resolveRelativeSpecifier("engine/session.ts", "./testing/fixtures.js"),
+    ).toBe("engine/testing/fixtures.ts");
+    expect(
+      resolveRelativeSpecifier(
+        "engine/serialize/canonical.ts",
+        "../testing/fixtures.js",
+      ),
+    ).toBe("engine/testing/fixtures.ts");
+    expect(resolveRelativeSpecifier("engine/a.ts", "node:fs")).toBeUndefined();
   });
 
   it("catches Math reached without a dotted access, however it is spelled", () => {

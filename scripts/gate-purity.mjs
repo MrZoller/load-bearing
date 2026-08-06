@@ -154,12 +154,26 @@ export const CODE_RULES = [
     // paths, and line numbers — different in Node, Chrome, and Safari, and
     // different again on another machine.
     id: "error-stack",
-    pattern: /\.\s*stack\b|\bcaptureStackTrace\b/g,
+    pattern:
+      /\.\s*stack\b|\bcaptureStackTrace\b|\{[^{}]*\bstack\b[^{}]*\}\s*=/g,
     invariant: "2 — determinism is non-negotiable",
     message:
       "An error's stack is host-formatted and machine-specific, so recording one puts " +
       "the developer's filesystem into replayed state. Normalize errors to declared " +
       "fields before they reach engine output.",
+  },
+  {
+    // `RegExp.$1`, `lastMatch`, and `input` reflect the most recent successful
+    // match *anywhere in the realm*, including work that ran before replay
+    // began. Ordinary regex use is untouched — `new RegExp(…)` is a
+    // construction, not a static read.
+    id: "regexp-statics",
+    pattern: /\bRegExp\s*\./g,
+    invariant: "2 — determinism is non-negotiable",
+    message:
+      "RegExp's legacy statics carry the last match made anywhere in the realm, so " +
+      "identical replay inputs can read different values depending on what ran first. " +
+      "Capture from the match result instead.",
   },
   {
     id: "gc-timing",
@@ -392,19 +406,32 @@ export function prepareSource(source) {
   let index = 0;
   /** The previous meaningful character, used to tell a regex from a division. */
   let previous = "";
+  let beforePrevious = "";
 
   while (index < length) {
-    const skipped = skipLiteralOrComment(source, index, previous, blanks);
+    const skipped = skipLiteralOrComment(
+      source,
+      index,
+      previous,
+      beforePrevious,
+      blanks,
+    );
     if (skipped !== null) {
       // A comment is whitespace and leaves `previous` alone; a literal is a
       // value, so a `/` after it is division rather than a regex.
-      if (!skipped.isComment) previous = ")";
+      if (!skipped.isComment) {
+        beforePrevious = previous;
+        previous = ")";
+      }
       index = skipped.end;
       continue;
     }
 
     const current = source[index];
-    if (!/\s/.test(current)) previous = current;
+    if (!/\s/.test(current)) {
+      beforePrevious = previous;
+      previous = current;
+    }
     index += 1;
   }
 
@@ -418,7 +445,7 @@ export function prepareSource(source) {
  * Shared by the top-level scan and the interpolation scan, so that a comment
  * or regex *inside* `${…}` is handled the same way as one outside it.
  */
-function skipLiteralOrComment(source, index, previous, blanks) {
+function skipLiteralOrComment(source, index, previous, beforePrevious, blanks) {
   const current = source[index];
   const next = source[index + 1];
 
@@ -443,7 +470,7 @@ function skipLiteralOrComment(source, index, previous, blanks) {
     };
   }
 
-  if (current === "/" && startsRegexLiteral(previous)) {
+  if (current === "/" && startsRegexLiteral(previous, beforePrevious)) {
     const end = skipRegexLiteral(source, index);
     if (end !== -1) {
       blanks.literal(index, end);
@@ -506,11 +533,21 @@ function skipInterpolation(source, start, blanks) {
   let index = start;
   let depth = 1;
   let previous = "";
+  let beforePrevious = "";
 
   while (index < length && depth > 0) {
-    const skipped = skipLiteralOrComment(source, index, previous, blanks);
+    const skipped = skipLiteralOrComment(
+      source,
+      index,
+      previous,
+      beforePrevious,
+      blanks,
+    );
     if (skipped !== null) {
-      if (!skipped.isComment) previous = ")";
+      if (!skipped.isComment) {
+        beforePrevious = previous;
+        previous = ")";
+      }
       index = skipped.end;
       continue;
     }
@@ -518,7 +555,10 @@ function skipInterpolation(source, start, blanks) {
     const current = source[index];
     if (current === "{") depth += 1;
     else if (current === "}") depth -= 1;
-    if (!/\s/.test(current)) previous = current;
+    if (!/\s/.test(current)) {
+      beforePrevious = previous;
+      previous = current;
+    }
     index += 1;
   }
 
@@ -549,7 +589,14 @@ const REGEX_CAN_FOLLOW = new Set([
   ">",
 ]);
 
-function startsRegexLiteral(previous) {
+function startsRegexLiteral(previous, beforePrevious) {
+  // `x++ / y` is division, not a regex — but the last meaningful character is
+  // `+`, which otherwise reads as an operator expecting an operand. Without
+  // this, the scanner would blank from the first slash to the next one and
+  // swallow whatever sat between them.
+  if ((previous === "+" || previous === "-") && beforePrevious === previous) {
+    return false;
+  }
   return REGEX_CAN_FOLLOW.has(previous);
 }
 
@@ -628,6 +675,42 @@ export function extractModuleSpecifiers(withStrings, code = withStrings) {
  * or `..`, and lookalikes such as `path-browserify` and `fs-extra` are whole
  * segments of their own, so neither is caught by this.
  */
+/**
+ * Resolve a relative specifier against the importing file, as a repo-relative
+ * POSIX path with the TypeScript source extension restored.
+ *
+ * Returns `undefined` for anything that is not relative — bare package names
+ * and `node:` builtins are somebody else's rule.
+ */
+export function resolveRelativeSpecifier(fromFile, specifier) {
+  if (!specifier.startsWith(".")) return undefined;
+
+  const segments = fromFile.split("/").slice(0, -1);
+  for (const part of specifier.split("/")) {
+    if (part === "" || part === ".") continue;
+    if (part === "..") segments.pop();
+    else segments.push(part);
+  }
+
+  // ESM specifiers point at the emitted `.js`; the file on disk is `.ts`.
+  return segments
+    .join("/")
+    .replace(/\.mjs$/, ".mts")
+    .replace(/\.cjs$/, ".cts")
+    .replace(/\.jsx$/, ".tsx")
+    .replace(/\.js$/, ".ts");
+}
+
+export const ALLOWLISTED_IMPORT_RULE = {
+  id: "allowlisted-module-import",
+  invariant: "3 — the engine stays headless",
+  message:
+    "This module is allowlisted for a rule it could not otherwise pass, on the grounds " +
+    "that nothing in the engine imports it. Importing it makes that justification false " +
+    "and pulls whatever it was excused for into the browser bundle. Note that the engine " +
+    "tsconfig's `exclude` does not help here — TypeScript still follows an import.",
+};
+
 export function isNodeBuiltin(specifier) {
   if (specifier.startsWith("node:")) return true;
   const [head] = specifier.split("/");
@@ -635,7 +718,7 @@ export function isNodeBuiltin(specifier) {
 }
 
 /** Every violation in one file's source. */
-export function scanSource(file, source) {
+export function scanSource(file, source, allowlist = ALLOWLIST) {
   const { code, withStrings } = prepareSource(source);
   const lineStarts = computeLineStarts(source);
   const sourceLines = source.split("\n");
@@ -683,6 +766,21 @@ export function scanSource(file, source) {
         {
           ...SPECIFIER_RULE,
           message: `${specifier}: ${SPECIFIER_RULE.message}`,
+        },
+        index,
+      );
+      continue;
+    }
+
+    // An allowlist entry's justification is always "nothing in the engine
+    // imports this". Importing it is what makes that false, so the import is
+    // the violation rather than the allowlisted file.
+    const resolved = resolveRelativeSpecifier(file, specifier);
+    if (resolved !== undefined && allowlist.some((e) => e.file === resolved)) {
+      record(
+        {
+          ...ALLOWLISTED_IMPORT_RULE,
+          message: `${resolved}: ${ALLOWLISTED_IMPORT_RULE.message}`,
         },
         index,
       );

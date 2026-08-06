@@ -24,7 +24,12 @@
   "include": ["engine"],
   "exclude": [
     "engine/testing/fixtures.ts",
-    "engine/**/*.test.ts",
-    "engine/__fixtures__"
+    "engine/__fixtures__",
+    // Every suffix TEST_FILE_PATTERN recognizes, not just `.test.ts`. A test
+    // left inside this program would import Vitest and pull its ambient
+    // declarations back in, undoing the `types: []` isolation. tsconfig globs
+    // have no brace expansion, so `*` after the dot covers the extensions.
+    "engine/**/*.test.*",
+    "engine/**/*.spec.*"
   ]
 }
