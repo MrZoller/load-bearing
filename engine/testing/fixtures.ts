@@ -15,6 +15,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { ReplayFixture, ReplayRecording } from "./replay.js";
+import { describeUnwritableText } from "./text.js";
 
 /** Absolute path to `engine/__fixtures__/replay/`. */
 export const REPLAY_FIXTURE_ROOT = fileURLToPath(
@@ -184,30 +185,6 @@ export function loadReplayFixture(name: string): ReplayFixture {
 }
 
 /**
- * Any C0 or C1 control character, plus U+2028 and U+2029.
- *
- * The Unicode separators are not control characters, but editors, terminals,
- * and review tooling all render them as line breaks — so one event would
- * appear as several transcript lines in the artifact a human is meant to read.
- *
- * Built from code points rather than written as a literal class, so the
- * pattern stays readable and cannot be corrupted by a stray raw control
- * character in the source.
- */
-const CONTROL_CHARACTER = /[\u0000-\u001F\u007F-\u009F\u2028\u2029]/;
-
-/**
- * A surrogate code unit with no partner.
- *
- * JSON permits `"\ud800"`, and a string carrying one is not valid Unicode:
- * writing it out as UTF-8 substitutes U+FFFD, so the recording no longer holds
- * what replay produced and no re-record could ever make the byte-identity test
- * pass. Rejecting it at load turns an unfixable fixture into a clear error.
- */
-const LONE_SURROGATE =
-  /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
-
-/**
  * Validate a parsed `fixture.json`. Pure, so the malformed cases are testable
  * without committing a broken fixture the replay suite would then have to skip.
  *
@@ -258,10 +235,9 @@ export function parseReplayFixture(
     // line terminator would make one event render as several lines — or slip a
     // CR into an artifact whose whole contract is LF — and `fixtures:update`
     // would record that as correct.
-    if (CONTROL_CHARACTER.test(type)) {
-      throw new Error(
-        `${at} has a control character in "type"; transcript entries are one line each`,
-      );
+    const problem = describeUnwritableText(type);
+    if (problem !== undefined) {
+      throw new Error(`${at} has ${problem} in "type"`);
     }
     // `payload` is optional, but `EngineEvent` declares it an object when
     // present. Casting past that at the disk boundary hands a reducer a value
@@ -275,12 +251,6 @@ export function parseReplayFixture(
     ) {
       throw new Error(
         `${at} has a "payload" that is ${describe(payload)}; it must be an object when present`,
-      );
-    }
-    if (LONE_SURROGATE.test(type)) {
-      throw new Error(
-        `${at} has an unpaired surrogate in "type"; it cannot survive being written ` +
-          `as UTF-8, so no recording of it could ever match`,
       );
     }
   });

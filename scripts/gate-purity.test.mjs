@@ -69,6 +69,9 @@ describe("purity gate", () => {
       [`${SAMPLES}/planted-math.ts`, 4, "math-alias"],
       [`${SAMPLES}/planted-math.ts`, 5, "math-alias"],
       [`${SAMPLES}/planted-math.ts`, 6, "math-nondeterministic"],
+      [`${SAMPLES}/planted-network.ts`, 2, "async-scheduling"],
+      [`${SAMPLES}/planted-network.ts`, 2, "async-scheduling"],
+      [`${SAMPLES}/planted-network.ts`, 3, "async-scheduling"],
       [`${SAMPLES}/planted-network.ts`, 3, "network"],
       [`${SAMPLES}/planted-node-import.ts`, 2, "node-builtin-import"],
       [`${SAMPLES}/planted-node-import.ts`, 3, "node-builtin-import"],
@@ -76,6 +79,8 @@ describe("purity gate", () => {
       [`${SAMPLES}/planted-regexp-and-postfix.ts`, 6, "wall-clock-performance"],
       [`${SAMPLES}/planted-regexp-and-postfix.ts`, 7, "error-stack"],
       [`${SAMPLES}/planted-regexp-and-postfix.ts`, 8, "regexp-statics"],
+      [`${SAMPLES}/planted-template-specifier.ts`, 5, "async-scheduling"],
+      [`${SAMPLES}/planted-template-specifier.ts`, 5, "async-scheduling"],
       [`${SAMPLES}/planted-template-specifier.ts`, 6, "node-builtin-import"],
     ]);
   });
@@ -335,7 +340,7 @@ describe("purity gate", () => {
     // through format:check, the gate, and CI.
     const violations = scanSource(
       "sample.ts",
-      "const fs = await import(`node:fs`);\nconst p = require(`path`);\n",
+      "const fs = import(`node:fs`);\nconst p = require(`path`);\n",
     );
 
     expect(locations(violations)).toEqual([
@@ -551,14 +556,14 @@ describe("purity gate", () => {
       locations(
         scanSource(
           "engine/a.ts",
-          'const t = "node:fs";\nconst m = await import(t);\n',
+          'const t = "node:fs";\nconst m = import(t);\n',
         ),
       ),
     ).toEqual([["engine/a.ts", 2, "computed-import-target"]]);
 
     // A literal target, quoted or templated, is checked normally.
     expect(
-      scanSource("engine/a.ts", 'const m = await import("./version.js");\n'),
+      scanSource("engine/a.ts", 'const m = import("./version.js");\n'),
     ).toEqual([]);
   });
 
@@ -656,7 +661,7 @@ describe("purity gate", () => {
       locations(
         scanSource(
           "engine/a.ts",
-          'const m = await import("./testing/" + "fixtures.js");\n',
+          'const m = import("./testing/" + "fixtures.js");\n',
         ),
       ),
     ).toEqual([["engine/a.ts", 1, "computed-import-target"]]);
@@ -900,7 +905,7 @@ describe("purity gate", () => {
   it("catches both prefixed and bare Node built-in imports", () => {
     const violations = scanSource(
       "sample.ts",
-      'import "node:https";\nimport { join } from "path";\nconst p = await import("node:fs");\n',
+      'import "node:https";\nimport { join } from "path";\nconst p = import("node:fs");\n',
     );
 
     expect(violations).toHaveLength(3);

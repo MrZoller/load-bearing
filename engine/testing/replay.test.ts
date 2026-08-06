@@ -84,10 +84,15 @@ describe("golden replay fixtures", () => {
       // them while behaving differently in production, where the cartridge is
       // loaded once and reused across a session.
       const shared = loadReplayFixture(name);
+      const sharedFirst = freshModule.replayFixture(shared);
 
-      expect(freshModule.replayFixture(shared)).toEqual(
-        freshModule.replayFixture(shared),
-      );
+      // Drained between the two, so a mutation deferred to a microtask has
+      // landed before the second call reads it. The gate bans asynchrony in
+      // engine sources, and this is the assertion that would notice if that
+      // ban were ever lifted or evaded.
+      await Promise.resolve();
+
+      expect(freshModule.replayFixture(shared)).toEqual(sharedFirst);
 
       // And against the committed recording. Everything above compares
       // isolated output with isolated output, which agrees even when module

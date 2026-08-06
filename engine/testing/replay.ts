@@ -17,6 +17,7 @@ import { replaySession } from "../session.js";
 import type { EngineEvent } from "../session.js";
 import { serialize } from "../serialize/canonical.js";
 import { formatTextDiff } from "./diff.js";
+import { describeUnwritableText } from "./text.js";
 
 /** The committed input half of a fixture: `fixture.json`. */
 export interface ReplayFixture {
@@ -52,6 +53,19 @@ export function replayFixture(fixture: ReplayFixture): ReplayRecording {
     cartridge: fixture.cartridge,
     seed: fixture.seed,
     events: fixture.events,
+  });
+
+  // Validated on the way out, not only on the way in. The loader checks what a
+  // fixture *declares*; this checks what the engine *generated*, and a reducer
+  // emitting a newline or a lone surrogate would otherwise be recorded as
+  // several lines, or as an artifact no re-record could ever match.
+  result.transcript.forEach((entry, index) => {
+    const problem = describeUnwritableText(entry);
+    if (problem !== undefined) {
+      throw new Error(
+        `${fixture.name}: transcript entry ${index} contains ${problem}`,
+      );
+    }
   });
 
   return {

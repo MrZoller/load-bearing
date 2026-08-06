@@ -91,6 +91,7 @@ build on:
 | `computed-import-target`    | `import(x)` where `x` is not a literal                             | 3         |
 | `specifier-escape`          | a `\u` escape inside a module specifier                            | 3         |
 | `host-capability`           | `Atomics`, `SharedArrayBuffer`                                     | 2         |
+| `async-scheduling`          | `Promise`, `queueMicrotask`, `async`, `await`                      | 2         |
 | `computed-member`           | `x["constructor"]`, `x["stack"]`, and the other banned members     | 2         |
 | `ambient-declaration`       | `declare const/function/class/enum/global/…`                       | 3         |
 | `type-suppression`          | `@ts-ignore`, `@ts-nocheck`, `@ts-expect-error`                    | 3         |

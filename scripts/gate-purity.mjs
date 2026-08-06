@@ -280,6 +280,19 @@ export const CODE_RULES = [
       "not depend on — the spec lets `Atomics.isLockFree(8)` differ by platform.",
   },
   {
+    // `state = reduce(cartridge, seed, eventLog)` is a synchronous function.
+    // Nothing in the engine waits for anything, so asynchrony has no use here
+    // and one real hazard: `Promise.resolve().then(() => mutate())` defers a
+    // change past the current turn, so two replays in one session see
+    // different state depending on where the event loop happened to be.
+    id: "async-scheduling",
+    pattern: /\bPromise\b|\bqueueMicrotask\b|\basync\b|\bawait\b/g,
+    invariant: "2 — determinism is non-negotiable",
+    message:
+      "The engine is synchronous by construction. Deferred work lands in a different " +
+      "turn than the replay that scheduled it, which is a difference no seed controls.",
+  },
+  {
     id: "gc-timing",
     pattern: /\b(?:WeakRef|FinalizationRegistry)\b/g,
     invariant: "2 — determinism is non-negotiable",
