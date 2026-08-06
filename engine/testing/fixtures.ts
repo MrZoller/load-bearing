@@ -85,7 +85,14 @@ function assertNoDuplicateKeys(text: string, path: string): void {
   }
 }
 
-/** Read one JSON string literal, returning its value and the index past it. */
+/**
+ * Read one JSON string literal, returning its *decoded* value and the index
+ * past it.
+ *
+ * Decoded, because `"seed"` and `"\u0073eed"` are the same key to
+ * `JSON.parse` — comparing raw spellings would call them different and let the
+ * duplicate through, which is the whole failure this exists to catch.
+ */
 function readJsonString(
   text: string,
   start: number,
@@ -95,11 +102,21 @@ function readJsonString(
 
   while (index < text.length) {
     const character = text[index];
+
     if (character === "\\") {
-      value += text.slice(index, index + 2);
+      const escape = text[index + 1];
+      if (escape === "u") {
+        value += String.fromCharCode(
+          Number.parseInt(text.slice(index + 2, index + 6), 16),
+        );
+        index += 6;
+        continue;
+      }
+      value += JSON_ESCAPES[escape ?? ""] ?? escape ?? "";
       index += 2;
       continue;
     }
+
     if (character === '"') return { value, end: index + 1 };
     value += character;
     index += 1;
@@ -107,6 +124,17 @@ function readJsonString(
 
   return { value, end: text.length };
 }
+
+const JSON_ESCAPES: Readonly<Record<string, string>> = {
+  '"': '"',
+  "\\": "\\",
+  "/": "/",
+  b: "\b",
+  f: "\f",
+  n: "\n",
+  r: "\r",
+  t: "\t",
+};
 
 /** Read a committed artifact, failing loudly on malformed bytes. */
 function readTextFile(path: string): string {
@@ -156,13 +184,17 @@ export function loadReplayFixture(name: string): ReplayFixture {
 }
 
 /**
- * Any C0 or C1 control character, including LF and CR.
+ * Any C0 or C1 control character, plus U+2028 and U+2029.
+ *
+ * The Unicode separators are not control characters, but editors, terminals,
+ * and review tooling all render them as line breaks — so one event would
+ * appear as several transcript lines in the artifact a human is meant to read.
  *
  * Built from code points rather than written as a literal class, so the
  * pattern stays readable and cannot be corrupted by a stray raw control
  * character in the source.
  */
-const CONTROL_CHARACTER = /[\u0000-\u001F\u007F-\u009F]/;
+const CONTROL_CHARACTER = /[\u0000-\u001F\u007F-\u009F\u2028\u2029]/;
 
 /**
  * A surrogate code unit with no partner.

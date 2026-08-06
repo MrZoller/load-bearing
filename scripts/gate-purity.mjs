@@ -111,6 +111,18 @@ export const CODE_RULES = [
       "browsers.",
   },
   {
+    // `Math.pow` is banned as implementation-approximated, and `**` is the
+    // same operation with no identifier to match. Integer exponents are exact
+    // in practice, but the operator does not distinguish them.
+    id: "exponentiation",
+    pattern: /\*\*=?/g,
+    invariant: "2 — determinism is non-negotiable",
+    message:
+      "Exponentiation is implementation-approximated for fractional and very large " +
+      "exponents, exactly like the banned `Math.pow`. Multiply, or add a deterministic " +
+      "helper with a proven domain.",
+  },
+  {
     // The half that closes aliasing without enumerating its spellings: any
     // mention of `Math` that is not an immediate dotted access.
     id: "math-alias",
@@ -251,7 +263,8 @@ export const CODE_RULES = [
     // that serializes as `{}`. Detecting every altered built-in from outside
     // is not cheap; stopping the engine from altering one is.
     id: "prototype-mutation",
-    pattern: /\bsetPrototypeOf\b|\b__proto__\b/g,
+    pattern:
+      /\bsetPrototypeOf\b|\b__proto__\b|\bdefineProperty\s*\(\s*\w+\s*\.\s*prototype\b/g,
     invariant: "4 — the world lies consistently",
     message:
       "Re-pointing a prototype makes a value lie about what it is, and the serializer " +
@@ -860,6 +873,15 @@ function topLevelDirectory(path) {
   return rest.length > 0 ? head : undefined;
 }
 
+export const MISSING_RUNTIME_MODULE_RULE = {
+  id: "missing-runtime-module",
+  invariant: "3 — the engine stays headless",
+  message:
+    "No runtime source exists at this path. A `.d.ts` alongside it satisfies TypeScript " +
+    "under bundler resolution while the module fails to load in Node and in the browser, " +
+    "so the type program cannot catch this on its own.",
+};
+
 export const UNSCANNED_IMPORT_RULE = {
   id: "unscanned-import",
   invariant: "3 — the engine stays headless",
@@ -868,6 +890,20 @@ export const UNSCANNED_IMPORT_RULE = {
     "reads, randomness, DOM globals, or network calls — while TypeScript and every " +
     "bundler follow the import regardless. Engine code imports engine code.",
 };
+
+/** Index just past a string or template literal starting at `start`. */
+function findLiteralEnd(text, start, quote) {
+  let index = start + 1;
+  while (index < text.length) {
+    if (text[index] === "\\") {
+      index += 2;
+      continue;
+    }
+    if (text[index] === quote) return index + 1;
+    index += 1;
+  }
+  return text.length;
+}
 
 export const DYNAMIC_IMPORT_TARGET_RULE = {
   id: "computed-import-target",
@@ -953,7 +989,14 @@ export function isNodeBuiltin(specifier) {
 }
 
 /** Every violation in one file's source. */
-export function scanSource(file, source, allowlist = ALLOWLIST) {
+export function scanSource(
+  file,
+  source,
+  allowlist = ALLOWLIST,
+  // Injected so the rule set stays pure and unit-testable; the real scan
+  // passes a probe backed by the filesystem.
+  runtimeModuleExists = () => true,
+) {
   const { code, withStrings } = prepareSource(source);
   const lineStarts = computeLineStarts(source);
   const sourceLines = source.split("\n");
@@ -1032,16 +1075,21 @@ export function scanSource(file, source, allowlist = ALLOWLIST) {
       record(DYNAMIC_IMPORT_TARGET_RULE, match.index);
       continue;
     }
-    // A backtick alone does not make a target static. `import(`./${p}.js`)`
-    // resolves at runtime to whatever `p` holds, while the raw spelling it
-    // extracts sails through the containment and allowlist checks.
-    if (next === "`") {
-      const close = withStrings.indexOf("`", start + 1);
-      const body = withStrings.slice(
-        start + 1,
-        close === -1 ? undefined : close,
-      );
-      if (body.includes("${")) record(DYNAMIC_IMPORT_TARGET_RULE, match.index);
+    // Starting with a literal is not the same as being one.
+    // `import("./a/" + "b.js")` opens with a quote, and the extractor would
+    // then validate only `./a/`; `import(`./${p}.js`)` resolves at runtime to
+    // whatever `p` holds. Both leave the containment and allowlist checks
+    // believing they have seen the real path.
+    const close = findLiteralEnd(withStrings, start, next);
+    if (!/^\s*\)/.test(withStrings.slice(close))) {
+      record(DYNAMIC_IMPORT_TARGET_RULE, match.index);
+      continue;
+    }
+    if (
+      next === "`" &&
+      withStrings.slice(start + 1, close - 1).includes("${")
+    ) {
+      record(DYNAMIC_IMPORT_TARGET_RULE, match.index);
     }
   }
 
@@ -1119,6 +1167,16 @@ export function scanSource(file, source, allowlist = ALLOWLIST) {
           index,
         );
         continue;
+      }
+
+      if (!runtimeModuleExists(resolved)) {
+        record(
+          {
+            ...MISSING_RUNTIME_MODULE_RULE,
+            message: `${resolved}: ${MISSING_RUNTIME_MODULE_RULE.message}`,
+          },
+          index,
+        );
       }
 
       const tree = topLevelDirectory(file);
@@ -1249,8 +1307,24 @@ function walkRoots(roots, repoRoot) {
 export function collectViolations(roots = DEFAULT_ROOTS, repoRoot = REPO_ROOT) {
   const { files, symlinks } = walkRoots(roots, repoRoot);
 
+  // A specifier is written as `./x.js`; the file on disk is `./x.ts`, or an
+  // extensionless directory import. Anything that resolves only to a `.d.ts`
+  // has types and no runtime module.
+  const runtimeModuleExists = (path) => {
+    const base = moduleIdentity(path);
+    return [
+      ...SCANNED_EXTENSIONS,
+      ...SCANNED_EXTENSIONS.map((e) => `/index${e}`),
+    ].some((suffix) => existsSync(resolve(repoRoot, `${base}${suffix}`)));
+  };
+
   const violations = files.flatMap((file) =>
-    scanSource(file, readFileSync(resolve(repoRoot, file), "utf8")),
+    scanSource(
+      file,
+      readFileSync(resolve(repoRoot, file), "utf8"),
+      ALLOWLIST,
+      runtimeModuleExists,
+    ),
   );
 
   // Reported at line 1: the link itself is the violation, not anything in it.

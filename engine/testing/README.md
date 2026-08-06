@@ -93,7 +93,9 @@ build on:
 | `computed-member`           | `x["constructor"]`, `x["stack"]`, and the other banned members     | 2         |
 | `ambient-declaration`       | `declare const/function/class/enum/global/…`                       | 3         |
 | `type-suppression`          | `@ts-ignore`, `@ts-nocheck`, `@ts-expect-error`                    | 3         |
-| `prototype-mutation`        | `setPrototypeOf`, `__proto__`                                      | 4         |
+| `prototype-mutation`        | `setPrototypeOf`, `__proto__`, `defineProperty(X.prototype, …)`    | 4         |
+| `exponentiation`            | `**` and `**=`, which `Math.pow`'s ban implies                     | 2         |
+| `missing-runtime-module`    | an import satisfied only by a `.d.ts`                              | 3         |
 | `regexp-statics`            | `RegExp.$1`, `RegExp.lastMatch`, any `RegExp.` static              | 2         |
 | `global-object`             | `globalThis`                                                       | 3         |
 | `proxy-reflection`          | `Proxy`, `Reflect`                                                 | 2         |
@@ -189,9 +191,20 @@ of the file with strings left intact — then cross-checks the first, requiring
 the `from` / `import` / `require` keyword to be real code. That way
 `const example = 'import "node:fs"'` is not mistaken for an import.
 
-One known gap: a regex literal immediately following a keyword
-(`return /a\/\/b/`) is read as division by the regex-versus-division heuristic.
-Assign such regexes to a constant.
+### Known limits
+
+Two, both stated rather than papered over.
+
+A regex literal immediately following a keyword (`return /a\/\/b/`) is read as
+division by the regex-versus-division heuristic. Assign such regexes to a
+constant.
+
+And a member name assembled at runtime — `["con", "structor"].join("")` — is
+out of reach. Catching it would mean evaluating the program, which no static
+analysis does; a syntax-aware rewrite of this gate would not help either. The
+literal spellings are rejected, which covers the accident; this gate's threat
+model is a plausible mistake, not an adversary with commit access. The
+serializer's own rejections are the backstop if one ever gets through.
 
 `ambient-types-reference` is the exception to all of the above — it is matched
 against raw source, because the thing it looks for lives inside a comment and

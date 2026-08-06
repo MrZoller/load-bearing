@@ -11,13 +11,16 @@ name: CI
 # loser is cancelled, which GitHub reports as a red check on a commit that
 # passed.
 #
-# The gap this leaves is a fork PR, where pushes to the fork do not reach this
-# repository. There are no forks; if that changes, add `synchronize` back and
-# accept the duplicate runs on same-repo branches.
+# A same-repository commit is covered by `push` alone, so the `pull_request`
+# triggers exist only for forks, whose pushes never reach this repository. The
+# job's `if` enforces that split: without it, opening a PR would rerun a head
+# commit its push had already checked — cancelling the live run through the
+# shared concurrency group, which is the red-check outcome this block exists to
+# avoid.
 on:
   push:
   pull_request:
-    types: [opened, reopened, ready_for_review]
+    types: [opened, reopened, ready_for_review, synchronize]
 
 # Superseded runs on the same branch are still cancelled — that is a genuinely
 # obsolete run, not a duplicate of a live one. The repository half of the key
@@ -30,6 +33,10 @@ concurrency:
 jobs:
   verify:
     name: Verify
+    # Push covers this repository's own branches; pull_request covers forks.
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

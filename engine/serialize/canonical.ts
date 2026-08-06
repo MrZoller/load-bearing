@@ -241,6 +241,21 @@ const BRAND_PROBES: readonly (readonly [string, (value: object) => unknown])[] =
  * `undefined` when it is ordinary data.
  */
 function detectBrand(value: object): string | undefined {
+  // `Object.prototype.toString` performs a Get of `Symbol.toStringTag`, which
+  // an *inherited* accessor would answer. The caller has already established
+  // that this value's prototype is `Object.prototype` or null, so that is the
+  // only chain member to check — and its descriptor can be read inertly.
+  if (
+    Object.getOwnPropertyDescriptor(Object.prototype, Symbol.toStringTag) !==
+    undefined
+  ) {
+    throw new CanonicalSerializeError(
+      "",
+      "Object.prototype carries a Symbol.toStringTag; the environment itself has been " +
+        "tampered with and nothing serialized in it can be trusted",
+    );
+  }
+
   const tag = Object.prototype.toString.call(value).slice(8, -1);
   if (tag !== "Object") return tag;
 

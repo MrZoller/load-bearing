@@ -648,6 +648,62 @@ describe("purity gate", () => {
     ]);
   });
 
+  it("catches a dynamic import argument that only starts with a literal", () => {
+    // `import("./a/" + "b.js")` opens with a quote, so classifying the
+    // argument by its first character accepted it and the extractor then
+    // validated only the first half.
+    expect(
+      locations(
+        scanSource(
+          "engine/a.ts",
+          'const m = await import("./testing/" + "fixtures.js");\n',
+        ),
+      ),
+    ).toEqual([["engine/a.ts", 1, "computed-import-target"]]);
+  });
+
+  it("catches the exponentiation operator, which Math.pow's ban implies", () => {
+    expect(
+      locations(
+        scanSource(
+          "engine/a.ts",
+          "const n = base ** exp;\nlet m = 2;\nm **= 3;\n",
+        ),
+      ),
+    ).toEqual([
+      ["engine/a.ts", 1, "exponentiation"],
+      ["engine/a.ts", 3, "exponentiation"],
+    ]);
+  });
+
+  it("catches mutation of a built-in prototype", () => {
+    expect(
+      locations(
+        scanSource(
+          "engine/a.ts",
+          "Object.defineProperty(Object.prototype, key, descriptor);\n",
+        ),
+      ),
+    ).toEqual([["engine/a.ts", 1, "prototype-mutation"]]);
+  });
+
+  it("catches an import with types but no runtime module", () => {
+    // A `.d.ts` satisfies TypeScript under bundler resolution while the module
+    // fails to load in Node and in the browser.
+    const noRuntime = () => false;
+
+    expect(
+      locations(
+        scanSource(
+          "engine/a.ts",
+          'import { x } from "./ambient.js";\n',
+          ALLOWLIST,
+          noRuntime,
+        ),
+      ),
+    ).toEqual([["engine/a.ts", 1, "missing-runtime-module"]]);
+  });
+
   it("catches host-capability globals", () => {
     expect(
       locations(
