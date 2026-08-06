@@ -64,6 +64,23 @@ This buys, for free: shareable replay permalinks
 (`incident + model + seed + compressed event log` in the URL), transcript
 regression tests in CI, deterministic playtesting, and debuggability.
 
+**Randomness is a tree of named streams, not one sequence** (`engine/random/`).
+`rng.fork("spinner.verbs")` derives a child from the root seed and the child's
+path — never from the parent's current position — so consuming from one stream
+cannot shift another. With a single sequence every draw is positional, and
+adding one rare-event roll during startup would renumber every subsequent draw
+in every subsystem and break every golden fixture at once, for a reason none of
+them would explain. The trade is that stream *names* become contract surface:
+renaming one re-rolls everything drawn under it. Renaming is deliberate;
+adding a draw is routine.
+
+**Time is two numbers** (`engine/clock/`): the cartridge-declared session start
+and the milliseconds advanced since. Which events advance it, and by how much,
+belongs to the subsystems that raise them. Calendar arithmetic and timestamp
+formatting are written out by hand in UTC, because `Date` reads the host
+timezone and `Intl` reads the host locale — either would make the same session
+render differently on a laptop than in CI.
+
 ### Simulated machine state
 
 - **VFS:** tree with contents, permissions, owners/groups, mtimes, cwd —

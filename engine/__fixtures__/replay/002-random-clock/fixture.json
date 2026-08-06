@@ -1,0 +1,52 @@
+{
+  "name": "002-random-clock",
+  "description": "Locks the two sources of nondeterminism the engine is allowed to have. The transcript records 1000 raw draws, the float derivation, an int() histogram, and a weightedPick distribution snapshot; state.json records where every stream and the clock stopped. A change to the seed hash, the mulberry32 constants, the fork derivation, int()'s rejection window, or the UTC calendar arithmetic fails here — and fails visibly, at the draw that first diverged. The cartridge declares meta.startedAt, so the clock starts somewhere other than the epoch.",
+  "seed": "2026-08-05/0/deep-foundation",
+  "cartridge": {
+    "meta": {
+      "title": "Fixture World",
+      "number": 0,
+      "startedAt": "2026-08-05T09:14:22.000Z"
+    }
+  },
+  "events": [
+    { "type": "session.start" },
+    {
+      "type": "random.draw",
+      "payload": { "stream": "spinner.verbs", "count": 1000, "form": "uint32" }
+    },
+    { "type": "clock.tick", "payload": { "ms": 1500 } },
+    {
+      "type": "random.draw",
+      "payload": { "stream": "spinner.verbs", "count": 8, "form": "float" }
+    },
+    {
+      "type": "random.draw",
+      "payload": { "stream": "", "count": 8, "form": "uint32" }
+    },
+    {
+      "type": "random.draw",
+      "payload": { "stream": "spinner/verbs", "count": 8, "form": "uint32" }
+    },
+    { "type": "clock.tick", "payload": { "ms": 0 } },
+    {
+      "type": "random.int",
+      "payload": { "stream": "pids", "count": 5000, "max": 7 }
+    },
+    {
+      "type": "random.weighted",
+      "payload": {
+        "stream": "rare-events",
+        "count": 10000,
+        "entries": [
+          { "value": "authored-but-off", "weight": 0 },
+          { "value": "teapot", "weight": 1 },
+          { "value": "cache-warning", "weight": 4 },
+          { "value": "nothing-happens", "weight": 95 }
+        ]
+      }
+    },
+    { "type": "clock.tick", "payload": { "ms": 53738000 } },
+    { "type": "session.end" }
+  ]
+}
