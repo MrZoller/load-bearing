@@ -54,5 +54,10 @@ jobs:
 
       # Includes the golden replay suite. A recorded fixture that differs by a
       # single byte fails here; CI never re-records.
-      - name: Test
-        run: npm test
+      #
+      # Run twice, under two host timezones. The engine has no `Date` to read
+      # one with, which is exactly the claim being checked: a timestamp that
+      # started depending on the host would pass in CI's UTC and fail on a
+      # laptop, which is the worst place to find out.
+      - name: Test (UTC and Asia/Tokyo)
+        run: npm run test:timezones

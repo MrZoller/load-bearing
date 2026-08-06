@@ -10,6 +10,13 @@ Both run in CI on every push, and on a pull request when it opens
 than from whenever a PR is opened).
 Locally, `npm run verify` runs the same four checks in the same order.
 
+The test step runs the whole suite twice, under `TZ=UTC` and `TZ=Asia/Tokyo`
+(`npm run test:timezones`). The engine has no `Date` to read a host timezone
+with, which is the claim being checked: a timestamp that started depending on
+one would pass in CI's UTC and fail on a laptop. A guard in
+`engine/clock/civil.test.ts` asserts the non-UTC run really is non-UTC, so a
+typo in that script cannot silently degrade it to running UTC twice.
+
 ---
 
 ## Golden replay fixtures
@@ -52,6 +59,16 @@ moved.
 Every Phase 0 subsystem PR adds at least one fixture. A subsystem with unit
 tests and no fixture is tested against its own idea of correct rather than
 against the replay contract.
+
+### The fixtures so far
+
+| fixture            | what it pins                                                                                                                                                                      |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `001-engine-smoke` | the loop itself: an input triple folds, records, and compares. Its cartridge has unsorted keys and no `meta.startedAt`, so key ordering and the 1970 default both fail here first |
+| `002-random-clock` | the seed hash, the mulberry32 constants, `fork`'s path derivation, `int`'s rejection window, `weightedPick`'s distribution, and the UTC calendar arithmetic                       |
+
+`002` records 1000 raw draws eight to a line with their index, so a divergence
+names the draw it started at rather than reporting that a file changed.
 
 ### When one fails
 
@@ -163,6 +180,12 @@ and `git log` dates must be formatted and sorted by hand. `localeCompare` sorts
 `å` before `z` in Swedish and after it in German, so a directory listing would
 differ between a laptop and CI. A bare `sort()` is UTF-16 code-unit order and
 is fine.
+
+The date half of that is already built: `engine/clock/civil.ts` turns epoch
+milliseconds into UTC calendar fields and carries the C-locale `MONTH_NAMES`
+and `WEEKDAY_NAMES` tables that `git log` and `ls -l` print. Build those
+formats from `CivilTime` — do not reach for `Date` or `Intl`, which is what
+the gate is stopping.
 
 **Naming consequence:** because `process` is banned as a whole identifier,
 engine code must not name a local `process` — the simulated process model's

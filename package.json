@@ -8,12 +8,13 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:timezones": "TZ=UTC npm test && TZ=Asia/Tokyo npm test",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.engine.json --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "gate:purity": "node scripts/gate-purity.mjs",
     "fixtures:update": "vite-node scripts/update-fixtures.ts",
-    "verify": "npm run typecheck && npm run format:check && npm run gate:purity && npm test"
+    "verify": "npm run typecheck && npm run format:check && npm run gate:purity && npm run test:timezones"
   },
   "devDependencies": {
     "@types/node": "^22.10.7",

@@ -12,7 +12,15 @@
       }
     }
   },
+  "clock": {
+    "elapsedMs": 0,
+    "startMs": 0
+  },
   "engineVersion": "0.0.0",
   "eventCount": 4,
+  "random": {
+    "cursors": {},
+    "seed": 1023437636
+  },
   "seed": "2026-08-05/0/deep-foundation"
 }

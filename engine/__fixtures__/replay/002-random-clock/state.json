@@ -1,0 +1,26 @@
+{
+  "cartridge": {
+    "meta": {
+      "number": 0,
+      "startedAt": "2026-08-05T09:14:22.000Z",
+      "title": "Fixture World"
+    }
+  },
+  "clock": {
+    "elapsedMs": 53739500,
+    "startMs": 1785921262000
+  },
+  "engineVersion": "0.0.0",
+  "eventCount": 11,
+  "random": {
+    "cursors": {
+      "root": 887066610,
+      "root/pids": 4043053915,
+      "root/rare-events": 44043203,
+      "root/spinner.verbs": 3792895982,
+      "root/spinner/verbs": 885184839
+    },
+    "seed": 1023437636
+  },
+  "seed": "2026-08-05/0/deep-foundation"
+}
