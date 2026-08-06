@@ -74,22 +74,28 @@ To re-record a single fixture: `npm run fixtures:update -- 001-engine-smoke`.
 `npm run gate:purity` scans non-test sources under `engine/` and fails the
 build on:
 
-| rule                     | catches                                                         | invariant |
-| ------------------------ | --------------------------------------------------------------- | --------- |
-| `math-random`            | `Math.random`                                                   | 2         |
-| `crypto-random`          | `crypto.randomUUID`, `getRandomValues`, `randomBytes`, …        | 2         |
-| `wall-clock-date`        | the `Date` global, in any form                                  | 2         |
-| `wall-clock-performance` | `performance.now`                                               | 2         |
-| `wall-clock-timer`       | `setTimeout`, `setInterval`, `setImmediate`                     | 2         |
-| `ambient-process`        | the `process` global, in any form                               | 3         |
-| `dom-global`             | `document`, `window`, `navigator`, `localStorage`, `jsdom`, …   | 3         |
-| `node-builtin-import`    | `node:fs`, bare `path`, `fs/promises`, and every other built-in | 3         |
-| `network`                | `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`           | 6         |
+| rule                      | catches                                                            | invariant |
+| ------------------------- | ------------------------------------------------------------------ | --------- |
+| `math-random`             | `Math.random`                                                      | 2         |
+| `crypto-random`           | the `crypto` global — `subtle.generateKey` as much as `randomUUID` | 2         |
+| `wall-clock-date`         | the `Date` global                                                  | 2         |
+| `wall-clock-performance`  | the `performance` global — `timeOrigin` as much as `now`           | 2         |
+| `wall-clock-timer`        | `setTimeout`, `setInterval`, `setImmediate`, and their `clear`s    | 2         |
+| `ambient-process`         | the `process` global                                               | 3         |
+| `node-global`             | `Buffer`, `__dirname`, `__filename`, `global`, `require`           | 3         |
+| `dom-global`              | `document`, `window`, `navigator`, `localStorage`, `jsdom`, …      | 3         |
+| `node-builtin-import`     | `node:fs`, bare `path`, `fs/promises`, and every other built-in    | 3         |
+| `ambient-types-reference` | `/// <reference types="…" />`                                      | 3         |
+| `network`                 | `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`              | 6         |
 
-The rules ban whole globals rather than call sites: `Date`, not `Date.now`;
-`fetch`, not `fetch(`. `const later = Date` is the same leak with an extra
-step. `crypto.randomUUID()` and `process` get their own rules because they need
-no import, which is precisely what makes them the easy accident.
+Every rule bans a whole global rather than a call site: `Date`, not `Date.now`;
+`crypto`, not `crypto.randomUUID`; `fetch`, not `fetch(`. `const later = Date`
+and `const schedule = setTimeout` are the same leaks with an extra step, and an
+enumeration of members always misses one — `performance.timeOrigin` and
+`crypto.subtle.generateKey` both got through an earlier version.
+
+`crypto`, `performance`, `process`, and the `node-global` set matter most,
+because they need no import: nothing in the file header hints they are there.
 
 **Naming consequence:** because `process` is banned as a whole identifier,
 engine code must not name a local `process` — the simulated process model's
@@ -123,6 +129,34 @@ the `from` / `import` / `require` keyword to be real code. That way
 One known gap: a regex literal immediately following a keyword
 (`return /a\/\/b/`) is read as division by the regex-versus-division heuristic.
 Assign such regexes to a constant.
+
+`ambient-types-reference` is the exception to all of the above — it is matched
+against raw source, because the thing it looks for lives inside a comment and
+means something to the compiler anyway.
+
+### The engine's own tsconfig
+
+`tsconfig.json` covers the whole repository and pulls in `@types/node`, because
+the tooling around the engine genuinely needs it. TypeScript's global type
+scope is per _program_, though, so inside that program `Buffer.from(…)`,
+`__dirname`, and `global` typecheck happily in engine sources that must run in
+a browser.
+
+`tsconfig.engine.json` is the engine's own program with `types: []`, and
+`npm run typecheck` runs both. Its exclusions are exactly the purity gate's
+allowlist plus its test-file pattern — one concept with two enforcement points,
+with `engine/testing/fixtures.ts` the single documented exception in each.
+
+Note that `types: []` alone would not be enough: an explicit
+`/// <reference types="node" />` inside any file of the program loads Node's
+globals for every file in it. That is what the `ambient-types-reference` rule
+is guarding.
+
+The engine program also has no `console`, `URL`, `TextEncoder`, or
+`structuredClone`, since `lib` is `ES2022` and nothing supplies the rest.
+Nothing needs them yet. When something does, add a curated
+`engine/globals.d.ts` rather than putting `"DOM"` in `lib`, which would hand
+the engine `document`, `window`, and `fetch` types along with it.
 
 ### Allowlist
 

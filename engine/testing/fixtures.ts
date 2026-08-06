@@ -41,8 +41,25 @@ export function listReplayFixtures(): string[] {
 /** Read and shape-check one fixture's input triple. */
 export function loadReplayFixture(name: string): ReplayFixture {
   const path = join(REPLAY_FIXTURE_ROOT, name, FIXTURE_FILE);
-  const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
+  return parseReplayFixture(
+    JSON.parse(readFileSync(path, "utf8")) as unknown,
+    name,
+    path,
+  );
+}
 
+/**
+ * Validate a parsed `fixture.json`. Pure, so the malformed cases are testable
+ * without committing a broken fixture the replay suite would then have to skip.
+ *
+ * `path` appears in every message: a fixture error that does not say which
+ * fixture is a worse error than the one it reports.
+ */
+export function parseReplayFixture(
+  parsed: unknown,
+  name: string,
+  path = name,
+): ReplayFixture {
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     throw new Error(`${path}: expected a JSON object`);
   }
@@ -56,6 +73,20 @@ export function loadReplayFixture(name: string): ReplayFixture {
   if (!Array.isArray(fixture.events)) {
     throw new Error(`${path}: "events" must be an array`);
   }
+  // Shape-check every event, not just the array around them. A fixture whose
+  // event says `kind` instead of `type` replays with `type` undefined, and
+  // `fixtures:update` then records that as the expected transcript — a typo
+  // promoted to a green baseline. A `null` element fails worse still, throwing
+  // a bare TypeError out of the reducer with no fixture path attached.
+  fixture.events.forEach((event: unknown, index: number) => {
+    const at = `${path}: events[${index}]`;
+    if (typeof event !== "object" || event === null || Array.isArray(event)) {
+      throw new Error(`${at} must be an object, not ${describe(event)}`);
+    }
+    if (typeof (event as { type?: unknown }).type !== "string") {
+      throw new Error(`${at} must have a string "type"`);
+    }
+  });
   if (fixture.name !== name) {
     throw new Error(
       `${path}: "name" is ${JSON.stringify(fixture.name)} but the directory is ` +
@@ -96,6 +127,13 @@ export function writeReplayRecording(
     recording.transcript,
     "utf8",
   );
+}
+
+/** A short, safe description of a bad value, for an error message. */
+function describe(value: unknown): string {
+  if (value === null) return "null";
+  if (Array.isArray(value)) return "an array";
+  return typeof value;
 }
 
 function readRecordedFile(name: string, file: string): string {

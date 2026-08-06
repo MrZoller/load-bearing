@@ -1,0 +1,30 @@
+{
+  // The engine's own program, compiled without Node's ambient globals.
+  //
+  // The root tsconfig covers the whole repository and necessarily pulls in
+  // @types/node, because the tooling around the engine — the fixture loader,
+  // the re-record script, the Vitest config — genuinely needs it. TypeScript's
+  // global type scope is per *program*, though, not per file: with Node's
+  // types loaded, `Buffer.from(…)`, `__dirname`, and `global` typecheck
+  // happily inside engine sources that must run in a browser.
+  //
+  // Setting `types: []` here is not on its own enough — an explicit
+  // `/// <reference types="node" />` inside a dependency's .d.ts loads them
+  // anyway — so the isolation comes from the include/exclude boundary, and the
+  // purity gate's `ambient-types-reference` rule keeps a stray directive from
+  // reopening it.
+  //
+  // The exclusions are exactly the purity gate's allowlist plus its test-file
+  // pattern: one concept, two enforcement points. engine/testing/fixtures.ts
+  // is the single documented exception in both.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": []
+  },
+  "include": ["engine"],
+  "exclude": [
+    "engine/testing/fixtures.ts",
+    "engine/**/*.test.ts",
+    "engine/__fixtures__"
+  ]
+}

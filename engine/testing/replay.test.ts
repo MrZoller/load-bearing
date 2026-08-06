@@ -4,6 +4,7 @@ import {
   listReplayFixtures,
   loadReplayFixture,
   loadReplayRecording,
+  parseReplayFixture,
 } from "./fixtures.js";
 import { compareRecording, replayFixture } from "./replay.js";
 
@@ -82,6 +83,37 @@ describe("fixture loading", () => {
   it("names the re-record command when a recording is missing", () => {
     expect(() => loadReplayRecording("no-such-fixture")).toThrow(
       /fixtures:update/,
+    );
+  });
+
+  it("shape-checks every event, so a typo cannot become a green baseline", () => {
+    // An event saying `kind` instead of `type` replays with type undefined,
+    // and `fixtures:update` would then record that as the expected transcript.
+    const withEvents = (events: unknown[]) => ({
+      name: "sample",
+      description: "sample",
+      seed: "sample",
+      events,
+    });
+
+    for (const bad of [{ kind: "session.start" }, { type: 42 }, null, ["x"]]) {
+      expect(() =>
+        parseReplayFixture(
+          withEvents([{ type: "session.start" }, bad]),
+          "sample",
+        ),
+      ).toThrow(/events\[1\]/);
+    }
+
+    expect(() =>
+      parseReplayFixture(withEvents([{ type: "session.start" }]), "sample"),
+    ).not.toThrow();
+  });
+
+  it("rejects a fixture that is not an object, or is missing a field", () => {
+    expect(() => parseReplayFixture([], "sample")).toThrow(/JSON object/);
+    expect(() => parseReplayFixture({ name: "sample" }, "sample")).toThrow(
+      /"description" must be a string/,
     );
   });
 });

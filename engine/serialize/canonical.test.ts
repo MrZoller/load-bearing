@@ -135,6 +135,52 @@ describe("serialize rejections", () => {
     );
   });
 
+  it("refuses an accessor at an array index, and never invokes it", () => {
+    let reads = 0;
+    const array: unknown[] = [];
+    Object.defineProperty(array, 0, {
+      enumerable: true,
+      get() {
+        reads += 1;
+        return reads;
+      },
+    });
+
+    expect(() => serialize(array)).toThrow(/accessor property/);
+    expect(() => serializeInline(array)).toThrow(/accessor property/);
+    expect(reads).toBe(0);
+  });
+
+  it("refuses a hole even when Array.prototype has been polluted", () => {
+    // `index in array` walks the prototype chain, so a polluted numeric
+    // property would make a hole look present and serialize ambient state.
+    const polluted = Array.prototype as unknown as Record<number, unknown>;
+    polluted[1] = "INHERITED";
+    try {
+      // eslint-disable-next-line no-sparse-arrays
+      expect(() => serialize([0, , 2])).toThrow(/hole in a sparse array/);
+    } finally {
+      delete polluted[1];
+    }
+  });
+
+  it("refuses extra own properties on an array, which would vanish", () => {
+    // The array branch never reaches plainEntries, so without this both of
+    // these serialize as a bare list and the extra state disappears.
+    expect(() => serialize(Object.assign([1, 2], { foo: 1 }))).toThrow(
+      /non-index property "foo"/,
+    );
+    expect(() => serialize(Object.assign([], { [Symbol("id")]: 1 }))).toThrow(
+      /symbol-keyed/,
+    );
+  });
+
+  it("refuses an Array subclass, which Array.isArray reports as an array", () => {
+    class Beam extends Array {}
+
+    expect(() => serialize(Beam.from([1, 2]))).toThrow(/array subclass/);
+  });
+
   it("refuses accessor properties rather than invoking them", () => {
     let reads = 0;
     const counter = {

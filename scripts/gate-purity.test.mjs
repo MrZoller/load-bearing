@@ -28,6 +28,11 @@ describe("purity gate", () => {
 
     expect(locations(violations)).toEqual([
       [`${SAMPLES}/planted-after-url.ts`, 5, "math-random"],
+      [`${SAMPLES}/planted-aliased-globals.ts`, 5, "wall-clock-timer"],
+      [`${SAMPLES}/planted-aliased-globals.ts`, 6, "wall-clock-performance"],
+      [`${SAMPLES}/planted-aliased-globals.ts`, 7, "crypto-random"],
+      [`${SAMPLES}/planted-aliased-globals.ts`, 8, "node-global"],
+      [`${SAMPLES}/planted-aliased-globals.ts`, 9, "node-global"],
       [`${SAMPLES}/planted-ambient.ts`, 4, "crypto-random"],
       [`${SAMPLES}/planted-ambient.ts`, 5, "ambient-process"],
       [`${SAMPLES}/planted-ambient.ts`, 5, "wall-clock-timer"],
@@ -47,6 +52,72 @@ describe("purity gate", () => {
       [`${SAMPLES}/planted-node-import.ts`, 2, "node-builtin-import"],
       [`${SAMPLES}/planted-node-import.ts`, 3, "node-builtin-import"],
       [`${SAMPLES}/planted-random.ts`, 3, "math-random"],
+      [`${SAMPLES}/planted-template-specifier.ts`, 6, "node-builtin-import"],
+    ]);
+  });
+
+  it("catches banned globals reached through an alias or an unlisted member", () => {
+    // The gate bans whole globals, so indirection is not an escape hatch.
+    const violations = scanSource(
+      "sample.ts",
+      [
+        "const schedule = setTimeout;",
+        "const origin = performance.timeOrigin;",
+        "const key = crypto.subtle;",
+        "const alias = crypto;",
+        "",
+      ].join("\n"),
+    );
+
+    expect(locations(violations)).toEqual([
+      ["sample.ts", 1, "wall-clock-timer"],
+      ["sample.ts", 2, "wall-clock-performance"],
+      ["sample.ts", 3, "crypto-random"],
+      ["sample.ts", 4, "crypto-random"],
+    ]);
+  });
+
+  it("catches Node globals that arrive with no import line", () => {
+    // require.resolve() is the sharp one: the specifier rule requires
+    // `require(`, so even its literal "node:fs" argument went unnoticed.
+    const violations = scanSource(
+      "sample.ts",
+      'const b = Buffer.from("x");\nconst d = __dirname;\nconst p = require.resolve("node:fs");\n',
+    );
+
+    expect(locations(violations)).toEqual([
+      ["sample.ts", 1, "node-global"],
+      ["sample.ts", 2, "node-global"],
+      ["sample.ts", 3, "node-global"],
+    ]);
+  });
+
+  it("catches a built-in imported through a template literal", () => {
+    // Valid syntax that prettier leaves alone, so a quote-only pattern let it
+    // through format:check, the gate, and CI.
+    const violations = scanSource(
+      "sample.ts",
+      "const fs = await import(`node:fs`);\nconst p = require(`path`);\n",
+    );
+
+    expect(locations(violations)).toEqual([
+      ["sample.ts", 1, "node-builtin-import"],
+      ["sample.ts", 2, "node-global"],
+      ["sample.ts", 2, "node-builtin-import"],
+    ]);
+  });
+
+  it("catches a triple-slash types reference, which lives in a comment", () => {
+    // One directive anywhere re-poisons the whole engine program, because
+    // TypeScript's global type scope is per-program, not per-file. It is
+    // matched against raw source: the code view has comments blanked.
+    const violations = scanSource(
+      "sample.ts",
+      '/// <reference types="node" />\nexport const x = 1;\n',
+    );
+
+    expect(locations(violations)).toEqual([
+      ["sample.ts", 1, "ambient-types-reference"],
     ]);
   });
 

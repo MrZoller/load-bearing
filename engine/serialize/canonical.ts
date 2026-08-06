@@ -82,14 +82,13 @@ function write(
     const closePad = INDENT.repeat(depth);
 
     if (Array.isArray(container)) {
+      assertPlainArray(container, pointer);
       if (container.length === 0) return "[]";
       const items: string[] = [];
       for (let index = 0; index < container.length; index += 1) {
         const itemPointer = `${pointer}/${index}`;
-        assertDenseElement(container, index, itemPointer);
-        items.push(
-          `${pad}${write(container[index], itemPointer, depth + 1, seen)}`,
-        );
+        const item = readElement(container, index, itemPointer);
+        items.push(`${pad}${write(item, itemPointer, depth + 1, seen)}`);
       }
       return `[\n${items.join(",\n")}\n${closePad}]`;
     }
@@ -120,11 +119,12 @@ function writeInline(
   seen.add(container);
   try {
     if (Array.isArray(container)) {
+      assertPlainArray(container, pointer);
       const items: string[] = [];
       for (let index = 0; index < container.length; index += 1) {
         const itemPointer = `${pointer}/${index}`;
-        assertDenseElement(container, index, itemPointer);
-        items.push(writeInline(container[index], itemPointer, seen));
+        const item = readElement(container, index, itemPointer);
+        items.push(writeInline(item, itemPointer, seen));
       }
       return `[${items.join(",")}]`;
     }
@@ -188,26 +188,74 @@ function writeNumber(value: number, pointer: string): string {
   return Object.is(value, -0) ? "0" : String(value);
 }
 
+/** Own enumerable index keys, as `Object.keys` reports them. */
+const ARRAY_INDEX_KEY = /^(?:0|[1-9]\d*)$/;
+
 /**
- * Reject a sparse array's holes.
+ * Reject arrays carrying anything the numeric elements do not cover.
  *
- * `Array.prototype.map` skips holes rather than visiting them, so a hole would
- * slip past an `item === undefined` check and emit nothing between two commas
- * — output that is not JSON at all. Holes and explicit `undefined` are the
- * same defect for the same reason the module rejects `undefined` elements:
- * dropping one shifts every index after it.
+ * `Array.isArray` is true for subclass instances, so the prototype check in
+ * `plainEntries` never runs on an array — and the array branch never calls
+ * `plainEntries` at all. Without this, `Object.assign([], { foo: 1 })`
+ * serializes as `[]` and the extra state vanishes without an error: two
+ * materially different values with one recording.
  */
-function assertDenseElement(
+function assertPlainArray(array: readonly unknown[], pointer: string): void {
+  const prototype = Object.getPrototypeOf(array) as object | null;
+  if (prototype !== Array.prototype) {
+    throw new CanonicalSerializeError(
+      pointer,
+      "array subclass; convert it to a plain array before serializing",
+    );
+  }
+
+  const symbols = Object.getOwnPropertySymbols(array);
+  if (symbols.length > 0) {
+    throw new CanonicalSerializeError(
+      pointer,
+      `symbol-keyed property ${String(symbols[0])} would be dropped silently`,
+    );
+  }
+
+  for (const key of Object.keys(array)) {
+    if (!ARRAY_INDEX_KEY.test(key)) {
+      throw new CanonicalSerializeError(
+        pointer,
+        `non-index property ${JSON.stringify(key)} would be dropped silently`,
+      );
+    }
+  }
+}
+
+/**
+ * Read one array element, rejecting everything that is not inert own data.
+ *
+ * Reading through the descriptor rather than `array[index]` closes three holes
+ * at once. A hole is `undefined` here even when `Array.prototype` has been
+ * polluted with a numeric property, which an `index in array` test would
+ * happily report as present. An accessor is rejected rather than invoked. And
+ * the value is read exactly once, where a separate check-then-read pair would
+ * call a getter twice per element.
+ */
+function readElement(
   array: readonly unknown[],
   index: number,
   pointer: string,
-): void {
-  if (!(index in array)) {
+): unknown {
+  const descriptor = Object.getOwnPropertyDescriptor(array, index);
+  if (descriptor === undefined) {
     throw new CanonicalSerializeError(pointer, "hole in a sparse array");
   }
-  if (array[index] === undefined) {
+  if (descriptor.get !== undefined || descriptor.set !== undefined) {
+    throw new CanonicalSerializeError(
+      pointer,
+      "accessor property; reading it would run code during serialization",
+    );
+  }
+  if (descriptor.value === undefined) {
     throw new CanonicalSerializeError(pointer, "undefined array element");
   }
+  return descriptor.value;
 }
 
 /**

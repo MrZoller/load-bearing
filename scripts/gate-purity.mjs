@@ -80,12 +80,12 @@ export const CODE_RULES = [
   },
   {
     id: "crypto-random",
-    pattern:
-      /\bcrypto\s*\.\s*(?:randomUUID|getRandomValues|randomBytes|randomInt)\b/g,
+    pattern: /\bcrypto\b/g,
     invariant: "2 — determinism is non-negotiable",
     message:
-      "Web Crypto randomness needs no import, which is what makes it the easy accident. " +
-      "Ids and shuffles come from the seeded PRNG.",
+      "Web Crypto needs no import, which is what makes it the easy accident, and every " +
+      "randomness-producing member of it draws on system entropy — `subtle.generateKey` " +
+      "as much as `randomUUID`. Ids and shuffles come from the seeded PRNG.",
   },
   {
     id: "wall-clock-date",
@@ -96,18 +96,28 @@ export const CODE_RULES = [
   },
   {
     id: "wall-clock-performance",
-    pattern: /\bperformance\s*\.\s*now\b/g,
+    pattern: /\bperformance\b/g,
     invariant: "2 — determinism is non-negotiable",
     message:
-      "performance.now() is wall-clock time. Read the engine's simulated clock instead.",
+      "The performance global is wall-clock time — `timeOrigin` as much as `now()`. " +
+      "Read the engine's simulated clock instead.",
   },
   {
     id: "wall-clock-timer",
-    pattern: /\b(?:setTimeout|setInterval|setImmediate)\s*\(/g,
+    pattern:
+      /\b(?:setTimeout|setInterval|setImmediate|clearTimeout|clearInterval|clearImmediate)\b/g,
     invariant: "2 — determinism is non-negotiable",
     message:
       "Time in the engine advances by event, not by timer. Anything that needs to " +
       "happen later is an event that happens later.",
+  },
+  {
+    id: "node-global",
+    pattern: /\b(?:Buffer|__dirname|__filename|global|require)\b/g,
+    invariant: "3 — the engine stays headless",
+    message:
+      "A Node-only global. It does not exist in a browser, and unlike a `node:` import " +
+      "it arrives with no import line to notice.",
   },
   {
     // Banned as a whole identifier, not per member. An earlier version listed
@@ -199,6 +209,28 @@ export const SPECIFIER_RULE = {
   message:
     "Node built-ins do not exist in a browser. The engine must run in both.",
 };
+
+/**
+ * Rules matched against the *raw* source, before any blanking.
+ *
+ * Only for constructs that live inside a comment and mean something to the
+ * compiler anyway — which in practice is the triple-slash directive. The
+ * engine's own tsconfig sets `types: []` to keep Node's ambient globals out of
+ * its program, and a single `/// <reference types="node" />` anywhere in that
+ * program silently undoes it: TypeScript's global type scope is per-program,
+ * not per-file, so one file's directive serves globals to every file.
+ */
+export const RAW_RULES = [
+  {
+    id: "ambient-types-reference",
+    pattern: /\/\/\/\s*<reference\s+types\s*=/g,
+    invariant: "3 — the engine stays headless",
+    message:
+      "A triple-slash types reference loads ambient globals for the whole program, " +
+      "undoing tsconfig.engine.json's `types: []` isolation for every engine file at " +
+      "once. Move the code that needs them out of the engine program.",
+  },
+];
 
 /**
  * Files permitted to break a specific rule, each with the argument for why.
@@ -456,11 +488,18 @@ function skipRegexLiteral(source, start) {
  *     import { x } from "node:fs";          // keyword is real code — reported
  */
 export function extractModuleSpecifiers(withStrings, code = withStrings) {
+  // The quote class includes a backtick, because a no-substitution template is
+  // a valid static specifier — `await import(`node:fs`)` — and prettier does
+  // not rewrite it to quotes, so a quote-only pattern let it through the whole
+  // pipeline. A template with a substitution still matches when its literal
+  // half names a built-in (`import(`node:${name}`)`), which is the right
+  // answer; one whose prefix resolves to nothing recognisable is left alone,
+  // since no text-level gate can resolve it.
   const patterns = [
-    /\bfrom\s*(['"])([^'"\n]*)\1/g,
-    /\bimport\s*\(\s*(['"])([^'"\n]*)\1/g,
-    /\bimport\s+(['"])([^'"\n]*)\1/g,
-    /\brequire\s*\(\s*(['"])([^'"\n]*)\1/g,
+    /\bfrom\s*(['"`])([^'"`\n]*)\1/g,
+    /\bimport\s*\(\s*(['"`])([^'"`\n]*)\1/g,
+    /\bimport\s+(['"`])([^'"`\n]*)\1/g,
+    /\brequire\s*\(\s*(['"`])([^'"`\n]*)\1/g,
   ];
 
   const found = [];
@@ -514,6 +553,13 @@ export function scanSource(file, source) {
     // before every file rather than sharing state between them.
     rule.pattern.lastIndex = 0;
     for (const match of code.matchAll(rule.pattern)) record(rule, match.index);
+  }
+
+  // Raw source, deliberately: these live inside comments, which `code` blanks.
+  for (const rule of RAW_RULES) {
+    rule.pattern.lastIndex = 0;
+    for (const match of source.matchAll(rule.pattern))
+      record(rule, match.index);
   }
 
   for (const { specifier, index } of extractModuleSpecifiers(
