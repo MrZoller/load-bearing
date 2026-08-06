@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# A push to a PR branch would otherwise start two identical runs. Same group
+# for both, so the newer one cancels the older.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Format
+        run: npm run format:check
+
+      # Invariants 2, 3, and 6: no wall-clock time, no unseeded randomness, no
+      # DOM, no Node built-ins, no network anywhere in the engine.
+      - name: Purity gate
+        run: npm run gate:purity
+
+      # Includes the golden replay suite. A recorded fixture that differs by a
+      # single byte fails here; CI never re-records.
+      - name: Test
+        run: npm test

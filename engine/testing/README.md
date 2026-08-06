@@ -1,0 +1,132 @@
+# The determinism harness
+
+`state = reduce(cartridge, seed, eventLog)` is only true if something checks.
+Two mechanisms do: the **purity gate** stops the engine from acquiring a source
+of nondeterminism, and **golden replay fixtures** prove that identical input
+still produces identical output.
+
+Both run in CI on every push and pull request (`.github/workflows/ci.yml`).
+Locally, `npm run verify` runs the same four checks in the same order.
+
+---
+
+## Golden replay fixtures
+
+A fixture is a directory under `engine/__fixtures__/replay/`:
+
+```
+001-engine-smoke/
+  fixture.json      the input triple  — committed by hand
+  state.json        recorded state    — generated
+  transcript.txt    recorded output   — generated
+```
+
+`fixture.json`:
+
+| field         | meaning                                                     |
+| ------------- | ----------------------------------------------------------- |
+| `name`        | must equal the directory name                               |
+| `description` | what this fixture protects, for the human reading a failure |
+| `seed`        | seed material for the PRNG                                  |
+| `cartridge`   | the world                                                   |
+| `events`      | the append-only event log to fold                           |
+
+The recorded artifacts are written by the canonical serializer
+(`engine/serialize/canonical.ts`): keys sorted by UTF-16 code unit, exact
+number formatting, LF endings, one trailing newline. Comparison is byte for
+byte — a single changed byte fails the suite, with a diff of the region that
+moved.
+
+### Adding one
+
+1. Create the directory and write `fixture.json`. Name it `NNN-what-it-proves`;
+   the numeric prefix is what makes the suite's order readable.
+2. Run `npm run fixtures:update`.
+3. **Read the recording.** This is the step that matters. The artifacts are
+   about to become the contract, so anything wrong in them is now the expected
+   answer.
+4. Commit all three files together.
+
+Every Phase 0 subsystem PR adds at least one fixture. A subsystem with unit
+tests and no fixture is tested against its own idea of correct rather than
+against the replay contract.
+
+### When one fails
+
+Either the engine changed behavior it should not have, or it changed behavior
+it should have. Only you know which.
+
+- **Unintended:** fix the engine. The fixture is right.
+- **Intended:** re-record with `npm run fixtures:update`, review the diff, and
+  **justify the change in the PR description**. Golden replay fixtures are
+  contracts (CLAUDE.md → Working agreements); a recording that changes without
+  explanation is a determinism regression that got waved through.
+
+CI never re-records. A harness that refreshed its own baselines would convert
+the one signal it exists to raise into a silent diff.
+
+To re-record a single fixture: `npm run fixtures:update -- 001-engine-smoke`.
+
+---
+
+## The purity gate
+
+`npm run gate:purity` scans non-test sources under `engine/` and fails the
+build on:
+
+| rule                     | catches                                                       | invariant |
+| ------------------------ | ------------------------------------------------------------- | --------- |
+| `math-random`            | `Math.random`                                                 | 2         |
+| `crypto-random`          | `crypto.randomUUID`, `getRandomValues`, `randomBytes`, …      | 2         |
+| `wall-clock-date`        | the `Date` global, in any form                                | 2         |
+| `wall-clock-performance` | `performance.now`                                             | 2         |
+| `wall-clock-timer`       | `setTimeout`, `setInterval`, `setImmediate`                   | 2         |
+| `ambient-process`        | `process.env`, `.argv`, `.cwd`, `.hrtime`, `.platform`, …     | 3         |
+| `dom-global`             | `document`, `window`, `navigator`, `localStorage`, `jsdom`, … | 3         |
+| `node-builtin-import`    | `node:fs`, bare `path`, and every other Node built-in         | 3         |
+| `network`                | `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`         | 6         |
+
+The rules ban whole globals rather than call sites: `Date`, not `Date.now`;
+`fetch`, not `fetch(`. `const later = Date` is the same leak with an extra
+step. `crypto.randomUUID()` and `process.env` get their own rules because they
+need no import, which is precisely what makes them the easy accident.
+
+Every hit reports `file:line:column`, the offending line, and the invariant it
+breaks. Run it against another directory to see it work:
+
+```
+node scripts/gate-purity.mjs scripts/gate-purity-samples
+```
+
+### What the gate reads
+
+Comments, string literal _text_, and regex literals are blanked before the
+rules run. So a doc comment explaining why a module avoids `Date.now` is fine,
+and so is the `"Date:   "` column header that simulated `git log` output needs
+— that string is mechanics, and mechanics live in engine source.
+
+Template _interpolations_ survive the blanking: `` `${Date.now()}` `` is
+caught. Blanking a template wholesale would hide the one thing inside it worth
+catching.
+
+Import specifiers are strings, so the module-specifier rule reads a second view
+of the file with strings left intact.
+
+One known gap: a regex literal immediately following a keyword
+(`return /a\/\/b/`) is read as division by the regex-versus-division heuristic.
+Assign such regexes to a constant.
+
+### Allowlist
+
+`ALLOWLIST` in `scripts/gate-purity.mjs` exempts a specific file from a
+specific rule, with a written reason. It currently has one entry:
+`engine/testing/fixtures.ts` reads fixture files from disk, which is the one
+legitimate use of `node:fs` under `engine/` — it is test infrastructure, never
+imported by simulation code, and never bundled for the browser. The pure half
+of the harness (`replay.ts`) has no such dependency.
+
+Entries that point at a missing file, or that no longer suppress anything, fail
+the gate. An allowlist that rots is worse than no allowlist.
+
+Adding a second entry should feel like a design decision worth arguing about,
+because it is one.

@@ -19,10 +19,13 @@ realizes the world is real.
 - [`docs/DESIGN.md`](docs/DESIGN.md) — experience design and comedy bible
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — engine, cartridge spec, pipeline
 - [`CLAUDE.md`](CLAUDE.md) — invariants and working agreements
+- [`engine/testing/README.md`](engine/testing/README.md) — the determinism
+  harness: golden replay fixtures and the purity gate
 
 The two that govern everything else: the runtime owns mechanics and
 cartridges own worlds, and `state = reduce(cartridge, seed, eventLog)` — no
-wall-clock time and no unseeded randomness anywhere in the engine.
+wall-clock time and no unseeded randomness anywhere in the engine. Both of
+those are machine-checked, not aspirational.
 
 ## Setup
 
@@ -32,9 +35,18 @@ npm install
 
 ## Development
 
-- Test: `npm test`
-- Format: `npm run format`
-- Typecheck: `npm run typecheck`
+`npm run verify` runs everything CI runs, in the same order:
+
+| command                | checks                                                                        |
+| ---------------------- | ----------------------------------------------------------------------------- |
+| `npm run typecheck`    | types                                                                         |
+| `npm run format:check` | Prettier formatting (`npm run format` to fix)                                 |
+| `npm run gate:purity`  | no wall-clock time, randomness, DOM, Node built-ins, or network in the engine |
+| `npm test`             | unit tests plus the golden replay suite                                       |
+
+Recorded replay fixtures are re-generated only on purpose, with
+`npm run fixtures:update`, and a change to one needs a justification in the
+PR description.
 
 ## Status
 

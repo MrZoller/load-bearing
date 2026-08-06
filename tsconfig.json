@@ -12,5 +12,12 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true
   },
-  "include": ["engine", "runtime", "content", "pipeline"]
+  "include": [
+    "engine",
+    "runtime",
+    "content",
+    "pipeline",
+    "vitest.config.ts",
+    "scripts/update-fixtures.ts"
+  ]
 }

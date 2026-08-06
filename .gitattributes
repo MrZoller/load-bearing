@@ -1,0 +1,5 @@
+# The replay contract is byte identity. A checkout that rewrote the recorded
+# artifacts' LF endings to CRLF would fail the suite for a reason that has
+# nothing to do with the engine, so line endings are pinned in the worktree —
+# not merely normalized in the index.
+* text=auto eol=lf
