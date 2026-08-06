@@ -704,6 +704,85 @@ describe("purity gate", () => {
     ).toEqual([["engine/a.ts", 1, "missing-runtime-module"]]);
   });
 
+  it("catches assignment to a built-in prototype member", () => {
+    expect(
+      locations(
+        scanSource(
+          "engine/a.ts",
+          "Object.prototype.toString = function () {};\nObject.prototype[k] = v;\n",
+        ),
+      ),
+    ).toEqual([
+      ["engine/a.ts", 1, "prototype-mutation"],
+      ["engine/a.ts", 2, "prototype-mutation"],
+    ]);
+  });
+
+  it("catches an aliased RegExp, allowing only construction", () => {
+    expect(
+      locations(
+        scanSource("engine/a.ts", "const R = RegExp;\nconst a = R.$1;\n"),
+      ),
+    ).toEqual([["engine/a.ts", 1, "regexp-statics"]]);
+
+    expect(scanSource("engine/a.ts", 'const re = new RegExp("a");\n')).toEqual(
+      [],
+    );
+  });
+
+  it("catches coercion of a caught error, which carries its host message", () => {
+    expect(
+      locations(
+        scanSource(
+          "engine/a.ts",
+          "try { f(); } catch (e) { throw new Error(`bad: ${e}`); }\n",
+        ),
+      ),
+    ).toEqual([["engine/a.ts", 1, "caught-error-coercion"]]);
+
+    expect(
+      locations(
+        scanSource(
+          "engine/a.ts",
+          "try { f(); } catch (e) { log(String(e)); }\n",
+        ),
+      ),
+    ).toEqual([["engine/a.ts", 1, "caught-error-coercion"]]);
+
+    // Attaching it as `cause` is the supported way to keep the original.
+    expect(
+      scanSource(
+        "engine/a.ts",
+        'try { f(); } catch (e) { throw new Error("bad", { cause: e }); }\n',
+      ),
+    ).toEqual([]);
+  });
+
+  it("exempts a type-only import from the runtime-module check", () => {
+    // The import is erased, so a declaration file is all it needs.
+    const noRuntime = () => false;
+
+    expect(
+      scanSource(
+        "engine/a.ts",
+        'import type { T } from "./types.js";\n',
+        ALLOWLIST,
+        noRuntime,
+      ),
+    ).toEqual([]);
+
+    expect(
+      locations(
+        scanSource(
+          "engine/a.ts",
+          'import { v } from "./types.js";\n',
+          ALLOWLIST,
+          noRuntime,
+        ),
+      ),
+    ).toEqual([["engine/a.ts", 1, "missing-runtime-module"]]);
+  });
+
   it("catches host-capability globals", () => {
     expect(
       locations(

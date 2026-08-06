@@ -181,12 +181,13 @@ export const CODE_RULES = [
     // began. Ordinary regex use is untouched — `new RegExp(…)` is a
     // construction, not a static read.
     id: "regexp-statics",
-    pattern: /\bRegExp\s*\./g,
+    pattern: /\bRegExp\b(?!\s*\()/g,
     invariant: "2 — determinism is non-negotiable",
     message:
       "RegExp's legacy statics carry the last match made anywhere in the realm, so " +
       "identical replay inputs can read different values depending on what ran first. " +
-      "Capture from the match result instead.",
+      "Capture from the match result instead. Only `new RegExp(…)` is allowed — an alias " +
+      "reaches the same statics with the dotted spelling nowhere in sight.",
   },
   {
     // ECMAScript does not standardize the text built-ins put in an error, so
@@ -264,7 +265,7 @@ export const CODE_RULES = [
     // is not cheap; stopping the engine from altering one is.
     id: "prototype-mutation",
     pattern:
-      /\bsetPrototypeOf\b|\b__proto__\b|\bdefineProperty\s*\(\s*\w+\s*\.\s*prototype\b/g,
+      /\bsetPrototypeOf\b|\b__proto__\b|\bdefineProperty\s*\(\s*\w+\s*\.\s*prototype\b|\b\w+\s*\.\s*prototype\s*(?:\.\s*\w+|\[[^\]]*\])\s*=(?!=)/g,
     invariant: "4 — the world lies consistently",
     message:
       "Re-pointing a prototype makes a value lie about what it is, and the serializer " +
@@ -945,6 +946,15 @@ const BANNED_MEMBER_LITERAL = /(['"`])(constructor|__proto__)\1/g;
 const INERT_INSPECTOR =
   /\b(?:getOwnPropertyDescriptor|hasOwn|hasOwnProperty)\s*\([^()]*$/;
 
+export const CAUGHT_ERROR_COERCION_RULE = {
+  id: "caught-error-coercion",
+  invariant: "2 — determinism is non-negotiable",
+  message:
+    "Coercing a caught error to a string includes its host-generated `message`, which " +
+    "ECMAScript does not standardize — the same failure reads differently in Node, " +
+    "Chrome, and Safari. Attach it as `cause` and write your own text.",
+};
+
 export const COMPUTED_MEMBER_RULE = {
   id: "computed-member",
   invariant: "2 — determinism is non-negotiable",
@@ -1032,6 +1042,24 @@ export function scanSource(
     for (const match of source.matchAll(rule.pattern)) {
       if (withStrings[match.index] !== " ") continue;
       record(rule, match.index);
+    }
+  }
+
+  // Banning `.message` catches the direct read; these catch the coercions that
+  // include it without naming it. Scoped to catch bindings, because a general
+  // ban on `String(x)` or interpolation would forbid what the engine does on
+  // every line — the risk is specifically the value a `catch` hands you.
+  for (const binding of source.matchAll(/\bcatch\s*\(\s*(\w+)\s*\)/g)) {
+    const name = binding[1];
+    const coercions = new RegExp(
+      `\\$\\{[^}]*\\b${name}\\b[^}]*\\}` +
+        `|\\bString\\s*\\(\\s*${name}\\b` +
+        `|\\b${name}\\s*\\.\\s*toString\\b` +
+        `|\\b${name}\\s*\\+|\\+\\s*${name}\\b`,
+      "g",
+    );
+    for (const use of code.matchAll(coercions)) {
+      record(CAUGHT_ERROR_COERCION_RULE, use.index);
     }
   }
 
@@ -1169,7 +1197,10 @@ export function scanSource(
         continue;
       }
 
-      if (!runtimeModuleExists(resolved)) {
+      // A type-only import is erased, so a declaration file is all it needs.
+      const statement = withStrings.slice(Math.max(0, index - 200), index);
+      const typeOnly = /\b(?:import|export)\s+type\b[^;]*$/.test(statement);
+      if (!typeOnly && !runtimeModuleExists(resolved)) {
         record(
           {
             ...MISSING_RUNTIME_MODULE_RULE,

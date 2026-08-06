@@ -10,7 +10,7 @@
  * problem to argue about, not paperwork to fill in.
  */
 
-import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { lstatSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -177,7 +177,7 @@ export function listReplayFixtures(): string[] {
 
 /** Read and shape-check one fixture's input triple. */
 export function loadReplayFixture(name: string): ReplayFixture {
-  const path = join(REPLAY_FIXTURE_ROOT, name, FIXTURE_FILE);
+  const path = assertRealFile(join(REPLAY_FIXTURE_ROOT, name, FIXTURE_FILE));
   const text = readTextFile(path);
   assertNoDuplicateKeys(text, path);
   return parseReplayFixture(JSON.parse(text) as unknown, name, path);
@@ -295,18 +295,37 @@ export function loadReplayRecording(name: string): ReplayRecording {
   };
 }
 
+/**
+ * Refuse to touch an artifact that is a symbolic link.
+ *
+ * `writeFileSync` follows one, so `fixtures:update` would rewrite whatever the
+ * link points at while the fixture directory still looks correct — and reading
+ * follows it too, so the recording compared against is not the file the
+ * repository thinks it committed.
+ */
+function assertRealFile(path: string): string {
+  if (lstatSync(path, { throwIfNoEntry: false })?.isSymbolicLink() === true) {
+    throw new Error(
+      `${path} is a symbolic link. Recorded artifacts are real files: a link is ` +
+        `followed on both read and write, so the recording compared and rewritten ` +
+        `would not be the file committed here.`,
+    );
+  }
+  return path;
+}
+
 /** Overwrite one fixture's recorded artifacts. Only `fixtures:update` calls this. */
 export function writeReplayRecording(
   name: string,
   recording: ReplayRecording,
 ): void {
   writeFileSync(
-    join(REPLAY_FIXTURE_ROOT, name, STATE_FILE),
+    assertRealFile(join(REPLAY_FIXTURE_ROOT, name, STATE_FILE)),
     recording.state,
     "utf8",
   );
   writeFileSync(
-    join(REPLAY_FIXTURE_ROOT, name, TRANSCRIPT_FILE),
+    assertRealFile(join(REPLAY_FIXTURE_ROOT, name, TRANSCRIPT_FILE)),
     recording.transcript,
     "utf8",
   );
@@ -320,7 +339,7 @@ function describe(value: unknown): string {
 }
 
 function readRecordedFile(name: string, file: string): string {
-  const path = join(REPLAY_FIXTURE_ROOT, name, file);
+  const path = assertRealFile(join(REPLAY_FIXTURE_ROOT, name, file));
   try {
     return readTextFile(path);
   } catch (cause) {

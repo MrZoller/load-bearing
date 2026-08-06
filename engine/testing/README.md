@@ -85,6 +85,7 @@ build on:
 | `dynamic-eval`              | `eval`, `Function` (value or type), `.constructor`                 | 2         |
 | `error-stack`               | `.stack`, `{ stack } =`, `captureStackTrace`                       | 2         |
 | `host-error-message`        | `.message` on an error — built-in text is unstandardized           | 2         |
+| `caught-error-coercion`     | interpolating, `String()`-ing, or concatenating a catch binding    | 2         |
 | `identifier-escape`         | `D\u0061te` and every other escaped identifier                     | 2         |
 | `symlinked-source`          | any symbolic link under a scanned tree, directories included       | 3         |
 | `computed-import-target`    | `import(x)` where `x` is not a literal                             | 3         |
@@ -96,7 +97,7 @@ build on:
 | `prototype-mutation`        | `setPrototypeOf`, `__proto__`, `defineProperty(X.prototype, …)`    | 4         |
 | `exponentiation`            | `**` and `**=`, which `Math.pow`'s ban implies                     | 2         |
 | `missing-runtime-module`    | an import satisfied only by a `.d.ts`                              | 3         |
-| `regexp-statics`            | `RegExp.$1`, `RegExp.lastMatch`, any `RegExp.` static              | 2         |
+| `regexp-statics`            | any `RegExp` reference that is not `new RegExp(…)`                 | 2         |
 | `global-object`             | `globalThis`                                                       | 3         |
 | `proxy-reflection`          | `Proxy`, `Reflect`                                                 | 2         |
 | `bare-package-import`       | any dependency not in `APPROVED_PACKAGES` (currently none)         | 6         |
