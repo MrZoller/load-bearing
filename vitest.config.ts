@@ -7,7 +7,16 @@ export default defineConfig({
     // engine's environment" test in engine/index.test.ts only means something
     // because the environment is bare Node.
     environment: "node",
-    include: ["engine/**/*.test.ts", "scripts/**/*.test.mjs"],
+    // These globs must stay in step with `TEST_FILE_PATTERN` in
+    // scripts/gate-purity.mjs, which is what the purity gate uses to decide a
+    // file is a test and skip it. A name the gate skips but these globs miss —
+    // `engine/foo.spec.ts`, `engine/foo.test.tsx` — gets neither purity
+    // scanning nor test execution, so a regression test could be added and
+    // silently never run. A test asserts the two agree.
+    include: [
+      "engine/**/*.{test,spec}.?(c|m)[jt]s?(x)",
+      "scripts/**/*.{test,spec}.?(c|m)[jt]s?(x)",
+    ],
     exclude: [
       "**/node_modules/**",
       // Deliberately impure fixtures for the purity gate's own tests.

@@ -64,7 +64,15 @@ const SCANNED_EXTENSIONS = [
   ".cjs",
 ];
 const SKIPPED_DIRECTORIES = new Set(["node_modules", "__fixtures__"]);
-const TEST_FILE_PATTERN = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
+
+/**
+ * Files the gate treats as tests and does not scan.
+ *
+ * Exported because `vitest.config.ts`'s `include` globs have to cover exactly
+ * this set. A file this pattern skips that Vitest also misses would be neither
+ * purity-checked nor executed — a regression test that silently never runs.
+ */
+export const TEST_FILE_PATTERN = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
 
 /**
  * Patterns matched against the `code` view from `prepareSource` — comments,
@@ -83,10 +91,18 @@ export const CODE_RULES = [
     // `cbrt` implementation-defined, and V8 and JavaScriptCore genuinely
     // disagree — `Math.tan(1e300)` differs in the last two digits between
     // Node and Safari, which invariant 3 requires the engine to run on both
-    // of. The members below are exact.
+    // of.
+    //
+    // The allowlist is drawn from what the *spec* pins, not from what engines
+    // happen to agree on today. `sqrt` is deliberately absent: IEEE 754
+    // requires it to be correctly rounded and every real engine defers to the
+    // hardware, but ECMA-262 still calls it implementation-approximated, which
+    // is the same sentence that disqualifies `cbrt`. Nothing in a terminal
+    // simulation needs a square root, so the cheap answer is to not have the
+    // argument.
     id: "math-nondeterministic",
     pattern:
-      /\bMath\s*\.\s*(?!(?:abs|ceil|floor|round|trunc|sign|min|max|sqrt|imul|clz32|fround|PI|E|LN2|LN10|LOG2E|LOG10E|SQRT2|SQRT1_2)\b)\w*/g,
+      /\bMath\s*\.\s*(?!(?:abs|ceil|floor|round|trunc|sign|min|max|imul|clz32|fround|PI|E|LN2|LN10|LOG2E|LOG10E|SQRT2|SQRT1_2)\b)\w*/g,
     invariant: "2 — determinism is non-negotiable",
     message:
       "Only the exactly-specified members of Math are allowed. `random` is unseeded — " +
@@ -103,6 +119,32 @@ export const CODE_RULES = [
     message:
       "Reference Math members directly. Aliasing, destructuring, or computed access " +
       '(`const { random } = Math`, `Math["random"]`) routes around the member allowlist.',
+  },
+  {
+    // The gate blanks string literal text, which is what makes simulated shell
+    // output cheap to write — and exactly what makes dynamic evaluation a hole
+    // in it. `eval("Math.random()")` turns ignored text back into running
+    // code, so the two primitives that can do that are banned outright.
+    // `Function\s*\(` rather than a bare `Function` so a `: Function` type
+    // annotation is not a violation.
+    id: "dynamic-eval",
+    pattern: /\beval\b|\bFunction\s*\(/g,
+    invariant: "2 — determinism is non-negotiable",
+    message:
+      "Dynamic evaluation resurrects string contents as code, which the gate blanks " +
+      "and therefore cannot check. Whatever it would build, build it directly.",
+  },
+  {
+    // Stack strings carry the host engine's formatting, file URLs or absolute
+    // paths, and line numbers — different in Node, Chrome, and Safari, and
+    // different again on another machine.
+    id: "error-stack",
+    pattern: /\.\s*stack\b|\bcaptureStackTrace\b/g,
+    invariant: "2 — determinism is non-negotiable",
+    message:
+      "An error's stack is host-formatted and machine-specific, so recording one puts " +
+      "the developer's filesystem into replayed state. Normalize errors to declared " +
+      "fields before they reach engine output.",
   },
   {
     id: "gc-timing",

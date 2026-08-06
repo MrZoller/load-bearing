@@ -9,7 +9,9 @@ import {
   prepareSource,
   runGate,
   scanSource,
+  TEST_FILE_PATTERN,
 } from "./gate-purity.mjs";
+import vitestConfig from "../vitest.config.js";
 
 const SAMPLES = "scripts/gate-purity-samples";
 
@@ -46,6 +48,9 @@ describe("purity gate", () => {
       [`${SAMPLES}/planted-dom.ts`, 3, "dom-global"],
       [`${SAMPLES}/planted-dom.ts`, 4, "dom-global"],
       [`${SAMPLES}/planted-dom.ts`, 5, "dom-global"],
+      [`${SAMPLES}/planted-eval-and-stack.ts`, 6, "dynamic-eval"],
+      [`${SAMPLES}/planted-eval-and-stack.ts`, 7, "dynamic-eval"],
+      [`${SAMPLES}/planted-eval-and-stack.ts`, 8, "error-stack"],
       [`${SAMPLES}/planted-extension.tsx`, 5, "math-nondeterministic"],
       [`${SAMPLES}/planted-interpolation.ts`, 5, "wall-clock-date"],
       [`${SAMPLES}/planted-locale-and-gc.ts`, 4, "gc-timing"],
@@ -85,12 +90,14 @@ describe("purity gate", () => {
   });
 
   it("allows the exact Math members and rejects the rest", () => {
-    // `sqrt` and `imul` are IEEE-exact; `tan` and `pow` are
-    // implementation-approximated and differ between V8 and JavaScriptCore.
+    // The allowlist is what ECMA-262 pins exactly. `sqrt` is deliberately not
+    // on it: IEEE 754 requires correct rounding and every engine defers to the
+    // hardware, but the spec still calls it implementation-approximated — the
+    // same sentence that disqualifies `cbrt`.
     expect(
       scanSource(
         "sample.ts",
-        "const a = Math.floor(Math.max(x, Math.imul(y, 2)));\nconst b = Math.PI * Math.sqrt(r);\n",
+        "const a = Math.floor(Math.max(x, Math.imul(y, 2)));\nconst b = Math.PI * Math.abs(r);\n",
       ),
     ).toEqual([]);
 
@@ -98,12 +105,42 @@ describe("purity gate", () => {
       locations(
         scanSource(
           "sample.ts",
-          "const a = Math.tan(x);\nconst b = Math.pow(x, 2);\n",
+          "const a = Math.tan(x);\nconst b = Math.pow(x, 2);\nconst c = Math.sqrt(x);\n",
         ),
       ),
     ).toEqual([
       ["sample.ts", 1, "math-nondeterministic"],
       ["sample.ts", 2, "math-nondeterministic"],
+      ["sample.ts", 3, "math-nondeterministic"],
+    ]);
+  });
+
+  it("catches dynamic evaluation, which resurrects blanked string contents", () => {
+    const violations = scanSource(
+      "sample.ts",
+      'const a = eval("Math.random()");\nconst b = new Function("return Date.now()")();\n',
+    );
+
+    expect(locations(violations)).toEqual([
+      ["sample.ts", 1, "dynamic-eval"],
+      ["sample.ts", 2, "dynamic-eval"],
+    ]);
+
+    // A `Function` type annotation is not a call, and is not a violation.
+    expect(
+      scanSource("sample.ts", "export function run(fn: Function): void {}\n"),
+    ).toEqual([]);
+  });
+
+  it("catches error stacks, which carry host formatting and local paths", () => {
+    const violations = scanSource(
+      "sample.ts",
+      "const a = new Error().stack;\ntry { f(); } catch (e) { log(e.stack); }\n",
+    );
+
+    expect(locations(violations)).toEqual([
+      ["sample.ts", 1, "error-stack"],
+      ["sample.ts", 2, "error-stack"],
     ]);
   });
 
@@ -362,6 +399,31 @@ describe("purity gate", () => {
     const files = collectFiles([SAMPLES]);
 
     expect(files).toContain(`${SAMPLES}/planted-extension.tsx`);
+  });
+
+  it("skips exactly the files Vitest is configured to run", async () => {
+    // A name the gate skips but Vitest's include globs miss would be neither
+    // purity-checked nor executed: a regression test that could be added and
+    // silently never run. Matched with the same glob library Vitest itself
+    // uses, so this compares the real configuration rather than a paraphrase.
+    const picomatch = (await import("picomatch")).default;
+    const runsInVitest = picomatch(vitestConfig.test.include);
+
+    for (const name of [
+      "engine/a.test.ts",
+      "engine/a.spec.ts",
+      "engine/a.test.tsx",
+      "engine/nested/a.spec.mts",
+      "scripts/a.test.mjs",
+      "scripts/a.spec.js",
+    ]) {
+      expect(TEST_FILE_PATTERN.test(name), `${name}: gate skips it`).toBe(true);
+      expect(runsInVitest(name), `${name}: vitest runs it`).toBe(true);
+    }
+
+    // And a plain source file is neither skipped by the gate nor run by Vitest.
+    expect(TEST_FILE_PATTERN.test("engine/a.ts")).toBe(false);
+    expect(runsInVitest("engine/a.ts")).toBe(false);
   });
 
   it("passes on the engine, with no stale allowlist entries", () => {

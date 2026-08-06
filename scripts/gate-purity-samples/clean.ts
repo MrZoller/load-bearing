@@ -37,8 +37,8 @@ export const SAMPLE_SOURCE = '/// <reference types="node" />';
 // is UTF-16 code-unit order.
 export function column(width: number, used: number, names: string[]): string {
   const pad = Math.max(0, Math.floor(width - used));
-  const area = Math.PI * Math.sqrt(width);
-  return names.sort().join(" ".repeat(pad)) + String(Math.round(area));
+  const scaled = Math.round(Math.abs(width) * Math.LN2);
+  return names.sort().join(" ".repeat(pad)) + String(scaled);
 }
 
 /** A regex full of slashes must not be read as a comment either. */

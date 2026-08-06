@@ -1,18 +1,18 @@
 name: CI
 
+# Every commit is checked exactly once. A branch push fires `pull_request`
+# (synchronize) once its PR is open, so listening to `push` on all branches as
+# well would double every run — and deduping those two events with a shared
+# concurrency group means the loser is *cancelled*, which GitHub reports as a
+# red check on a commit that passed. One trigger per context avoids both.
 on:
   push:
+    branches: [main]
   pull_request:
 
-# A push to a PR branch would otherwise start two identical runs. Same group
-# for both, so the newer one cancels the older.
-#
-# The repository half of the key is what keeps that dedup from over-reaching:
-# `head_ref` is an unqualified branch name, so without it two fork PRs from
-# branches both named `main` would share a group and cancel each other. Note
-# that the common `pull_request.number || ref` idiom does the opposite — it
-# puts push and PR in different groups and reintroduces the duplicate run this
-# block exists to prevent.
+# Superseded runs on the same branch are still cancelled — that is a genuinely
+# obsolete run, not a duplicate of a live one. The repository half of the key
+# keeps two fork PRs from branches both named `main` out of each other's group.
 concurrency:
   group: >-
     ${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}
