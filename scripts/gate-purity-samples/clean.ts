@@ -19,6 +19,16 @@ export const MAINTENANCE_NOTICE =
   "Europe reattachment window: Sunday 02:00 UTC";
 export const CURL_USAGE = "curl: try 'curl --help' or fetch the manual";
 
+// Text that merely looks like an import is not one. The specifier rule reads a
+// view of the file with strings intact, so it cross-checks that the keyword is
+// real code and not literal text.
+export const BANNED_EXAMPLE = 'import "node:fs"';
+export const BANNED_PATTERN = /import "node:fs"/;
+
+// Package names that only begin like a built-in are whole segments of their
+// own, so matching the first path segment does not catch them.
+export const LOOKALIKES = ["path-browserify", "fs-extra", "process-nextick"];
+
 /** A regex full of slashes must not be read as a comment either. */
 const REPEATED_SLASHES = /\/{2,}/g;
 

@@ -116,6 +116,55 @@ describe("serialize rejections", () => {
     );
   });
 
+  it("refuses a hole in a sparse array, which map() would skip entirely", () => {
+    // Array.prototype.map never visits a hole, so it would slip past the
+    // undefined check and emit nothing between two commas — not JSON at all.
+    // eslint-disable-next-line no-sparse-arrays
+    expect(() => serialize([1, , 3])).toThrow(/hole in a sparse array/);
+    expect(() => serialize(new Array(3))).toThrow(/hole in a sparse array/);
+    // eslint-disable-next-line no-sparse-arrays
+    expect(() => serializeInline([1, , 3])).toThrow(/hole in a sparse array/);
+  });
+
+  it("refuses symbol-keyed properties instead of dropping them", () => {
+    // Object.keys omits them. Dropping silently lets two different states
+    // serialize to identical bytes — the divergence no fixture could catch.
+    expect(() => serialize({ [Symbol("id")]: 1 })).toThrow(/symbol-keyed/);
+    expect(() => serialize({ a: 1, [Symbol("id")]: 2 })).toThrow(
+      /symbol-keyed/,
+    );
+  });
+
+  it("refuses accessor properties rather than invoking them", () => {
+    let reads = 0;
+    const counter = {
+      get n() {
+        reads += 1;
+        return reads;
+      },
+    };
+
+    expect(() => serialize(counter)).toThrow(/accessor property/);
+    expect(reads).toBe(0);
+  });
+
+  it("points at the accessor property it refused", () => {
+    let pointer = "";
+    try {
+      serialize({
+        repository: {
+          get cwd() {
+            return "/production";
+          },
+        },
+      });
+    } catch (error) {
+      pointer = (error as CanonicalSerializeError).pointer;
+    }
+
+    expect(pointer).toBe("/repository/cwd");
+  });
+
   it("refuses circular references", () => {
     const node: Record<string, unknown> = { name: "a" };
     node.self = node;

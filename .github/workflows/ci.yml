@@ -6,8 +6,16 @@ on:
 
 # A push to a PR branch would otherwise start two identical runs. Same group
 # for both, so the newer one cancels the older.
+#
+# The repository half of the key is what keeps that dedup from over-reaching:
+# `head_ref` is an unqualified branch name, so without it two fork PRs from
+# branches both named `main` would share a group and cancel each other. Note
+# that the common `pull_request.number || ref` idiom does the opposite — it
+# puts push and PR in different groups and reintroduces the duplicate run this
+# block exists to prevent.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  group: >-
+    ${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:

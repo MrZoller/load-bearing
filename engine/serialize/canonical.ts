@@ -83,16 +83,14 @@ function write(
 
     if (Array.isArray(container)) {
       if (container.length === 0) return "[]";
-      const items = container.map((item, index) => {
+      const items: string[] = [];
+      for (let index = 0; index < container.length; index += 1) {
         const itemPointer = `${pointer}/${index}`;
-        if (item === undefined) {
-          throw new CanonicalSerializeError(
-            itemPointer,
-            "undefined array element",
-          );
-        }
-        return `${pad}${write(item, itemPointer, depth + 1, seen)}`;
-      });
+        assertDenseElement(container, index, itemPointer);
+        items.push(
+          `${pad}${write(container[index], itemPointer, depth + 1, seen)}`,
+        );
+      }
       return `[\n${items.join(",\n")}\n${closePad}]`;
     }
 
@@ -122,16 +120,12 @@ function writeInline(
   seen.add(container);
   try {
     if (Array.isArray(container)) {
-      const items = container.map((item, index) => {
+      const items: string[] = [];
+      for (let index = 0; index < container.length; index += 1) {
         const itemPointer = `${pointer}/${index}`;
-        if (item === undefined) {
-          throw new CanonicalSerializeError(
-            itemPointer,
-            "undefined array element",
-          );
-        }
-        return writeInline(item, itemPointer, seen);
-      });
+        assertDenseElement(container, index, itemPointer);
+        items.push(writeInline(container[index], itemPointer, seen));
+      }
       return `[${items.join(",")}]`;
     }
 
@@ -195,12 +189,44 @@ function writeNumber(value: number, pointer: string): string {
 }
 
 /**
+ * Reject a sparse array's holes.
+ *
+ * `Array.prototype.map` skips holes rather than visiting them, so a hole would
+ * slip past an `item === undefined` check and emit nothing between two commas
+ * — output that is not JSON at all. Holes and explicit `undefined` are the
+ * same defect for the same reason the module rejects `undefined` elements:
+ * dropping one shifts every index after it.
+ */
+function assertDenseElement(
+  array: readonly unknown[],
+  index: number,
+  pointer: string,
+): void {
+  if (!(index in array)) {
+    throw new CanonicalSerializeError(pointer, "hole in a sparse array");
+  }
+  if (array[index] === undefined) {
+    throw new CanonicalSerializeError(pointer, "undefined array element");
+  }
+}
+
+/**
  * Key/value pairs of a plain object, sorted by key and with `undefined` values
  * dropped (the JSON convention: an absent key and an undefined key are the
  * same document).
  *
- * Anything that is not a plain object is rejected here, including the built-ins
- * whose `toJSON` would otherwise make them look serializable.
+ * Three things are rejected here rather than handled, because each would
+ * produce output that looks fine and is not:
+ *
+ * - **Non-plain objects**, including the built-ins whose `toJSON` would
+ *   otherwise make them look serializable.
+ * - **Symbol keys**, which `Object.keys` omits. Dropping them silently lets
+ *   two materially different states serialize to identical bytes, which is
+ *   precisely the divergence no golden fixture could then catch.
+ * - **Accessor properties**, because reading one runs arbitrary code during
+ *   serialization. A getter over a counter makes the same object serialize to
+ *   different bytes on consecutive calls, and a getter with a side effect can
+ *   mutate the very state being recorded.
  */
 function plainEntries(value: object, pointer: string): [string, unknown][] {
   const prototype = Object.getPrototypeOf(value) as object | null;
@@ -212,11 +238,28 @@ function plainEntries(value: object, pointer: string): [string, unknown][] {
     );
   }
 
+  const symbols = Object.getOwnPropertySymbols(value);
+  if (symbols.length > 0) {
+    throw new CanonicalSerializeError(
+      pointer,
+      `symbol-keyed property ${String(symbols[0])} would be dropped silently`,
+    );
+  }
+
   return Object.keys(value)
     .sort()
     .flatMap((key): [string, unknown][] => {
-      const item = (value as Record<string, unknown>)[key];
-      return item === undefined ? [] : [[key, item]];
+      // Read the descriptor rather than the property: dereferencing the key
+      // would invoke a getter before there was a chance to reject it.
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      if (descriptor === undefined) return [];
+      if (descriptor.get !== undefined || descriptor.set !== undefined) {
+        throw new CanonicalSerializeError(
+          `${pointer}/${escapePointer(key)}`,
+          "accessor property; reading it would run code during serialization",
+        );
+      }
+      return descriptor.value === undefined ? [] : [[key, descriptor.value]];
     });
 }
 

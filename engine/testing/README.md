@@ -74,22 +74,28 @@ To re-record a single fixture: `npm run fixtures:update -- 001-engine-smoke`.
 `npm run gate:purity` scans non-test sources under `engine/` and fails the
 build on:
 
-| rule                     | catches                                                       | invariant |
-| ------------------------ | ------------------------------------------------------------- | --------- |
-| `math-random`            | `Math.random`                                                 | 2         |
-| `crypto-random`          | `crypto.randomUUID`, `getRandomValues`, `randomBytes`, …      | 2         |
-| `wall-clock-date`        | the `Date` global, in any form                                | 2         |
-| `wall-clock-performance` | `performance.now`                                             | 2         |
-| `wall-clock-timer`       | `setTimeout`, `setInterval`, `setImmediate`                   | 2         |
-| `ambient-process`        | `process.env`, `.argv`, `.cwd`, `.hrtime`, `.platform`, …     | 3         |
-| `dom-global`             | `document`, `window`, `navigator`, `localStorage`, `jsdom`, … | 3         |
-| `node-builtin-import`    | `node:fs`, bare `path`, and every other Node built-in         | 3         |
-| `network`                | `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`         | 6         |
+| rule                     | catches                                                         | invariant |
+| ------------------------ | --------------------------------------------------------------- | --------- |
+| `math-random`            | `Math.random`                                                   | 2         |
+| `crypto-random`          | `crypto.randomUUID`, `getRandomValues`, `randomBytes`, …        | 2         |
+| `wall-clock-date`        | the `Date` global, in any form                                  | 2         |
+| `wall-clock-performance` | `performance.now`                                               | 2         |
+| `wall-clock-timer`       | `setTimeout`, `setInterval`, `setImmediate`                     | 2         |
+| `ambient-process`        | the `process` global, in any form                               | 3         |
+| `dom-global`             | `document`, `window`, `navigator`, `localStorage`, `jsdom`, …   | 3         |
+| `node-builtin-import`    | `node:fs`, bare `path`, `fs/promises`, and every other built-in | 3         |
+| `network`                | `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`           | 6         |
 
 The rules ban whole globals rather than call sites: `Date`, not `Date.now`;
 `fetch`, not `fetch(`. `const later = Date` is the same leak with an extra
-step. `crypto.randomUUID()` and `process.env` get their own rules because they
-need no import, which is precisely what makes them the easy accident.
+step. `crypto.randomUUID()` and `process` get their own rules because they need
+no import, which is precisely what makes them the easy accident.
+
+**Naming consequence:** because `process` is banned as a whole identifier,
+engine code must not name a local `process` — the simulated process model's
+locals are `proc`, `entry`, or `row`. Enumerating `process` members instead
+would not work: the ones a simulated `ps` row carries (`pid`, `ppid`, `title`,
+`uptime`) are exactly the ones a real leak reads.
 
 Every hit reports `file:line:column`, the offending line, and the invariant it
 breaks. Run it against another directory to see it work:
@@ -110,7 +116,9 @@ caught. Blanking a template wholesale would hide the one thing inside it worth
 catching.
 
 Import specifiers are strings, so the module-specifier rule reads a second view
-of the file with strings left intact.
+of the file with strings left intact — then cross-checks the first, requiring
+the `from` / `import` / `require` keyword to be real code. That way
+`const example = 'import "node:fs"'` is not mistaken for an import.
 
 One known gap: a regex literal immediately following a keyword
 (`return /a\/\/b/`) is read as division by the regex-versus-division heuristic.

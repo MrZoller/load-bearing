@@ -31,12 +31,17 @@ describe("purity gate", () => {
       [`${SAMPLES}/planted-ambient.ts`, 4, "crypto-random"],
       [`${SAMPLES}/planted-ambient.ts`, 5, "ambient-process"],
       [`${SAMPLES}/planted-ambient.ts`, 5, "wall-clock-timer"],
+      [`${SAMPLES}/planted-brace-in-comment.ts`, 6, "math-random"],
+      [`${SAMPLES}/planted-brace-in-comment.ts`, 7, "wall-clock-date"],
+      [`${SAMPLES}/planted-builtin-subpath.ts`, 4, "node-builtin-import"],
+      [`${SAMPLES}/planted-builtin-subpath.ts`, 5, "node-builtin-import"],
       [`${SAMPLES}/planted-clock.ts`, 3, "wall-clock-date"],
       [`${SAMPLES}/planted-clock.ts`, 4, "wall-clock-date"],
       [`${SAMPLES}/planted-clock.ts`, 5, "wall-clock-performance"],
       [`${SAMPLES}/planted-dom.ts`, 3, "dom-global"],
       [`${SAMPLES}/planted-dom.ts`, 4, "dom-global"],
       [`${SAMPLES}/planted-dom.ts`, 5, "dom-global"],
+      [`${SAMPLES}/planted-extension.tsx`, 5, "math-random"],
       [`${SAMPLES}/planted-interpolation.ts`, 5, "wall-clock-date"],
       [`${SAMPLES}/planted-network.ts`, 3, "network"],
       [`${SAMPLES}/planted-node-import.ts`, 2, "node-builtin-import"],
@@ -67,6 +72,64 @@ describe("purity gate", () => {
     );
 
     expect(violations).toEqual([]);
+  });
+
+  it("catches a Node built-in imported by subpath", () => {
+    // `import { readFile } from "fs/promises"` is what autocomplete produces,
+    // so the subpath form is the likely accident, not an exotic one.
+    const violations = scanSource(
+      "sample.ts",
+      'import "fs/promises";\nimport "assert/strict";\nimport "node:timers/promises";\n',
+    );
+
+    expect(violations).toHaveLength(3);
+  });
+
+  it("does not fire on packages that merely start like a built-in", () => {
+    const violations = scanSource(
+      "sample.ts",
+      'import "path-browserify";\nimport "fs-extra";\nimport "./fs/local.js";\n',
+    );
+
+    expect(violations).toEqual([]);
+  });
+
+  it("does not treat import-shaped text in a literal as an import", () => {
+    // The specifier rule reads a view with strings intact, so it cross-checks
+    // that the keyword itself is real code.
+    const violations = scanSource(
+      "sample.ts",
+      'const a = \'import "node:fs"\';\nconst b = /import "node:fs"/;\n',
+    );
+
+    expect(violations).toEqual([]);
+  });
+
+  it("catches a violation hidden behind a stray brace in an interpolation", () => {
+    // A `}` inside a comment or regex is not a brace. Counting it would end
+    // the interpolation early and blank the real expression after it.
+    const violations = scanSource(
+      "sample.ts",
+      "const a = `${/* } */ Math.random()}`;\nconst b = `${x.replace(/}/g, String(Date))}`;\n",
+    );
+
+    expect(locations(violations)).toEqual([
+      ["sample.ts", 1, "math-random"],
+      ["sample.ts", 2, "wall-clock-date"],
+    ]);
+  });
+
+  it("catches every use of the process global, not a list of members", () => {
+    const violations = scanSource(
+      "sample.ts",
+      "const a = process.pid;\nconst b = process.uptime();\nconst c = process;\n",
+    );
+
+    expect(locations(violations)).toEqual([
+      ["sample.ts", 1, "ambient-process"],
+      ["sample.ts", 2, "ambient-process"],
+      ["sample.ts", 3, "ambient-process"],
+    ]);
   });
 
   it("catches a banned global that is aliased rather than called", () => {
@@ -123,11 +186,18 @@ describe("purity gate", () => {
     expect(violations[2].message).toContain("node:fs");
   });
 
-  it("skips test files", () => {
+  it("skips test files, including .tsx ones", () => {
     const files = collectFiles(["scripts"]);
 
     expect(files).toContain("scripts/gate-purity.mjs");
     expect(files).not.toContain("scripts/gate-purity.test.mjs");
+    expect(files).not.toContain(`${SAMPLES}/ignored.test.tsx`);
+  });
+
+  it("scans .tsx sources rather than reporting them clean unopened", () => {
+    const files = collectFiles([SAMPLES]);
+
+    expect(files).toContain(`${SAMPLES}/planted-extension.tsx`);
   });
 
   it("passes on the engine, with no stale allowlist entries", () => {
