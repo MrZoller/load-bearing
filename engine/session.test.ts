@@ -115,6 +115,34 @@ describe("probe events", () => {
     expect(output.transcript[2]).toMatch(/on\s+weight=\s+1\s+picks=\s+100/);
   });
 
+  it("records a snapshot whose picks sum to the count", () => {
+    // The property the duplicate-value rejection exists to keep true: rows are
+    // labelled by value, so a snapshot whose column does not sum to `count` is
+    // reporting one arm's draws against two labels.
+    const count = 4000;
+    const output = replay(cartridge, [
+      {
+        type: "random.weighted",
+        payload: {
+          stream: "rare-events",
+          count,
+          entries: [
+            { value: "off", weight: 0 },
+            { value: "rare", weight: 1 },
+            { value: "common", weight: 9 },
+          ],
+        },
+      },
+    ]);
+
+    const picks = output.transcript
+      .slice(1, 4)
+      .map((line) => Number(/picks=\s*(\d+)/.exec(line)?.[1]));
+
+    expect(picks[0]).toBe(0);
+    expect(picks.reduce((sum, hits) => sum + hits, 0)).toBe(count);
+  });
+
   it("ignores event types it does not know, rather than failing on them", () => {
     const output = replay(cartridge, [
       { type: "shell.exec", payload: { input: "ls -la" } },
@@ -151,6 +179,20 @@ describe("probe events", () => {
           payload: { stream: "a", count: 1, entries: [{ weight: 1 }] },
         },
         /value must be a string/,
+      ],
+      [
+        {
+          type: "random.weighted",
+          payload: {
+            stream: "a",
+            count: 1,
+            entries: [
+              { value: "same", weight: 0 },
+              { value: "same", weight: 1 },
+            ],
+          },
+        },
+        /already appears in this snapshot/,
       ],
     ];
 

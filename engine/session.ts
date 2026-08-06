@@ -190,14 +190,32 @@ function readWeightedEntries(
   }
 
   const items: readonly unknown[] = raw;
+  const seen = new Set<string>();
   return items.map((item, index) => {
     const scope = `${context} entry ${String(index)}`;
     const entry = asRecord(item);
     if (entry === undefined) {
       throw new Error(`${scope}: must be an object`);
     }
+
+    const value = readString(entry, "value", scope);
+    // The snapshot tallies by value and prints one row per entry, so two arms
+    // sharing a label would each report the merged count: the rows would sum
+    // past `count`, and a weight-0 arm would appear to have been selected.
+    // `weightedPick` handles duplicates correctly — it walks by index — so
+    // this is the *report* being ambiguous, and an ambiguous report is worse
+    // than no report when it is committed as a contract. Two identical labels
+    // in a distribution snapshot are unreadable even with honest counts, so
+    // reject rather than disambiguate.
+    if (seen.has(value)) {
+      throw new Error(
+        `${scope}: value ${JSON.stringify(value)} already appears in this snapshot; distribution rows are labelled by value`,
+      );
+    }
+    seen.add(value);
+
     return {
-      value: readString(entry, "value", scope),
+      value,
       weight: readInteger(entry, "weight", 0, MAX_PROBE_WEIGHT, scope),
     };
   });
