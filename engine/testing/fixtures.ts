@@ -263,6 +263,20 @@ export function parseReplayFixture(
         `${at} has a control character in "type"; transcript entries are one line each`,
       );
     }
+    // `payload` is optional, but `EngineEvent` declares it an object when
+    // present. Casting past that at the disk boundary hands a reducer a value
+    // the type system promised was a record.
+    const payload = (event as { payload?: unknown }).payload;
+    if (
+      payload !== undefined &&
+      (typeof payload !== "object" ||
+        payload === null ||
+        Array.isArray(payload))
+    ) {
+      throw new Error(
+        `${at} has a "payload" that is ${describe(payload)}; it must be an object when present`,
+      );
+    }
     if (LONE_SURROGATE.test(type)) {
       throw new Error(
         `${at} has an unpaired surrogate in "type"; it cannot survive being written ` +

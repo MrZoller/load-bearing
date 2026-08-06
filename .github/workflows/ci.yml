@@ -17,9 +17,14 @@ on:
 # condition is evaluated, so a shared group lets a pull_request run cancel a
 # live push run — reported as a red check on a commit that was passing. Within
 # one event, a superseded run is genuinely obsolete and is still cancelled.
+#
+# Pull requests are keyed by number rather than branch, because one branch can
+# have several open PRs against different bases and each tests a different
+# merge tree. Keyed by branch, a synchronize on one would cancel the other's
+# verification as though it were stale.
 concurrency:
   group: >-
-    ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}
+    ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || format('{0}-{1}', github.repository, github.ref_name) }}
   cancel-in-progress: true
 
 jobs:

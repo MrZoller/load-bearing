@@ -78,6 +78,17 @@ describe("golden replay fixtures", () => {
 
       expect(third).toEqual(second);
 
+      // And twice with the *same* object. Every call above receives a freshly
+      // parsed fixture, so a reducer that remembers input identities — in a
+      // WeakMap, which the gate allows — would answer identically to all of
+      // them while behaving differently in production, where the cartridge is
+      // loaded once and reused across a session.
+      const shared = loadReplayFixture(name);
+
+      expect(freshModule.replayFixture(shared)).toEqual(
+        freshModule.replayFixture(shared),
+      );
+
       // And against the committed recording. Everything above compares
       // isolated output with isolated output, which agrees even when module
       // state carried over from an *earlier fixture* — the recorder walks the
@@ -248,6 +259,31 @@ describe("fixture loading", () => {
     // A correctly paired astral character is fine.
     expect(() =>
       parseReplayFixture(withType("shell.exec.\u{1f9f1}"), "sample"),
+    ).not.toThrow();
+  });
+
+  it("rejects a payload that is not an object", () => {
+    // EngineEvent declares payload a record when present; casting past that at
+    // the disk boundary hands a reducer a value the type system promised.
+    const withPayload = (payload: unknown) => ({
+      name: "sample",
+      description: "d",
+      seed: "s",
+      cartridge: null,
+      events: [{ type: "shell.exec", payload }],
+    });
+
+    for (const bad of [null, ["a"], 42, "text"]) {
+      expect(() => parseReplayFixture(withPayload(bad), "sample")).toThrow(
+        /"payload"/,
+      );
+    }
+
+    expect(() =>
+      parseReplayFixture(withPayload({ input: "pwd" }), "sample"),
+    ).not.toThrow();
+    expect(() =>
+      parseReplayFixture(withPayload(undefined), "sample"),
     ).not.toThrow();
   });
 

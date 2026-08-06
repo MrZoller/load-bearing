@@ -1049,7 +1049,11 @@ export function scanSource(
   // include it without naming it. Scoped to catch bindings, because a general
   // ban on `String(x)` or interpolation would forbid what the engine does on
   // every line — the risk is specifically the value a `catch` hands you.
-  for (const binding of source.matchAll(/\bcatch\s*\(\s*(\w+)\s*\)/g)) {
+  // The annotation is optional and idiomatic — `catch (error: unknown)` is
+  // what TypeScript's `useUnknownInCatchVariables` encourages.
+  for (const binding of source.matchAll(
+    /\bcatch\s*\(\s*(\w+)\s*(?::[^)]*)?\)/g,
+  )) {
     const name = binding[1];
     const coercions = new RegExp(
       `\\$\\{[^}]*\\b${name}\\b[^}]*\\}` +
