@@ -82,6 +82,9 @@ build on:
 | `gc-timing`                 | `WeakRef`, `FinalizationRegistry`                                  | 2         |
 | `dynamic-eval`              | `eval`, `Function` (value or type), `.constructor`                 | 2         |
 | `error-stack`               | `.stack`, `{ stack } =`, `captureStackTrace`                       | 2         |
+| `host-error-message`        | `.message` on an error — built-in text is unstandardized           | 2         |
+| `identifier-escape`         | `D\u0061te` and every other escaped identifier                     | 2         |
+| `symlinked-source`          | a symbolic link under a scanned tree                               | 3         |
 | `regexp-statics`            | `RegExp.$1`, `RegExp.lastMatch`, any `RegExp.` static              | 2         |
 | `global-object`             | `globalThis`                                                       | 3         |
 | `proxy-reflection`          | `Proxy`, `Reflect`                                                 | 2         |
@@ -185,6 +188,11 @@ Assign such regexes to a constant.
 against raw source, because the thing it looks for lives inside a comment and
 means something to the compiler anyway.
 
+The two `import`-shaped rules and `symlinked-source` share a shape worth
+naming: the scanner decides what to read by walking directories, while
+TypeScript and every bundler decide by following imports. Anything the walk
+skips but an import reaches is a hole, and those are the three ways it happens.
+
 ### The engine's own tsconfig
 
 `tsconfig.json` covers the whole repository and pulls in `@types/node`, because
@@ -202,6 +210,11 @@ Note that `types: []` alone would not be enough: an explicit
 `/// <reference types="node" />` inside any file of the program loads Node's
 globals for every file in it. That is what the `ambient-types-reference` rule
 is guarding.
+
+`allowJs` and `checkJs` are on because the gate scans `.js`, `.jsx`, `.mjs`,
+and `.cjs` under `engine/`. Without them a JavaScript engine source would be
+checked by a text grep alone, and a grep cannot know that `location.origin` is
+a browser ambient.
 
 The engine program also has no `console`, `URL`, `TextEncoder`, or
 `structuredClone`, since `lib` is `ES2022` and nothing supplies the rest.

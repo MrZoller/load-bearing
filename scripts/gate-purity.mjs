@@ -177,6 +177,31 @@ export const CODE_RULES = [
       "Capture from the match result instead.",
   },
   {
+    // ECMAScript does not standardize the text built-ins put in an error, so
+    // `JSON.parse`'s complaint about the same malformed cartridge differs
+    // between V8, JavaScriptCore, and SpiderMonkey. Reading one into state or
+    // a transcript makes replay depend on which engine ran it.
+    id: "host-error-message",
+    pattern: /\.\s*message\b|\{[^{}]*\bmessage\b[^{}]*\}\s*=/g,
+    invariant: "2 — determinism is non-negotiable",
+    message:
+      "A built-in's error text is host-specific and unversioned. Attach the original as " +
+      "`cause` and write your own message from values the engine controls.",
+  },
+  {
+    // Identifier escapes are valid JavaScript and resolve to the same binding:
+    // `D\u0061te.now()` is `Date.now()`. Every rule here matches raw text, so
+    // one escape would route around all of them at once. Strings, templates,
+    // regexes, and comments are already blanked from this view, so a surviving
+    // backslash-u is in an identifier and has no legitimate use.
+    id: "identifier-escape",
+    pattern: /\\u/g,
+    invariant: "2 — determinism is non-negotiable",
+    message:
+      "An escaped identifier resolves to the same global while matching none of these " +
+      "patterns, which would route around every rule at once. Spell identifiers plainly.",
+  },
+  {
     // A Proxy cannot be detected from inside the language, so the canonical
     // serializer cannot refuse one — reflecting over it already runs its traps.
     // Stopping the engine from *creating* one is the enforceable half, and the
@@ -988,11 +1013,47 @@ function locate(lineStarts, index) {
 
 /** Scannable source files under `roots`, as repo-relative paths, sorted. */
 export function collectFiles(roots = DEFAULT_ROOTS, repoRoot = REPO_ROOT) {
+  return walkRoots(roots, repoRoot).files;
+}
+
+/**
+ * Symbolic links found while walking the scanned tree, as repo-relative paths.
+ *
+ * A symlink's Dirent is neither a file nor a directory, so it was silently
+ * skipped — while TypeScript and every bundler follow it. A linked source
+ * could hold `Date.now()` under a path that looks like ordinary engine code.
+ * Rejecting is the answer rather than following: engine sources have no reason
+ * to be links, and following raises loop questions the gate should not have.
+ */
+export function collectSymlinks(roots = DEFAULT_ROOTS, repoRoot = REPO_ROOT) {
+  return walkRoots(roots, repoRoot).symlinks;
+}
+
+export const SYMLINK_RULE = {
+  id: "symlinked-source",
+  invariant: "3 — the engine stays headless",
+  message:
+    "A symbolic link is skipped by the scanner but followed by TypeScript and by every " +
+    "bundler, so its contents reach the engine unchecked. Engine sources are real files.",
+};
+
+function walkRoots(roots, repoRoot) {
   const files = [];
+  const symlinks = [];
 
   const walk = (absolute) => {
     for (const entry of readdirSync(absolute, { withFileTypes: true })) {
       const child = join(absolute, entry.name);
+      const relativePath = relative(repoRoot, child).split(sep).join("/");
+
+      if (entry.isSymbolicLink()) {
+        if (
+          SCANNED_EXTENSIONS.some((extension) => entry.name.endsWith(extension))
+        ) {
+          symlinks.push(relativePath);
+        }
+        continue;
+      }
       if (entry.isDirectory()) {
         if (!SKIPPED_DIRECTORIES.has(entry.name)) walk(child);
         continue;
@@ -1003,7 +1064,7 @@ export function collectFiles(roots = DEFAULT_ROOTS, repoRoot = REPO_ROOT) {
         !SCANNED_EXTENSIONS.some((extension) => entry.name.endsWith(extension))
       )
         continue;
-      files.push(relative(repoRoot, child).split(sep).join("/"));
+      files.push(relativePath);
     }
   };
 
@@ -1013,7 +1074,7 @@ export function collectFiles(roots = DEFAULT_ROOTS, repoRoot = REPO_ROOT) {
     if (statSync(absolute).isDirectory()) walk(absolute);
   }
 
-  return files.sort();
+  return { files: files.sort(), symlinks: symlinks.sort() };
 }
 
 /**
@@ -1021,10 +1082,25 @@ export function collectFiles(roots = DEFAULT_ROOTS, repoRoot = REPO_ROOT) {
  * Tests use this to assert what the rules actually see.
  */
 export function collectViolations(roots = DEFAULT_ROOTS, repoRoot = REPO_ROOT) {
-  const files = collectFiles(roots, repoRoot);
+  const { files, symlinks } = walkRoots(roots, repoRoot);
+
   const violations = files.flatMap((file) =>
     scanSource(file, readFileSync(resolve(repoRoot, file), "utf8")),
   );
+
+  // Reported at line 1: the link itself is the violation, not anything in it.
+  for (const file of symlinks) {
+    violations.push({
+      file,
+      line: 1,
+      column: 1,
+      rule: SYMLINK_RULE.id,
+      invariant: SYMLINK_RULE.invariant,
+      message: SYMLINK_RULE.message,
+      snippet: file,
+    });
+  }
+
   return { files, violations };
 }
 

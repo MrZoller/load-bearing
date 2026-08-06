@@ -10,7 +10,13 @@
     "noEmit": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    // The purity gate scans .js/.jsx/.mjs/.cjs under engine/, so the type
+    // programs have to cover them too. Without this a JavaScript engine source
+    // is checked by a text grep alone — and a grep cannot know that
+    // `location.origin` is a browser ambient.
+    "allowJs": true,
+    "checkJs": true
   },
   "include": [
     "engine",

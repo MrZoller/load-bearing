@@ -9,9 +9,14 @@ import {
   prepareSource,
   runGate,
   resolveRelativeSpecifier,
+  collectSymlinks,
   scanSource,
   TEST_FILE_PATTERN,
 } from "./gate-purity.mjs";
+import { mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import vitestConfig from "../vitest.config.js";
 
 const SAMPLES = "scripts/gate-purity-samples";
@@ -507,6 +512,38 @@ describe("purity gate", () => {
     ).toEqual([["engine/a.ts", 1, "import-meta"]]);
   });
 
+  it("catches an escaped identifier, which resolves to the same global", () => {
+    // `Date.now()` is `Date.now()`. Every rule matches raw text, so one
+    // escape would route around all of them at once.
+    expect(
+      locations(scanSource("engine/a.ts", "const t = D\\u0061te.now();\n")),
+    ).toEqual([["engine/a.ts", 1, "identifier-escape"]]);
+
+    // An escape inside a string is ordinary data, and is blanked first.
+    expect(scanSource("engine/a.ts", 'const s = "caf\\u00e9";\n')).toEqual([]);
+  });
+
+  it("catches a read of a host-generated error message", () => {
+    // ECMAScript does not standardize what built-ins put in an error, so
+    // JSON.parse's complaint about one bad cartridge differs across engines.
+    expect(
+      locations(
+        scanSource(
+          "engine/a.ts",
+          "const m = (cause as Error).message;\nconst { message } = cause;\n",
+        ),
+      ),
+    ).toEqual([
+      ["engine/a.ts", 1, "host-error-message"],
+      ["engine/a.ts", 2, "host-error-message"],
+    ]);
+
+    // Writing your own message is the whole point of the rule.
+    expect(
+      scanSource("engine/a.ts", "throw new Error(`${path}: bad`);\n"),
+    ).toEqual([]);
+  });
+
   it("catches Proxy and Reflect, which the serializer cannot refuse", () => {
     // A Proxy is undetectable from inside the language, so the enforceable
     // half is stopping engine code from creating one.
@@ -625,6 +662,27 @@ describe("purity gate", () => {
     expect(files).toContain("scripts/gate-purity.mjs");
     expect(files).not.toContain("scripts/gate-purity.test.mjs");
     expect(files).not.toContain(`${SAMPLES}/ignored.test.tsx`);
+  });
+
+  it("reports a symlinked source rather than skipping it", () => {
+    // A symlink's Dirent is neither a file nor a directory, so it was silently
+    // skipped — while TypeScript and every bundler follow it.
+    const root = fileURLToPath(new URL("./__symlink__/", import.meta.url));
+    mkdirSync(join(root, "engine"), { recursive: true });
+    writeFileSync(join(root, "target.ts"), "export const t = Date.now();\n");
+    writeFileSync(join(root, "engine", "real.ts"), "export const ok = 1;\n");
+    rmSync(join(root, "engine", "linked.ts"), { force: true });
+    symlinkSync("../target.ts", join(root, "engine", "linked.ts"));
+
+    try {
+      expect(collectFiles(["engine"], root)).toEqual(["engine/real.ts"]);
+      expect(collectSymlinks(["engine"], root)).toEqual(["engine/linked.ts"]);
+      expect(locations(collectViolations(["engine"], root).violations)).toEqual(
+        [["engine/linked.ts", 1, "symlinked-source"]],
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it("scans .tsx sources rather than reporting them clean unopened", () => {
