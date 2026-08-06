@@ -49,11 +49,19 @@ describe("golden replay fixtures", () => {
       );
 
       vi.resetModules();
-      const second = (await import("./replay.js")).replayFixture(
-        loadReplayFixture(name),
-      );
+      const freshModule = await import("./replay.js");
+      const second = freshModule.replayFixture(loadReplayFixture(name));
 
       expect(first).toEqual(second);
+
+      // And a consecutive call inside the *same* graph. Two first calls of
+      // separate graphs agree even when a reducer counts its invocations, so
+      // that comparison alone would miss `let calls = 0` — the case where
+      // replaying the same fixture twice in one session produces different
+      // bytes.
+      const third = freshModule.replayFixture(loadReplayFixture(name));
+
+      expect(third).toEqual(second);
     },
   );
 
@@ -162,6 +170,30 @@ describe("fixture loading", () => {
     expect(() => parseReplayFixture({ name: "sample" }, "sample")).toThrow(
       /"description" must be a string/,
     );
+  });
+
+  it("rejects an unpaired surrogate in an event type", () => {
+    // JSON permits "\ud800", but writing it as UTF-8 substitutes U+FFFD, so
+    // the recording would not hold what replay produced and no re-record could
+    // ever make the byte-identity test pass.
+    const withType = (type: string) => ({
+      name: "sample",
+      description: "d",
+      seed: "s",
+      cartridge: null,
+      events: [{ type }],
+    });
+
+    expect(() => parseReplayFixture(withType("a\ud800b"), "sample")).toThrow(
+      /unpaired surrogate/,
+    );
+    expect(() => parseReplayFixture(withType("a\udc00"), "sample")).toThrow(
+      /unpaired surrogate/,
+    );
+    // A correctly paired astral character is fine.
+    expect(() =>
+      parseReplayFixture(withType("shell.exec.\u{1f9f1}"), "sample"),
+    ).not.toThrow();
   });
 
   it("rejects a control character in an event type", () => {

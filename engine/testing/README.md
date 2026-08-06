@@ -80,14 +80,14 @@ build on:
 | `math-alias`                | any `Math` reference that is not an immediate dotted access        | 2         |
 | `locale-sensitive`          | `Intl`, `toLocaleString`, `localeCompare`, `toLocale*`             | 2         |
 | `gc-timing`                 | `WeakRef`, `FinalizationRegistry`                                  | 2         |
-| `dynamic-eval`              | `eval`, `Function` (as value or type)                              | 2         |
+| `dynamic-eval`              | `eval`, `Function` (value or type), `.constructor`                 | 2         |
 | `error-stack`               | `.stack`, `{ stack } =`, `captureStackTrace`                       | 2         |
 | `regexp-statics`            | `RegExp.$1`, `RegExp.lastMatch`, any `RegExp.` static              | 2         |
 | `global-object`             | `globalThis`                                                       | 3         |
 | `proxy-reflection`          | `Proxy`, `Reflect`                                                 | 2         |
 | `bare-package-import`       | any dependency not in `APPROVED_PACKAGES` (currently none)         | 6         |
 | `test-module-import`        | a production import of a `*.test.*` module                         | 3         |
-| `unscanned-import`          | a relative import that leaves the scanned tree                     | 3         |
+| `unscanned-import`          | a relative import leaving the scanned tree, or into `__fixtures__` | 3         |
 | `import-meta`               | `import.meta`                                                      | 3         |
 | `allowlisted-module-import` | a production import of an allowlisted module                       | 3         |
 | `crypto-random`             | the `crypto` global — `subtle.generateKey` as much as `randomUUID` | 2         |

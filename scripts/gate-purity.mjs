@@ -128,13 +128,14 @@ export const CODE_RULES = [
     // `Function\s*\(` rather than a bare `Function` so a `: Function` type
     // annotation is not a violation.
     id: "dynamic-eval",
-    pattern: /\beval\b|\bFunction\b/g,
+    pattern: /\beval\b|\bFunction\b|\.\s*constructor\b/g,
     invariant: "2 — determinism is non-negotiable",
     message:
       "Dynamic evaluation resurrects string contents as code, which the gate blanks " +
       "and therefore cannot check. Whatever it would build, build it directly. `Function` " +
       "is banned as a whole identifier, aliases included — and as a type it should be a " +
-      "call signature anyway.",
+      "call signature anyway. `.constructor` goes with it: `(() => {}).constructor` is " +
+      "the Function constructor without ever spelling its name.",
   },
   {
     // Property names are strings, and the gate blanks string literal text, so
@@ -621,11 +622,18 @@ const REGEX_CAN_FOLLOW = new Set([
 ]);
 
 function startsRegexLiteral(previous, beforePrevious) {
-  // `x++ / y` is division, not a regex — but the last meaningful character is
-  // `+`, which otherwise reads as an operator expecting an operand. Without
-  // this, the scanner would blank from the first slash to the next one and
-  // swallow whatever sat between them.
+  // Three postfix forms end a value, so a slash after them is division — but
+  // each ends in a character that otherwise reads as an operator expecting an
+  // operand. Without these the scanner blanks from the first slash to the
+  // next and swallows whatever sat between them.
+  //
+  //   x++ / y     the `+` of `++`
+  //   x-- / y     the `-` of `--`
+  //   x!  / y     TypeScript's non-null assertion, vs. logical negation
   if ((previous === "+" || previous === "-") && beforePrevious === previous) {
+    return false;
+  }
+  if (previous === "!" && /[\w$)\]]/.test(beforePrevious)) {
     return false;
   }
   return REGEX_CAN_FOLLOW.has(previous);
@@ -908,6 +916,21 @@ export function scanSource(file, source, allowlist = ALLOWLIST) {
       // leaves the gate's reach: `engine/session.ts` importing
       // `../runtime/leak.js` is followed by TypeScript and by every bundler,
       // while nothing scans the target.
+      // A directory the scanner skips is unscanned for the same reason a test
+      // file is, and importing into it has the same consequence.
+      if (
+        resolved.split("/").some((segment) => SKIPPED_DIRECTORIES.has(segment))
+      ) {
+        record(
+          {
+            ...UNSCANNED_IMPORT_RULE,
+            message: `${resolved}: ${UNSCANNED_IMPORT_RULE.message}`,
+          },
+          index,
+        );
+        continue;
+      }
+
       const tree = topLevelDirectory(file);
       if (tree !== undefined && topLevelDirectory(resolved) !== tree) {
         record(
@@ -1008,7 +1031,13 @@ export function collectViolations(roots = DEFAULT_ROOTS, repoRoot = REPO_ROOT) {
 /** Split violations into those the allowlist covers and those it does not. */
 export function applyAllowlist(violations, allowlist = ALLOWLIST) {
   const kept = [];
-  const suppressedBy = new Map(allowlist.map((entry) => [entry, 0]));
+  // Counted per rule, not per entry. An entry naming two rules whose file
+  // still breaks one of them would otherwise keep a nonzero total and hide
+  // that the other permission is obsolete — letting that impurity come back
+  // later without review.
+  const suppressedBy = new Map(
+    allowlist.map((entry) => [entry, new Map(entry.rules.map((r) => [r, 0]))]),
+  );
 
   for (const violation of violations) {
     const entry = allowlist.find(
@@ -1016,8 +1045,10 @@ export function applyAllowlist(violations, allowlist = ALLOWLIST) {
         candidate.file === violation.file &&
         candidate.rules.includes(violation.rule),
     );
-    if (entry) suppressedBy.set(entry, suppressedBy.get(entry) + 1);
-    else kept.push(violation);
+    if (entry) {
+      const counts = suppressedBy.get(entry);
+      counts.set(violation.rule, counts.get(violation.rule) + 1);
+    } else kept.push(violation);
   }
 
   return { kept, suppressedBy };
@@ -1037,7 +1068,7 @@ export function findStaleAllowlistEntries(
   repoRoot = REPO_ROOT,
 ) {
   const stale = [];
-  for (const [entry, count] of suppressedBy) {
+  for (const [entry, counts] of suppressedBy) {
     if (
       !roots.some(
         (root) => entry.file === root || entry.file.startsWith(`${root}/`),
@@ -1049,11 +1080,20 @@ export function findStaleAllowlistEntries(
       stale.push(
         `${entry.file}: allowlisted file does not exist — remove the entry.`,
       );
-    } else if (count === 0) {
-      stale.push(
-        `${entry.file}: allowlisted for [${entry.rules.join(", ")}] but no longer violates ` +
-          `any of them — remove the entry.`,
-      );
+      continue;
+    }
+
+    // Per rule, not per entry. An entry naming two rules whose file still
+    // breaks one of them would otherwise stay "in use" as a whole, hiding that
+    // the other permission is obsolete — and letting that impurity return
+    // later without review.
+    for (const [rule, count] of counts) {
+      if (count === 0) {
+        stale.push(
+          `${entry.file}: allowlisted for ${rule} but no longer violates it — ` +
+            `drop that rule from the entry.`,
+        );
+      }
     }
   }
   return stale;

@@ -693,7 +693,10 @@ describe("purity gate allowlist", () => {
       reason: "sample",
     };
 
-    const stale = findStaleAllowlistEntries(new Map([[entry, 0]]), ["engine"]);
+    const stale = findStaleAllowlistEntries(
+      new Map([[entry, new Map([["math-nondeterministic", 0]])]]),
+      ["engine"],
+    );
 
     expect(stale).toEqual([expect.stringContaining("does not exist")]);
   });
@@ -705,9 +708,12 @@ describe("purity gate allowlist", () => {
       reason: "sample",
     };
 
-    const stale = findStaleAllowlistEntries(new Map([[entry, 0]]), ["engine"]);
+    const stale = findStaleAllowlistEntries(
+      new Map([[entry, new Map([["math-nondeterministic", 0]])]]),
+      ["engine"],
+    );
 
-    expect(stale).toEqual([expect.stringContaining("no longer violates")]);
+    expect(stale).toEqual([expect.stringContaining("no longer violates it")]);
   });
 
   it("ignores entries outside the scanned roots", () => {
@@ -718,8 +724,31 @@ describe("purity gate allowlist", () => {
     };
 
     expect(
-      findStaleAllowlistEntries(new Map([[entry, 0]]), ["scripts"]),
+      findStaleAllowlistEntries(
+        new Map([[entry, new Map([["math-nondeterministic", 0]])]]),
+        ["scripts"],
+      ),
     ).toEqual([]);
+  });
+
+  it("flags one obsolete rule in an entry that still needs the other", () => {
+    // Counted per entry, a still-used rule would keep the whole entry "in
+    // use" and hide that the other permission is obsolete — letting that
+    // impurity return later without review.
+    const entry = {
+      file: "engine/index.ts",
+      rules: ["math-nondeterministic", "dom-global"],
+      reason: "sample",
+    };
+
+    const { suppressedBy } = applyAllowlist(
+      [{ file: "engine/index.ts", rule: "dom-global" }],
+      [entry],
+    );
+
+    expect(findStaleAllowlistEntries(suppressedBy, ["engine"])).toEqual([
+      expect.stringContaining("math-nondeterministic"),
+    ]);
   });
 
   it("documents a reason for every entry", () => {

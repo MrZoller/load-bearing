@@ -79,6 +79,17 @@ export function loadReplayFixture(name: string): ReplayFixture {
 const CONTROL_CHARACTER = /[\u0000-\u001F\u007F-\u009F]/;
 
 /**
+ * A surrogate code unit with no partner.
+ *
+ * JSON permits `"\ud800"`, and a string carrying one is not valid Unicode:
+ * writing it out as UTF-8 substitutes U+FFFD, so the recording no longer holds
+ * what replay produced and no re-record could ever make the byte-identity test
+ * pass. Rejecting it at load turns an unfixable fixture into a clear error.
+ */
+const LONE_SURROGATE =
+  /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
+/**
  * Validate a parsed `fixture.json`. Pure, so the malformed cases are testable
  * without committing a broken fixture the replay suite would then have to skip.
  *
@@ -132,6 +143,12 @@ export function parseReplayFixture(
     if (CONTROL_CHARACTER.test(type)) {
       throw new Error(
         `${at} has a control character in "type"; transcript entries are one line each`,
+      );
+    }
+    if (LONE_SURROGATE.test(type)) {
+      throw new Error(
+        `${at} has an unpaired surrogate in "type"; it cannot survive being written ` +
+          `as UTF-8, so no recording of it could ever match`,
       );
     }
   });

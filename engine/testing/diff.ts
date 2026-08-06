@@ -14,6 +14,16 @@
 /** Maximum number of lines shown from each side before truncating. */
 const MAX_CONTEXT_LINES = 20;
 
+/**
+ * Maximum characters of any single rendered line.
+ *
+ * The line cap alone bounds nothing: a serialized cartridge holds file
+ * contents as one string, so one differing line can be megabytes. Dumping that
+ * twice pushes the re-record guidance out of a truncated CI log — the diff
+ * exists to be read.
+ */
+const MAX_LINE_LENGTH = 200;
+
 export interface TextDiffOptions {
   /** Label for the recorded artifact. Defaults to `expected`. */
   readonly expectedLabel?: string;
@@ -73,6 +83,12 @@ export function formatTextDiff(
   ].join("\n");
 }
 
+function truncate(line: string): string {
+  return line.length <= MAX_LINE_LENGTH
+    ? line
+    : `${line.slice(0, MAX_LINE_LENGTH)}… (${line.length - MAX_LINE_LENGTH} more characters)`;
+}
+
 function renderRegion(
   title: string,
   marker: string,
@@ -84,7 +100,7 @@ function renderRegion(
 
   const shown = lines.slice(0, MAX_CONTEXT_LINES);
   const rendered = shown.map(
-    (line, index) => `${marker} ${offset + index + 1} | ${line}`,
+    (line, index) => `${marker} ${offset + index + 1} | ${truncate(line)}`,
   );
   if (lines.length > shown.length) {
     rendered.push(`${marker} … ${lines.length - shown.length} more line(s)`);

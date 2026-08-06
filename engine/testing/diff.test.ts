@@ -53,6 +53,18 @@ describe("formatTextDiff", () => {
     expect(diff).toContain("more line(s)");
   });
 
+  it("truncates a single enormous line", () => {
+    // A serialized cartridge holds file contents as one string, so one
+    // differing line can be megabytes — enough to push the re-record guidance
+    // out of a truncated CI log.
+    const huge = "x".repeat(5000);
+
+    const diff = formatTextDiff(`${huge}\n`, `y${huge}\n`);
+
+    expect(diff).toContain("more characters)");
+    expect(diff.length).toBeLessThan(2000);
+  });
+
   it("honours custom labels", () => {
     const diff = formatTextDiff("a\n", "b\n", {
       expectedLabel: "recorded",
