@@ -388,13 +388,65 @@ describe("purity gate", () => {
     expect(violations).toHaveLength(3);
   });
 
-  it("does not fire on packages that merely start like a built-in", () => {
+  it("does not confuse a package that merely starts like a built-in", () => {
     const violations = scanSource(
       "sample.ts",
       'import "path-browserify";\nimport "fs-extra";\nimport "./fs/local.js";\n',
     );
 
-    expect(violations).toEqual([]);
+    // Both packages are rejected — but as unapproved dependencies, not as Node
+    // built-ins, and the relative path is untouched.
+    expect(locations(violations)).toEqual([
+      ["sample.ts", 1, "bare-package-import"],
+      ["sample.ts", 2, "bare-package-import"],
+    ]);
+  });
+
+  it("rejects an unapproved bare package, which the gate never scans", () => {
+    // `axios` makes a real network call with no `fetch` anywhere in engine
+    // source, and node_modules is outside the scanned roots.
+    const violations = scanSource(
+      "engine/a.ts",
+      'import axios from "axios";\nimport x from "@scope/pkg/sub";\n',
+    );
+
+    expect(locations(violations)).toEqual([
+      ["engine/a.ts", 1, "bare-package-import"],
+      ["engine/a.ts", 2, "bare-package-import"],
+    ]);
+  });
+
+  it("resolves an extensionless import before checking the allowlist", () => {
+    // `moduleResolution: "bundler"` accepts all three spellings as the same
+    // import, so comparing raw strings would let one walk past the allowlist.
+    for (const specifier of [
+      "./testing/fixtures",
+      "./testing/fixtures.js",
+      "./testing/fixtures.ts",
+    ]) {
+      expect(
+        locations(
+          scanSource(
+            "engine/session.ts",
+            `import { x } from "${specifier}";\n`,
+          ),
+        ),
+      ).toEqual([["engine/session.ts", 1, "allowlisted-module-import"]]);
+    }
+  });
+
+  it("catches Proxy and Reflect, which the serializer cannot refuse", () => {
+    // A Proxy is undetectable from inside the language, so the enforceable
+    // half is stopping engine code from creating one.
+    const violations = scanSource(
+      "engine/a.ts",
+      "const p = new Proxy(target, handler);\nconst v = Reflect.get(o, k);\n",
+    );
+
+    expect(locations(violations)).toEqual([
+      ["engine/a.ts", 1, "proxy-reflection"],
+      ["engine/a.ts", 2, "proxy-reflection"],
+    ]);
   });
 
   it("does not treat import-shaped text in a literal as an import", () => {

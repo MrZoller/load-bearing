@@ -7,6 +7,7 @@ import {
   parseReplayFixture,
 } from "./fixtures.js";
 import { compareRecording, replayFixture } from "./replay.js";
+import { serialize } from "../serialize/canonical.js";
 
 const FIXTURES = listReplayFixtures();
 
@@ -28,13 +29,24 @@ describe("golden replay fixtures", () => {
     if (mismatch !== undefined) throw new Error(mismatch);
   });
 
-  it.each(FIXTURES)("%s replays identically twice in a row", (name) => {
-    const fixture = loadReplayFixture(name);
+  it.each(FIXTURES)("%s replays identically from a fresh input", (name) => {
+    // Two separately loaded fixtures, deliberately: passing one object twice
+    // would let a reducer that mutates its input on first use still compare
+    // equal, and bless the mutation as the baseline.
+    expect(replayFixture(loadReplayFixture(name))).toEqual(
+      replayFixture(loadReplayFixture(name)),
+    );
+  });
 
-    // Guards against hidden state: memoization, a module-level accumulator, a
-    // lazily initialized cache. Reducing the same log twice must be observably
-    // the same operation.
-    expect(replayFixture(fixture)).toEqual(replayFixture(fixture));
+  it.each(FIXTURES)("%s leaves its input untouched", (name) => {
+    const fixture = loadReplayFixture(name);
+    const before = serialize(fixture as unknown);
+
+    replayFixture(fixture);
+
+    // The cartridge is loaded once per session and reused, so a reducer that
+    // edited it in place would have a later session start from altered state.
+    expect(serialize(fixture as unknown)).toBe(before);
   });
 });
 

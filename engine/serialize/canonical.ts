@@ -82,14 +82,12 @@ function write(
     const closePad = INDENT.repeat(depth);
 
     if (Array.isArray(container)) {
-      assertPlainArray(container, pointer);
-      if (container.length === 0) return "[]";
-      const items: string[] = [];
-      for (let index = 0; index < container.length; index += 1) {
-        const itemPointer = `${pointer}/${index}`;
-        const item = readElement(container, index, itemPointer);
-        items.push(`${pad}${write(item, itemPointer, depth + 1, seen)}`);
-      }
+      const elements = arrayElements(container, pointer);
+      if (elements.length === 0) return "[]";
+      const items = elements.map(
+        (item, index) =>
+          `${pad}${write(item, `${pointer}/${index}`, depth + 1, seen)}`,
+      );
       return `[\n${items.join(",\n")}\n${closePad}]`;
     }
 
@@ -119,13 +117,9 @@ function writeInline(
   seen.add(container);
   try {
     if (Array.isArray(container)) {
-      assertPlainArray(container, pointer);
-      const items: string[] = [];
-      for (let index = 0; index < container.length; index += 1) {
-        const itemPointer = `${pointer}/${index}`;
-        const item = readElement(container, index, itemPointer);
-        items.push(writeInline(item, itemPointer, seen));
-      }
+      const items = arrayElements(container, pointer).map((item, index) =>
+        writeInline(item, `${pointer}/${index}`, seen),
+      );
       return `[${items.join(",")}]`;
     }
 
@@ -204,39 +198,75 @@ function isArrayIndexKey(key: string): boolean {
 }
 
 /**
- * Reject own properties `Object.keys` would not report.
+ * Snapshot every own property of a container in a single reflective pass.
  *
- * A non-enumerable property is state, and dropping it silently produces the
- * same one-recording-two-states collision as a symbol key. It also bypasses
- * the accessor check, since that check only ever sees keys `Object.keys`
- * returned — so a single property flag would otherwise let a getter run during
- * serialization after all.
+ * `Object.getOwnPropertyDescriptors` is one `ownKeys` trap and one
+ * `getOwnPropertyDescriptor` trap per key, and everything downstream reads
+ * from the snapshot rather than touching the value again. That matters
+ * because JavaScript offers no way to detect a `Proxy` from inside the
+ * language: reflecting over one runs its traps no matter what. Reflecting
+ * once means a hostile proxy has one opportunity to lie rather than four, and
+ * that the same descriptor cannot report different things to the enumerability
+ * check and to the value read. See also the purity gate's `proxy-reflection`
+ * rule, which stops engine code creating one in the first place — that is the
+ * realistic defence; this is the containment.
+ *
+ * Symbol keys are rejected here because `Object.keys` omits them, and dropping
+ * them silently lets two different states produce one recording.
  */
-function assertAllOwnPropertiesEnumerable(
+function ownProperties(
   value: object,
   pointer: string,
-  ignore: readonly string[] = [],
+): Record<string, PropertyDescriptor> {
+  const descriptors = Object.getOwnPropertyDescriptors(value);
+
+  const symbols = Object.getOwnPropertySymbols(descriptors);
+  if (symbols.length > 0) {
+    throw new CanonicalSerializeError(
+      pointer,
+      `symbol-keyed property ${String(symbols[0])} would be dropped silently`,
+    );
+  }
+
+  return descriptors as Record<string, PropertyDescriptor>;
+}
+
+/**
+ * Reject a property that is state but would not survive serialization.
+ *
+ * Non-enumerable first: `Object.keys` omits it, so dropping it silently is the
+ * same one-recording-two-states collision as a symbol key — and it would also
+ * slip past the accessor check below, since that only ever sees keys
+ * `Object.keys` returned.
+ */
+function assertInertData(
+  descriptor: PropertyDescriptor,
+  key: string,
+  pointer: string,
 ): void {
-  const enumerable = new Set(Object.keys(value));
-  for (const key of Object.getOwnPropertyNames(value)) {
-    if (enumerable.has(key) || ignore.includes(key)) continue;
+  if (descriptor.enumerable !== true) {
     throw new CanonicalSerializeError(
       pointer,
       `non-enumerable property ${JSON.stringify(key)} would be dropped silently`,
     );
   }
+  if (descriptor.get !== undefined || descriptor.set !== undefined) {
+    throw new CanonicalSerializeError(
+      `${pointer}/${escapePointer(key)}`,
+      "accessor property; reading it would run code during serialization",
+    );
+  }
 }
 
 /**
- * Reject arrays carrying anything the numeric elements do not cover.
+ * Validate an array and return its elements in index order.
  *
  * `Array.isArray` is true for subclass instances, so the prototype check in
  * `plainEntries` never runs on an array — and the array branch never calls
- * `plainEntries` at all. Without this, `Object.assign([], { foo: 1 })`
- * serializes as `[]` and the extra state vanishes without an error: two
- * materially different values with one recording.
+ * `plainEntries` at all. Without the checks here, `Object.assign([], { foo: 1 })`
+ * serializes as `[]` and the extra state vanishes without an error.
  */
-function assertPlainArray(array: readonly unknown[], pointer: string): void {
+function arrayElements(array: readonly unknown[], pointer: string): unknown[] {
   const prototype = Object.getPrototypeOf(array) as object | null;
   if (prototype !== Array.prototype) {
     throw new CanonicalSerializeError(
@@ -245,57 +275,38 @@ function assertPlainArray(array: readonly unknown[], pointer: string): void {
     );
   }
 
-  const symbols = Object.getOwnPropertySymbols(array);
-  if (symbols.length > 0) {
-    throw new CanonicalSerializeError(
-      pointer,
-      `symbol-keyed property ${String(symbols[0])} would be dropped silently`,
-    );
-  }
+  const descriptors = ownProperties(array, pointer);
+  const elements: unknown[] = [];
 
-  // `length` is a non-enumerable own property of every array, and is the one
-  // that is not state.
-  assertAllOwnPropertiesEnumerable(array, pointer, ["length"]);
-
-  for (const key of Object.keys(array)) {
+  for (const [key, descriptor] of Object.entries(descriptors)) {
+    // `length` is the one own property of an array that is not state, and the
+    // one that is legitimately non-enumerable.
+    if (key === "length") continue;
     if (!isArrayIndexKey(key)) {
       throw new CanonicalSerializeError(
         pointer,
         `non-index property ${JSON.stringify(key)} would be dropped silently`,
       );
     }
+    assertInertData(descriptor, key, `${pointer}/${key}`);
   }
-}
 
-/**
- * Read one array element, rejecting everything that is not inert own data.
- *
- * Reading through the descriptor rather than `array[index]` closes three holes
- * at once. A hole is `undefined` here even when `Array.prototype` has been
- * polluted with a numeric property, which an `index in array` test would
- * happily report as present. An accessor is rejected rather than invoked. And
- * the value is read exactly once, where a separate check-then-read pair would
- * call a getter twice per element.
- */
-function readElement(
-  array: readonly unknown[],
-  index: number,
-  pointer: string,
-): unknown {
-  const descriptor = Object.getOwnPropertyDescriptor(array, index);
-  if (descriptor === undefined) {
-    throw new CanonicalSerializeError(pointer, "hole in a sparse array");
+  const length = (descriptors["length"]?.value ?? 0) as number;
+  for (let index = 0; index < length; index += 1) {
+    const itemPointer = `${pointer}/${index}`;
+    const descriptor = descriptors[String(index)];
+    // A hole is absent from the snapshot even when `Array.prototype` carries a
+    // numeric property, which an `index in array` test would report as present.
+    if (descriptor === undefined) {
+      throw new CanonicalSerializeError(itemPointer, "hole in a sparse array");
+    }
+    if (descriptor.value === undefined) {
+      throw new CanonicalSerializeError(itemPointer, "undefined array element");
+    }
+    elements.push(descriptor.value);
   }
-  if (descriptor.get !== undefined || descriptor.set !== undefined) {
-    throw new CanonicalSerializeError(
-      pointer,
-      "accessor property; reading it would run code during serialization",
-    );
-  }
-  if (descriptor.value === undefined) {
-    throw new CanonicalSerializeError(pointer, "undefined array element");
-  }
-  return descriptor.value;
+
+  return elements;
 }
 
 /**
@@ -303,18 +314,8 @@ function readElement(
  * dropped (the JSON convention: an absent key and an undefined key are the
  * same document).
  *
- * Three things are rejected here rather than handled, because each would
- * produce output that looks fine and is not:
- *
- * - **Non-plain objects**, including the built-ins whose `toJSON` would
- *   otherwise make them look serializable.
- * - **Symbol keys**, which `Object.keys` omits. Dropping them silently lets
- *   two materially different states serialize to identical bytes, which is
- *   precisely the divergence no golden fixture could then catch.
- * - **Accessor properties**, because reading one runs arbitrary code during
- *   serialization. A getter over a counter makes the same object serialize to
- *   different bytes on consecutive calls, and a getter with a side effect can
- *   mutate the very state being recorded.
+ * Non-plain objects are rejected here, including the built-ins whose `toJSON`
+ * would otherwise make them look serializable.
  */
 function plainEntries(value: object, pointer: string): [string, unknown][] {
   const prototype = Object.getPrototypeOf(value) as object | null;
@@ -325,29 +326,14 @@ function plainEntries(value: object, pointer: string): [string, unknown][] {
     );
   }
 
-  const symbols = Object.getOwnPropertySymbols(value);
-  if (symbols.length > 0) {
-    throw new CanonicalSerializeError(
-      pointer,
-      `symbol-keyed property ${String(symbols[0])} would be dropped silently`,
-    );
-  }
+  const descriptors = ownProperties(value, pointer);
 
-  assertAllOwnPropertiesEnumerable(value, pointer);
-
-  return Object.keys(value)
+  return Object.keys(descriptors)
     .sort()
     .flatMap((key): [string, unknown][] => {
-      // Read the descriptor rather than the property: dereferencing the key
-      // would invoke a getter before there was a chance to reject it.
-      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      const descriptor = descriptors[key];
       if (descriptor === undefined) return [];
-      if (descriptor.get !== undefined || descriptor.set !== undefined) {
-        throw new CanonicalSerializeError(
-          `${pointer}/${escapePointer(key)}`,
-          "accessor property; reading it would run code during serialization",
-        );
-      }
+      assertInertData(descriptor, key, pointer);
       return descriptor.value === undefined ? [] : [[key, descriptor.value]];
     });
 }

@@ -21,6 +21,21 @@ export const REPLAY_FIXTURE_ROOT = fileURLToPath(
   new URL("../__fixtures__/replay/", import.meta.url),
 );
 
+/**
+ * A decoder that refuses malformed UTF-8 instead of substituting U+FFFD.
+ *
+ * `readFileSync(path, "utf8")` replaces a bad byte sequence with the
+ * replacement character silently, so a corrupted recording could compare equal
+ * to a replay that legitimately emits U+FFFD — the harness would report byte
+ * identity it had not actually checked.
+ */
+const STRICT_UTF8 = new TextDecoder("utf-8", { fatal: true });
+
+/** Read a committed artifact, failing loudly on malformed bytes. */
+function readTextFile(path: string): string {
+  return STRICT_UTF8.decode(readFileSync(path));
+}
+
 const FIXTURE_FILE = "fixture.json";
 const STATE_FILE = "state.json";
 const TRANSCRIPT_FILE = "transcript.txt";
@@ -42,7 +57,7 @@ export function listReplayFixtures(): string[] {
 export function loadReplayFixture(name: string): ReplayFixture {
   const path = join(REPLAY_FIXTURE_ROOT, name, FIXTURE_FILE);
   return parseReplayFixture(
-    JSON.parse(readFileSync(path, "utf8")) as unknown,
+    JSON.parse(readTextFile(path)) as unknown,
     name,
     path,
   );
@@ -166,7 +181,7 @@ function describe(value: unknown): string {
 function readRecordedFile(name: string, file: string): string {
   const path = join(REPLAY_FIXTURE_ROOT, name, file);
   try {
-    return readFileSync(path, "utf8");
+    return readTextFile(path);
   } catch (cause) {
     throw new Error(
       `${path} is missing. A fixture must be recorded deliberately: run ` +

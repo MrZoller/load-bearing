@@ -84,6 +84,8 @@ build on:
 | `error-stack`               | `.stack`, `{ stack } =`, `captureStackTrace`                       | 2         |
 | `regexp-statics`            | `RegExp.$1`, `RegExp.lastMatch`, any `RegExp.` static              | 2         |
 | `global-object`             | `globalThis`                                                       | 3         |
+| `proxy-reflection`          | `Proxy`, `Reflect`                                                 | 2         |
+| `bare-package-import`       | any dependency not in `APPROVED_PACKAGES` (currently none)         | 6         |
 | `allowlisted-module-import` | a production import of an allowlisted module                       | 3         |
 | `crypto-random`             | the `crypto` global — `subtle.generateKey` as much as `randomUUID` | 2         |
 | `wall-clock-date`           | the `Date` global                                                  | 2         |
@@ -219,8 +221,25 @@ the gate. An allowlist that rots is worse than no allowlist.
 The entry's justification is always some form of "nothing in the engine imports
 this", so `allowlisted-module-import` enforces exactly that: a production
 engine module importing an allowlisted file is a violation at the import, not
-at the allowlisted file. Note that `tsconfig.engine.json`'s `exclude` does not
-help here — TypeScript still follows an import into an excluded file.
+at the allowlisted file. Specifiers are compared by module identity, so the
+extensionless spelling `moduleResolution: "bundler"` permits cannot walk past
+it. Note that `tsconfig.engine.json`'s `exclude` does not help here —
+TypeScript still follows an import into an excluded file, and so would a
+bundler.
+
+`APPROVED_PACKAGES` is the same idea for dependencies, and is empty. A
+package's own code is never scanned, so approving one means asserting by hand
+that it reads no clock, draws no randomness, and touches no network.
+
+### What the gate cannot do
+
+A `Proxy` cannot be detected from inside JavaScript: reflecting over one runs
+its traps, so the canonical serializer cannot refuse one before it has already
+executed user code. Two things narrow that. The serializer takes a single
+`Object.getOwnPropertyDescriptors` snapshot and reads everything from it, so a
+hostile proxy gets one opportunity to lie rather than one per check. And the
+`proxy-reflection` rule stops engine code creating a proxy at all — which is
+the realistic defence, since cartridges arrive as JSON and cannot carry one.
 
 Adding a second entry should feel like a design decision worth arguing about,
 because it is one.

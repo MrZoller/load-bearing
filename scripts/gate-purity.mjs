@@ -176,6 +176,21 @@ export const CODE_RULES = [
       "Capture from the match result instead.",
   },
   {
+    // A Proxy cannot be detected from inside the language, so the canonical
+    // serializer cannot refuse one — reflecting over it already runs its traps.
+    // Stopping the engine from *creating* one is the enforceable half, and the
+    // realistic one: a proxy in engine state would have to come from engine
+    // code, since cartridges arrive as JSON. `Reflect` goes with it as the
+    // other half of the metaprogramming pair.
+    id: "proxy-reflection",
+    pattern: /\bProxy\b|\bReflect\b/g,
+    invariant: "2 — determinism is non-negotiable",
+    message:
+      "A Proxy runs user code during the reflection the serializer performs, so the same " +
+      "state could record differently on consecutive calls — and no in-language check can " +
+      "detect one. Engine state is inert plain data.",
+  },
+  {
     id: "gc-timing",
     pattern: /\b(?:WeakRef|FinalizationRegistry)\b/g,
     invariant: "2 — determinism is non-negotiable",
@@ -701,6 +716,42 @@ export function resolveRelativeSpecifier(fromFile, specifier) {
     .replace(/\.js$/, ".ts");
 }
 
+/**
+ * The module a path names, ignoring how it was spelled.
+ *
+ * `moduleResolution: "bundler"` accepts `./testing/fixtures`,
+ * `./testing/fixtures.js`, and `./testing/fixtures.ts` as the same import, and
+ * a directory resolves through its `index`. Comparing raw strings would let
+ * the extensionless spelling walk straight past an allowlist entry.
+ */
+export function moduleIdentity(path) {
+  const withoutExtension = path.replace(
+    /\.(?:mts|cts|tsx|ts|mjs|cjs|jsx|js)$/,
+    "",
+  );
+  return withoutExtension.replace(/\/index$/, "");
+}
+
+/**
+ * Bare packages the engine may import.
+ *
+ * Empty, and that is the intended steady state. A dependency's own code is
+ * never scanned by this gate, so approving one means asserting by hand that it
+ * reads no clock, draws no randomness, and touches no network — the three
+ * things every rule above exists to prevent. Add a name here only with that
+ * argument written down, exactly as for an ALLOWLIST entry.
+ */
+export const APPROVED_PACKAGES = new Set();
+
+export const BARE_PACKAGE_RULE = {
+  id: "bare-package-import",
+  invariant: "6 — no runtime model calls",
+  message:
+    "Package code is never scanned by this gate, so an unreviewed dependency is a hole " +
+    "through every rule above — `axios` makes a real network call with no `fetch` in " +
+    "sight. Add it to APPROVED_PACKAGES with the argument for why it is deterministic.",
+};
+
 export const ALLOWLISTED_IMPORT_RULE = {
   id: "allowlisted-module-import",
   invariant: "3 — the engine stays headless",
@@ -776,11 +827,34 @@ export function scanSource(file, source, allowlist = ALLOWLIST) {
     // imports this". Importing it is what makes that false, so the import is
     // the violation rather than the allowlisted file.
     const resolved = resolveRelativeSpecifier(file, specifier);
-    if (resolved !== undefined && allowlist.some((e) => e.file === resolved)) {
+    if (resolved !== undefined) {
+      const identity = moduleIdentity(resolved);
+      if (allowlist.some((e) => moduleIdentity(e.file) === identity)) {
+        record(
+          {
+            ...ALLOWLISTED_IMPORT_RULE,
+            message: `${resolved}: ${ALLOWLISTED_IMPORT_RULE.message}`,
+          },
+          index,
+        );
+      }
+      continue;
+    }
+
+    // Anything left is a bare package. The gate scans `engine/`, never
+    // `node_modules`, so an unreviewed dependency is a hole straight through
+    // every rule above — `axios` makes a real network call with no `fetch` in
+    // sight. Nothing is approved today; adding a name here is the same
+    // deliberate act as adding an allowlist entry.
+    if (
+      !APPROVED_PACKAGES.has(
+        specifier.replace(/^(@[^/]+\/[^/]+|[^/]+).*$/, "$1"),
+      )
+    ) {
       record(
         {
-          ...ALLOWLISTED_IMPORT_RULE,
-          message: `${resolved}: ${ALLOWLISTED_IMPORT_RULE.message}`,
+          ...BARE_PACKAGE_RULE,
+          message: `${specifier}: ${BARE_PACKAGE_RULE.message}`,
         },
         index,
       );
