@@ -13,8 +13,14 @@ export default defineConfig({
     // `engine/foo.spec.ts`, `engine/foo.test.tsx` — gets neither purity
     // scanning nor test execution, so a regression test could be added and
     // silently never run. A test asserts the two agree.
+    // An explicit include replaces Vitest's repository-wide default, so every
+    // source root the project layout declares has to be named or its tests are
+    // silently never run.
     include: [
       "engine/**/*.{test,spec}.?(c|m)[jt]s?(x)",
+      "runtime/**/*.{test,spec}.?(c|m)[jt]s?(x)",
+      "content/**/*.{test,spec}.?(c|m)[jt]s?(x)",
+      "pipeline/**/*.{test,spec}.?(c|m)[jt]s?(x)",
       "scripts/**/*.{test,spec}.?(c|m)[jt]s?(x)",
     ],
     exclude: [

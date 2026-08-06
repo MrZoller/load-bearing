@@ -544,6 +544,51 @@ describe("purity gate", () => {
     ).toEqual([]);
   });
 
+  it("catches a dynamic import whose target is not a literal", () => {
+    // No specifier to extract means every import rule is skipped, while the
+    // string it resolves to could be a built-in, a package, or the loader.
+    expect(
+      locations(
+        scanSource(
+          "engine/a.ts",
+          'const t = "node:fs";\nconst m = await import(t);\n',
+        ),
+      ),
+    ).toEqual([["engine/a.ts", 2, "computed-import-target"]]);
+
+    // A literal target, quoted or templated, is checked normally.
+    expect(
+      scanSource("engine/a.ts", 'const m = await import("./version.js");\n'),
+    ).toEqual([]);
+  });
+
+  it("catches an escape inside a module specifier", () => {
+    // Resolves to the allowlisted loader while matching none of the checks,
+    // which all compare the raw spelling.
+    expect(
+      locations(
+        scanSource(
+          "engine/session.ts",
+          'import { x } from "./testing/fixt\\u0075res.js";\n',
+        ),
+      ),
+    ).toEqual([["engine/session.ts", 1, "specifier-escape"]]);
+  });
+
+  it("catches host-capability globals", () => {
+    expect(
+      locations(
+        scanSource(
+          "engine/a.ts",
+          "const f = Atomics.isLockFree(8);\nconst b = new SharedArrayBuffer(8);\n",
+        ),
+      ),
+    ).toEqual([
+      ["engine/a.ts", 1, "host-capability"],
+      ["engine/a.ts", 2, "host-capability"],
+    ]);
+  });
+
   it("catches Proxy and Reflect, which the serializer cannot refuse", () => {
     // A Proxy is undetectable from inside the language, so the enforceable
     // half is stopping engine code from creating one.

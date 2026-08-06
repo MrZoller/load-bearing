@@ -24,8 +24,9 @@ realizes the world is real.
 
 The two that govern everything else: the runtime owns mechanics and
 cartridges own worlds, and `state = reduce(cartridge, seed, eventLog)` — no
-wall-clock time and no unseeded randomness anywhere in the engine. Both of
-those are machine-checked, not aspirational.
+wall-clock time and no unseeded randomness anywhere in the engine. The second
+is machine-checked today; the content-path allowlist that will enforce the
+first arrives with the nightly pipeline in Phase 5.
 
 ## Setup
 

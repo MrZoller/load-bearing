@@ -348,11 +348,22 @@ function plainEntries(value: object, pointer: string): [string, unknown][] {
  * in the one branch that skips every descriptor check.
  */
 function describePrototype(prototype: object): string {
-  const descriptor = Object.getOwnPropertyDescriptor(prototype, "constructor");
-  return typeof descriptor?.value === "function" &&
-    typeof descriptor.value.name === "string" &&
-    descriptor.value.name.length > 0
-    ? descriptor.value.name
+  const constructorDescriptor = Object.getOwnPropertyDescriptor(
+    prototype,
+    "constructor",
+  );
+  if (typeof constructorDescriptor?.value !== "function") return "this value";
+
+  // `name` is configurable, so it too can be an accessor — reading it the
+  // obvious way would run code from the value being refused, one level deeper
+  // than the `constructor` trap this function already avoids.
+  const nameDescriptor = Object.getOwnPropertyDescriptor(
+    constructorDescriptor.value,
+    "name",
+  );
+  return typeof nameDescriptor?.value === "string" &&
+    nameDescriptor.value.length > 0
+    ? nameDescriptor.value
     : "this value";
 }
 

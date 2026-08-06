@@ -84,7 +84,10 @@ build on:
 | `error-stack`               | `.stack`, `{ stack } =`, `captureStackTrace`                       | 2         |
 | `host-error-message`        | `.message` on an error — built-in text is unstandardized           | 2         |
 | `identifier-escape`         | `D\u0061te` and every other escaped identifier                     | 2         |
-| `symlinked-source`          | a symbolic link under a scanned tree                               | 3         |
+| `symlinked-source`          | any symbolic link under a scanned tree, directories included       | 3         |
+| `computed-import-target`    | `import(x)` where `x` is not a literal                             | 3         |
+| `specifier-escape`          | a `\u` escape inside a module specifier                            | 3         |
+| `host-capability`           | `Atomics`, `SharedArrayBuffer`                                     | 2         |
 | `regexp-statics`            | `RegExp.$1`, `RegExp.lastMatch`, any `RegExp.` static              | 2         |
 | `global-object`             | `globalThis`                                                       | 3         |
 | `proxy-reflection`          | `Proxy`, `Reflect`                                                 | 2         |

@@ -229,6 +229,17 @@ export const CODE_RULES = [
       "event log.",
   },
   {
+    // `Atomics.isLockFree(8)` is explicitly implementation- and
+    // platform-dependent, and `SharedArrayBuffer` availability depends on the
+    // host's cross-origin isolation. Both typecheck under ES2022.
+    id: "host-capability",
+    pattern: /\bAtomics\b|\bSharedArrayBuffer\b/g,
+    invariant: "2 — determinism is non-negotiable",
+    message:
+      "These report what the host is capable of, which is exactly the thing replay may " +
+      "not depend on — the spec lets `Atomics.isLockFree(8)` differ by platform.",
+  },
+  {
     id: "gc-timing",
     pattern: /\b(?:WeakRef|FinalizationRegistry)\b/g,
     invariant: "2 — determinism is non-negotiable",
@@ -821,6 +832,24 @@ export const UNSCANNED_IMPORT_RULE = {
     "bundler follow the import regardless. Engine code imports engine code.",
 };
 
+export const DYNAMIC_IMPORT_TARGET_RULE = {
+  id: "computed-import-target",
+  invariant: "3 — the engine stays headless",
+  message:
+    "A dynamic import whose target is not a literal is invisible to every import rule " +
+    "here — the string it resolves to could be a Node built-in, an unapproved package, " +
+    "or the allowlisted fixture loader. Import statically.",
+};
+
+export const SPECIFIER_ESCAPE_RULE = {
+  id: "specifier-escape",
+  invariant: "3 — the engine stays headless",
+  message:
+    "An escape inside a module specifier resolves to a different path than it spells, " +
+    "so the built-in, allowlist, test-module, and containment checks all compare the " +
+    "wrong string. Spell module paths plainly.",
+};
+
 export const TEST_MODULE_IMPORT_RULE = {
   id: "test-module-import",
   invariant: "3 — the engine stays headless",
@@ -886,10 +915,26 @@ export function scanSource(file, source, allowlist = ALLOWLIST) {
     }
   }
 
+  // A dynamic import or require whose argument is not a literal never reaches
+  // the specifier rules at all, because there is no specifier to extract.
+  for (const match of withStrings.matchAll(/\b(?:import|require)\s*\(\s*/g)) {
+    if (code[match.index] === " ") continue;
+    const next = withStrings[match.index + match[0].length];
+    if (next !== '"' && next !== "'" && next !== "`") {
+      record(DYNAMIC_IMPORT_TARGET_RULE, match.index);
+    }
+  }
+
   for (const { specifier, index } of extractModuleSpecifiers(
     withStrings,
     code,
   )) {
+    // `"./testing/fixt\u0075res.js"` resolves to the allowlisted loader while
+    // matching none of the checks below, which all compare the raw spelling.
+    if (specifier.includes("\\")) {
+      record(SPECIFIER_ESCAPE_RULE, index);
+      continue;
+    }
     if (isNodeBuiltin(specifier)) {
       record(
         {
@@ -1046,12 +1091,12 @@ function walkRoots(roots, repoRoot) {
       const child = join(absolute, entry.name);
       const relativePath = relative(repoRoot, child).split(sep).join("/");
 
+      // Every symlink, not only the ones that look like sources. A directory
+      // link (`engine/linked -> ../outside`) has no extension at all, and an
+      // import of `./linked/leak.js` through it satisfies the containment
+      // check while the target was never walked.
       if (entry.isSymbolicLink()) {
-        if (
-          SCANNED_EXTENSIONS.some((extension) => entry.name.endsWith(extension))
-        ) {
-          symlinks.push(relativePath);
-        }
+        symlinks.push(relativePath);
         continue;
       }
       if (entry.isDirectory()) {

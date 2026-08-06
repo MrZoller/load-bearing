@@ -11,6 +11,21 @@ import { serialize } from "../serialize/canonical.js";
 
 const FIXTURES = listReplayFixtures();
 
+/**
+ * Freeze a value and everything reachable from it.
+ *
+ * Under strict mode — which every module is — writing to a frozen object
+ * throws, so an in-place edit fails loudly at the point it happens instead of
+ * being inferred afterwards from a serialized comparison.
+ */
+function deepFreeze(value: unknown): unknown {
+  if (typeof value !== "object" || value === null) return value;
+  for (const key of Object.getOwnPropertyNames(value)) {
+    deepFreeze((value as Record<string, unknown>)[key]);
+  }
+  return Object.freeze(value);
+}
+
 describe("golden replay fixtures", () => {
   it("has fixtures to replay", () => {
     // A suite that silently found nothing would pass forever while proving
@@ -62,6 +77,15 @@ describe("golden replay fixtures", () => {
       const third = freshModule.replayFixture(loadReplayFixture(name));
 
       expect(third).toEqual(second);
+
+      // And against the committed recording. Everything above compares
+      // isolated output with isolated output, which agrees even when module
+      // state carried over from an *earlier fixture* — the recorder walks the
+      // same sorted list this suite does, so contamination would be baked into
+      // the artifact and reproduced from it. Only the recording is outside
+      // that shared history.
+      const mismatch = compareRecording(name, loadReplayRecording(name), first);
+      if (mismatch !== undefined) throw new Error(mismatch);
     },
   );
 
@@ -69,7 +93,12 @@ describe("golden replay fixtures", () => {
     const fixture = loadReplayFixture(name);
     const before = serialize(fixture as unknown);
 
-    replayFixture(fixture);
+    // Frozen as well as compared, because the comparison alone cannot see
+    // every edit: `serialize` drops undefined-valued properties by JSON
+    // convention, so `cartridge.touched = undefined` would add an own property
+    // observable to a later session and still compare equal. Freezing makes
+    // the assignment itself throw — modules are strict mode.
+    replayFixture(deepFreeze(fixture) as typeof fixture);
 
     // The cartridge is loaded once per session and reused, so a reducer that
     // edited it in place would have a later session start from altered state.
