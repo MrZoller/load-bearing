@@ -1,0 +1,18 @@
+{
+  "cartridge": {
+    "meta": {
+      "number": 0,
+      "title": "Fixture World"
+    },
+    "repository": {
+      "cwd": "/production/service",
+      "files": {
+        "README.md": "# service\n",
+        "src/index.ts": "export const load = 1;\n"
+      }
+    }
+  },
+  "engineVersion": "0.0.0",
+  "eventCount": 4,
+  "seed": "2026-08-05/0/deep-foundation"
+}

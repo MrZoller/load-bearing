@@ -1,0 +1,24 @@
+{
+  "name": "001-engine-smoke",
+  "description": "Proves the replay loop end to end: an input triple folds into state and a transcript that are recorded and compared byte for byte. The cartridge is a placeholder with deliberately unsorted keys, so a regression in canonical key ordering fails here rather than in a subtle way later. Issue #3 replaces it with the minimal fixture cartridge.",
+  "seed": "2026-08-05/0/deep-foundation",
+  "cartridge": {
+    "repository": {
+      "cwd": "/production/service",
+      "files": {
+        "src/index.ts": "export const load = 1;\n",
+        "README.md": "# service\n"
+      }
+    },
+    "meta": {
+      "title": "Fixture World",
+      "number": 0
+    }
+  },
+  "events": [
+    { "type": "session.start" },
+    { "type": "shell.exec", "payload": { "input": "pwd" } },
+    { "type": "shell.exec", "payload": { "input": "ls -la" } },
+    { "type": "session.end" }
+  ]
+}

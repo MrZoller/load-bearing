@@ -1,0 +1,58 @@
+name: CI
+
+# Two triggers, checking two different trees — not a duplicate between them.
+#
+# `push` checks the branch exactly as written, from its first commit, before
+# any pull request exists. `pull_request` checks the *merge* of that branch
+# with its base, which is a tree neither side has on its own: a base that
+# advanced after the last push can break the branch without either commit
+# being wrong. Skipping the second is how a green PR merges red.
+on:
+  push:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+
+# Scoped by event as well as branch, so the two triggers never contend.
+# `cancel-in-progress` acts on the whole workflow run before any job-level
+# condition is evaluated, so a shared group lets a pull_request run cancel a
+# live push run — reported as a red check on a commit that was passing. Within
+# one event, a superseded run is genuinely obsolete and is still cancelled.
+#
+# Pull requests are keyed by number rather than branch, because one branch can
+# have several open PRs against different bases and each tests a different
+# merge tree. Keyed by branch, a synchronize on one would cancel the other's
+# verification as though it were stale.
+concurrency:
+  group: >-
+    ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || format('{0}-{1}', github.repository, github.ref_name) }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Format
+        run: npm run format:check
+
+      # Invariants 2, 3, and 6: no wall-clock time, no unseeded randomness, no
+      # DOM, no Node built-ins, no network anywhere in the engine.
+      - name: Purity gate
+        run: npm run gate:purity
+
+      # Includes the golden replay suite. A recorded fixture that differs by a
+      # single byte fails here; CI never re-records.
+      - name: Test
+        run: npm test
