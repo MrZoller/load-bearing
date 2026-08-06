@@ -22,14 +22,20 @@ export const REPLAY_FIXTURE_ROOT = fileURLToPath(
 );
 
 /**
- * A decoder that refuses malformed UTF-8 instead of substituting U+FFFD.
+ * A decoder that changes nothing about the bytes it is given.
  *
- * `readFileSync(path, "utf8")` replaces a bad byte sequence with the
- * replacement character silently, so a corrupted recording could compare equal
- * to a replay that legitimately emits U+FFFD — the harness would report byte
- * identity it had not actually checked.
+ * Both options are load-bearing, and both close the same failure: the harness
+ * reporting byte identity it did not actually check.
+ *
+ * - `fatal` — `readFileSync(path, "utf8")` replaces a malformed byte sequence
+ *   with U+FFFD silently, so a corrupted recording would compare equal to a
+ *   replay that legitimately emits the replacement character.
+ * - `ignoreBOM` — despite the name, this *keeps* a leading byte-order mark as
+ *   a character instead of consuming it. Without it, a recording that starts
+ *   with a BOM decodes identically to one that does not, and three bytes of
+ *   difference pass as a match.
  */
-const STRICT_UTF8 = new TextDecoder("utf-8", { fatal: true });
+const STRICT_UTF8 = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
 
 /** Read a committed artifact, failing loudly on malformed bytes. */
 function readTextFile(path: string): string {

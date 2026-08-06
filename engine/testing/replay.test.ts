@@ -111,6 +111,21 @@ describe("fixture loading", () => {
     expect(() => loadReplayFixture("no-such-fixture")).toThrow();
   });
 
+  it("reads recordings without normalizing their bytes", () => {
+    // Two failures the decoder configuration exists to prevent, both of which
+    // would make the harness report byte identity it had not checked: a
+    // malformed sequence becoming U+FFFD, and a leading BOM being consumed.
+    const decoder = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
+
+    expect(decoder.decode(new Uint8Array([0xef, 0xbb, 0xbf, 0x61]))).toBe("﻿a");
+    expect(() => decoder.decode(new Uint8Array([0xff, 0xfe]))).toThrow();
+
+    // The lenient default silently does both.
+    const lenient = new TextDecoder("utf-8");
+    expect(lenient.decode(new Uint8Array([0xef, 0xbb, 0xbf, 0x61]))).toBe("a");
+    expect(lenient.decode(new Uint8Array([0xff, 0xfe]))).toContain("�");
+  });
+
   it("names the re-record command when a recording is missing", () => {
     expect(() => loadReplayRecording("no-such-fixture")).toThrow(
       /fixtures:update/,

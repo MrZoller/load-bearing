@@ -87,6 +87,7 @@ build on:
 | `proxy-reflection`          | `Proxy`, `Reflect`                                                 | 2         |
 | `bare-package-import`       | any dependency not in `APPROVED_PACKAGES` (currently none)         | 6         |
 | `test-module-import`        | a production import of a `*.test.*` module                         | 3         |
+| `unscanned-import`          | a relative import that leaves the scanned tree                     | 3         |
 | `import-meta`               | `import.meta`                                                      | 3         |
 | `allowlisted-module-import` | a production import of an allowlisted module                       | 3         |
 | `crypto-random`             | the `crypto` global — `subtle.generateKey` as much as `randomUUID` | 2         |
@@ -97,7 +98,7 @@ build on:
 | `node-global`               | `Buffer`, `__dirname`, `__filename`, `global`, `require`           | 3         |
 | `dom-global`                | `document`, `window`, `navigator`, `localStorage`, `jsdom`, …      | 3         |
 | `node-builtin-import`       | `node:fs`, bare `path`, `fs/promises`, and every other built-in    | 3         |
-| `ambient-types-reference`   | `/// <reference types="…" />`                                      | 3         |
+| `ambient-types-reference`   | `/// <reference types/lib/path="…" />`                             | 3         |
 | `network`                   | `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`              | 6         |
 
 Every rule bans a whole global rather than a call site: `Date`, not `Date.now`;
@@ -231,7 +232,9 @@ bundler.
 
 `test-module-import` is the same idea for the other exemption: a test module
 is skipped by the scanner, which is only safe while nothing production imports
-it.
+it. `unscanned-import` completes the set — a relative path that leaves the
+scanned tree is followed by TypeScript and by every bundler while nothing
+checks it.
 
 `APPROVED_PACKAGES` is the same idea for dependencies, and is empty. A
 package's own code is never scanned, so approving one means asserting by hand

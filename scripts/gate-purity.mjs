@@ -370,12 +370,14 @@ export const SPECIFIER_RULE = {
 export const RAW_RULES = [
   {
     id: "ambient-types-reference",
-    pattern: /\/\/\/\s*<reference\s+types\s*=/g,
+    pattern: /\/\/\/\s*<reference\s+(?:types|lib|path|no-default-lib)\s*=/g,
     invariant: "3 — the engine stays headless",
     message:
-      "A triple-slash types reference loads ambient globals for the whole program, " +
-      "undoing tsconfig.engine.json's `types: []` isolation for every engine file at " +
-      "once. Move the code that needs them out of the engine program.",
+      "A triple-slash reference changes what the whole program sees, per-file: `types` " +
+      "loads ambient globals and undoes tsconfig.engine.json's `types: []`, and `lib` " +
+      'restores a library the config deliberately left out — `lib="dom"` hands the ' +
+      "engine `location`, `Worker`, and `indexedDB`. Move the code that needs them out " +
+      "of the engine program.",
   },
 ];
 
@@ -766,6 +768,26 @@ export const BARE_PACKAGE_RULE = {
     "sight. Add it to APPROVED_PACKAGES with the argument for why it is deterministic.",
 };
 
+/**
+ * The first path segment — the directory a scan root names.
+ *
+ * `undefined` for a path with no directory at all, where there is no tree to
+ * stay inside and the containment rule cannot say anything.
+ */
+function topLevelDirectory(path) {
+  const [head, ...rest] = path.split("/");
+  return rest.length > 0 ? head : undefined;
+}
+
+export const UNSCANNED_IMPORT_RULE = {
+  id: "unscanned-import",
+  invariant: "3 — the engine stays headless",
+  message:
+    "This path is outside the tree the gate scans, so nothing checks it for wall-clock " +
+    "reads, randomness, DOM globals, or network calls — while TypeScript and every " +
+    "bundler follow the import regardless. Engine code imports engine code.",
+};
+
 export const TEST_MODULE_IMPORT_RULE = {
   id: "test-module-import",
   invariant: "3 — the engine stays headless",
@@ -865,11 +887,33 @@ export function scanSource(file, source, allowlist = ALLOWLIST) {
       // timers, Node APIs, and test dependencies. That is only safe while
       // nothing production imports it — TypeScript and every bundler follow an
       // explicit import regardless of any `exclude`.
-      if (TEST_FILE_PATTERN.test(resolved)) {
+      //
+      // The `.ts` fallback covers the extensionless spelling: `./helper.test`
+      // resolves to `helper.test.ts` on disk, and testing the bare path
+      // against a pattern anchored on the extension would miss it.
+      if (
+        TEST_FILE_PATTERN.test(resolved) ||
+        TEST_FILE_PATTERN.test(`${resolved}.ts`)
+      ) {
         record(
           {
             ...TEST_MODULE_IMPORT_RULE,
             message: `${resolved}: ${TEST_MODULE_IMPORT_RULE.message}`,
+          },
+          index,
+        );
+      }
+
+      // A relative path that leaves the importing file's top-level directory
+      // leaves the gate's reach: `engine/session.ts` importing
+      // `../runtime/leak.js` is followed by TypeScript and by every bundler,
+      // while nothing scans the target.
+      const tree = topLevelDirectory(file);
+      if (tree !== undefined && topLevelDirectory(resolved) !== tree) {
+        record(
+          {
+            ...UNSCANNED_IMPORT_RULE,
+            message: `${resolved}: ${UNSCANNED_IMPORT_RULE.message}`,
           },
           index,
         );

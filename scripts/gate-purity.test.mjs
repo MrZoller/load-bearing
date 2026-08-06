@@ -391,15 +391,15 @@ describe("purity gate", () => {
 
   it("does not confuse a package that merely starts like a built-in", () => {
     const violations = scanSource(
-      "sample.ts",
+      "engine/a.ts",
       'import "path-browserify";\nimport "fs-extra";\nimport "./fs/local.js";\n',
     );
 
     // Both packages are rejected — but as unapproved dependencies, not as Node
     // built-ins, and the relative path is untouched.
     expect(locations(violations)).toEqual([
-      ["sample.ts", 1, "bare-package-import"],
-      ["sample.ts", 2, "bare-package-import"],
+      ["engine/a.ts", 1, "bare-package-import"],
+      ["engine/a.ts", 2, "bare-package-import"],
     ]);
   });
 
@@ -448,6 +448,57 @@ describe("purity gate", () => {
         ),
       ),
     ).toEqual([["engine/session.ts", 1, "test-module-import"]]);
+  });
+
+  it("catches an extensionless import of a test module", () => {
+    // `./helper.test` loads `helper.test.ts`, and the pattern is anchored on
+    // the extension, so the bare path would slip past it.
+    for (const specifier of ["./helper.test", "./helper.spec"]) {
+      expect(
+        locations(
+          scanSource(
+            "engine/session.ts",
+            `import { x } from "${specifier}";\n`,
+          ),
+        ),
+      ).toEqual([["engine/session.ts", 1, "test-module-import"]]);
+    }
+  });
+
+  it("catches a relative import that leaves the scanned tree", () => {
+    // Nothing scans the target, and TypeScript and every bundler follow it.
+    expect(
+      locations(
+        scanSource(
+          "engine/session.ts",
+          'import { x } from "../runtime/x.js";\n',
+        ),
+      ),
+    ).toEqual([["engine/session.ts", 1, "unscanned-import"]]);
+
+    // Staying inside the tree, at any depth, is fine.
+    expect(
+      scanSource(
+        "engine/testing/replay.ts",
+        'import { x } from "../session.js";\n',
+      ),
+    ).toEqual([]);
+  });
+
+  it("catches a lib reference, not only a types reference", () => {
+    // `lib="dom"` restores what tsconfig.engine.json deliberately left out,
+    // handing the engine `location`, `Worker`, and `indexedDB`.
+    for (const directive of [
+      '/// <reference lib="dom" />',
+      '/// <reference path="./x.d.ts" />',
+      '/// <reference types="node" />',
+    ]) {
+      expect(
+        locations(
+          scanSource("engine/a.ts", `${directive}\nexport const x = 1;\n`),
+        ),
+      ).toEqual([["engine/a.ts", 1, "ambient-types-reference"]]);
+    }
   });
 
   it("catches import.meta, which describes where the module was loaded", () => {
