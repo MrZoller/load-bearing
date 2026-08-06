@@ -118,6 +118,29 @@ describe("fixture loading", () => {
     );
   });
 
+  it("rejects a control character in an event type", () => {
+    // The transcript is one line per entry joined with LF, so a type carrying
+    // a newline would render one event as several lines, and `fixtures:update`
+    // would bless that as the baseline.
+    const withType = (type: string) => ({
+      name: "sample",
+      description: "d",
+      seed: "s",
+      cartridge: null,
+      events: [{ type }],
+    });
+
+    expect(() => parseReplayFixture(withType("a\nb"), "sample")).toThrow(
+      /control character/,
+    );
+    expect(() => parseReplayFixture(withType("a\rb"), "sample")).toThrow(
+      /control character/,
+    );
+    expect(() =>
+      parseReplayFixture(withType("shell.exec"), "sample"),
+    ).not.toThrow();
+  });
+
   it("requires a cartridge key, which may be null but may not be absent", () => {
     // Without this, a misspelled key replays as `cartridge: undefined`, the
     // serializer drops the undefined property, and `fixtures:update` records a

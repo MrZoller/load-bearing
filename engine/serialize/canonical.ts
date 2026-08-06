@@ -319,10 +319,9 @@ function readElement(
 function plainEntries(value: object, pointer: string): [string, unknown][] {
   const prototype = Object.getPrototypeOf(value) as object | null;
   if (prototype !== null && prototype !== Object.prototype) {
-    const name = value.constructor?.name ?? "object";
     throw new CanonicalSerializeError(
       pointer,
-      `${name} is not a plain object; convert it to plain data before serializing`,
+      `${describePrototype(prototype)} is not a plain object; convert it to plain data before serializing`,
     );
   }
 
@@ -351,6 +350,24 @@ function plainEntries(value: object, pointer: string): [string, unknown][] {
       }
       return descriptor.value === undefined ? [] : [[key, descriptor.value]];
     });
+}
+
+/**
+ * Name a rejected value's type for the error message, without running any of
+ * its code.
+ *
+ * `value.constructor?.name` would be the obvious spelling and is a trap: a
+ * prototype can define `constructor` as a getter, so the diagnostic that
+ * exists to reject an unserializable object would execute part of it first —
+ * in the one branch that skips every descriptor check.
+ */
+function describePrototype(prototype: object): string {
+  const descriptor = Object.getOwnPropertyDescriptor(prototype, "constructor");
+  return typeof descriptor?.value === "function" &&
+    typeof descriptor.value.name === "string" &&
+    descriptor.value.name.length > 0
+    ? descriptor.value.name
+    : "this value";
 }
 
 /** RFC 6901 escaping, so a key containing `/` still yields a usable pointer. */

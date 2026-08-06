@@ -49,6 +49,15 @@ export function loadReplayFixture(name: string): ReplayFixture {
 }
 
 /**
+ * Any C0 or C1 control character, including LF and CR.
+ *
+ * Built from code points rather than written as a literal class, so the
+ * pattern stays readable and cannot be corrupted by a stray raw control
+ * character in the source.
+ */
+const CONTROL_CHARACTER = /[\u0000-\u001F\u007F-\u009F]/;
+
+/**
  * Validate a parsed `fixture.json`. Pure, so the malformed cases are testable
  * without committing a broken fixture the replay suite would then have to skip.
  *
@@ -91,8 +100,18 @@ export function parseReplayFixture(
     if (typeof event !== "object" || event === null || Array.isArray(event)) {
       throw new Error(`${at} must be an object, not ${describe(event)}`);
     }
-    if (typeof (event as { type?: unknown }).type !== "string") {
+    const type = (event as { type?: unknown }).type;
+    if (typeof type !== "string") {
       throw new Error(`${at} must have a string "type"`);
+    }
+    // The transcript is one line per entry, joined with LF. A type carrying a
+    // line terminator would make one event render as several lines — or slip a
+    // CR into an artifact whose whole contract is LF — and `fixtures:update`
+    // would record that as correct.
+    if (CONTROL_CHARACTER.test(type)) {
+      throw new Error(
+        `${at} has a control character in "type"; transcript entries are one line each`,
+      );
     }
   });
   if (fixture.name !== name) {

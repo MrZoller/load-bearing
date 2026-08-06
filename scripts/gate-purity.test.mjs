@@ -52,6 +52,8 @@ describe("purity gate", () => {
       [`${SAMPLES}/planted-eval-and-stack.ts`, 7, "dynamic-eval"],
       [`${SAMPLES}/planted-eval-and-stack.ts`, 8, "error-stack"],
       [`${SAMPLES}/planted-extension.tsx`, 5, "math-nondeterministic"],
+      [`${SAMPLES}/planted-global-object.ts`, 5, "global-object"],
+      [`${SAMPLES}/planted-global-object.ts`, 6, "dynamic-eval"],
       [`${SAMPLES}/planted-interpolation.ts`, 5, "wall-clock-date"],
       [`${SAMPLES}/planted-locale-and-gc.ts`, 4, "gc-timing"],
       [`${SAMPLES}/planted-locale-and-gc.ts`, 5, "locale-sensitive"],
@@ -126,10 +128,42 @@ describe("purity gate", () => {
       ["sample.ts", 2, "dynamic-eval"],
     ]);
 
-    // A `Function` type annotation is not a call, and is not a violation.
+    // Aliasing is not an escape, and `Function` as a bare type annotation is
+    // banned too — a call signature says what the value actually is.
     expect(
-      scanSource("sample.ts", "export function run(fn: Function): void {}\n"),
+      locations(
+        scanSource(
+          "sample.ts",
+          "const Build = Function;\nexport function run(fn: Function): void {}\n",
+        ),
+      ),
+    ).toEqual([
+      ["sample.ts", 1, "dynamic-eval"],
+      ["sample.ts", 2, "dynamic-eval"],
+    ]);
+
+    // `function` the keyword, and identifiers merely containing "Function",
+    // are untouched.
+    expect(
+      scanSource(
+        "sample.ts",
+        "export function run(): void {}\nconst c: AsyncFunctionish = x;\n",
+      ),
     ).toEqual([]);
+  });
+
+  it("catches an ambient reached through globalThis", () => {
+    // The property name is a string, and string contents are blanked, so no
+    // banned identifier appears in the code view at all.
+    const violations = scanSource(
+      "sample.ts",
+      'const a = globalThis["Date"].now();\nconst b = globalThis["Math"]["random"]();\n',
+    );
+
+    expect(locations(violations)).toEqual([
+      ["sample.ts", 1, "global-object"],
+      ["sample.ts", 2, "global-object"],
+    ]);
   });
 
   it("catches error stacks, which carry host formatting and local paths", () => {

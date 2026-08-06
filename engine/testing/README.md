@@ -80,8 +80,9 @@ build on:
 | `math-alias`              | any `Math` reference that is not an immediate dotted access        | 2         |
 | `locale-sensitive`        | `Intl`, `toLocaleString`, `localeCompare`, `toLocale*`             | 2         |
 | `gc-timing`               | `WeakRef`, `FinalizationRegistry`                                  | 2         |
-| `dynamic-eval`            | `eval`, the `Function` constructor                                 | 2         |
+| `dynamic-eval`            | `eval`, `Function` (as value or type)                              | 2         |
 | `error-stack`             | `.stack`, `captureStackTrace`                                      | 2         |
+| `global-object`           | `globalThis`                                                       | 3         |
 | `crypto-random`           | the `crypto` global — `subtle.generateKey` as much as `randomUUID` | 2         |
 | `wall-clock-date`         | the `Date` global                                                  | 2         |
 | `wall-clock-performance`  | the `performance` global — `timeOrigin` as much as `now`           | 2         |
@@ -119,12 +120,20 @@ to be correctly rounded and every engine defers to the hardware. ECMA-262 still
 calls it implementation-approximated, and nothing in a terminal simulation
 needs a square root, so the cheap answer is to not have the argument.
 
-Two related bans exist because the gate's own design creates the opening.
-Blanking string literal text is what makes simulated shell output cheap to
-write, and `eval("Math.random()")` turns that ignored text straight back into
-running code — so `dynamic-eval` bans both primitives that can. And an error's
-`.stack` is host-formatted and carries absolute paths, so recording one would
-put a developer's filesystem into replayed state.
+Three bans exist because the gate's own design creates the opening. Blanking
+string literal text is what makes simulated shell output cheap to write — and
+it is exactly what lets a string become code or a property name again:
+
+- `eval("Math.random()")` and `Function("return Date.now()")` turn ignored text
+  straight back into running code, so `dynamic-eval` bans both primitives,
+  aliases included.
+- `globalThis["Date"].now()` reaches wall-clock time with no banned identifier
+  anywhere in the code view, because the property name is a string. A headless
+  engine has no reason to touch the global object, so `globalThis` is banned
+  outright.
+
+And an error's `.stack` is host-formatted and carries absolute paths, so
+recording one would put a developer's filesystem into replayed state.
 
 **Consequence for issues #5, #9, and #10:** `ls` ordering, `ls -l` timestamps,
 and `git log` dates must be formatted and sorted by hand. `localeCompare` sorts

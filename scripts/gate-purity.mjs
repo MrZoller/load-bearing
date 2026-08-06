@@ -128,11 +128,26 @@ export const CODE_RULES = [
     // `Function\s*\(` rather than a bare `Function` so a `: Function` type
     // annotation is not a violation.
     id: "dynamic-eval",
-    pattern: /\beval\b|\bFunction\s*\(/g,
+    pattern: /\beval\b|\bFunction\b/g,
     invariant: "2 — determinism is non-negotiable",
     message:
       "Dynamic evaluation resurrects string contents as code, which the gate blanks " +
-      "and therefore cannot check. Whatever it would build, build it directly.",
+      "and therefore cannot check. Whatever it would build, build it directly. `Function` " +
+      "is banned as a whole identifier, aliases included — and as a type it should be a " +
+      "call signature anyway.",
+  },
+  {
+    // Property names are strings, and the gate blanks string literal text, so
+    // `globalThis["Date"].now()` reaches wall-clock time with no banned
+    // identifier anywhere in the code view. A headless engine has no reason to
+    // touch the global object at all.
+    id: "global-object",
+    pattern: /\bglobalThis\b/g,
+    invariant: "3 — the engine stays headless",
+    message:
+      "Reaching an ambient through globalThis routes around every rule here, because " +
+      "the property name is a string and string contents are blanked. The engine's " +
+      "inputs are the cartridge and the event log.",
   },
   {
     // Stack strings carry the host engine's formatting, file URLs or absolute

@@ -86,6 +86,24 @@ describe("serialize rejections", () => {
     expect(() => serialize({ at: new Date(0) })).toThrow(/not a plain object/);
   });
 
+  it("names a rejected type without invoking a constructor getter", () => {
+    // The rejection branch skips every descriptor check, so reading
+    // `value.constructor` to build the message would run part of the very
+    // object being refused.
+    let reads = 0;
+    const hostile = Object.create({
+      get constructor() {
+        reads += 1;
+        return Object;
+      },
+    }) as object;
+
+    expect(() => serialize(hostile)).toThrow(
+      /this value is not a plain object/,
+    );
+    expect(reads).toBe(0);
+  });
+
   it("refuses Map and Set", () => {
     expect(() => serialize({ m: new Map() })).toThrow(
       /Map is not a plain object/,
