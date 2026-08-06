@@ -238,7 +238,7 @@ export const CODE_RULES = [
     // declarations (`declare type`, `declare interface`) are untouched.
     id: "ambient-declaration",
     pattern:
-      /\bdeclare\s+(?:const|let|var|function|class|global|namespace|module)\b/g,
+      /\bdeclare\s+(?:(?:abstract|async|readonly)\s+)*(?:const|let|var|function|class|enum|global|namespace|module)\b/g,
     invariant: "3 — the engine stays headless",
     message:
       "An ambient value declaration asserts a global exists without the type program " +
@@ -431,6 +431,17 @@ export const SPECIFIER_RULE = {
  * not per-file, so one file's directive serves globals to every file.
  */
 export const RAW_RULES = [
+  {
+    // The isolated type program is the only thing that knows `location` does
+    // not exist; a suppression comment turns its one error off. `@ts-nocheck`
+    // does it for a whole file.
+    id: "type-suppression",
+    pattern: /@ts-(?:ignore|nocheck|expect-error)\b/g,
+    invariant: "3 — the engine stays headless",
+    message:
+      "Suppressing a type error silences tsconfig.engine.json, which is what proves the " +
+      "engine compiles without Node's or the browser's ambients. Fix the type instead.",
+  },
   {
     id: "ambient-types-reference",
     pattern: /\/\/\/\s*<reference\s+(?:types|lib|path|no-default-lib)\s*=/g,
@@ -880,6 +891,24 @@ export const DYNAMIC_IMPORT_TARGET_RULE = {
 const COMPUTED_MEMBER_PATTERN =
   /\[\s*(['"`])(constructor|stack|message|__proto__|prototype)\1\s*\]/g;
 
+/**
+ * Member names that have no other use as a string.
+ *
+ * A computed access can also be spelled indirectly — `const key =
+ * "constructor"; fn[key](…)` — and no text gate can follow a variable. What it
+ * can do is refuse the literal every such spelling has to start from. Matched
+ * without the code mask, because the match *is* the string; comments are
+ * blanked from this view too, so prose is unaffected.
+ *
+ * The exception is the inert inspectors. Reading a descriptor is how this
+ * codebase is *required* to look at `constructor` — dereferencing it would run
+ * an accessor — so a rule that forbade the literal outright would forbid its
+ * own approved idiom.
+ */
+const BANNED_MEMBER_LITERAL = /(['"`])(constructor|__proto__)\1/g;
+const INERT_INSPECTOR =
+  /\b(?:getOwnPropertyDescriptor|hasOwn|hasOwnProperty)\s*\([^()]*$/;
+
 export const COMPUTED_MEMBER_RULE = {
   id: "computed-member",
   invariant: "2 — determinism is non-negotiable",
@@ -975,13 +1004,44 @@ export function scanSource(file, source, allowlist = ALLOWLIST) {
     );
   }
 
+  BANNED_MEMBER_LITERAL.lastIndex = 0;
+  for (const match of withStrings.matchAll(BANNED_MEMBER_LITERAL)) {
+    const before = withStrings.slice(
+      Math.max(0, match.index - 80),
+      match.index,
+    );
+    if (INERT_INSPECTOR.test(before)) continue;
+    record(
+      {
+        ...COMPUTED_MEMBER_RULE,
+        message:
+          `${match[2]} as a string literal: there is no use for it except to reach the ` +
+          `member of that name indirectly.`,
+      },
+      match.index,
+    );
+  }
+
   // A dynamic import or require whose argument is not a literal never reaches
   // the specifier rules at all, because there is no specifier to extract.
   for (const match of withStrings.matchAll(/\b(?:import|require)\s*\(\s*/g)) {
     if (code[match.index] === " ") continue;
-    const next = withStrings[match.index + match[0].length];
+    const start = match.index + match[0].length;
+    const next = withStrings[start];
     if (next !== '"' && next !== "'" && next !== "`") {
       record(DYNAMIC_IMPORT_TARGET_RULE, match.index);
+      continue;
+    }
+    // A backtick alone does not make a target static. `import(`./${p}.js`)`
+    // resolves at runtime to whatever `p` holds, while the raw spelling it
+    // extracts sails through the containment and allowlist checks.
+    if (next === "`") {
+      const close = withStrings.indexOf("`", start + 1);
+      const body = withStrings.slice(
+        start + 1,
+        close === -1 ? undefined : close,
+      );
+      if (body.includes("${")) record(DYNAMIC_IMPORT_TARGET_RULE, match.index);
     }
   }
 

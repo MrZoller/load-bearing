@@ -37,6 +37,77 @@ export const REPLAY_FIXTURE_ROOT = fileURLToPath(
  */
 const STRICT_UTF8 = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
 
+/**
+ * Reject an object member that appears twice.
+ *
+ * `JSON.parse` keeps the last value silently, so a fixture can show one
+ * scenario to a reader while CI and `fixtures:update` exercise another — and
+ * the recording that results is green and wrong. There is no parser option for
+ * this, so the text is scanned for key positions directly.
+ */
+function assertNoDuplicateKeys(text: string, path: string): void {
+  const stack: { object: boolean; keys: Set<string> }[] = [];
+  let index = 0;
+  let atKey = false;
+
+  while (index < text.length) {
+    const character = text[index];
+
+    if (character === '"') {
+      const { value, end } = readJsonString(text, index);
+      const frame = stack[stack.length - 1];
+      if (atKey && frame !== undefined) {
+        if (frame.keys.has(value)) {
+          throw new Error(
+            `${path}: duplicate key ${JSON.stringify(value)}; JSON.parse would keep ` +
+              `only the last one, so the file would not say what it runs`,
+          );
+        }
+        frame.keys.add(value);
+        atKey = false;
+      }
+      index = end;
+      continue;
+    }
+
+    if (character === "{") stack.push({ object: true, keys: new Set() });
+    else if (character === "[") stack.push({ object: false, keys: new Set() });
+    else if (character === "}" || character === "]") stack.pop();
+    else if (character === ",")
+      atKey = stack[stack.length - 1]?.object === true;
+    else if (character === ":") atKey = false;
+
+    if (character === "{") atKey = true;
+    else if (character === "[" || character === "}" || character === "]")
+      atKey = false;
+
+    index += 1;
+  }
+}
+
+/** Read one JSON string literal, returning its value and the index past it. */
+function readJsonString(
+  text: string,
+  start: number,
+): { value: string; end: number } {
+  let index = start + 1;
+  let value = "";
+
+  while (index < text.length) {
+    const character = text[index];
+    if (character === "\\") {
+      value += text.slice(index, index + 2);
+      index += 2;
+      continue;
+    }
+    if (character === '"') return { value, end: index + 1 };
+    value += character;
+    index += 1;
+  }
+
+  return { value, end: text.length };
+}
+
 /** Read a committed artifact, failing loudly on malformed bytes. */
 function readTextFile(path: string): string {
   return STRICT_UTF8.decode(readFileSync(path));
@@ -79,11 +150,9 @@ export function listReplayFixtures(): string[] {
 /** Read and shape-check one fixture's input triple. */
 export function loadReplayFixture(name: string): ReplayFixture {
   const path = join(REPLAY_FIXTURE_ROOT, name, FIXTURE_FILE);
-  return parseReplayFixture(
-    JSON.parse(readTextFile(path)) as unknown,
-    name,
-    path,
-  );
+  const text = readTextFile(path);
+  assertNoDuplicateKeys(text, path);
+  return parseReplayFixture(JSON.parse(text) as unknown, name, path);
 }
 
 /**

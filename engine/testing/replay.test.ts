@@ -194,6 +194,32 @@ describe("fixture loading", () => {
     ).not.toThrow();
   });
 
+  it("rejects a fixture whose JSON repeats a key", async () => {
+    // JSON.parse keeps the last value silently, so the file would show one
+    // scenario to a reader while CI exercised another — and the recording
+    // that results is green and wrong.
+    const { mkdirSync, rmSync, writeFileSync } = await import("node:fs");
+    const root = new URL(
+      "../__fixtures__/replay/000-duplicate-key/",
+      import.meta.url,
+    );
+    const dir = root.pathname;
+
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      `${dir}fixture.json`,
+      '{"name":"000-duplicate-key","description":"d","seed":"s","cartridge":null,"events":[],"seed":"other"}\n',
+    );
+
+    try {
+      expect(() => loadReplayFixture("000-duplicate-key")).toThrow(
+        /duplicate key "seed"/,
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("rejects a fixture that is not an object, or is missing a field", () => {
     expect(() => parseReplayFixture([], "sample")).toThrow(/JSON object/);
     expect(() => parseReplayFixture({ name: "sample" }, "sample")).toThrow(

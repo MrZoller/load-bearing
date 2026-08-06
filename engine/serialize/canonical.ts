@@ -399,8 +399,14 @@ function plainEntries(value: object, pointer: string): [string, unknown][] {
     );
   }
 
-  // The prototype says "plain object", so ask the value itself — a re-pointed
-  // prototype would otherwise let a Map with entries serialize as `{}`.
+  // Snapshot first, brand-check second. `Object.prototype.toString` performs a
+  // Get of `Symbol.toStringTag`, so an own accessor there would run before
+  // anything had a chance to reject it — in the check whose whole purpose is
+  // to identify a value without trusting it. `ownProperties` rejects every
+  // symbol key, this one included, and the prototype is already known to be
+  // `Object.prototype` or null, so no inherited tag can exist either.
+  const descriptors = ownProperties(value, pointer);
+
   const brand = detectBrand(value);
   if (brand !== undefined) {
     throw new CanonicalSerializeError(
@@ -408,8 +414,6 @@ function plainEntries(value: object, pointer: string): [string, unknown][] {
       `${brand} with a replaced prototype; its contents live in internal slots and cannot be serialized`,
     );
   }
-
-  const descriptors = ownProperties(value, pointer);
 
   return Object.keys(descriptors)
     .sort()

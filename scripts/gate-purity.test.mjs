@@ -586,12 +586,36 @@ describe("purity gate", () => {
         ),
       ),
     ).toEqual([
+      // Line 1 twice: the bracket form and the literal it is built from.
+      ["engine/a.ts", 1, "computed-member"],
       ["engine/a.ts", 1, "computed-member"],
       ["engine/a.ts", 2, "computed-member"],
     ]);
 
     // Ordinary indexing is untouched.
     expect(scanSource("engine/a.ts", "const v = files[0];\n")).toEqual([]);
+  });
+
+  it("catches a banned member reached through a variable", () => {
+    // No text gate can follow a variable, but every such spelling has to
+    // start from the literal.
+    expect(
+      locations(
+        scanSource(
+          "engine/a.ts",
+          'const key = "constructor";\nconst r = f[key]("x")();\n',
+        ),
+      ),
+    ).toEqual([["engine/a.ts", 1, "computed-member"]]);
+
+    // Reading a descriptor is how this codebase is required to inspect
+    // `constructor`, so the inert inspectors are exempt.
+    expect(
+      scanSource(
+        "engine/a.ts",
+        'const d = Object.getOwnPropertyDescriptor(p, "constructor");\n',
+      ),
+    ).toEqual([]);
   });
 
   it("catches an ambient value declaration", () => {
