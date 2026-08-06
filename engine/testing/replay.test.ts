@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   listReplayFixtures,
@@ -29,14 +29,33 @@ describe("golden replay fixtures", () => {
     if (mismatch !== undefined) throw new Error(mismatch);
   });
 
-  it.each(FIXTURES)("%s replays identically from a fresh input", (name) => {
-    // Two separately loaded fixtures, deliberately: passing one object twice
-    // would let a reducer that mutates its input on first use still compare
-    // equal, and bless the mutation as the baseline.
-    expect(replayFixture(loadReplayFixture(name))).toEqual(
-      replayFixture(loadReplayFixture(name)),
-    );
-  });
+  it.each(FIXTURES)(
+    "%s replays identically from a fresh input and a fresh module",
+    async (name) => {
+      // Both halves of the isolation matter, and for different reasons.
+      //
+      // Separately loaded fixtures, because passing one object to both calls
+      // would let a reducer that mutates its input on first use still compare
+      // equal, and bless the mutation as the baseline.
+      //
+      // Separately loaded *modules*, because by the time this test runs the
+      // engine has already been invoked — so comparing two more calls would
+      // compare the second against the third. Module-level state that changes
+      // behaviour on first invocation and then settles would survive that.
+      // `resetModules` makes each side a first invocation.
+      vi.resetModules();
+      const first = (await import("./replay.js")).replayFixture(
+        loadReplayFixture(name),
+      );
+
+      vi.resetModules();
+      const second = (await import("./replay.js")).replayFixture(
+        loadReplayFixture(name),
+      );
+
+      expect(first).toEqual(second);
+    },
+  );
 
   it.each(FIXTURES)("%s leaves its input untouched", (name) => {
     const fixture = loadReplayFixture(name);

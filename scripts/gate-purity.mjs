@@ -191,6 +191,18 @@ export const CODE_RULES = [
       "detect one. Engine state is inert plain data.",
   },
   {
+    // `import.meta.url` is a local filesystem URL in Node and a deployed
+    // module URL in a browser. Anything derived from it that reaches state or
+    // a transcript makes replay depend on where the code happens to live.
+    id: "import-meta",
+    pattern: /\bimport\s*\.\s*meta\b/g,
+    invariant: "3 — the engine stays headless",
+    message:
+      "import.meta describes where the module was loaded from, which differs between " +
+      "Node, a browser, and a bundle. The engine's inputs are the cartridge and the " +
+      "event log.",
+  },
+  {
     id: "gc-timing",
     pattern: /\b(?:WeakRef|FinalizationRegistry)\b/g,
     invariant: "2 — determinism is non-negotiable",
@@ -375,12 +387,14 @@ export const RAW_RULES = [
 export const ALLOWLIST = [
   {
     file: "engine/testing/fixtures.ts",
-    rules: ["node-builtin-import"],
+    rules: ["node-builtin-import", "import-meta"],
     reason:
       "Test infrastructure: reads committed golden-replay fixtures from disk for the " +
-      "CI replay suite and the deliberate `npm run fixtures:update` re-record. It is " +
-      "never imported by simulation code and never reaches the browser bundle. The " +
-      "pure half of the harness lives in engine/testing/replay.ts.",
+      "CI replay suite and the deliberate `npm run fixtures:update` re-record. It needs " +
+      "`node:fs` to do that and `import.meta.url` to locate the fixture directory " +
+      "relative to itself. It is never imported by simulation code — the " +
+      "`allowlisted-module-import` rule enforces exactly that — and never reaches the " +
+      "browser bundle. The pure half of the harness lives in engine/testing/replay.ts.",
   },
 ];
 
@@ -752,6 +766,15 @@ export const BARE_PACKAGE_RULE = {
     "sight. Add it to APPROVED_PACKAGES with the argument for why it is deterministic.",
 };
 
+export const TEST_MODULE_IMPORT_RULE = {
+  id: "test-module-import",
+  invariant: "3 — the engine stays headless",
+  message:
+    "This module is exempt from purity scanning because it is a test, which is only " +
+    "safe while nothing production imports it. Move the shared code into a scanned " +
+    "module.",
+};
+
 export const ALLOWLISTED_IMPORT_RULE = {
   id: "allowlisted-module-import",
   invariant: "3 — the engine stays headless",
@@ -834,6 +857,19 @@ export function scanSource(file, source, allowlist = ALLOWLIST) {
           {
             ...ALLOWLISTED_IMPORT_RULE,
             message: `${resolved}: ${ALLOWLISTED_IMPORT_RULE.message}`,
+          },
+          index,
+        );
+      }
+      // A test module is skipped by `collectFiles`, so it is free to use
+      // timers, Node APIs, and test dependencies. That is only safe while
+      // nothing production imports it — TypeScript and every bundler follow an
+      // explicit import regardless of any `exclude`.
+      if (TEST_FILE_PATTERN.test(resolved)) {
+        record(
+          {
+            ...TEST_MODULE_IMPORT_RULE,
+            message: `${resolved}: ${TEST_MODULE_IMPORT_RULE.message}`,
           },
           index,
         );

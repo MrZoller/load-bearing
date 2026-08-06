@@ -86,6 +86,8 @@ build on:
 | `global-object`             | `globalThis`                                                       | 3         |
 | `proxy-reflection`          | `Proxy`, `Reflect`                                                 | 2         |
 | `bare-package-import`       | any dependency not in `APPROVED_PACKAGES` (currently none)         | 6         |
+| `test-module-import`        | a production import of a `*.test.*` module                         | 3         |
+| `import-meta`               | `import.meta`                                                      | 3         |
 | `allowlisted-module-import` | a production import of an allowlisted module                       | 3         |
 | `crypto-random`             | the `crypto` global — `subtle.generateKey` as much as `randomUUID` | 2         |
 | `wall-clock-date`           | the `Date` global                                                  | 2         |
@@ -226,6 +228,10 @@ extensionless spelling `moduleResolution: "bundler"` permits cannot walk past
 it. Note that `tsconfig.engine.json`'s `exclude` does not help here —
 TypeScript still follows an import into an excluded file, and so would a
 bundler.
+
+`test-module-import` is the same idea for the other exemption: a test module
+is skipped by the scanner, which is only safe while nothing production imports
+it.
 
 `APPROVED_PACKAGES` is the same idea for dependencies, and is empty. A
 package's own code is never scanned, so approving one means asserting by hand

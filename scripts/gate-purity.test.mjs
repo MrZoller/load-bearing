@@ -55,6 +55,7 @@ describe("purity gate", () => {
       [`${SAMPLES}/planted-extension.tsx`, 5, "math-nondeterministic"],
       [`${SAMPLES}/planted-global-object.ts`, 5, "global-object"],
       [`${SAMPLES}/planted-global-object.ts`, 6, "dynamic-eval"],
+      [`${SAMPLES}/planted-import-meta.ts`, 5, "import-meta"],
       [`${SAMPLES}/planted-interpolation.ts`, 5, "wall-clock-date"],
       [`${SAMPLES}/planted-locale-and-gc.ts`, 4, "gc-timing"],
       [`${SAMPLES}/planted-locale-and-gc.ts`, 5, "locale-sensitive"],
@@ -433,6 +434,26 @@ describe("purity gate", () => {
         ),
       ).toEqual([["engine/session.ts", 1, "allowlisted-module-import"]]);
     }
+  });
+
+  it("catches a production import of a test module", () => {
+    // A test module is exempt from scanning, which is only safe while nothing
+    // production imports it — TypeScript and every bundler follow an explicit
+    // import regardless of any `exclude`.
+    expect(
+      locations(
+        scanSource(
+          "engine/session.ts",
+          'import { helper } from "./helper.test.js";\n',
+        ),
+      ),
+    ).toEqual([["engine/session.ts", 1, "test-module-import"]]);
+  });
+
+  it("catches import.meta, which describes where the module was loaded", () => {
+    expect(
+      locations(scanSource("engine/a.ts", "const here = import.meta.url;\n")),
+    ).toEqual([["engine/a.ts", 1, "import-meta"]]);
   });
 
   it("catches Proxy and Reflect, which the serializer cannot refuse", () => {
