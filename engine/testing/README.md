@@ -308,11 +308,32 @@ the engine `document`, `window`, and `fetch` types along with it.
 ### Allowlist
 
 `ALLOWLIST` in `scripts/gate-purity.mjs` exempts a specific file from a
-specific rule, with a written reason. It currently has one entry:
+specific rule, with a written reason. It has two entries, and each earns it
+differently.
+
 `engine/testing/fixtures.ts` reads fixture files from disk, which is the one
 legitimate use of `node:fs` under `engine/` — it is test infrastructure, never
 imported by simulation code, and never bundled for the browser. The pure half
 of the harness (`replay.ts`) has no such dependency.
+
+`engine/globals.d.ts` declares `structuredClone`, and nothing else. The
+engine's program is `lib: ["ES2022"]` with `types: []`, so an ambient
+declaration is the only way to reach a host global — which is exactly what the
+`ambient-declaration` rule exists to stop, and why this file is one line long.
+
+It earns the exemption by closing something no alternative can. The serializer
+has to answer whether a value is really plain data, and a prototype can be
+re-pointed, so `getPrototypeOf` can be lied to. Structured clone reads internal
+slots instead: it either refuses the value or returns a copy wearing the true
+prototype. Every other approach is an enumeration of named built-ins —
+incomplete by construction, and unable to name the constructors this gate
+itself bans (`SharedArrayBuffer`, `Promise`, `WeakRef`,
+`FinalizationRegistry`). Before it, a `Map` with a re-pointed prototype was
+caught and a `Promise` with one was not, for no better reason than which
+identifiers the gate permits.
+
+Adding a _second_ global to that file would not be a formality. The paragraph
+above is the shape a new one has to match.
 
 Entries that point at a missing file, or that no longer suppress anything, fail
 the gate. An allowlist that rots is worse than no allowlist.
@@ -346,5 +367,7 @@ hostile proxy gets one opportunity to lie rather than one per check. And the
 `proxy-reflection` rule stops engine code creating a proxy at all — which is
 the realistic defence, since cartridges arrive as JSON and cannot carry one.
 
-Adding a second entry should feel like a design decision worth arguing about,
-because it is one.
+Adding a third entry should feel like a design decision worth arguing about,
+because it is one. The second took ten rounds of review to argue for, and the
+argument that won was not "this is inconvenient" — it was that the alternative
+was incomplete in a way no amount of care could fix.

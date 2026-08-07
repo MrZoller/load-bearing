@@ -416,6 +416,49 @@ describe("loadCartridge", () => {
     ]);
   });
 
+  it("rejects a disguised built-in the probe table cannot name", () => {
+    // The probes are an enumeration and cannot name these — the purity gate
+    // forbids writing `Promise`, `SharedArrayBuffer` or `WeakRef` in engine
+    // source at all. Structured clone reads internal slots instead, so it
+    // needs no name: it either refuses the value or returns a copy wearing the
+    // true prototype.
+    for (const [label, value] of [
+      ["Promise", Promise.resolve(1)],
+      ["SharedArrayBuffer", new SharedArrayBuffer(8)],
+      ["WeakRef", new WeakRef({})],
+      ["FinalizationRegistry", new FinalizationRegistry(() => {})],
+    ] as const) {
+      Object.setPrototypeOf(value, Object.prototype);
+      const source = minimal();
+      source["story"] = { payload: value };
+
+      expect(issuesOf(source)[0], label).toEqual({
+        pointer: "/story/payload",
+        expected: "an object of plain JSON values",
+        found: expect.stringContaining("which JSON cannot carry") as string,
+      });
+    }
+  });
+
+  it("rejects these already when their prototype is intact", () => {
+    // The case a real pipeline produces — a forgotten `await`, a stray buffer
+    // — never needed the clone test: the prototype check has always caught it.
+    // Worth pinning, because it is the difference between a live defect and a
+    // hardening measure.
+    for (const [label, value] of [
+      ["Promise", Promise.resolve(1)],
+      ["SharedArrayBuffer", new SharedArrayBuffer(8)],
+      ["WeakRef", new WeakRef({})],
+    ] as const) {
+      const source = minimal();
+      source["story"] = { payload: value };
+
+      expect(issuesOf(source)[0]?.found, label).toBe(
+        "an object with a prototype JSON cannot produce",
+      );
+    }
+  });
+
   it("still accepts a null-prototype object and an ordinary array", () => {
     // The brand check must not catch these. `Object.create(null)` is what a
     // careful generator uses to avoid inherited keys, and it serializes fine.

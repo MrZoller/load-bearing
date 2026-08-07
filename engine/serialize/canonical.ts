@@ -205,28 +205,21 @@ const BRAND_KEY = {};
  * one: engine code cannot re-point a prototype at all. This is the containment
  * for a value that arrives some other way.
  *
- * ## What this does not catch, stated plainly
+ * ## Completeness
  *
- * The list is the reachable set, not every built-in there is. Probing means
- * *naming*, and the purity gate forbids naming several: `SharedArrayBuffer`
- * and `Atomics` fall to `host-capability`, `WeakRef` and
- * `FinalizationRegistry` to `gc-timing`, `Proxy` and `Reflect` to
- * `proxy-reflection`, `Promise` to `async-scheduling`.
+ * The probe table is an enumeration, and an enumeration is incomplete by
+ * construction — it cannot name whatever the language added most recently, and
+ * it cannot name the constructors the purity gate bans from this file
+ * (`SharedArrayBuffer`, `Promise`, `WeakRef`, `FinalizationRegistry`). So the
+ * table is not the last word: `detectByCloning` below asks the host instead,
+ * which needs no name at all. The table runs first because it gives a better
+ * one and costs less.
  *
- * A repointed one of those is therefore **not detected at all** — not here and
- * not later. It has no tag `Object.prototype.toString` can see, matches no
- * probe, and reports no own properties, so it serializes as `{}` with its
- * contents discarded. An earlier version of this comment claimed such a value
- * "reaches the serializer's own rejection instead"; that was wrong, and it is
- * worth saying so rather than leaving the reassuring version in place.
- *
- * Closing it means an allowlist entry letting this file name those globals —
- * a deliberate widening of the gate for a case that requires an in-memory
- * cartridge with a hand-repointed prototype. That is an adversary, not the
- * plausible mistake this codebase's checks are calibrated for
- * (engine/testing/README.md → Known limits). Left open, on purpose, and
- * written down so the next person weighs the same trade rather than assuming
- * it was covered.
+ * The residual is a value that is branded *and* carries its own data
+ * properties *and* wears a re-pointed prototype *and* is one of the built-ins
+ * this file cannot name. Three deliberate acts, and it loses only the branded
+ * content rather than everything. Recorded here rather than left to be
+ * rediscovered.
  */
 const BRAND_PROBES: readonly (readonly [string, (value: object) => unknown])[] =
   [
@@ -333,7 +326,52 @@ export function detectBrand(value: object): string | undefined {
       // Not that built-in: the probe threw on a missing internal slot.
     }
   }
+
+  // Nothing above named it, and it reports nothing of its own — so the caller
+  // is about to write `{}` over it. That is the one shape where a disguised
+  // built-in loses everything in silence, and the only point at which asking
+  // the host is worth it.
+  if (
+    Object.getOwnPropertyNames(value).length === 0 &&
+    Object.getOwnPropertySymbols(value).length === 0
+  ) {
+    return detectByCloning(value);
+  }
   return undefined;
+}
+
+/**
+ * The general brand test: ask the host to copy the value.
+ *
+ * Structured clone reads internal slots rather than the prototype chain, which
+ * is exactly the thing a re-pointed prototype cannot lie about. It either
+ * refuses the value — a `Promise`, a `WeakRef`, a `FinalizationRegistry` — or
+ * hands back a copy wearing the true prototype, and that copy is safe to ask
+ * `Object.prototype.toString` about because the host built it, not the
+ * cartridge.
+ *
+ * This is what makes the check complete rather than an enumeration. The probe
+ * table above still runs first because it gives a better name and costs less,
+ * but the names it does not have — including the ones the purity gate forbids
+ * this file from writing — end up here.
+ *
+ * Only reached for a value with no own properties, so it reads nothing and can
+ * run no accessor. A branded object carrying its own data properties is still
+ * caught by the probes above; one carrying data properties *and* a
+ * gate-unnameable brand *and* a re-pointed prototype is the documented
+ * residual, and needs three deliberate acts to construct.
+ */
+function detectByCloning(value: object): string | undefined {
+  let clone: object;
+  try {
+    clone = structuredClone(value);
+  } catch {
+    return "built-in that structured clone refuses to copy";
+  }
+
+  const prototype: unknown = Object.getPrototypeOf(clone);
+  if (prototype === Object.prototype || prototype === null) return undefined;
+  return Object.prototype.toString.call(clone).slice(8, -1);
 }
 
 /**

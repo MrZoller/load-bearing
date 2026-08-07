@@ -499,6 +499,22 @@ export const ALLOWLIST = [
       "`allowlisted-module-import` rule enforces exactly that — and never reaches the " +
       "browser bundle. The pure half of the harness lives in engine/testing/replay.ts.",
   },
+  {
+    file: "engine/globals.d.ts",
+    rules: ["ambient-declaration"],
+    reason:
+      "Declares `structuredClone`, and nothing else. The engine program is deliberately " +
+      '`lib: ["ES2022"]` with `types: []`, so this is the only way to reach a global — ' +
+      "which is the point of the `ambient-declaration` rule, and why this file is one " +
+      "declaration long and typechecked in both programs. It earns the exemption by " +
+      "closing a hole nothing else can: the serializer has to answer whether a value is " +
+      "really plain data, a prototype can be re-pointed so `getPrototypeOf` can be lied " +
+      "to, and structured clone reads internal slots instead. Every alternative is an " +
+      "enumeration of named built-ins — incomplete by construction, and unable to name " +
+      "the constructors this gate itself bans (`SharedArrayBuffer`, `Promise`, " +
+      "`WeakRef`). Adding a *second* global here would not be a formality; the argument " +
+      "above is the shape a new one has to match.",
+  },
 ];
 
 /**
