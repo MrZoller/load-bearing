@@ -150,6 +150,49 @@ function objectFromEntries(
   return Object.fromEntries(entries);
 }
 
+export const DENSE_ARRAY_EXPECTED = "a dense array with no extra properties";
+const DENSE_ARRAY_FOUND = "an array with holes or properties JSON cannot carry";
+
+/**
+ * Whether an array is exactly what JSON can carry: every index present, no
+ * extra properties.
+ *
+ * Both halves are load-bearing, and each catches what the other misses.
+ * Comparing the key count to `length` catches holes — `[x, , z]` has two keys
+ * for a length of three. Comparing key by key catches a stray property, and
+ * also the pair that defeats counting alone: one hole plus one extra property
+ * is the same count as a dense array.
+ *
+ * A hole is not a value. `map` preserves it, the reducer would read it as
+ * `undefined`, and the canonical serializer refuses it at record time — after
+ * the loader has already promised the cartridge was sound.
+ */
+function isDenseArray(value: readonly unknown[]): boolean {
+  const keys = Object.keys(value);
+  return (
+    keys.length === value.length &&
+    keys.every((key, index) => key === String(index))
+  );
+}
+
+/**
+ * Report a value that contains itself.
+ *
+ * Reachable only from a cartridge built in memory rather than parsed, which is
+ * exactly the path this module commits to defending — the Phase 5 pipeline may
+ * well build one. Without the check the recursion below terminates in a host
+ * `RangeError` instead of a validation issue with a pointer, which is the
+ * difference between a report the pipeline can act on and a stack trace.
+ */
+function reportCycle<T>(pointer: string, report: Report, substitute: T): T {
+  report.addPhrase(
+    pointer,
+    "a value that does not contain itself",
+    "a circular reference, which JSON cannot represent",
+  );
+  return substitute;
+}
+
 /**
  * Deep-copy a JSON value, rejecting anything that is not one.
  *
@@ -162,7 +205,19 @@ function objectFromEntries(
  * a pointer into a transcript instead of into the cartridge, or not surfacing
  * at all and simply losing the data.
  */
-function cloneJson(value: unknown, pointer: string, report: Report): unknown {
+function cloneJson(
+  value: unknown,
+  pointer: string,
+  report: Report,
+  /**
+   * The containers on the path from the root to here — not every container
+   * seen. A cycle is a value that contains itself, which is what overflows the
+   * stack; a subobject referenced twice side by side is a DAG, which JSON
+   * carries perfectly well by writing it out twice. A global visited-set would
+   * confuse the second for the first and start rejecting valid cartridges.
+   */
+  active: Set<object> = new Set(),
+): unknown {
   if (
     value === null ||
     typeof value === "string" ||
@@ -178,24 +233,17 @@ function cloneJson(value: unknown, pointer: string, report: Report): unknown {
     return value;
   }
   if (Array.isArray(value)) {
-    // A dense array's own keys are exactly its indices, in order. Anything
-    // else is a hole or a stray property — both of which `map` would carry
-    // through invisibly and the serializer would then refuse.
-    //
-    // Compared key by key rather than by counting them: one hole plus one
-    // stray property is the same count as a dense array, and that pair would
-    // otherwise pass here and fail later at the serializer instead.
-    if (!Object.keys(value).every((key, index) => key === String(index))) {
-      report.addPhrase(
-        pointer,
-        "a dense array with no extra properties",
-        "an array with holes or properties JSON cannot carry",
-      );
+    if (!isDenseArray(value)) {
+      report.addPhrase(pointer, DENSE_ARRAY_EXPECTED, DENSE_ARRAY_FOUND);
       return [];
     }
-    return value.map((item, index) =>
-      cloneJson(item, child(pointer, index), report),
+    if (active.has(value)) return reportCycle(pointer, report, []);
+    active.add(value);
+    const copied = value.map((item, index) =>
+      cloneJson(item, child(pointer, index), report, active),
     );
+    active.delete(value);
+    return copied;
   }
   if (isPlainObject(value)) {
     // `isPlainObject` only rules out null and arrays, so a class instance
@@ -211,14 +259,18 @@ function cloneJson(value: unknown, pointer: string, report: Report): unknown {
       );
       return {};
     }
-    return objectFromEntries(
+    if (active.has(value)) return reportCycle(pointer, report, {});
+    active.add(value);
+    const copied = objectFromEntries(
       Object.keys(value)
         .sort()
         .map((key) => [
           key,
-          cloneJson(value[key], child(pointer, key), report),
+          cloneJson(value[key], child(pointer, key), report, active),
         ]),
     );
+    active.delete(value);
+    return copied;
   }
   report.add(pointer, "a JSON value", value);
   return null;
@@ -247,7 +299,15 @@ function validate(
         report.add(pointer, node.patternLabel ?? String(node.pattern), value);
         return value;
       }
-      if (node.minLength !== undefined && value.length < node.minLength) {
+      // Code points, not UTF-16 code units. JSON Schema counts characters as
+      // RFC 8259 defines them, so a string of 60 emoji satisfies the published
+      // `maxLength: 60` while `value.length` calls it 120 — content that
+      // validates against the contract, rejected by the loader that emitted
+      // it. Only `maxLength` can actually diverge, since UTF-16 length is
+      // never the smaller of the two, but the three-way agreement this schema
+      // is built on has to hold in both directions.
+      const characters = [...value].length;
+      if (node.minLength !== undefined && characters < node.minLength) {
         report.add(
           pointer,
           `at least ${String(node.minLength)} character(s)`,
@@ -255,7 +315,7 @@ function validate(
         );
         return value;
       }
-      if (node.maxLength !== undefined && value.length > node.maxLength) {
+      if (node.maxLength !== undefined && characters > node.maxLength) {
         report.add(
           pointer,
           `at most ${String(node.maxLength)} characters`,
@@ -309,6 +369,14 @@ function validate(
       }
       if (node.minItems !== undefined && value.length < node.minItems) {
         report.add(pointer, `at least ${String(node.minItems)} item(s)`, value);
+      }
+      // Schema arrays need the same density check as a deferred one. Without
+      // it `models = new Array(1)` satisfies `minItems`, `map` preserves the
+      // hole, `checkModelIds` skips it without complaint, and the loader hands
+      // back a cartridge the canonical serializer then refuses.
+      if (!isDenseArray(value)) {
+        report.addPhrase(pointer, DENSE_ARRAY_EXPECTED, DENSE_ARRAY_FOUND);
+        return [];
       }
       return value.map((item, index) =>
         validate(item, node.items, child(pointer, index), report),

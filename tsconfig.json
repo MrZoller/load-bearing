@@ -24,6 +24,12 @@
     "content",
     "pipeline",
     "vitest.config.ts",
-    "scripts/update-fixtures.ts"
+    // Every TypeScript script, not a named list. `scripts/update-schema.ts`
+    // generates the published cartridge contract and was typechecked by
+    // nothing at all, so a broken import in it would merge green and fail only
+    // when someone next needed to regenerate the schema. The glob is `*.ts`
+    // rather than the directory: `allowJs`/`checkJs` would otherwise pull in
+    // the `.mjs` gate scripts, which are deliberately plain Node.
+    "scripts/*.ts"
   ]
 }

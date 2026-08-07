@@ -74,7 +74,17 @@ function emitNode(node: SchemaNode): Record<string, unknown> {
       for (const [key, field] of Object.entries(node.fields)) {
         const emitted = emitNode(field.node);
         if (field.fill !== undefined) emitted["default"] = field.fill;
-        if (field.derived !== undefined) emitted["$comment"] = field.derived;
+        if (field.derived !== undefined) {
+          // Appended, not assigned. `mtime` carries both a derived default and
+          // a node-level refinement note, and overwriting would drop the one
+          // saying the pattern is not the whole rule — which is the half a
+          // reader needs in order to trust the other.
+          const existing = emitted["$comment"];
+          emitted["$comment"] =
+            typeof existing === "string"
+              ? `${existing} ${field.derived}`
+              : field.derived;
+        }
         properties[key] = emitted;
         if (field.required) required.push(key);
       }

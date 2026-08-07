@@ -43,6 +43,7 @@
  * the world does not contain is broken before the first command.
  */
 
+import { parseTimestamp } from "../clock/civil.js";
 import { INCIDENT_DATE_PATTERN, MODEL_ID_PATTERN } from "../random/seed.js";
 
 /**
@@ -73,6 +74,19 @@ export const ARCHETYPES = [
  */
 export const ABSOLUTE_PATH_PATTERN =
   /^\/$|^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F]+)+$/;
+
+/**
+ * The same, minus the bare root.
+ *
+ * `/` is a directory and cannot also be a regular file with contents — and it
+ * is the one path for which `cwd`'s containment check degenerates, since the
+ * trailing-slash prefix that excludes `cwd` itself for every other path
+ * matches `/` against itself. So the world's only filesystem coherence check
+ * would approve a cartridge whose cwd collides with a file. `cwd` keeps the
+ * wider pattern: opening a session at the root is legitimate.
+ */
+export const FILE_PATH_PATTERN =
+  /^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F]+)+$/;
 
 /** Four octal digits, as `ls -l` renders a mode. */
 export const FILE_MODE_PATTERN = /^[0-7]{4}$/;
@@ -230,12 +244,38 @@ function refineCalendarDate(value: string): string | undefined {
   return undefined;
 }
 
+/**
+ * Rejects `2026-13-40T25:61:61Z` and `1969-12-31T23:59:59Z`, which the pattern
+ * alone accepts.
+ *
+ * The shape check is not enough, and the gap is the one place it matters most:
+ * `meta.startedAt` is required precisely so a generated cartridge cannot open a
+ * session on a wrong date with no human watching. A timestamp that only fails
+ * later, when `createClock` parses it, has crossed the validation boundary —
+ * and invariant 7's "pipeline failure ships the fallback episode" only works
+ * while failures are detected on the validating side of it. Authored `mtime`s
+ * are worse in kind: nothing parses one yet, so a bad one would sit latent
+ * until the filesystem subsystem lands.
+ *
+ * `parseTimestamp` is the same function the clock uses, so agreeing with it is
+ * not a matter of keeping two rules in step.
+ */
+function refineInstant(value: string): string | undefined {
+  try {
+    parseTimestamp(value);
+    return undefined;
+  } catch {
+    return "a real UTC instant between 1970-01-01 and 9999-12-31";
+  }
+}
+
 const TIMESTAMP: StringNode = {
   kind: "string",
   description:
     "A UTC instant, `YYYY-MM-DDTHH:MM:SS[.mmm]Z`. The simulated machine has no other timezone.",
   pattern: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/,
   patternLabel: "YYYY-MM-DDTHH:MM:SS[.mmm]Z",
+  refine: refineInstant,
 };
 
 const FILE: ObjectNode = {
@@ -344,8 +384,8 @@ const REPOSITORY: ObjectNode = {
     files: required({
       kind: "record",
       description: "The simulated filesystem, keyed by absolute path.",
-      keyPattern: ABSOLUTE_PATH_PATTERN,
-      keyLabel: "an absolute POSIX path",
+      keyPattern: FILE_PATH_PATTERN,
+      keyLabel: "an absolute POSIX path naming a file, not the root directory",
       values: FILE,
     }),
     env: optional(

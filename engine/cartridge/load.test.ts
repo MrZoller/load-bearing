@@ -137,6 +137,95 @@ describe("loadCartridge", () => {
     );
   });
 
+  it("rejects a timestamp that is well-shaped but not a real instant", () => {
+    // The shape check alone let these cross the validation boundary and blow
+    // up later in `createClock` — on the wrong side of the line that decides
+    // whether the fallback episode ships.
+    for (const startedAt of [
+      "1969-12-31T23:59:59Z",
+      "2026-13-40T25:61:61Z",
+      "2026-02-30T00:00:00Z",
+    ]) {
+      const source = minimal();
+      (source["meta"] as Record<string, unknown>)["startedAt"] = startedAt;
+
+      expect(issuesOf(source), startedAt).toEqual([
+        {
+          pointer: "/meta/startedAt",
+          expected: "a real UTC instant between 1970-01-01 and 9999-12-31",
+          found: JSON.stringify(startedAt),
+        },
+      ]);
+    }
+  });
+
+  it("applies the same check to an authored mtime", () => {
+    // Worse in kind than a bad `startedAt`: nothing parses an mtime yet, so
+    // one would sit latent until the filesystem subsystem lands.
+    const source = minimal();
+    const files = (source["repository"] as Record<string, unknown>)[
+      "files"
+    ] as Record<string, Record<string, unknown>>;
+    (files["/etc/motd"] as Record<string, unknown>)["mtime"] =
+      "2026-02-30T00:00:00Z";
+
+    expect(issuesOf(source)[0]?.pointer).toBe(
+      "/repository/files/~1etc~1motd/mtime",
+    );
+  });
+
+  it("rejects the root directory as a file key", () => {
+    // `/` is a directory, and it is the one path for which cwd containment
+    // degenerates — the trailing-slash prefix that excludes cwd itself for
+    // every other path matches `/` against itself, so the world's only
+    // filesystem coherence check would approve a cwd that collides with a file.
+    const source = minimal();
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["cwd"] = "/";
+    repository["files"] = { "/": { contents: "not a directory\n" } };
+
+    expect(issuesOf(source)[0]?.pointer).toBe("/repository/files/~1");
+  });
+
+  it("still lets a session open at the root directory", () => {
+    const source = minimal();
+    (source["repository"] as Record<string, unknown>)["cwd"] = "/";
+
+    expect(loadCartridge(source).repository.cwd).toBe("/");
+  });
+
+  it("counts string limits in code points, as the published schema does", () => {
+    // 60 astral characters is 120 UTF-16 code units. The emitted contract says
+    // `maxLength: 60` and means code points, so counting units here would
+    // reject content that validates against the schema this module emitted.
+    const source = minimal();
+    const models = source["models"] as Record<string, unknown>[];
+    (models[0] as Record<string, unknown>)["name"] = "\u{1f9f1}".repeat(60);
+
+    expect(() => loadCartridge(source)).not.toThrow();
+
+    (models[0] as Record<string, unknown>)["name"] = "\u{1f9f1}".repeat(61);
+    expect(issuesOf(source)[0]?.expected).toBe("at most 60 characters");
+  });
+
+  it("rejects a sparse or decorated array in a schema section too", () => {
+    // `models = new Array(1)` satisfies `minItems`, `map` keeps the hole, and
+    // `checkModelIds` skips it — so this used to load and then fail in the
+    // canonical serializer.
+    const holed = minimal();
+    holed["models"] = new Array<unknown>(1);
+    expect(issuesOf(holed)[0]?.pointer).toBe("/models");
+
+    const trailing = minimal();
+    const models = trailing["models"] as unknown[];
+    const withHole: unknown[] = [models[0]];
+    withHole.length = 2;
+    trailing["models"] = withHole;
+    expect(issuesOf(trailing)[0]?.expected).toBe(
+      "a dense array with no extra properties",
+    );
+  });
+
   it("builds a loaded cartridge with exactly the fields the schema declares", () => {
     // `load.ts` cherry-picks the top level by name, so the compiler ties it to
     // `types.ts` but not to `schema.ts`: a field added to the schema and not to
@@ -265,6 +354,37 @@ describe("deferred sections", () => {
     );
   });
 
+  it("reject a value that contains itself, rather than overflowing the stack", () => {
+    // Only reachable from a cartridge built in memory, which is exactly the
+    // path this module commits to defending. A `RangeError` is not a report
+    // the pipeline can act on.
+    const source = minimal();
+    const story: Record<string, unknown> = { premise: "recursive" };
+    story["self"] = story;
+    source["story"] = story;
+
+    expect(issuesOf(source)).toEqual([
+      {
+        pointer: "/story/self",
+        expected: "a value that does not contain itself",
+        found: "a circular reference, which JSON cannot represent",
+      },
+    ]);
+  });
+
+  it("accept the same subobject referenced twice, which is not a cycle", () => {
+    // The regression that a global visited-set would cause. JSON carries a DAG
+    // perfectly well, by writing the shared value out twice.
+    const shared = { reveal: "Where is Europe?" };
+    const source = minimal();
+    source["story"] = { first: shared, second: shared };
+
+    expect(loadCartridge(source).story).toEqual({
+      first: shared,
+      second: shared,
+    });
+  });
+
   it("reject values JSON cannot carry, at the pointer they sit at", () => {
     // Deferred subtrees are handed through unread, so without this check a
     // value the serializer refuses would surface much later while recording,
@@ -346,7 +466,8 @@ describe("rejection", () => {
       [
         {
           pointer: "/repository/files/src~1main.ts",
-          expected: "a key that is an absolute POSIX path",
+          expected:
+            "a key that is an absolute POSIX path naming a file, not the root directory",
           found: '"src/main.ts"',
         },
       ],
