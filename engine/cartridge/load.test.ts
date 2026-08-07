@@ -354,6 +354,29 @@ describe("loadCartridge", () => {
     }
   });
 
+  it("checks for symbol keys before asking what a value is branded as", () => {
+    // Order, not presence. Brand detection reaches
+    // `Object.prototype.toString`, which performs a Get of
+    // `Symbol.toStringTag` — so an own accessor there runs inside the function
+    // whose job is to classify a value without executing any of it. Rejecting
+    // symbol-keyed properties first leaves only an inherited tag, read inertly.
+    let reads = 0;
+    const tagged: Record<string, unknown> = { premise: "ordinary" };
+    Object.defineProperty(tagged, Symbol.toStringTag, {
+      configurable: true,
+      get: () => {
+        reads += 1;
+        throw new Error("toStringTag getter exploded");
+      },
+    });
+
+    const source = minimal();
+    source["story"] = tagged;
+
+    expect(issuesOf(source)[0]?.found).toContain("symbol-keyed");
+    expect(reads).toBe(0);
+  });
+
   it("still accepts a null-prototype object and an ordinary array", () => {
     // The brand check must not catch these. `Object.create(null)` is what a
     // careful generator uses to avoid inherited keys, and it serializes fine.

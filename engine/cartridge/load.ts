@@ -188,6 +188,17 @@ function describeNonDataObject(value: object): string | undefined {
     return "an object with a prototype JSON cannot produce";
   }
 
+  // Symbols before brands, and the order is the whole point: `detectBrand`
+  // reaches `Object.prototype.toString`, which performs a Get of
+  // `Symbol.toStringTag`. An own accessor there would run — inside the
+  // function whose job is to classify a value without executing any of it.
+  // Rejecting symbol-keyed properties first means the only `Symbol.toStringTag`
+  // left to find is an inherited one, which `detectBrand` reads inertly.
+  // `canonical.ts` sequences its own call the same way, for the same reason.
+  if (Object.getOwnPropertySymbols(value).length > 0) {
+    return "an object with symbol-keyed properties, which JSON cannot carry";
+  }
+
   // A prototype can be repointed. Internal slots cannot, and they are what
   // makes a `Map` a `Map` — with `Object.prototype` installed it has no own
   // keys, so every check below is vacuously satisfied and the walk writes an
@@ -203,10 +214,6 @@ function describeNonDataObject(value: object): string | undefined {
     if (brand !== undefined) {
       return `a ${brand}, which JSON cannot carry`;
     }
-  }
-
-  if (Object.getOwnPropertySymbols(value).length > 0) {
-    return "an object with symbol-keyed properties, which JSON cannot carry";
   }
 
   // Property *names*, never values: `map` would read each element, so looking
