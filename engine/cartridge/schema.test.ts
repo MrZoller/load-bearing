@@ -95,6 +95,22 @@ describe("the descriptor tree", () => {
     ]);
   });
 
+  it("is frozen, since it is the validation authority", () => {
+    // `as const` is erased at runtime, so an exported array is an exported
+    // *mutable* array: `ARCHETYPES.push("other")` would make `loadCartridge`
+    // accept an archetype the exported `Archetype` type says does not exist,
+    // and the next emission would publish it. Modules are strict mode, so a
+    // write to a frozen object throws rather than passing silently.
+    expect(Object.isFrozen(ARCHETYPES)).toBe(true);
+    expect(() => (ARCHETYPES as unknown as string[]).push("other")).toThrow();
+
+    // The whole tree, not just the enum — every node is validation authority.
+    expect(Object.isFrozen(CARTRIDGE_SCHEMA)).toBe(true);
+    expect(Object.isFrozen(CARTRIDGE_SCHEMA.fields)).toBe(true);
+    const meta = CARTRIDGE_SCHEMA.fields["meta"]?.node as ObjectNode;
+    expect(Object.isFrozen(meta.fields["title"])).toBe(true);
+  });
+
   it("gives every node a description, since the schema is the document", () => {
     const missing: string[] = [];
 

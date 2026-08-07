@@ -13,6 +13,7 @@
           "description": "What the visitor is nominally asked to do.",
           "maxLength": 240,
           "minLength": 1,
+          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
           "type": "string"
         },
         "date": {
@@ -41,6 +42,7 @@
           "description": "The incident's title.",
           "maxLength": 120,
           "minLength": 1,
+          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
           "type": "string"
         }
       },
@@ -80,6 +82,7 @@
             "description": "One line shown in the model selector.",
             "maxLength": 200,
             "minLength": 1,
+            "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
             "type": "string"
           },
           "id": {
@@ -91,6 +94,7 @@
             "description": "Display name, e.g. `Deep Foundation`.",
             "maxLength": 60,
             "minLength": 1,
+            "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
             "type": "string"
           },
           "quirks": {

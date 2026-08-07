@@ -660,7 +660,7 @@ describe("rejection", () => {
       [
         {
           pointer: "/meta/title",
-          expected: "a string (required)",
+          expected: "a single-line string (required)",
           found: "nothing",
         },
       ],
@@ -753,7 +753,7 @@ describe("rejection", () => {
       },
       {
         pointer: "/meta/assignment",
-        expected: "a string (required)",
+        expected: "a single-line string (required)",
         found: "nothing",
       },
       {
@@ -790,7 +790,10 @@ describe("rejection", () => {
     expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
       "/repository/files/~1a~1early.ts/contents",
       "/repository/files/~1z~1late.ts/contents",
-      // The cwd check is suppressed while structural issues remain.
+      // And the cwd check still runs: it reads the file *keys*, which are
+      // sound here, not their contents. Gating it on the whole `/repository`
+      // subtree would have hidden this.
+      "/repository/cwd",
     ]);
   });
 
@@ -821,6 +824,51 @@ describe("rejection", () => {
     }
   });
 
+  it("rejects a line terminator in a field declared to be one line", () => {
+    // Nothing downstream catches this: a description with a newline simply
+    // arrives in the model selector as two lines. So it belongs at the
+    // validation boundary with everything else the fallback episode depends on.
+    for (const [pointer, apply] of [
+      [
+        "/models/0/description",
+        (source: Record<string, unknown>, text: string) => {
+          (
+            (source["models"] as Record<string, unknown>[])[0] as Record<
+              string,
+              unknown
+            >
+          )["description"] = text;
+        },
+      ],
+      [
+        "/meta/title",
+        (source: Record<string, unknown>, text: string) => {
+          (source["meta"] as Record<string, unknown>)["title"] = text;
+        },
+      ],
+    ] as const) {
+      // U+2028 is a line terminator to JavaScript even though most tools
+      // treat it as ordinary text, which is exactly why it needs naming.
+      for (const text of [
+        "first" + String.fromCharCode(10) + "second",
+        String.fromCharCode(10),
+        "tab" + String.fromCharCode(9) + "here",
+        "a" + String.fromCharCode(0x2028) + "b",
+      ]) {
+        const source = minimal();
+        apply(source, text);
+        expect(
+          issuesOf(source)[0],
+          `${pointer} ${JSON.stringify(text)}`,
+        ).toEqual({
+          pointer,
+          expected: "a single-line string",
+          found: JSON.stringify(text),
+        });
+      }
+    }
+  });
+
   it("reports a cross-field problem alongside an unrelated one", () => {
     // Gating every cross-check on the whole report meant one bad `meta` field
     // hid a duplicate model id entirely, costing the generator a round trip
@@ -833,6 +881,35 @@ describe("rejection", () => {
     expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
       "/meta/assignment",
       "/models/1/id",
+    ]);
+  });
+
+  it("gates a cross-check on the fields it reads, not on its whole section", () => {
+    // An invalid *description* says nothing about whether the ids collide, so
+    // suppressing the duplicate would cost the generator a round trip for no
+    // reason. Same for file contents against a dangling cwd.
+    const models = minimal();
+    const list = models["models"] as Record<string, unknown>[];
+    (list[0] as Record<string, unknown>)["description"] = 42;
+    (list[1] as Record<string, unknown>)["id"] = list[0]?.["id"];
+
+    expect(issuesOf(models).map((issue) => issue.pointer)).toEqual([
+      "/models/0/description",
+      "/models/1/id",
+    ]);
+
+    const files = minimal();
+    const repository = files["repository"] as Record<string, unknown>;
+    repository["cwd"] = "/srv/elsewhere";
+    (
+      (repository["files"] as Record<string, Record<string, unknown>>)[
+        "/etc/motd"
+      ] as Record<string, unknown>
+    )["contents"] = 42;
+
+    expect(issuesOf(files).map((issue) => issue.pointer)).toEqual([
+      "/repository/files/~1etc~1motd/contents",
+      "/repository/cwd",
     ]);
   });
 

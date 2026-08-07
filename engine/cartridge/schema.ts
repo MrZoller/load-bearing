@@ -55,13 +55,31 @@ import { INCIDENT_DATE_PATTERN, MODEL_ID_PATTERN } from "../random/seed.js";
  */
 export const CARTRIDGE_SCHEMA_VERSION = 0;
 
+/**
+ * Freeze a value and everything reachable from it.
+ *
+ * `as const` is a compile-time assertion and nothing more: the arrays and
+ * objects below are exported, and a JavaScript consumer — or a TypeScript one
+ * with a cast — can push to them. That matters here more than it usually does,
+ * because this tree *is* the validation authority: `ARCHETYPES.push("other")`
+ * would make `loadCartridge` accept an archetype the exported `Archetype` type
+ * still says does not exist, and the next schema emission would publish it.
+ */
+function deepFreeze<T>(value: T): T {
+  if (typeof value !== "object" || value === null) return value;
+  for (const key of Object.getOwnPropertyNames(value)) {
+    deepFreeze((value as Record<string, unknown>)[key]);
+  }
+  return Object.freeze(value);
+}
+
 /** The four behavioural archetypes. See docs/DESIGN.md. */
-export const ARCHETYPES = [
+export const ARCHETYPES = Object.freeze([
   "paranoid",
   "reckless",
   "superficial",
   "existential",
-] as const;
+] as const);
 
 /**
  * Absolute POSIX path: a leading slash, then non-empty segments that are not
@@ -87,6 +105,19 @@ export const ABSOLUTE_PATH_PATTERN =
  */
 export const FILE_PATH_PATTERN =
   /^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F]+)+$/;
+
+/**
+ * Text that has to stay on one line.
+ *
+ * Excludes C0 and C1 controls plus U+2028 and U+2029, which are line
+ * terminators to JavaScript even though they are not to most tools. A title or
+ * a model description carrying a newline is not caught anywhere downstream —
+ * it just arrives in the model selector as two lines, or in a status bar as a
+ * broken row — so it belongs at the validation boundary with everything else
+ * the fallback episode depends on.
+ */
+export const SINGLE_LINE_PATTERN =
+  /^[^\u0000-\u001F\u007F-\u009F\u2028\u2029]*$/;
 
 /** Four octal digits, as `ls -l` renders a mode. */
 export const FILE_MODE_PATTERN = /^[0-7]{4}$/;
@@ -339,6 +370,8 @@ const MODEL: ObjectNode = {
     name: required({
       kind: "string",
       description: "Display name, e.g. `Deep Foundation`.",
+      pattern: SINGLE_LINE_PATTERN,
+      patternLabel: "a single-line string",
       minLength: 1,
       maxLength: 60,
     }),
@@ -350,6 +383,8 @@ const MODEL: ObjectNode = {
     description: required({
       kind: "string",
       description: "One line shown in the model selector.",
+      pattern: SINGLE_LINE_PATTERN,
+      patternLabel: "a single-line string",
       minLength: 1,
       maxLength: 200,
     }),
@@ -466,12 +501,16 @@ const META: ObjectNode = {
     title: required({
       kind: "string",
       description: "The incident's title.",
+      pattern: SINGLE_LINE_PATTERN,
+      patternLabel: "a single-line string",
       minLength: 1,
       maxLength: 120,
     }),
     assignment: required({
       kind: "string",
       description: "What the visitor is nominally asked to do.",
+      pattern: SINGLE_LINE_PATTERN,
+      patternLabel: "a single-line string",
       minLength: 1,
       maxLength: 240,
     }),
@@ -480,7 +519,7 @@ const META: ObjectNode = {
 };
 
 /** The whole document. */
-export const CARTRIDGE_SCHEMA: ObjectNode = {
+export const CARTRIDGE_SCHEMA: ObjectNode = deepFreeze({
   kind: "object",
   description:
     "A Load Bearing incident cartridge. Everything the engine knows about a world arrives through this document.",
@@ -514,4 +553,4 @@ export const CARTRIDGE_SCHEMA: ObjectNode = {
       fill: {},
     },
   },
-};
+});

@@ -648,12 +648,43 @@ function checkVersion(value: unknown): CartridgeIssue | undefined {
   };
 }
 
-/** Whether anything is already wrong at `prefix` or below it. */
-function hasIssueUnder(report: Report, prefix: string): boolean {
-  return report.issues.some(
-    (issue) =>
-      issue.pointer === prefix || issue.pointer.startsWith(`${prefix}/`),
-  );
+/**
+ * Whether the walk substituted any value a cross-check is about to read.
+ *
+ * The gate exists for one reason: a check that reads a substituted value
+ * reports a second, derived problem for every real one — two models each
+ * missing an `id` collide on the substitute and produce a phantom duplicate.
+ * So the precise question is not "is this section sound" but "are the fields
+ * this check reads sound", and `matches` names exactly those.
+ *
+ * Coarser gating is safe but costs the generator a round trip: an invalid
+ * model *description* would suppress a genuine duplicate id, which the
+ * every-issue-at-once contract exists to prevent.
+ */
+function anySubstituted(
+  report: Report,
+  matches: (pointer: string) => boolean,
+): boolean {
+  return report.issues.some((issue) => matches(issue.pointer));
+}
+
+/** `/models/3/id` — the field `checkModelIds` reads, at any index. */
+const MODEL_ID_POINTER = /^\/models\/\d+\/id$/;
+
+/**
+ * `/repository/cwd`, or a *key* of `/repository/files`.
+ *
+ * A key issue sits at the file's own pointer; an issue with the file's
+ * contents sits below it. `checkCwd` reads the keys and not the values, so the
+ * depth is what distinguishes them.
+ */
+function readByCwdCheck(pointer: string): boolean {
+  if (pointer === "/repository" || pointer === "/repository/cwd") return true;
+  if (pointer === "/repository/files") return true;
+  const key = pointer.startsWith("/repository/files/")
+    ? pointer.slice("/repository/files/".length)
+    : undefined;
+  return key !== undefined && !key.includes("/");
 }
 
 /**
@@ -734,22 +765,23 @@ export function loadCartridge(value: unknown): LoadedCartridge {
     presentation: normalized["presentation"] as DeferredObject,
   };
 
-  // Each cross-field check is gated on the subtree it reads, not on the whole
-  // report. Gating globally suppressed a genuine duplicate model id whenever
-  // anything else in the document was wrong, which costs the generator a round
-  // trip the every-issue-at-once contract exists to save. Gating per subtree
-  // keeps the reason the gate was there at all: a check that read a structure
-  // the walk had already substituted would report a second, derived problem
-  // for every real one — two models each missing an `id` would collide on the
-  // substitute and produce a phantom duplicate.
+  // Each cross-field check is gated on the fields it actually reads. Anything
+  // wider is safe but costs the generator a round trip: gated on the whole
+  // report, one bad `meta` field hid a duplicate model id; gated on `/models`,
+  // an invalid *description* hid one.
   //
   // These are appended after the structural issues rather than interleaved at
   // their document position. Deterministic, which is what matters, but not
   // strictly document-ordered; the header above says so.
-  if (!hasIssueUnder(report, "/repository")) {
+  if (!anySubstituted(report, readByCwdCheck)) {
     checkCwd(cartridge.repository, report);
   }
-  if (!hasIssueUnder(report, "/models")) {
+  if (
+    !anySubstituted(
+      report,
+      (pointer) => pointer === "/models" || MODEL_ID_POINTER.test(pointer),
+    )
+  ) {
     checkModelIds(cartridge.models, report);
   }
 

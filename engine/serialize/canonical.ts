@@ -205,14 +205,28 @@ const BRAND_KEY = {};
  * one: engine code cannot re-point a prototype at all. This is the containment
  * for a value that arrives some other way.
  *
- * The list is the reachable set, not every built-in there is, and the
- * distinction matters to whoever extends it. Anything the purity gate already
- * bans from engine code cannot be probed here either, because probing means
- * naming: `SharedArrayBuffer` and `Atomics` fall to `host-capability`,
- * `WeakRef` and `FinalizationRegistry` to `gc-timing`, `Proxy` and `Reflect`
- * to `proxy-reflection`, and `Promise` to `async-scheduling`. A cartridge
- * carrying one of those reaches the serializer's own "not a plain object"
- * rejection instead — later than here, but never silently.
+ * ## What this does not catch, stated plainly
+ *
+ * The list is the reachable set, not every built-in there is. Probing means
+ * *naming*, and the purity gate forbids naming several: `SharedArrayBuffer`
+ * and `Atomics` fall to `host-capability`, `WeakRef` and
+ * `FinalizationRegistry` to `gc-timing`, `Proxy` and `Reflect` to
+ * `proxy-reflection`, `Promise` to `async-scheduling`.
+ *
+ * A repointed one of those is therefore **not detected at all** — not here and
+ * not later. It has no tag `Object.prototype.toString` can see, matches no
+ * probe, and reports no own properties, so it serializes as `{}` with its
+ * contents discarded. An earlier version of this comment claimed such a value
+ * "reaches the serializer's own rejection instead"; that was wrong, and it is
+ * worth saying so rather than leaving the reassuring version in place.
+ *
+ * Closing it means an allowlist entry letting this file name those globals —
+ * a deliberate widening of the gate for a case that requires an in-memory
+ * cartridge with a hand-repointed prototype. That is an adversary, not the
+ * plausible mistake this codebase's checks are calibrated for
+ * (engine/testing/README.md → Known limits). Left open, on purpose, and
+ * written down so the next person weighs the same trade rather than assuming
+ * it was covered.
  */
 const BRAND_PROBES: readonly (readonly [string, (value: object) => unknown])[] =
   [
