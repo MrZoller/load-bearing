@@ -3,8 +3,10 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { serialize } from "../serialize/canonical.js";
+import { INCIDENT_DATE_PATTERN, MODEL_ID_PATTERN } from "../random/seed.js";
 import { emitJsonSchema } from "./jsonSchema.js";
 import {
+  ABSOLUTE_PATH_PATTERN,
   ARCHETYPES,
   CARTRIDGE_SCHEMA,
   CARTRIDGE_SCHEMA_VERSION,
@@ -93,6 +95,28 @@ describe("the descriptor tree", () => {
       "superficial",
       "existential",
     ]);
+  });
+
+  it("freezes every exported pattern at its declaration", () => {
+    // A `RegExp` is an ordinary object, so `PATTERN.test = () => true` turns a
+    // validator into a rubber stamp. The schema's deep freeze reaches these
+    // too — but only once this module has loaded, so before this, whether a
+    // pattern was frozen depended on which module a consumer imported first.
+    for (const [name, pattern] of [
+      ["ABSOLUTE_PATH_PATTERN", ABSOLUTE_PATH_PATTERN],
+      ["MODEL_ID_PATTERN", MODEL_ID_PATTERN],
+      ["INCIDENT_DATE_PATTERN", INCIDENT_DATE_PATTERN],
+    ] as const) {
+      expect(Object.isFrozen(pattern), name).toBe(true);
+      expect(() => {
+        (pattern as unknown as { test: unknown }).test = () => true;
+      }, name).toThrow();
+    }
+
+    // And they still work: `test` writes `lastIndex` only on a global or
+    // sticky pattern, and none of these are either.
+    expect(MODEL_ID_PATTERN.test("deep-foundation")).toBe(true);
+    expect(MODEL_ID_PATTERN.test("Deep Foundation")).toBe(false);
   });
 
   it("is frozen, since it is the validation authority", () => {

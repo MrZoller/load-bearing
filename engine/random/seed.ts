@@ -31,18 +31,30 @@ export interface SeedMaterial {
 export const SEED_FIELD_SEPARATOR = "/";
 
 /**
+ * Frozen, like every pattern this codebase exports.
+ *
+ * A `RegExp` is an ordinary object: `MODEL_ID_PATTERN.test = () => true` makes
+ * `formatSeed` accept a slash and mint ambiguous seed strings. These two are
+ * also reached by the cartridge schema's deep freeze — but only once that
+ * module loads, so whether a validator was frozen depended on import order.
+ * Freezing at the declaration makes it a property of the value rather than of
+ * who imported what first.
+ *
+ * Freezing is safe for these: `test` writes `lastIndex` only on a global or
+ * sticky pattern, and none here are either.
+ *
  * Shape check only. The date is `YYYY-MM-DD`; whether it is a real calendar
  * date is the cartridge loader's job (issue #3), which has the whole cartridge
  * in hand and can say which incident is wrong.
  */
-export const INCIDENT_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+export const INCIDENT_DATE_PATTERN = Object.freeze(/^\d{4}-\d{2}-\d{2}$/);
 
 /**
  * Model identifiers are slugs, not prose. Narrow on purpose: the seed string
  * ends up in URLs and fixture names, and a model called `Deep Foundation™`
  * would make one that needs escaping.
  */
-export const MODEL_ID_PATTERN = /^[a-z0-9][a-z0-9.-]*$/;
+export const MODEL_ID_PATTERN = Object.freeze(/^[a-z0-9][a-z0-9.-]*$/);
 
 /** FNV-1a 32-bit, as published. */
 export const FNV_OFFSET_BASIS_32 = 0x811c9dc5;

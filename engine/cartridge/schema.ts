@@ -90,8 +90,9 @@ export const ARCHETYPES = Object.freeze([
  * a file key names a location in that filesystem. It also gives `cwd` something
  * to be checked against.
  */
-export const ABSOLUTE_PATH_PATTERN =
-  /^\/$|^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F]+)+$/;
+export const ABSOLUTE_PATH_PATTERN = Object.freeze(
+  /^\/$|^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F]+)+$/,
+);
 
 /**
  * The same, minus the bare root.
@@ -103,8 +104,9 @@ export const ABSOLUTE_PATH_PATTERN =
  * would approve a cartridge whose cwd collides with a file. `cwd` keeps the
  * wider pattern: opening a session at the root is legitimate.
  */
-export const FILE_PATH_PATTERN =
-  /^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F]+)+$/;
+export const FILE_PATH_PATTERN = Object.freeze(
+  /^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F]+)+$/,
+);
 
 /**
  * Text that has to stay on one line.
@@ -116,20 +118,21 @@ export const FILE_PATH_PATTERN =
  * broken row — so it belongs at the validation boundary with everything else
  * the fallback episode depends on.
  */
-export const SINGLE_LINE_PATTERN =
-  /^[^\u0000-\u001F\u007F-\u009F\u2028\u2029]*$/;
+export const SINGLE_LINE_PATTERN = Object.freeze(
+  /^[^\u0000-\u001F\u007F-\u009F\u2028\u2029]*$/,
+);
 
 /** Four octal digits, as `ls -l` renders a mode. */
-export const FILE_MODE_PATTERN = /^[0-7]{4}$/;
+export const FILE_MODE_PATTERN = Object.freeze(/^[0-7]{4}$/);
 
 /** A POSIX user or group name. */
-export const ACCOUNT_NAME_PATTERN = /^[a-z_][a-z0-9_-]*$/;
+export const ACCOUNT_NAME_PATTERN = Object.freeze(/^[a-z_][a-z0-9_-]*$/);
 
 /** An environment variable name, as the shell would accept it. */
-export const ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+export const ENV_NAME_PATTERN = Object.freeze(/^[A-Za-z_][A-Za-z0-9_]*$/);
 
 /** A man page name, e.g. `systemd.service` or `ls`. */
-export const MAN_PAGE_PATTERN = /^[a-z0-9][a-z0-9._-]*$/;
+export const MAN_PAGE_PATTERN = Object.freeze(/^[a-z0-9][a-z0-9._-]*$/);
 
 /**
  * The slice of a regular expression this schema needs.
