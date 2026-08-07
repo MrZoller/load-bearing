@@ -294,6 +294,66 @@ describe("loadCartridge", () => {
     }
   });
 
+  it("finds an indexed accessor without invoking it", () => {
+    // The guard used to look for element accessors with `map`, which reads
+    // each element — invoking the very getter it was looking for.
+    let reads = 0;
+    const reveals: unknown[] = [];
+    Object.defineProperty(reveals, "0", {
+      enumerable: true,
+      configurable: true,
+      get: () => {
+        reads += 1;
+        throw new Error("element getter exploded");
+      },
+    });
+    reveals.length = 1;
+
+    const source = minimal();
+    source["story"] = { reveals };
+
+    expect(issuesOf(source)[0]?.found).toContain("accessor property");
+    expect(reads).toBe(0);
+  });
+
+  it("finds an indexed accessor in a schema array too", () => {
+    let reads = 0;
+    const models: unknown[] = [];
+    Object.defineProperty(models, "0", {
+      enumerable: true,
+      configurable: true,
+      get: () => {
+        reads += 1;
+        return { id: "x" };
+      },
+    });
+    models.length = 1;
+
+    const source = minimal();
+    source["models"] = models;
+
+    expect(issuesOf(source)[0]?.pointer).toBe("/models");
+    expect(reads).toBe(0);
+  });
+
+  it("rejects a branded built-in rather than emptying it", () => {
+    // A `Map` has no own enumerable properties, so every later check passes
+    // and the walk writes an empty object over it — discarding every entry in
+    // silence, which is the worst outcome available.
+    const source = minimal();
+    (source["repository"] as Record<string, unknown>)["env"] = new Map([
+      ["PATH", "/bin"],
+    ]);
+
+    expect(issuesOf(source)).toEqual([
+      {
+        pointer: "/repository/env",
+        expected: "an object of plain JSON values",
+        found: "an object with a prototype JSON cannot produce",
+      },
+    ]);
+  });
+
   it("rejects properties the serializer would drop in silence", () => {
     const hidden = minimal();
     (hidden["repository"] as Record<string, unknown>)["env"] =
@@ -405,7 +465,7 @@ describe("deferred sections", () => {
     expect(issuesOf(source)).toEqual([
       {
         pointer: "/story/when",
-        expected: "a plain object",
+        expected: "an object of plain JSON values",
         found: "an object with a prototype JSON cannot produce",
       },
     ]);

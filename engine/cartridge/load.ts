@@ -176,16 +176,28 @@ const ARRAY_SUBCLASS_FOUND =
  * which is the same threat model as the prototype and cycle checks nearby.
  */
 function describeNonDataObject(value: object): string | undefined {
+  // Prototype first, because it is the cheapest way to be wrong: a `Map` has
+  // no own enumerable properties at all, so every check below passes and the
+  // walk copies an empty object over it, discarding every entry in silence.
+  const prototype: unknown = Object.getPrototypeOf(value);
+  const expected: unknown = Array.isArray(value)
+    ? Array.prototype
+    : Object.prototype;
+  if (prototype !== expected && prototype !== null) {
+    return "an object with a prototype JSON cannot produce";
+  }
+
   if (Object.getOwnPropertySymbols(value).length > 0) {
     return "an object with symbol-keyed properties, which JSON cannot carry";
   }
 
-  // An array's `length` is an own non-enumerable property, so its indices are
-  // checked directly rather than through `getOwnPropertyNames`. Holes and
-  // stray properties are `isDenseArray`'s job.
-  const keys = Array.isArray(value)
-    ? value.map((_item, index) => String(index))
-    : Object.getOwnPropertyNames(value);
+  // Property *names*, never values: `map` would read each element, so looking
+  // for an indexed accessor with it would invoke the very getter being looked
+  // for. An array's `length` is its one own non-enumerable property; holes and
+  // stray keys are `isDenseArray`'s job.
+  const keys = Object.getOwnPropertyNames(value).filter(
+    (key) => !Array.isArray(value) || key !== "length",
+  );
 
   for (const key of keys) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
@@ -318,16 +330,8 @@ function cloneJson(
     // `isPlainObject` only rules out null and arrays, so a class instance
     // reaches here. `JSON.parse` cannot produce one, but a cartridge built in
     // memory — which the Phase 5 pipeline may well do — can, and copying its
-    // enumerable own properties would silently turn it into `{}`.
-    const prototype: unknown = Object.getPrototypeOf(value);
-    if (prototype !== Object.prototype && prototype !== null) {
-      report.addPhrase(
-        pointer,
-        "a plain object",
-        "an object with a prototype JSON cannot produce",
-      );
-      return {};
-    }
+    // enumerable own properties would silently turn it into `{}`. The guard
+    // rejects it by prototype, along with accessors and hidden properties.
     if (!isDataObject(value, pointer, report)) return {};
     if (active.has(value)) return reportCycle(pointer, report, {});
     active.add(value);
