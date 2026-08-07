@@ -33,6 +33,7 @@
  * cartridge happened to be written.
  */
 
+import { detectBrand } from "../serialize/canonical.js";
 import { CARTRIDGE_SCHEMA, CARTRIDGE_SCHEMA_VERSION } from "./schema.js";
 import type { SchemaNode, ObjectNode } from "./schema.js";
 import type {
@@ -185,6 +186,23 @@ function describeNonDataObject(value: object): string | undefined {
     : Object.prototype;
   if (prototype !== expected && prototype !== null) {
     return "an object with a prototype JSON cannot produce";
+  }
+
+  // A prototype can be repointed. Internal slots cannot, and they are what
+  // makes a `Map` a `Map` — with `Object.prototype` installed it has no own
+  // keys, so every check below is vacuously satisfied and the walk writes an
+  // empty object over it. This is the serializer's own brand detection, shared
+  // rather than reimplemented: two answers to "is this plain data" would be
+  // two chances to disagree, and the loader exists to hand the serializer
+  // something it accepts.
+  //
+  // Arrays are exempt: `Array.isArray` already answered that question, and a
+  // real array's brand *is* "Array".
+  if (!Array.isArray(value)) {
+    const brand = detectBrand(value);
+    if (brand !== undefined) {
+      return `a ${brand}, which JSON cannot carry`;
+    }
   }
 
   if (Object.getOwnPropertySymbols(value).length > 0) {

@@ -336,6 +336,39 @@ describe("loadCartridge", () => {
     expect(reads).toBe(0);
   });
 
+  it("rejects a branded built-in wearing a plain prototype", () => {
+    // A prototype can be repointed; the internal slots that make a Map a Map
+    // cannot. Disguised, it has no own keys, so a check that stopped at the
+    // prototype would find nothing wrong and write `{}` over it.
+    for (const [pointer, disguise] of [
+      ["/repository/env", new Map([["PATH", "/bin"]])],
+      ["/repository/env", new Set(["PATH"])],
+      ["/repository/env", new Date(0)],
+    ] as const) {
+      Object.setPrototypeOf(disguise, Object.prototype);
+      const source = minimal();
+      (source["repository"] as Record<string, unknown>)["env"] = disguise;
+
+      expect(issuesOf(source)[0]?.pointer).toBe(pointer);
+      expect(issuesOf(source)[0]?.found).toMatch(/which JSON cannot carry/);
+    }
+  });
+
+  it("still accepts a null-prototype object and an ordinary array", () => {
+    // The brand check must not catch these. `Object.create(null)` is what a
+    // careful generator uses to avoid inherited keys, and it serializes fine.
+    const bare = Object.create(null) as Record<string, unknown>;
+    bare["premise"] = "still fine";
+
+    const source = minimal();
+    source["story"] = { bare, beats: ["one", "two"] };
+
+    expect(loadCartridge(source).story).toEqual({
+      bare: { premise: "still fine" },
+      beats: ["one", "two"],
+    });
+  });
+
   it("rejects a branded built-in rather than emptying it", () => {
     // A `Map` has no own enumerable properties, so every later check passes
     // and the walk writes an empty object over it — discarding every entry in

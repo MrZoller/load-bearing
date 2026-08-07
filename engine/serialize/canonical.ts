@@ -239,8 +239,18 @@ const BRAND_PROBES: readonly (readonly [string, (value: object) => unknown])[] =
 /**
  * The built-in a value really is, whatever its prototype claims, or
  * `undefined` when it is ordinary data.
+ *
+ * Exported because the cartridge loader needs the same answer. A `Map` whose
+ * prototype has been repointed at `Object.prototype` has no own keys, so a
+ * loader checking only the prototype copies an empty object over it and loses
+ * every entry in silence — while this function, and therefore the serializer,
+ * would have refused it. Two implementations of "what is really plain data"
+ * would be two chances to disagree.
+ *
+ * Callers must have established that the prototype is `Object.prototype` or
+ * null first; see the note below about `Symbol.toStringTag`.
  */
-function detectBrand(value: object): string | undefined {
+export function detectBrand(value: object): string | undefined {
   // `Object.prototype.toString` performs a Get of `Symbol.toStringTag`, which
   // an *inherited* accessor would answer. The caller has already established
   // that this value's prototype is `Object.prototype` or null, so that is the
