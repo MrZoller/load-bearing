@@ -247,8 +247,14 @@ const BRAND_PROBES: readonly (readonly [string, (value: object) => unknown])[] =
  * would have refused it. Two implementations of "what is really plain data"
  * would be two chances to disagree.
  *
- * Callers must have established that the prototype is `Object.prototype` or
- * null first; see the note below about `Symbol.toStringTag`.
+ * Two preconditions, both of which exist because this function reads
+ * `Symbol.toStringTag` and must never run an accessor to do it. The caller
+ * must already have established that the value's prototype is
+ * `Object.prototype` or null, so that is the only chain member left to check;
+ * and that the value has no own symbol-keyed properties, since an own
+ * accessor at `Symbol.toStringTag` would answer the Get below. `plainEntries`
+ * satisfies both before calling, and so does the cartridge loader — the
+ * second one is easy to lose when this function moves to a new call site.
  */
 export function detectBrand(value: object): string | undefined {
   // `Object.prototype.toString` performs a Get of `Symbol.toStringTag`, which
