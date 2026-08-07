@@ -127,6 +127,16 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 class Report {
   readonly issues: CartridgeIssue[] = [];
 
+  /**
+   * Records whose keys are not all usable, by the record's own pointer.
+   *
+   * Recorded rather than inferred, because it cannot be inferred: a bad *key*
+   * and a bad whole *value* are reported at the same pointer, so no amount of
+   * pointer inspection tells them apart. A cross-check that reads keys needs
+   * the first and not the second.
+   */
+  readonly unusableKeys = new Set<string>();
+
   add(pointer: string, expected: string, found: unknown): void {
     this.issues.push({ pointer, expected, found: describe(found) });
   }
@@ -508,6 +518,7 @@ function validate(
         const at = child(pointer, key);
         if (!node.keyPattern.test(key)) {
           report.addPhrase(at, `a key that is ${node.keyLabel}`, describe(key));
+          report.unusableKeys.add(pointer);
         }
         // Collected and defined rather than assigned: these keys come from the
         // cartridge, and one of them names an accessor on `Object.prototype`.
@@ -649,53 +660,23 @@ function checkVersion(value: unknown): CartridgeIssue | undefined {
 }
 
 /**
- * Whether the walk substituted any value a cross-check is about to read.
+ * Whether an issue was reported at exactly this pointer.
  *
- * The gate exists for one reason: a check that reads a substituted value
- * reports a second, derived problem for every real one — two models each
- * missing an `id` collide on the substitute and produce a phantom duplicate.
- * So the precise question is not "is this section sound" but "are the fields
- * this check reads sound", and `matches` names exactly those.
+ * A cross-check reads specific fields, and an issue at a field's pointer means
+ * the walk substituted it — so the check would be reading a value the
+ * cartridge never contained and reporting a second, derived problem for a
+ * first one already in the list.
  *
- * Coarser gating is safe but costs the generator a round trip: an invalid
- * model *description* would suppress a genuine duplicate id, which the
- * every-issue-at-once contract exists to prevent.
+ * Four rounds of review went into gating these correctly, by way of three
+ * wrong answers: the whole report, then the section, then a pointer pattern.
+ * Each was a proxy for the real question, and each was wrong in a different
+ * direction — too coarse hides genuine problems, too narrow misses a
+ * substitution and invents one. The proxy is gone: the checks below now ask
+ * about the exact pointers they read, and about `unusableKeys` for the one
+ * thing a pointer cannot express.
  */
-function anySubstituted(
-  report: Report,
-  matches: (pointer: string) => boolean,
-): boolean {
-  return report.issues.some((issue) => matches(issue.pointer));
-}
-
-/**
- * What `checkModelIds` reads: the array, a whole item, or an item's `id`.
- *
- * The middle one is easy to leave out and is the reason the gate exists.
- * `models: [null, null]` reports two issues at `/models/0` and `/models/1`,
- * substituting `{}` for each — so both ids read as `undefined`, collide, and
- * produce a phantom duplicate on top of the two real problems. A pointer at
- * the item is a substitution of every field inside it.
- *
- * `/models/0/description` deliberately does not match: an invalid description
- * says nothing about whether the ids collide.
- */
-const MODEL_ID_POINTER = /^\/models(?:\/\d+(?:\/id)?)?$/;
-
-/**
- * `/repository/cwd`, or a *key* of `/repository/files`.
- *
- * A key issue sits at the file's own pointer; an issue with the file's
- * contents sits below it. `checkCwd` reads the keys and not the values, so the
- * depth is what distinguishes them.
- */
-function readByCwdCheck(pointer: string): boolean {
-  if (pointer === "/repository" || pointer === "/repository/cwd") return true;
-  if (pointer === "/repository/files") return true;
-  const key = pointer.startsWith("/repository/files/")
-    ? pointer.slice("/repository/files/".length)
-    : undefined;
-  return key !== undefined && !key.includes("/");
+function issueAt(report: Report, pointer: string): boolean {
+  return report.issues.some((issue) => issue.pointer === pointer);
 }
 
 /**
@@ -731,6 +712,18 @@ function checkModelIds(
 ): void {
   const seen = new Map<string, number>();
   models.forEach((model, index) => {
+    // Per model, not per array. An invalid *item* substitutes the id inside
+    // it, so two of those would collide on `undefined` and invent a duplicate
+    // — but a bad item says nothing about its siblings, and disabling the
+    // whole check for one costs the generator a round trip on a real
+    // duplicate elsewhere.
+    if (
+      issueAt(report, `/models/${String(index)}`) ||
+      issueAt(report, `/models/${String(index)}/id`)
+    ) {
+      return;
+    }
+
     const first = seen.get(model.id);
     if (first === undefined) {
       seen.set(model.id, index);
@@ -784,10 +777,18 @@ export function loadCartridge(value: unknown): LoadedCartridge {
   // These are appended after the structural issues rather than interleaved at
   // their document position. Deterministic, which is what matters, but not
   // strictly document-ordered; the header above says so.
-  if (!anySubstituted(report, readByCwdCheck)) {
+  // `checkCwd` reads `cwd` and the file *keys*. A bad file value shares its
+  // key's pointer, so `unusableKeys` is what separates them.
+  if (
+    !issueAt(report, "/repository") &&
+    !issueAt(report, "/repository/cwd") &&
+    !issueAt(report, "/repository/files") &&
+    !report.unusableKeys.has("/repository/files")
+  ) {
     checkCwd(cartridge.repository, report);
   }
-  if (!anySubstituted(report, (pointer) => MODEL_ID_POINTER.test(pointer))) {
+  // `checkModelIds` gates per model, so it only needs the array to exist.
+  if (!issueAt(report, "/models")) {
     checkModelIds(cartridge.models, report);
   }
 

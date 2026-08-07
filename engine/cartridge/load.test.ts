@@ -928,6 +928,43 @@ describe("rejection", () => {
     ]);
   });
 
+  it("checks the models whose ids survived, not none of them", () => {
+    // Skipping the whole array because one item is invalid costs a round trip
+    // on a real duplicate elsewhere — the opposite error from inventing one.
+    const source = minimal();
+    const models = source["models"] as Record<string, unknown>[];
+    source["models"] = [null, models[0], { ...models[0] }];
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
+      "/models/0",
+      "/models/2/id",
+    ]);
+  });
+
+  it("tells a bad file value apart from a bad file key", () => {
+    // Both are reported at the file's own pointer, so pointer shape cannot
+    // distinguish them — and `checkCwd` reads the keys, not the values.
+    const badValue = minimal();
+    const repository = badValue["repository"] as Record<string, unknown>;
+    repository["cwd"] = "/missing";
+    repository["files"] = { "/valid/file": null };
+
+    expect(issuesOf(badValue).map((issue) => issue.pointer)).toEqual([
+      "/repository/files/~1valid~1file",
+      "/repository/cwd",
+    ]);
+
+    // A bad key does suppress it: the key set is what the check reads.
+    const badKey = minimal();
+    const other = badKey["repository"] as Record<string, unknown>;
+    other["cwd"] = "/missing";
+    other["files"] = { "relative/file": { contents: "x\n" } };
+
+    expect(issuesOf(badKey).map((issue) => issue.pointer)).toEqual([
+      "/repository/files/relative~1file",
+    ]);
+  });
+
   it("still holds a cross-check back when its own subtree is broken", () => {
     // The reason the gate exists: two models each missing an `id` would
     // collide on the walk's substitute and produce a phantom duplicate on top
