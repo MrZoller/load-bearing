@@ -226,6 +226,88 @@ describe("loadCartridge", () => {
     );
   });
 
+  it("rejects an Array subclass, which `map` would carry through", () => {
+    // `Symbol.species` means the copy is a subclass too, so it reaches
+    // recorded state and the canonical serializer refuses it there.
+    class Models extends Array<unknown> {}
+    const source = minimal();
+    const models = Models.from(source["models"] as unknown[]);
+    source["models"] = models;
+
+    expect(issuesOf(source)).toEqual([
+      {
+        pointer: "/models",
+        expected: "a dense array with no extra properties",
+        found: "an Array subclass, which `map` preserves and JSON cannot carry",
+      },
+    ]);
+  });
+
+  it("refuses to run an accessor a cartridge supplied", () => {
+    // Reading `value[key]` executes a getter. A throwing one escapes as a host
+    // error rather than an issue; a stateful one makes two loads of the same
+    // source differ, which is determinism lost inside the function whose job
+    // is to establish it.
+    let reads = 0;
+    const source = minimal();
+    source["story"] = Object.defineProperty({}, "premise", {
+      enumerable: true,
+      get: () => {
+        reads += 1;
+        return `read ${String(reads)}`;
+      },
+    });
+
+    expect(issuesOf(source)[0]?.found).toContain("accessor property");
+    expect(reads).toBe(0);
+  });
+
+  it("refuses an accessor in a validated section too, not only a deferred one", () => {
+    for (const build of [
+      (source: Record<string, unknown>) => {
+        (source["repository"] as Record<string, unknown>)["env"] =
+          Object.defineProperty({}, "PATH", {
+            enumerable: true,
+            get: () => "/bin",
+          });
+        return "/repository/env";
+      },
+      (source: Record<string, unknown>) => {
+        Object.defineProperty(source["meta"], "title", {
+          enumerable: true,
+          get: () => "computed",
+        });
+        return "/meta";
+      },
+      (source: Record<string, unknown>) => {
+        Object.defineProperty(source, "meta", {
+          enumerable: true,
+          get: () => ({ schemaVersion: 0 }),
+        });
+        return "";
+      },
+    ]) {
+      const source = minimal();
+      const pointer = build(source);
+      expect(issuesOf(source)[0]?.pointer, pointer).toBe(pointer);
+      expect(issuesOf(source)[0]?.found).toContain("accessor property");
+    }
+  });
+
+  it("rejects properties the serializer would drop in silence", () => {
+    const hidden = minimal();
+    (hidden["repository"] as Record<string, unknown>)["env"] =
+      Object.defineProperty({}, "SECRET", {
+        enumerable: false,
+        value: "invisible",
+      });
+    expect(issuesOf(hidden)[0]?.found).toContain("non-enumerable");
+
+    const symbolic = minimal();
+    symbolic["story"] = { [Symbol("beat")]: "unreachable" };
+    expect(issuesOf(symbolic)[0]?.found).toContain("symbol-keyed");
+  });
+
   it("builds a loaded cartridge with exactly the fields the schema declares", () => {
     // `load.ts` cherry-picks the top level by name, so the compiler ties it to
     // `types.ts` but not to `schema.ts`: a field added to the schema and not to
@@ -575,6 +657,36 @@ describe("rejection", () => {
     for (const value of [null, 42, "cartridge", []]) {
       expect(issuesOf(value)[0]?.pointer).toBe("");
     }
+  });
+
+  it("reports a cross-field problem alongside an unrelated one", () => {
+    // Gating every cross-check on the whole report meant one bad `meta` field
+    // hid a duplicate model id entirely, costing the generator a round trip
+    // the every-issue-at-once contract exists to save.
+    const source = minimal();
+    delete (source["meta"] as Record<string, unknown>)["assignment"];
+    const models = source["models"] as Record<string, unknown>[];
+    (models[1] as Record<string, unknown>)["id"] = models[0]?.["id"];
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
+      "/meta/assignment",
+      "/models/1/id",
+    ]);
+  });
+
+  it("still holds a cross-check back when its own subtree is broken", () => {
+    // The reason the gate exists: two models each missing an `id` would
+    // collide on the walk's substitute and produce a phantom duplicate on top
+    // of the two real problems.
+    const source = minimal();
+    for (const model of source["models"] as Record<string, unknown>[]) {
+      delete model["id"];
+    }
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
+      "/models/0/id",
+      "/models/1/id",
+    ]);
   });
 
   it("holds cross-field checks back until the shapes are sound", () => {

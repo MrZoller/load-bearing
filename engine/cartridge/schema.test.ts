@@ -25,6 +25,25 @@ describe("the published schema", () => {
     expect(readFileSync(PUBLISHED, "utf8")).toBe(serialize(emitJsonSchema()));
   });
 
+  it("hands out copies of its defaults, not the schema's own objects", () => {
+    // Aliased, a caller editing the emitted document changed what
+    // `loadCartridge` filled afterwards — and what the *next* emission
+    // contained, which would make the lockstep test above depend on whatever
+    // ran before it.
+    const emitted = emitJsonSchema();
+    const properties = emitted["properties"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    const story = properties["story"] as Record<string, unknown>;
+
+    expect(story["default"]).not.toBe(CARTRIDGE_SCHEMA.fields["story"]?.fill);
+
+    (story["default"] as Record<string, unknown>)["injected"] = true;
+    expect(CARTRIDGE_SCHEMA.fields["story"]?.fill).toEqual({});
+    expect(serialize(emitJsonSchema())).not.toContain("injected");
+  });
+
   it("declares its version and identity", () => {
     const emitted = emitJsonSchema();
     expect(emitted["$id"]).toContain("cartridge.v0.json");

@@ -12,10 +12,12 @@
  * loop, so a validator that reports the first problem and stops turns one bad
  * generation into as many round trips as it has mistakes. Every issue is
  * collected and reported together, in document order: fields in the order
- * `./schema.ts` declares them, record keys sorted, array items by index. That
- * order is a property of the schema and the data, never of JSON key order or
- * anything about the host — the same bad cartridge produces the same report
- * character for character on every machine.
+ * `./schema.ts` declares them, record keys sorted, array items by index. The
+ * two cross-field checks are appended after that, in a fixed order, since a
+ * problem spanning two sections has no single position in the document. Either
+ * way the order is a property of the schema and the data, never of JSON key
+ * order or anything about the host — the same bad cartridge produces the same
+ * report character for character on every machine.
  *
  * The one exception is the schema version, which is checked alone and aborts.
  * Validating a v1 document against v0's rules produces a page of cascading
@@ -152,6 +154,59 @@ function objectFromEntries(
 
 export const DENSE_ARRAY_EXPECTED = "a dense array with no extra properties";
 const DENSE_ARRAY_FOUND = "an array with holes or properties JSON cannot carry";
+const ARRAY_SUBCLASS_FOUND =
+  "an Array subclass, which `map` preserves and JSON cannot carry";
+
+/**
+ * Whether an object or array holds data rather than behaviour.
+ *
+ * Everything below reads properties with `value[key]`, which runs an accessor
+ * if one is there. That is cartridge-supplied code executing during
+ * validation: a throwing getter escapes as a host error instead of an issue,
+ * and a stateful one makes two loads of the same source differ — determinism
+ * lost inside the function whose job is to establish it. So every object is
+ * checked before any of its properties are read.
+ *
+ * Non-enumerable and symbol-keyed properties are rejected for the reason the
+ * canonical serializer rejects them: they would be dropped in silence. Without
+ * this the loader was the more permissive of the two, which is backwards — it
+ * exists to hand the serializer something it will accept.
+ *
+ * Reachable only from a cartridge built in memory, never from `JSON.parse`,
+ * which is the same threat model as the prototype and cycle checks nearby.
+ */
+function describeNonDataObject(value: object): string | undefined {
+  if (Object.getOwnPropertySymbols(value).length > 0) {
+    return "an object with symbol-keyed properties, which JSON cannot carry";
+  }
+
+  // An array's `length` is an own non-enumerable property, so its indices are
+  // checked directly rather than through `getOwnPropertyNames`. Holes and
+  // stray properties are `isDenseArray`'s job.
+  const keys = Array.isArray(value)
+    ? value.map((_item, index) => String(index))
+    : Object.getOwnPropertyNames(value);
+
+  for (const key of keys) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (descriptor === undefined) continue;
+    if (descriptor.get !== undefined || descriptor.set !== undefined) {
+      return "an object with an accessor property, which would run cartridge-supplied code during validation";
+    }
+    if (!descriptor.enumerable) {
+      return "an object with a non-enumerable property, which would be dropped silently";
+    }
+  }
+  return undefined;
+}
+
+/** Report a non-data object, and say whether reading it is safe. */
+function isDataObject(value: object, pointer: string, report: Report): boolean {
+  const problem = describeNonDataObject(value);
+  if (problem === undefined) return true;
+  report.addPhrase(pointer, "an object of plain JSON values", problem);
+  return false;
+}
 
 /**
  * Whether an array is exactly what JSON can carry: every index present, no
@@ -173,6 +228,15 @@ function isDenseArray(value: readonly unknown[]): boolean {
     keys.length === value.length &&
     keys.every((key, index) => key === String(index))
   );
+}
+
+/**
+ * An `Array` subclass survives `map` — `Symbol.species` sees to that — so it
+ * would reach recorded state, where the canonical serializer refuses it. Its
+ * own keys look perfectly dense on the way through.
+ */
+function isPlainArray(value: readonly unknown[]): boolean {
+  return Object.getPrototypeOf(value) === Array.prototype;
 }
 
 /**
@@ -233,10 +297,15 @@ function cloneJson(
     return value;
   }
   if (Array.isArray(value)) {
+    if (!isPlainArray(value)) {
+      report.addPhrase(pointer, DENSE_ARRAY_EXPECTED, ARRAY_SUBCLASS_FOUND);
+      return [];
+    }
     if (!isDenseArray(value)) {
       report.addPhrase(pointer, DENSE_ARRAY_EXPECTED, DENSE_ARRAY_FOUND);
       return [];
     }
+    if (!isDataObject(value, pointer, report)) return [];
     if (active.has(value)) return reportCycle(pointer, report, []);
     active.add(value);
     const copied = value.map((item, index) =>
@@ -259,6 +328,7 @@ function cloneJson(
       );
       return {};
     }
+    if (!isDataObject(value, pointer, report)) return {};
     if (active.has(value)) return reportCycle(pointer, report, {});
     active.add(value);
     const copied = objectFromEntries(
@@ -359,6 +429,7 @@ function validate(
         report.add(pointer, "an object", value);
         return {};
       }
+      if (!isDataObject(value, pointer, report)) return {};
       return validateFields(value, node, pointer, report);
     }
 
@@ -374,10 +445,15 @@ function validate(
       // it `models = new Array(1)` satisfies `minItems`, `map` preserves the
       // hole, `checkModelIds` skips it without complaint, and the loader hands
       // back a cartridge the canonical serializer then refuses.
+      if (!isPlainArray(value)) {
+        report.addPhrase(pointer, DENSE_ARRAY_EXPECTED, ARRAY_SUBCLASS_FOUND);
+        return [];
+      }
       if (!isDenseArray(value)) {
         report.addPhrase(pointer, DENSE_ARRAY_EXPECTED, DENSE_ARRAY_FOUND);
         return [];
       }
+      if (!isDataObject(value, pointer, report)) return [];
       return value.map((item, index) =>
         validate(item, node.items, child(pointer, index), report),
       );
@@ -388,6 +464,7 @@ function validate(
         report.add(pointer, "an object", value);
         return {};
       }
+      if (!isDataObject(value, pointer, report)) return {};
       const entries: [string, unknown][] = [];
       // Sorted, so the order issues are reported in comes from the schema and
       // the data rather than from how the JSON happened to be written.
@@ -493,12 +570,31 @@ function checkVersion(value: unknown): CartridgeIssue | undefined {
       found: describe(value),
     };
   }
+  // Checked before the read, not after: this runs before the walk, so without
+  // it an accessor on the root object would execute before a single field had
+  // been validated.
+  const rootProblem = describeNonDataObject(value);
+  if (rootProblem !== undefined) {
+    return {
+      pointer: "",
+      expected: "an object of plain JSON values",
+      found: rootProblem,
+    };
+  }
   const meta: unknown = value["meta"];
   if (!isPlainObject(meta) || !Object.hasOwn(meta, "schemaVersion")) {
     return {
       pointer: "/meta/schemaVersion",
       expected: `${String(CARTRIDGE_SCHEMA_VERSION)} (every cartridge declares its schema version)`,
       found: describe(isPlainObject(meta) ? undefined : meta),
+    };
+  }
+  const metaProblem = describeNonDataObject(meta);
+  if (metaProblem !== undefined) {
+    return {
+      pointer: "/meta",
+      expected: "an object of plain JSON values",
+      found: metaProblem,
     };
   }
   const declared: unknown = meta["schemaVersion"];
@@ -514,6 +610,14 @@ function checkVersion(value: unknown): CartridgeIssue | undefined {
         : String(CARTRIDGE_SCHEMA_VERSION),
     found: describe(declared),
   };
+}
+
+/** Whether anything is already wrong at `prefix` or below it. */
+function hasIssueUnder(report: Report, prefix: string): boolean {
+  return report.issues.some(
+    (issue) =>
+      issue.pointer === prefix || issue.pointer.startsWith(`${prefix}/`),
+  );
 }
 
 /**
@@ -594,10 +698,22 @@ export function loadCartridge(value: unknown): LoadedCartridge {
     presentation: normalized["presentation"] as DeferredObject,
   };
 
-  // Cross-field checks run only when the shapes they read are sound; otherwise
-  // they would report a second, derived problem for every structural one.
-  if (report.issues.length === 0) {
+  // Each cross-field check is gated on the subtree it reads, not on the whole
+  // report. Gating globally suppressed a genuine duplicate model id whenever
+  // anything else in the document was wrong, which costs the generator a round
+  // trip the every-issue-at-once contract exists to save. Gating per subtree
+  // keeps the reason the gate was there at all: a check that read a structure
+  // the walk had already substituted would report a second, derived problem
+  // for every real one — two models each missing an `id` would collide on the
+  // substitute and produce a phantom duplicate.
+  //
+  // These are appended after the structural issues rather than interleaved at
+  // their document position. Deterministic, which is what matters, but not
+  // strictly document-ordered; the header above says so.
+  if (!hasIssueUnder(report, "/repository")) {
     checkCwd(cartridge.repository, report);
+  }
+  if (!hasIssueUnder(report, "/models")) {
     checkModelIds(cartridge.models, report);
   }
 

@@ -31,6 +31,23 @@ function patternSource(pattern: Pattern): string {
   return pattern.source;
 }
 
+/**
+ * Deep-copy a schema default.
+ *
+ * Total over the fills the schema declares, which are plain JSON literals by
+ * construction. `structuredClone` would be the obvious call and is not
+ * available: the engine's own program has no DOM or Node lib, only ES2022.
+ */
+function copyJson(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(copyJson);
+  if (typeof value === "object" && value !== null) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, copyJson(item)]),
+    );
+  }
+  return value;
+}
+
 function emitNode(node: SchemaNode): Record<string, unknown> {
   switch (node.kind) {
     case "string": {
@@ -73,7 +90,12 @@ function emitNode(node: SchemaNode): Record<string, unknown> {
       const required: string[] = [];
       for (const [key, field] of Object.entries(node.fields)) {
         const emitted = emitNode(field.node);
-        if (field.fill !== undefined) emitted["default"] = field.fill;
+        // Copied, not aliased. The fill objects live on the shared
+        // `CARTRIDGE_SCHEMA`, so handing them out means a caller who edits the
+        // emitted document changes what `loadCartridge` fills afterwards — and
+        // changes what the *next* emission contains, which would make the
+        // published-schema lockstep test depend on what ran before it.
+        if (field.fill !== undefined) emitted["default"] = copyJson(field.fill);
         if (field.derived !== undefined) {
           // Appended, not assigned. `mtime` carries both a derived default and
           // a node-level refinement note, and overwriting would drop the one
