@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { loadCartridge } from "../cartridge/load.js";
+
 import {
   listReplayFixtures,
   loadReplayFixture,
@@ -88,13 +90,16 @@ describe("golden replay fixtures", () => {
 
       expect(third).toEqual(second);
 
-      // And twice with the *same* object. Every call above receives a freshly
-      // parsed fixture, so a reducer that remembers input identities — in a
-      // WeakMap, which the gate allows — would answer identically to all of
-      // them while behaving differently in production, where the cartridge is
-      // loaded once and reused across a session.
+      // And twice with the *same* objects — fixture *and* loaded cartridge.
+      // A reducer that remembers input identities in a WeakMap, which the gate
+      // allows, would answer identically to two separately loaded cartridges
+      // while behaving differently in production, where a session loads once
+      // and reuses it. Passing the cartridge explicitly is what makes this
+      // branch test identity at all: `replayFixture` loads per call by
+      // default, so every other call above holds a fresh one.
       const shared = loadReplayFixture(name);
-      const sharedFirst = freshModule.replayFixture(shared);
+      const sharedCartridge = loadCartridge(shared.cartridge);
+      const sharedFirst = freshModule.replayFixture(shared, sharedCartridge);
 
       // Drained between the two, so a mutation deferred to a microtask has
       // landed before the second call reads it. The gate bans asynchrony in
@@ -102,7 +107,9 @@ describe("golden replay fixtures", () => {
       // ban were ever lifted or evaded.
       await Promise.resolve();
 
-      expect(freshModule.replayFixture(shared)).toEqual(sharedFirst);
+      expect(freshModule.replayFixture(shared, sharedCartridge)).toEqual(
+        sharedFirst,
+      );
 
       // And against the committed recording. Everything above compares
       // isolated output with isolated output, which agrees even when module

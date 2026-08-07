@@ -104,6 +104,12 @@ function describe(value: unknown): string {
         ? `${JSON.stringify(`${value.slice(0, 40)}…`)} (${String(value.length)} characters)`
         : JSON.stringify(value);
     case "number":
+      // `JSON.stringify(Infinity)` is `"null"`, so an issue would claim the
+      // cartridge held null when it held `1e400`. Reachable from ordinary
+      // parsed JSON, unlike most of what this function guards against:
+      // `JSON.parse` turns an overflowing exponent into `Infinity` without
+      // complaint.
+      return Number.isFinite(value) ? JSON.stringify(value) : String(value);
     case "boolean":
       return JSON.stringify(value);
     case "object":
@@ -212,7 +218,8 @@ function describeNonDataObject(value: object): string | undefined {
   if (!Array.isArray(value)) {
     const brand = detectBrand(value);
     if (brand !== undefined) {
-      return `a ${brand}, which JSON cannot carry`;
+      const article = "AEIOU".includes(brand.slice(0, 1)) ? "an" : "a";
+      return `${article} ${brand}, which JSON cannot carry`;
     }
   }
 

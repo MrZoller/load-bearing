@@ -16,6 +16,7 @@
 import { replaySession } from "../session.js";
 import type { EngineEvent } from "../session.js";
 import { loadCartridge } from "../cartridge/load.js";
+import type { LoadedCartridge } from "../cartridge/types.js";
 import { serialize } from "../serialize/canonical.js";
 import { formatTextDiff } from "./diff.js";
 import { describeUnwritableText } from "./text.js";
@@ -60,13 +61,24 @@ export interface ReplayRecording {
  * well-formed text — a fixture with no transcript entries records as an empty
  * file rather than a file containing one blank line.
  */
-export function replayFixture(fixture: ReplayFixture): ReplayRecording {
+export function replayFixture(
+  fixture: ReplayFixture,
+  /**
+   * An already-loaded cartridge, for a caller that needs two replays to
+   * receive the *same* object.
+   *
+   * Loading per call is the right default — every fixture then exercises the
+   * validator on the way in, and a world that stops validating fails the
+   * replay suite. But it also means no two calls ever share a cartridge
+   * identity, which quietly disarms the isolation test: a reducer keying a
+   * `WeakMap` on its cartridge, or editing one in place, would answer
+   * identically to two freshly loaded objects while behaving differently in
+   * production, where a session loads once and reuses it.
+   */
+  cartridge: LoadedCartridge = loadCartridge(fixture.cartridge),
+): ReplayRecording {
   const result = replaySession({
-    // Loaded here rather than by the caller, so every fixture exercises the
-    // validator on the way in and records the *normalized* world. A cartridge
-    // that stops validating fails the replay suite, which is where a world
-    // that no longer loads should be noticed.
-    cartridge: loadCartridge(fixture.cartridge),
+    cartridge,
     seed: fixture.seed,
     events: fixture.events,
   });

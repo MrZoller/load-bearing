@@ -204,6 +204,15 @@ const BRAND_KEY = {};
  * The gate's `prototype-mutation` rule is the other half, and the load-bearing
  * one: engine code cannot re-point a prototype at all. This is the containment
  * for a value that arrives some other way.
+ *
+ * The list is the reachable set, not every built-in there is, and the
+ * distinction matters to whoever extends it. Anything the purity gate already
+ * bans from engine code cannot be probed here either, because probing means
+ * naming: `SharedArrayBuffer` and `Atomics` fall to `host-capability`,
+ * `WeakRef` and `FinalizationRegistry` to `gc-timing`, `Proxy` and `Reflect`
+ * to `proxy-reflection`, and `Promise` to `async-scheduling`. A cartridge
+ * carrying one of those reaches the serializer's own "not a plain object"
+ * rejection instead — later than here, but never silently.
  */
 const BRAND_PROBES: readonly (readonly [string, (value: object) => unknown])[] =
   [
@@ -233,6 +242,33 @@ const BRAND_PROBES: readonly (readonly [string, (value: object) => unknown])[] =
       "WeakSet",
       (value) =>
         WeakSet.prototype.has.call(value as WeakSet<object>, BRAND_KEY),
+    ],
+    [
+      "ArrayBuffer",
+      (value) =>
+        Object.getOwnPropertyDescriptor(
+          ArrayBuffer.prototype,
+          "byteLength",
+        )?.get?.call(value),
+    ],
+    [
+      "DataView",
+      (value) =>
+        Object.getOwnPropertyDescriptor(
+          DataView.prototype,
+          "byteLength",
+        )?.get?.call(value),
+    ],
+    [
+      // One probe for every typed array. They share %TypedArray%.prototype,
+      // whose `length` getter throws without the [[TypedArrayName]] slot, so
+      // naming the nine concrete constructors would be nine ways to forget one.
+      "TypedArray",
+      (value) =>
+        Object.getOwnPropertyDescriptor(
+          Object.getPrototypeOf(Int8Array.prototype) as object,
+          "length",
+        )?.get?.call(value),
     ],
   ];
 

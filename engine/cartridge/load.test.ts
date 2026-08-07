@@ -377,6 +377,45 @@ describe("loadCartridge", () => {
     expect(reads).toBe(0);
   });
 
+  it("rejects buffer-backed built-ins wearing a plain prototype", () => {
+    // These carry no tag `Object.prototype.toString` can see once their
+    // prototype is repointed, so they read as ordinary objects with no own
+    // keys — and the clone writes `{}` over their bytes.
+    for (const [label, value] of [
+      ["ArrayBuffer", new ArrayBuffer(8)],
+      ["DataView", new DataView(new ArrayBuffer(8))],
+      ["Uint8Array", new Uint8Array([1, 2, 3])],
+      ["Float64Array", new Float64Array([1.5])],
+    ] as const) {
+      Object.setPrototypeOf(value, Object.prototype);
+      const source = minimal();
+      source["story"] = { payload: value };
+
+      expect(issuesOf(source)[0], label).toEqual({
+        pointer: "/story/payload",
+        expected: "an object of plain JSON values",
+        found: expect.stringContaining("which JSON cannot carry") as string,
+      });
+    }
+  });
+
+  it("reports a non-finite number as itself, not as null", () => {
+    // Reachable from ordinary parsed JSON, unlike most of what the guard
+    // catches: `JSON.parse` turns an overflowing exponent into `Infinity`, and
+    // `JSON.stringify(Infinity)` is `"null"` — so the issue used to claim the
+    // cartridge held null.
+    const source = minimal();
+    source["story"] = JSON.parse('{"curve": 1e400}') as unknown;
+
+    expect(issuesOf(source)).toEqual([
+      {
+        pointer: "/story/curve",
+        expected: "a finite number",
+        found: "Infinity",
+      },
+    ]);
+  });
+
   it("still accepts a null-prototype object and an ordinary array", () => {
     // The brand check must not catch these. `Object.create(null)` is what a
     // careful generator uses to avoid inherited keys, and it serializes fine.
@@ -591,7 +630,14 @@ describe("deferred sections", () => {
     source["story"] = { curve: Number.POSITIVE_INFINITY };
 
     expect(issuesOf(source)).toEqual([
-      { pointer: "/story/curve", expected: "a finite number", found: "null" },
+      {
+        pointer: "/story/curve",
+        // Not `"null"`, which is what this asserted while `describe` ran the
+        // value through `JSON.stringify` — the test was pinning the misleading
+        // answer rather than catching it.
+        expected: "a finite number",
+        found: "Infinity",
+      },
     ]);
   });
 });
