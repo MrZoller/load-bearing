@@ -11,7 +11,19 @@ import {
   CARTRIDGE_SCHEMA,
   CARTRIDGE_SCHEMA_VERSION,
 } from "./schema.js";
-import type { ObjectNode, SchemaNode } from "./schema.js";
+import type {
+  EnumNode,
+  IntegerNode,
+  ObjectNode,
+  SchemaNode,
+  StringNode,
+} from "./schema.js";
+import type {
+  CartridgeFile,
+  CartridgeMeta,
+  CartridgeModel,
+  CartridgeRepository,
+} from "./types.js";
 
 const PUBLISHED = fileURLToPath(
   new URL("../../content/schema/cartridge.v0.json", import.meta.url),
@@ -202,8 +214,74 @@ describe("the descriptor tree", () => {
       expect(meta.fields[key]?.required, `meta.${key}`).toBe(true);
     }
 
+    const root: ObjectNode = CARTRIDGE_SCHEMA;
     for (const key of ["meta", "repository", "models"]) {
-      expect(CARTRIDGE_SCHEMA.fields[key]?.required, key).toBe(true);
+      expect(root.fields[key]?.required, key).toBe(true);
     }
+  });
+});
+
+describe("descriptor and type lockstep", () => {
+  /**
+   * The node kind a declared TypeScript type demands.
+   *
+   * This is the piece the `as` casts in `load.ts` cannot supply. Those tie the
+   * loader's output to `./types.ts`, and the walk ties the loader to
+   * `./schema.ts` — but nothing tied a *leaf descriptor's kind* to the type
+   * declared for that field, so changing `costMultiplier` from an integer node
+   * to a string node compiled cleanly while `CartridgeModel` still promised a
+   * number.
+   *
+   * Derived from the type rather than written out, so the assertions below
+   * fail from either side: change the descriptor and the node no longer fits,
+   * change the type and the expectation no longer matches it.
+   */
+  type NodeFor<T> = [T] extends [number]
+    ? IntegerNode
+    : [T] extends [string]
+      ? StringNode | EnumNode
+      : never;
+
+  /** Asserts at compile time; the runtime body is only here to name it. */
+  function agrees<Declared>(_node: NodeFor<Declared>): void {}
+
+  it("ties every leaf descriptor to the type declared for it", () => {
+    const meta = CARTRIDGE_SCHEMA.fields.meta.node;
+    agrees<CartridgeMeta["schemaVersion"]>(meta.fields.schemaVersion.node);
+    agrees<CartridgeMeta["number"]>(meta.fields.number.node);
+    agrees<CartridgeMeta["date"]>(meta.fields.date.node);
+    agrees<CartridgeMeta["title"]>(meta.fields.title.node);
+    agrees<CartridgeMeta["assignment"]>(meta.fields.assignment.node);
+    agrees<CartridgeMeta["startedAt"]>(meta.fields.startedAt.node);
+
+    const model = CARTRIDGE_SCHEMA.fields.models.node.items;
+    agrees<CartridgeModel["id"]>(model.fields.id.node);
+    agrees<CartridgeModel["name"]>(model.fields.name.node);
+    agrees<CartridgeModel["archetype"]>(model.fields.archetype.node);
+    agrees<CartridgeModel["description"]>(model.fields.description.node);
+    agrees<CartridgeModel["costMultiplier"]>(model.fields.costMultiplier.node);
+    agrees<CartridgeModel["quirks"][number]>(model.fields.quirks.node.items);
+
+    const repository = CARTRIDGE_SCHEMA.fields.repository.node;
+    agrees<CartridgeRepository["cwd"]>(repository.fields.cwd.node);
+    agrees<CartridgeRepository["env"][string]>(
+      repository.fields.env.node.values,
+    );
+    agrees<CartridgeRepository["manPages"][string]>(
+      repository.fields.manPages.node.values,
+    );
+    agrees<CartridgeRepository["shellHistory"][number]>(
+      repository.fields.shellHistory.node.items,
+    );
+
+    const file = repository.fields.files.node.values;
+    agrees<CartridgeFile["contents"]>(file.fields.contents.node);
+    agrees<CartridgeFile["mode"]>(file.fields.mode.node);
+    agrees<CartridgeFile["owner"]>(file.fields.owner.node);
+    agrees<CartridgeFile["group"]>(file.fields.group.node);
+    agrees<CartridgeFile["mtime"]>(file.fields.mtime.node);
+
+    // Nothing to assert at runtime: the point is that this file compiles.
+    expect(true).toBe(true);
   });
 });

@@ -233,11 +233,14 @@ export interface SchemaField {
   readonly derived?: string;
 }
 
-function required(node: SchemaNode): SchemaField {
+function required<T extends SchemaNode>(node: T): { node: T; required: true } {
   return { node, required: true };
 }
 
-function optional(node: SchemaNode, fill: unknown): SchemaField {
+function optional<T extends SchemaNode>(
+  node: T,
+  fill: unknown,
+): { node: T; required: false; fill: unknown } {
   return { node, required: false, fill };
 }
 
@@ -303,16 +306,16 @@ function refineInstant(value: string): string | undefined {
   }
 }
 
-const TIMESTAMP: StringNode = {
+const TIMESTAMP = {
   kind: "string",
   description:
     "A UTC instant, `YYYY-MM-DDTHH:MM:SS[.mmm]Z`. The simulated machine has no other timezone.",
   pattern: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/,
   patternLabel: "YYYY-MM-DDTHH:MM:SS[.mmm]Z",
   refine: refineInstant,
-};
+} satisfies StringNode;
 
-const FILE: ObjectNode = {
+const FILE = {
   kind: "object",
   description: "One file in the simulated filesystem.",
   fields: {
@@ -357,9 +360,9 @@ const FILE: ObjectNode = {
         "Defaults to `meta.startedAt` — a file the cartridge does not date was already there when the session opened.",
     },
   },
-};
+} satisfies ObjectNode;
 
-const MODEL: ObjectNode = {
+const MODEL = {
   kind: "object",
   description: "One selectable model persona.",
   fields: {
@@ -406,9 +409,9 @@ const MODEL: ObjectNode = {
       [],
     ),
   },
-};
+} satisfies ObjectNode;
 
-const REPOSITORY: ObjectNode = {
+const REPOSITORY = {
   kind: "object",
   description: "The world: a filesystem and everything queryable from a shell.",
   fields: {
@@ -475,9 +478,9 @@ const REPOSITORY: ObjectNode = {
       "issue #12",
     ),
   },
-};
+} satisfies ObjectNode;
 
-const META: ObjectNode = {
+const META = {
   kind: "object",
   description: "Who this incident is and when it happens.",
   fields: {
@@ -519,10 +522,19 @@ const META: ObjectNode = {
     }),
     startedAt: required(TIMESTAMP),
   },
-};
+} satisfies ObjectNode;
 
-/** The whole document. */
-export const CARTRIDGE_SCHEMA: ObjectNode = deepFreeze({
+/**
+ * The whole document.
+ *
+ * Declared with `satisfies` rather than `: ObjectNode`, which would widen it
+ * and erase the literal shape. Keeping that shape is what lets
+ * `schema.test.ts` assert, field by field and at compile time, that each leaf
+ * descriptor agrees with the type `./types.ts` declares for it — the third
+ * side of the three-way agreement this file's header claims, which the `as`
+ * casts in `./load.ts` cannot provide on their own.
+ */
+export const CARTRIDGE_SCHEMA = deepFreeze({
   kind: "object",
   description:
     "A Load Bearing incident cartridge. Everything the engine knows about a world arrives through this document.",
@@ -556,4 +568,4 @@ export const CARTRIDGE_SCHEMA: ObjectNode = deepFreeze({
       fill: {},
     },
   },
-});
+} satisfies ObjectNode);
