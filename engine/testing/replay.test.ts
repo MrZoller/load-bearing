@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { loadCartridge } from "../cartridge/load.js";
+import type { LoadedCartridge } from "../cartridge/types.js";
 
 import {
   listReplayFixtures,
@@ -98,7 +99,9 @@ describe("golden replay fixtures", () => {
       // branch test identity at all: `replayFixture` loads per call by
       // default, so every other call above holds a fresh one.
       const shared = loadReplayFixture(name);
-      const sharedCartridge = loadCartridge(shared.cartridge);
+      const sharedCartridge = deepFreeze(
+        loadCartridge(shared.cartridge),
+      ) as LoadedCartridge;
       const sharedFirst = freshModule.replayFixture(shared, sharedCartridge);
 
       // Drained between the two, so a mutation deferred to a microtask has
@@ -126,16 +129,26 @@ describe("golden replay fixtures", () => {
     const fixture = loadReplayFixture(name);
     const before = serialize(fixture as unknown);
 
+    // The *loaded* cartridge is what a reducer actually holds, and it has to
+    // be frozen and passed explicitly: `replayFixture` loads a fresh one per
+    // call by default, so freezing the raw fixture alone leaves the object
+    // under test mutable and unexamined.
+    const cartridge = deepFreeze(
+      loadCartridge(fixture.cartridge),
+    ) as LoadedCartridge;
+    const cartridgeBefore = serialize(cartridge);
+
     // Frozen as well as compared, because the comparison alone cannot see
     // every edit: `serialize` drops undefined-valued properties by JSON
     // convention, so `cartridge.touched = undefined` would add an own property
     // observable to a later session and still compare equal. Freezing makes
     // the assignment itself throw — modules are strict mode.
-    replayFixture(deepFreeze(fixture) as typeof fixture);
+    replayFixture(deepFreeze(fixture) as typeof fixture, cartridge);
 
     // The cartridge is loaded once per session and reused, so a reducer that
     // edited it in place would have a later session start from altered state.
     expect(serialize(fixture as unknown)).toBe(before);
+    expect(serialize(cartridge)).toBe(cartridgeBefore);
   });
 });
 

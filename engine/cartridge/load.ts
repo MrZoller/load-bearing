@@ -668,8 +668,19 @@ function anySubstituted(
   return report.issues.some((issue) => matches(issue.pointer));
 }
 
-/** `/models/3/id` — the field `checkModelIds` reads, at any index. */
-const MODEL_ID_POINTER = /^\/models\/\d+\/id$/;
+/**
+ * What `checkModelIds` reads: the array, a whole item, or an item's `id`.
+ *
+ * The middle one is easy to leave out and is the reason the gate exists.
+ * `models: [null, null]` reports two issues at `/models/0` and `/models/1`,
+ * substituting `{}` for each — so both ids read as `undefined`, collide, and
+ * produce a phantom duplicate on top of the two real problems. A pointer at
+ * the item is a substitution of every field inside it.
+ *
+ * `/models/0/description` deliberately does not match: an invalid description
+ * says nothing about whether the ids collide.
+ */
+const MODEL_ID_POINTER = /^\/models(?:\/\d+(?:\/id)?)?$/;
 
 /**
  * `/repository/cwd`, or a *key* of `/repository/files`.
@@ -776,12 +787,7 @@ export function loadCartridge(value: unknown): LoadedCartridge {
   if (!anySubstituted(report, readByCwdCheck)) {
     checkCwd(cartridge.repository, report);
   }
-  if (
-    !anySubstituted(
-      report,
-      (pointer) => pointer === "/models" || MODEL_ID_POINTER.test(pointer),
-    )
-  ) {
+  if (!anySubstituted(report, (pointer) => MODEL_ID_POINTER.test(pointer))) {
     checkModelIds(cartridge.models, report);
   }
 

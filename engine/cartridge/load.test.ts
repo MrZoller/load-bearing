@@ -913,6 +913,21 @@ describe("rejection", () => {
     ]);
   });
 
+  it("treats a substituted whole item as a substituted id", () => {
+    // Narrowing the gate to `/models/<n>/id` dropped this: two invalid items
+    // are reported at `/models/0` and `/models/1`, each substituted with `{}`,
+    // so both ids read as undefined and collide into a phantom duplicate on
+    // top of the two real problems. A pointer at the item is a substitution of
+    // every field inside it.
+    const source = minimal();
+    source["models"] = [null, null];
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
+      "/models/0",
+      "/models/1",
+    ]);
+  });
+
   it("still holds a cross-check back when its own subtree is broken", () => {
     // The reason the gate exists: two models each missing an `id` would
     // collide on the walk's substitute and produce a phantom duplicate on top
