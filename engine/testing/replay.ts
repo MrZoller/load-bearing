@@ -15,6 +15,7 @@
 
 import { replaySession } from "../session.js";
 import type { EngineEvent } from "../session.js";
+import { loadCartridge } from "../cartridge/load.js";
 import { serialize } from "../serialize/canonical.js";
 import { formatTextDiff } from "./diff.js";
 import { describeUnwritableText } from "./text.js";
@@ -29,6 +30,17 @@ export interface ReplayFixture {
   /** What this fixture is protecting. Read by humans, not by the runner. */
   readonly description: string;
   readonly seed: string;
+  /**
+   * Which cartridge under `engine/__fixtures__/cartridges/` this replays, by
+   * name.
+   *
+   * Referenced rather than inlined so every fixture replays *the* fixture
+   * cartridge. Embedded copies would drift, and a change to the shared world
+   * would then show up in one recording and not the others — which is the
+   * opposite of what a contract artifact is for.
+   */
+  readonly cartridgeName: string;
+  /** That cartridge's parsed JSON, still unvalidated. */
   readonly cartridge: unknown;
   readonly events: readonly EngineEvent[];
 }
@@ -50,7 +62,11 @@ export interface ReplayRecording {
  */
 export function replayFixture(fixture: ReplayFixture): ReplayRecording {
   const result = replaySession({
-    cartridge: fixture.cartridge,
+    // Loaded here rather than by the caller, so every fixture exercises the
+    // validator on the way in and records the *normalized* world. A cartridge
+    // that stops validating fails the replay suite, which is where a world
+    // that no longer loads should be noticed.
+    cartridge: loadCartridge(fixture.cartridge),
     seed: fixture.seed,
     events: fixture.events,
   });

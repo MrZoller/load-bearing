@@ -1,0 +1,7 @@
+{
+  "name": "003-cartridge-load",
+  "description": "Load to initial state, with nothing folded on top. The event log is empty on purpose: state.json here is the normalized cartridge and the clock it implies, and nothing else. That separates two contracts which 001 and 002 test together — a change to the reducer moves their recordings and leaves this one alone, so a diff here means normalization changed: a default filled differently, a section defaulting to something other than empty, or key ordering moving. The malformed counterparts live under engine/__fixtures__/cartridges/invalid/ and are exercised by the loader's own tests, since a cartridge that does not load cannot be replayed.",
+  "seed": "2026-08-05/0/deep-foundation",
+  "cartridge": "minimal",
+  "events": []
+}

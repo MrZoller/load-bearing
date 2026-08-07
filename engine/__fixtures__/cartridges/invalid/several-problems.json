@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 1,
+    "date": "2026-02-30",
+    "title": "Small World",
+    "startedAt": "2026-08-05T09:14:22.000Z"
+  },
+  "repository": {
+    "cwd": "relative/path",
+    "files": {
+      "/srv/app/main.ts": {
+        "contents": "export const load = 1;\n"
+      }
+    }
+  },
+  "models": [
+    {
+      "id": "deep-foundation",
+      "name": "Deep Foundation",
+      "archetype": "paranoid",
+      "description": "Thorough. Expensive.",
+      "costMultiplier": "expensive"
+    }
+  ]
+}

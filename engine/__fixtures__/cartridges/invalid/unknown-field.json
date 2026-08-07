@@ -1,0 +1,28 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 1,
+    "date": "2026-08-05",
+    "title": "Small World",
+    "assignment": "Fail validation in exactly one way.",
+    "startedAt": "2026-08-05T09:14:22.000Z"
+  },
+  "repository": {
+    "cwd": "/srv/app",
+    "files": {
+      "/srv/app/main.ts": {
+        "contents": "export const load = 1;\n",
+        "mtme": "2026-08-05T09:14:22.000Z"
+      }
+    }
+  },
+  "models": [
+    {
+      "id": "deep-foundation",
+      "name": "Deep Foundation",
+      "archetype": "paranoid",
+      "description": "Thorough. Expensive.",
+      "costMultiplier": 48000
+    }
+  ]
+}

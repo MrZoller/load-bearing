@@ -1,13 +1,44 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_SESSION_START_MS, replaySession } from "./session.js";
+import { replaySession } from "./session.js";
 import type { EngineEvent } from "./session.js";
-import { formatTimestamp, parseTimestamp } from "./clock/civil.js";
+import { parseTimestamp } from "./clock/civil.js";
+import { loadCartridge } from "./cartridge/load.js";
+import type { LoadedCartridge } from "./cartridge/types.js";
 
 const SEED = "2026-08-05/0/deep-foundation";
 const STARTED_AT = "2026-08-05T09:14:22.000Z";
 
-function replay(cartridge: unknown, events: readonly EngineEvent[]) {
+/**
+ * The smallest world that loads. `replaySession` takes a validated cartridge,
+ * so these tests build one the same way production does rather than casting a
+ * literal past the type.
+ */
+const CARTRIDGE: LoadedCartridge = loadCartridge({
+  meta: {
+    schemaVersion: 0,
+    number: 1,
+    date: "2026-08-05",
+    title: "Session Fixture",
+    assignment: "Exercise the fold.",
+    startedAt: STARTED_AT,
+  },
+  repository: {
+    cwd: "/srv/app",
+    files: { "/srv/app/main.ts": { contents: "export const load = 1;\n" } },
+  },
+  models: [
+    {
+      id: "deep-foundation",
+      name: "Deep Foundation",
+      archetype: "paranoid",
+      description: "Thorough.",
+      costMultiplier: 1,
+    },
+  ],
+});
+
+function replay(cartridge: LoadedCartridge, events: readonly EngineEvent[]) {
   return replaySession({ cartridge, seed: SEED, events });
 }
 
@@ -21,13 +52,12 @@ describe("replaySession", () => {
         payload: { stream: "spinner.verbs", count: 4, form: "uint32" },
       },
     ];
-    const cartridge = { meta: { startedAt: STARTED_AT } };
 
-    expect(replay(cartridge, events)).toEqual(replay(cartridge, events));
+    expect(replay(CARTRIDGE, events)).toEqual(replay(CARTRIDGE, events));
   });
 
   it("carries the clock and the PRNG into serialized state", () => {
-    const output = replay({ meta: { startedAt: STARTED_AT } }, [
+    const output = replay(CARTRIDGE, [
       { type: "clock.tick", payload: { ms: 2500 } },
       {
         type: "random.draw",
@@ -43,7 +73,7 @@ describe("replaySession", () => {
   });
 
   it("stamps each event with the instant it was issued, not the one it ended at", () => {
-    const output = replay({ meta: { startedAt: STARTED_AT } }, [
+    const output = replay(CARTRIDGE, [
       { type: "clock.tick", payload: { ms: 60000 } },
       { type: "session.end" },
     ]);
@@ -53,35 +83,31 @@ describe("replaySession", () => {
   });
 });
 
-describe("meta.startedAt", () => {
-  it("starts the clock where the cartridge says", () => {
-    const output = replay({ meta: { startedAt: STARTED_AT } }, []);
-    expect(output.state.clock.startMs).toBe(parseTimestamp(STARTED_AT));
-  });
-
-  it("falls back to a visibly wrong default when the cartridge is silent", () => {
-    for (const cartridge of [{}, { meta: {} }, null, "not a cartridge", []]) {
-      expect(replay(cartridge, []).state.clock.startMs).toBe(
-        DEFAULT_SESSION_START_MS,
-      );
-    }
-    expect(formatTimestamp(DEFAULT_SESSION_START_MS)).toBe(
-      "1970-01-01T00:00:00.000Z",
+describe("the cartridge's declared start", () => {
+  it("is where the clock starts", () => {
+    expect(replay(CARTRIDGE, []).state.clock.startMs).toBe(
+      parseTimestamp(STARTED_AT),
     );
   });
 
-  it("rejects a declared start that is not a UTC timestamp", () => {
-    expect(() => replay({ meta: { startedAt: 12345 } }, [])).toThrow(
-      /meta.startedAt must be a UTC timestamp string/,
-    );
-    expect(() => replay({ meta: { startedAt: "2026-08-05" } }, [])).toThrow(
-      /must be YYYY-MM-DDTHH/,
-    );
+  it("carries the normalized cartridge into state", () => {
+    // Not the JSON that was written: the loader filled `mode`, `owner`,
+    // `group` and `mtime`, and a recording captures what the engine ran on.
+    const file = replay(CARTRIDGE, []).state.cartridge.repository.files[
+      "/srv/app/main.ts"
+    ];
+    expect(file).toEqual({
+      contents: "export const load = 1;\n",
+      mode: "0644",
+      owner: "root",
+      group: "root",
+      mtime: STARTED_AT,
+    });
   });
 });
 
 describe("probe events", () => {
-  const cartridge = { meta: { startedAt: STARTED_AT } };
+  const cartridge = CARTRIDGE;
 
   it("names the resolved stream path, so a fixture says which stream moved", () => {
     const output = replay(cartridge, [

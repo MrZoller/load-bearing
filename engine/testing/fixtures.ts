@@ -14,6 +14,7 @@ import { lstatSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import type { EngineEvent } from "../session.js";
 import type { ReplayFixture, ReplayRecording } from "./replay.js";
 import { describeUnwritableText } from "./text.js";
 
@@ -21,6 +22,20 @@ import { describeUnwritableText } from "./text.js";
 export const REPLAY_FIXTURE_ROOT = fileURLToPath(
   new URL("../__fixtures__/replay/", import.meta.url),
 );
+
+/** Absolute path to `engine/__fixtures__/cartridges/`. */
+export const CARTRIDGE_FIXTURE_ROOT = fileURLToPath(
+  new URL("../__fixtures__/cartridges/", import.meta.url),
+);
+
+/**
+ * Cartridge fixture names are file-name components, not paths.
+ *
+ * A fixture names its cartridge and this joins that name to a directory, so
+ * without the check a `../` in a `fixture.json` would read whatever it liked
+ * off the developer's disk and record it into a committed artifact.
+ */
+const CARTRIDGE_NAME = /^[a-z0-9][a-z0-9-]*$/;
 
 /**
  * A decoder that changes nothing about the bytes it is given.
@@ -176,12 +191,59 @@ export function listReplayFixtures(): string[] {
     .sort();
 }
 
+/**
+ * Read one cartridge fixture, by name, from `engine/__fixtures__/cartridges/`.
+ *
+ * Returns the parsed JSON unvalidated — `loadCartridge` is what validates, and
+ * it runs on the replay path so the fixture suite exercises it. The malformed
+ * cartridges under `invalid/` are read through here too, which is the point:
+ * the loader's tests feed it the same bytes a replay would.
+ */
+export function loadCartridgeFixture(name: string): unknown {
+  if (!CARTRIDGE_NAME.test(name)) {
+    throw new Error(
+      `cartridge fixture name ${JSON.stringify(name)} must match ${String(CARTRIDGE_NAME)}. ` +
+        `Names are joined to a directory, so a path here would read files this harness does not own.`,
+    );
+  }
+  const path = assertRealFile(join(CARTRIDGE_FIXTURE_ROOT, `${name}.json`));
+  const text = readTextFile(path);
+  assertNoDuplicateKeys(text, path);
+  return JSON.parse(text) as unknown;
+}
+
+/** Every malformed cartridge fixture, sorted by name. */
+export function listInvalidCartridgeFixtures(): string[] {
+  return readdirSync(join(CARTRIDGE_FIXTURE_ROOT, "invalid"))
+    .filter((entry) => entry.endsWith(".json"))
+    .map((entry) => entry.slice(0, -".json".length))
+    .sort();
+}
+
+/** Read one malformed cartridge fixture. Parsed, deliberately not validated. */
+export function loadInvalidCartridgeFixture(name: string): unknown {
+  if (!CARTRIDGE_NAME.test(name)) {
+    throw new Error(`invalid cartridge fixture name ${JSON.stringify(name)}`);
+  }
+  const path = assertRealFile(
+    join(CARTRIDGE_FIXTURE_ROOT, "invalid", `${name}.json`),
+  );
+  const text = readTextFile(path);
+  assertNoDuplicateKeys(text, path);
+  return JSON.parse(text) as unknown;
+}
+
 /** Read and shape-check one fixture's input triple. */
 export function loadReplayFixture(name: string): ReplayFixture {
   const path = assertRealFile(join(REPLAY_FIXTURE_ROOT, name, FIXTURE_FILE));
   const text = readTextFile(path);
   assertNoDuplicateKeys(text, path);
-  return parseReplayFixture(JSON.parse(text) as unknown, name, path);
+  return parseReplayFixture(
+    JSON.parse(text) as unknown,
+    name,
+    path,
+    loadCartridgeFixture,
+  );
 }
 
 /**
@@ -194,25 +256,21 @@ export function loadReplayFixture(name: string): ReplayFixture {
 export function parseReplayFixture(
   parsed: unknown,
   name: string,
-  path = name,
+  path: string,
+  readCartridge: (cartridgeName: string) => unknown,
 ): ReplayFixture {
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     throw new Error(`${path}: expected a JSON object`);
   }
 
   const fixture = parsed as Partial<ReplayFixture>;
-  for (const field of ["name", "description", "seed"] as const) {
+  for (const field of ["name", "description", "seed", "cartridge"] as const) {
     if (typeof fixture[field] !== "string") {
-      throw new Error(`${path}: "${field}" must be a string`);
+      throw new Error(
+        `${path}: "${field}" must be a string; "cartridge" names a file under ` +
+          `engine/__fixtures__/cartridges/`,
+      );
     }
-  }
-  // `hasOwn`, not an undefined check: the cartridge is typed `unknown` until
-  // issue #3 gives it a schema, so `null` has to stay legal. Without this, a
-  // fixture that misspells the key replays with `cartridge: undefined`, the
-  // serializer drops the undefined property by JSON convention, and
-  // `fixtures:update` mints a green recording for two thirds of the triple.
-  if (!Object.hasOwn(parsed, "cartridge")) {
-    throw new Error(`${path}: "cartridge" is required, and may be null`);
   }
   if (!Array.isArray(fixture.events)) {
     throw new Error(`${path}: "events" must be an array`);
@@ -262,7 +320,18 @@ export function parseReplayFixture(
     );
   }
 
-  return fixture as ReplayFixture;
+  // `cartridge` is a *name* on disk and the resolved contents in memory. The
+  // resolution happens last, so a fixture that is malformed in some other way
+  // reports that rather than a missing-file error from chasing its reference.
+  const cartridgeName = fixture.cartridge as string;
+  return {
+    name: fixture.name,
+    description: fixture.description as string,
+    seed: fixture.seed as string,
+    cartridgeName,
+    cartridge: readCartridge(cartridgeName),
+    events: fixture.events as readonly EngineEvent[],
+  };
 }
 
 /**

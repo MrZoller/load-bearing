@@ -1,0 +1,294 @@
+{
+  "$comment": "Generated from engine/cartridge/schema.ts by `npm run schema:update`. Do not edit by hand: a test fails when this file and the loader disagree.",
+  "$id": "https://loadbearing.cc/schema/cartridge.v0.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A Load Bearing incident cartridge. Everything the engine knows about a world arrives through this document.",
+  "properties": {
+    "meta": {
+      "additionalProperties": false,
+      "description": "Who this incident is and when it happens.",
+      "properties": {
+        "assignment": {
+          "description": "What the visitor is nominally asked to do.",
+          "maxLength": 240,
+          "minLength": 1,
+          "type": "string"
+        },
+        "date": {
+          "$comment": "The loader applies a further check this pattern cannot express.",
+          "description": "The incident's calendar date, `YYYY-MM-DD`. Part of the PRNG seed.",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "type": "string"
+        },
+        "number": {
+          "description": "The incident number, as it appears in the archive.",
+          "maximum": 1000000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "schemaVersion": {
+          "const": 0,
+          "description": "Must be 0. Anything else is rejected before other checks run."
+        },
+        "startedAt": {
+          "description": "A UTC instant, `YYYY-MM-DDTHH:MM:SS[.mmm]Z`. The simulated machine has no other timezone.",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$",
+          "type": "string"
+        },
+        "title": {
+          "description": "The incident's title.",
+          "maxLength": 120,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "number",
+        "date",
+        "title",
+        "assignment",
+        "startedAt"
+      ],
+      "type": "object"
+    },
+    "models": {
+      "description": "The selectable models. At least one, with distinct ids.",
+      "items": {
+        "additionalProperties": false,
+        "description": "One selectable model persona.",
+        "properties": {
+          "archetype": {
+            "description": "Which behavioural archetype modulates the story beats.",
+            "enum": [
+              "paranoid",
+              "reckless",
+              "superficial",
+              "existential"
+            ],
+            "type": "string"
+          },
+          "costMultiplier": {
+            "description": "Feeds the cost readout in the status bar.",
+            "maximum": 1000000000,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "description": {
+            "description": "One line shown in the model selector.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "id": {
+            "description": "Stable slug. Part of the PRNG seed, so changing one re-rolls every session that used it.",
+            "pattern": "^[a-z0-9][a-z0-9.-]*$",
+            "type": "string"
+          },
+          "name": {
+            "description": "Display name, e.g. `Deep Foundation`.",
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string"
+          },
+          "quirks": {
+            "default": [],
+            "description": "Free-text behavioural notes, used by the dialogue layer.",
+            "items": {
+              "description": "One quirk.",
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "archetype",
+          "description",
+          "costMultiplier"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "presentation": {
+      "$comment": "Declared but not validated in schema v0. Tightened by: Phase 2 shapes it, Phase 4 hardens it. The gap is a decision, not an oversight.",
+      "default": {},
+      "description": "Status curves, share lines, spinner verb pools, preview card, UI disturbances.",
+      "type": "object"
+    },
+    "repository": {
+      "additionalProperties": false,
+      "description": "The world: a filesystem and everything queryable from a shell.",
+      "properties": {
+        "cwd": {
+          "description": "Where the session opens. Must be a directory some declared file lives under.",
+          "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$",
+          "type": "string"
+        },
+        "env": {
+          "additionalProperties": {
+            "description": "The variable's value.",
+            "type": "string"
+          },
+          "default": {},
+          "description": "Environment variables. A primary carrier of environmental jokes.",
+          "propertyNames": {
+            "description": "Each key is an environment variable name.",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "type": "object"
+        },
+        "files": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "description": "One file in the simulated filesystem.",
+            "properties": {
+              "contents": {
+                "description": "The file's full text. Empty is allowed; a binary file is not.",
+                "type": "string"
+              },
+              "group": {
+                "default": "root",
+                "description": "Owning group.",
+                "pattern": "^[a-z_][a-z0-9_-]*$",
+                "type": "string"
+              },
+              "mode": {
+                "default": "0644",
+                "description": "Permission bits as four octal digits, as `ls -l` renders them.",
+                "pattern": "^[0-7]{4}$",
+                "type": "string"
+              },
+              "mtime": {
+                "$comment": "Defaults to `meta.startedAt` — a file the cartridge does not date was already there when the session opened.",
+                "description": "A UTC instant, `YYYY-MM-DDTHH:MM:SS[.mmm]Z`. The simulated machine has no other timezone.",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$",
+                "type": "string"
+              },
+              "owner": {
+                "default": "root",
+                "description": "Owning user. A comedy surface: `ls -la` showing owner `greg` is doing work.",
+                "pattern": "^[a-z_][a-z0-9_-]*$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "contents"
+            ],
+            "type": "object"
+          },
+          "description": "The simulated filesystem, keyed by absolute path.",
+          "propertyNames": {
+            "description": "Each key is an absolute POSIX path.",
+            "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$"
+          },
+          "type": "object"
+        },
+        "gitHistory": {
+          "default": [],
+          "description": "Commit history for the repository at `cwd`.",
+          "items": {
+            "$comment": "Declared but not validated in schema v0. Tightened by: issue #6. The gap is a decision, not an oversight.",
+            "description": "One entry. Commit history for the repository at `cwd`.",
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "logs": {
+          "default": [],
+          "description": "Log entries queryable from the shell.",
+          "items": {
+            "$comment": "Declared but not validated in schema v0. Tightened by: issue #7. The gap is a decision, not an oversight.",
+            "description": "One entry. Log entries queryable from the shell.",
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "manPages": {
+          "additionalProperties": {
+            "description": "The page's full text.",
+            "type": "string"
+          },
+          "default": {},
+          "description": "`man` page bodies, keyed by page name.",
+          "propertyNames": {
+            "description": "Each key is a man page name.",
+            "pattern": "^[a-z0-9][a-z0-9._-]*$"
+          },
+          "type": "object"
+        },
+        "processes": {
+          "default": [],
+          "description": "Process table rows, as `ps` would show them.",
+          "items": {
+            "$comment": "Declared but not validated in schema v0. Tightened by: issue #7. The gap is a decision, not an oversight.",
+            "description": "One entry. Process table rows, as `ps` would show them.",
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "services": {
+          "default": [],
+          "description": "Service units, with states, health and ports.",
+          "items": {
+            "$comment": "Declared but not validated in schema v0. Tightened by: issue #7. The gap is a decision, not an oversight.",
+            "description": "One entry. Service units, with states, health and ports.",
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "shellHistory": {
+          "default": [],
+          "description": "`history` output, oldest first — what the last person tried.",
+          "items": {
+            "description": "One command line.",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "tests": {
+          "default": [],
+          "description": "Simulated test-runner cases and their reactions.",
+          "items": {
+            "$comment": "Declared but not validated in schema v0. Tightened by: issue #12. The gap is a decision, not an oversight.",
+            "description": "One entry. Simulated test-runner cases and their reactions.",
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "tickets": {
+          "default": [],
+          "description": "The in-world ticket archive.",
+          "items": {
+            "$comment": "Declared but not validated in schema v0. Tightened by: issue #7. The gap is a decision, not an oversight.",
+            "description": "One entry. The in-world ticket archive.",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "cwd",
+        "files"
+      ],
+      "type": "object"
+    },
+    "story": {
+      "$comment": "Declared but not validated in schema v0. Tightened by: Phase 2 shapes it, Phase 4 hardens it. The gap is a decision, not an oversight.",
+      "default": {},
+      "description": "Premise, reveals, intents, consequences, callbacks, rare events, endings.",
+      "type": "object"
+    }
+  },
+  "required": [
+    "meta",
+    "repository",
+    "models"
+  ],
+  "title": "Load Bearing cartridge, schema version 0",
+  "type": "object"
+}

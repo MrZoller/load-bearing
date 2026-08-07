@@ -35,14 +35,14 @@ export const SEED_FIELD_SEPARATOR = "/";
  * date is the cartridge loader's job (issue #3), which has the whole cartridge
  * in hand and can say which incident is wrong.
  */
-const INCIDENT_DATE_SHAPE = /^\d{4}-\d{2}-\d{2}$/;
+export const INCIDENT_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * Model identifiers are slugs, not prose. Narrow on purpose: the seed string
  * ends up in URLs and fixture names, and a model called `Deep Foundation™`
  * would make one that needs escaping.
  */
-const MODEL_SHAPE = /^[a-z0-9][a-z0-9.-]*$/;
+export const MODEL_ID_PATTERN = /^[a-z0-9][a-z0-9.-]*$/;
 
 /** FNV-1a 32-bit, as published. */
 export const FNV_OFFSET_BASIS_32 = 0x811c9dc5;
@@ -94,7 +94,7 @@ export function hashString(
  * permalink carries, and what `hashString` turns into the root seed.
  */
 export function formatSeed(material: SeedMaterial): string {
-  if (!INCIDENT_DATE_SHAPE.test(material.incidentDate)) {
+  if (!INCIDENT_DATE_PATTERN.test(material.incidentDate)) {
     throw new Error(
       `seed material: incidentDate must be YYYY-MM-DD, got ${JSON.stringify(material.incidentDate)}`,
     );
@@ -104,7 +104,7 @@ export function formatSeed(material: SeedMaterial): string {
       `seed material: dailySeed must be a non-negative integer, got ${String(material.dailySeed)}`,
     );
   }
-  if (!MODEL_SHAPE.test(material.model)) {
+  if (!MODEL_ID_PATTERN.test(material.model)) {
     throw new Error(
       `seed material: model must be a lowercase slug, got ${JSON.stringify(material.model)}`,
     );

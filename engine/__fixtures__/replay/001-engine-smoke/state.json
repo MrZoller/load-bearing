@@ -1,20 +1,83 @@
 {
   "cartridge": {
     "meta": {
+      "assignment": "Exercise the loader. Do not make this interesting.",
+      "date": "2026-08-05",
       "number": 0,
+      "schemaVersion": 0,
+      "startedAt": "2026-08-05T09:14:22.000Z",
       "title": "Fixture World"
     },
+    "models": [
+      {
+        "archetype": "paranoid",
+        "costMultiplier": 48000,
+        "description": "Thorough. Expensive. Excavation permit required.",
+        "id": "deep-foundation",
+        "name": "Deep Foundation",
+        "quirks": [
+          "Surveys before it reads."
+        ]
+      },
+      {
+        "archetype": "reckless",
+        "costMultiplier": 3,
+        "description": "Ships first. Reads the diff later, or never.",
+        "id": "quick-patch",
+        "name": "Quick Patch",
+        "quirks": []
+      }
+    ],
+    "presentation": {},
     "repository": {
       "cwd": "/production/service",
+      "env": {
+        "PATH": "/usr/local/bin:/usr/bin:/bin",
+        "SERVICE_TIER": "critical"
+      },
       "files": {
-        "README.md": "# service\n",
-        "src/index.ts": "export const load = 1;\n"
-      }
-    }
+        "/etc/motd": {
+          "contents": "This system is load-bearing.\n",
+          "group": "root",
+          "mode": "0444",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/README.md": {
+          "contents": "# service\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src/index.ts": {
+          "contents": "export const load = 1;\n",
+          "group": "departed",
+          "mode": "0644",
+          "mtime": "2026-07-31T02:11:09.000Z",
+          "owner": "greg"
+        }
+      },
+      "gitHistory": [],
+      "logs": [],
+      "manPages": {
+        "service": "SERVICE(8)\n\nNAME\n     service - the service\n"
+      },
+      "processes": [],
+      "services": [],
+      "shellHistory": [
+        "cd /production/service",
+        "git status",
+        "npm test"
+      ],
+      "tests": [],
+      "tickets": []
+    },
+    "story": {}
   },
   "clock": {
     "elapsedMs": 0,
-    "startMs": 0
+    "startMs": 1785921262000
   },
   "engineVersion": "0.0.0",
   "eventCount": 4,
