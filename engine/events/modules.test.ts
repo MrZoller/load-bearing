@@ -3,11 +3,12 @@ import { describe, expect, it } from "vitest";
 import { loadCartridge } from "../cartridge/load.js";
 import type { LoadedCartridge } from "../cartridge/types.js";
 import { parseTimestamp } from "../clock/civil.js";
+import { deserialize, serialize } from "../serialize/canonical.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { CLOCK_MODULE, MAX_TICK_MS } from "./core.js";
 import { ENGINE_EVENT_MODULES, ENGINE_EVENT_REGISTRY } from "./modules.js";
 import { PROBE_MODULE } from "./probe.js";
-import { reduce } from "./reduce.js";
+import { reduce, restoreSnapshot, snapshot, step } from "./reduce.js";
 import type { EngineEvent, SessionState } from "./state.js";
 import { renderTranscript } from "./transcript.js";
 
@@ -190,27 +191,62 @@ describe("the probe events", () => {
     const rejections: readonly (readonly [unknown, RegExp])[] = [
       [null, /must be an object/],
       [[], /must be an object/],
-      [{ events: "oops", values: 0 }, /events must be a non-negative integer/],
-      [{ events: 0, values: -1 }, /values must be a non-negative integer/],
-      [{ events: 1.5, values: 0 }, /events must be a non-negative integer/],
-      [{ events: 0 }, /values must be a non-negative integer/],
+      [
+        { events: "oops", values: 0 },
+        /events must be an integer between 0 and/,
+      ],
+      [{ events: 0, values: -1 }, /values must be an integer between 0 and/],
+      [{ events: 1.5, values: 0 }, /events must be an integer between 0 and/],
+      [{ events: 0 }, /values must be an integer between 0 and/],
       [{ events: 0, values: 0, extra: 1 }, /unexpected field\(s\) extra/],
-      // At 2^53 the counter stops counting: `events + 1` returns `events`
-      // unchanged and `values + 3` lands 4 away, and the corruption survives
+      // Past 2^53 the counter stops counting: `events + 1` returns `events`
+      // unchanged and `values + 3` lands 2 away, and the corruption survives
       // re-serialization looking like an ordinary integer.
       [
         { events: Number.MAX_SAFE_INTEGER + 1, values: 0 },
-        /events must be a non-negative integer below 2\^53/,
+        /events must be an integer between 0 and/,
       ],
       [
         { events: 0, values: Number.MAX_SAFE_INTEGER + 1 },
-        /values must be a non-negative integer below 2\^53/,
+        /values must be an integer between 0 and/,
       ],
     ];
 
     for (const [slice, expected] of rejections) {
       expect(() => validate(slice, where)).toThrow(expected);
     }
+  });
+
+  it("refuses to fold a counter past the point addition stays exact", () => {
+    // The two bounds are one invariant: the fold path never *creates* a counter
+    // above MAX_SAFE_INTEGER, and restore accepts exactly what the fold path
+    // can create. The guard has to be here and not only at restore — any
+    // ceiling restore accepts, the next fold turns into a larger value that
+    // restore would then refuse, so no restore-side bound can deliver the
+    // round trip.
+    const validate = PROBE_MODULE.validateSlice;
+    if (validate === undefined) {
+      expect.unreachable("the probe module declares a slice validator");
+    }
+
+    // Exactly at the ceiling restores — it is a value the fold path can reach.
+    const atCeiling = { events: 1, values: Number.MAX_SAFE_INTEGER };
+    expect(validate(atCeiling, "snapshot: slices.probe")).toEqual(atCeiling);
+
+    // And one fold from there is refused rather than silently losing precision.
+    const state = restoreSnapshot(
+      serialize({
+        ...(deserialize(snapshot(fold([]))) as Record<string, unknown>),
+        slices: { probe: atCeiling },
+      }),
+    );
+
+    expect(() =>
+      step(state, {
+        type: "probe.random",
+        payload: { stream: "a", count: 1, form: "uint32" },
+      }),
+    ).toThrow(/would take the slice past 9007199254740991/);
   });
 
   it("rejects a payload it cannot trust", () => {

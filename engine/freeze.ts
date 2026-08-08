@@ -30,12 +30,33 @@
  * instance through its private fields — and a typed array does not survive
  * `Object.freeze` at all, throwing a bare `TypeError` out of an exported
  * function. A brand list closes the two that were noticed; the prototype test
- * closes every one of them at once and has a natural end.
+ * refuses all of them with one question.
+ *
+ * Accessors are refused for the neighbouring reason: freezing cannot make a
+ * getter inert, and every read of one can return a new mutable object, so a
+ * frozen surface would sit over an interior that is never frozen. Descriptors
+ * are read rather than properties, so no caller code runs during the walk.
  *
  * The three callers all pass values already known to be plain JSON — the
  * cartridge schema, a validated cartridge, and a payload that has been through
  * `deserialize(serialize(…))` — so this narrows what the function promises
  * rather than what it accepts today.
+ *
+ * ## What these two predicates do not cover
+ *
+ * They close brand hardening and accessor hardening. Two things remain outside
+ * what this function can promise, and are stated rather than left to be found:
+ *
+ * - **A `Proxy` whose traps lie.** `deepFreeze` on one escapes as a raw
+ *   `TypeError` from `preventExtensions`. No in-language check can detect a
+ *   proxy — reflecting over one already runs its traps — which is why the
+ *   purity gate's `proxy-reflection` rule stops engine code creating one at
+ *   all, and why `engine/serialize/canonical.ts` documents the same stopping
+ *   point.
+ * - **Partial freezing on rejection.** This walks and mutates as it goes, so a
+ *   value refused midway is left half-hardened. Both predicates above throw,
+ *   and neither unwinds; a caller that needs all-or-nothing must validate
+ *   before freezing rather than relying on the throw.
  *
  * `getOwnPropertyNames` rather than `Object.keys`, so a non-enumerable property
  * is frozen too — an unfrozen one would be a mutable interior hiding behind a
@@ -99,12 +120,28 @@ function freezeReachable<T>(value: T, seen: WeakSet<object>): T {
   if (seen.has(container)) return value;
   seen.add(container);
 
-  const properties = container as Record<string | symbol, unknown>;
   for (const key of [
     ...Object.getOwnPropertyNames(container),
     ...Object.getOwnPropertySymbols(container),
   ]) {
-    freezeReachable(properties[key], seen);
+    // Descriptors, never `container[key]`. Reading a property runs an accessor,
+    // which is caller code executing inside a walk whose whole job is to make a
+    // value inert — and it achieves nothing, because a getter returns a fresh
+    // object on every call: the one this walk froze is not the one the next
+    // read returns, so the surface reports frozen over a permanently mutable
+    // interior. This is the house idiom for the same reason in
+    // `canonical.ts` (`ownProperties`, `canProbeByCloning`) and `load.ts`
+    // (`describeNonDataObject`).
+    const descriptor = Object.getOwnPropertyDescriptor(container, key);
+    if (descriptor === undefined) continue;
+    if (descriptor.get !== undefined || descriptor.set !== undefined) {
+      throw new Error(
+        `deepFreeze: property ${String(key)} is an accessor. Freezing cannot make it inert — ` +
+          "every read runs code and can return a new mutable object — so a frozen surface " +
+          "would sit over an interior that is never frozen.",
+      );
+    }
+    freezeReachable(descriptor.value, seen);
   }
   return Object.freeze(value);
 }

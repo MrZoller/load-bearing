@@ -750,7 +750,7 @@ describe("snapshots", () => {
     };
 
     expect(() => restoreSnapshot(serialize(parsed))).toThrow(
-      /snapshot: slices\.probe: events must be a non-negative integer/,
+      /snapshot: slices\.probe: events must be an integer between 0 and/,
     );
   });
 

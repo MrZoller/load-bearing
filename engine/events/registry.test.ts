@@ -439,6 +439,20 @@ describe("createRegistry", () => {
         }),
         /handler "gamma\.bump" has no apply function/,
       ],
+      // `undefined` and `null` are exactly the two values that throw on
+      // property access; `=== undefined` alone let `null` reach `handler.type`
+      // and a bare TypeError. Every other wrong type yields `undefined` for
+      // `.type` and lands in a named error, so this completes the pair.
+      [
+        "a null handler",
+        withModule({ handlers: { "gamma.bump": null } }),
+        /has no handler for it, got null/,
+      ],
+      [
+        "a handler that is a number",
+        withModule({ handlers: { "gamma.bump": 42 } }),
+        /files a handler under "gamma\.bump" that calls itself undefined/,
+      ],
     ];
 
     for (const [what, build, expected] of cases) {

@@ -104,8 +104,10 @@
  *   harm is that `snapshot(restoreSnapshot(text))` may not equal `text` — a
  *   round trip nothing claims.
  * - **Exhaustive field-shape validation of a hand-built module.** Every field
- *   the engine *dereferences* is guarded, so no malformed module produces a
- *   bare `TypeError` (see `./registry.ts`). Fields it merely reads — a
+ *   `defineEventModule` and `createRegistry` *dereference* is guarded, so no
+ *   malformed module produces a bare `TypeError` **along the module and handler
+ *   construction path** — which is the path those two functions own, and not a
+ *   claim about the engine at large. Fields they merely read — a
  *   `description` that is not a string, a `stateful` flag that is not a boolean
  *   — are not, because they cannot throw. One route does change a fold, and is
  *   named here rather than glossed: spreading a stateful module with

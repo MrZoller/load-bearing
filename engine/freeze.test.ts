@@ -115,6 +115,34 @@ describe("deepFreeze", () => {
     }
   });
 
+  it("refuses an accessor instead of running it during the walk", () => {
+    // Reading a property runs a getter — caller code executing inside a walk
+    // whose job is to make a value inert — and it achieves nothing, because a
+    // getter returns a fresh object each call: the one frozen here is not the
+    // one the next read returns, so the surface reports frozen over a
+    // permanently mutable interior.
+    let reads = 0;
+    const value: Record<string, unknown> = { plain: 1 };
+    Object.defineProperty(value, "computed", {
+      enumerable: true,
+      get: () => {
+        reads += 1;
+        return { mutable: true };
+      },
+    });
+
+    expect(() => deepFreeze(value)).toThrow(/property computed is an accessor/);
+    expect(reads).toBe(0);
+
+    // Nested too, and a setter-only property just the same.
+    const setterOnly: Record<string, unknown> = {};
+    Object.defineProperty(setterOnly, "sink", {
+      enumerable: true,
+      set: () => undefined,
+    });
+    expect(() => deepFreeze({ inner: setterOnly })).toThrow(/is an accessor/);
+  });
+
   it("accepts the three shapes plain JSON is made of", () => {
     const nullProto = Object.create(null) as Record<string, unknown>;
     nullProto["n"] = 1;

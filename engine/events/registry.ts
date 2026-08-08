@@ -134,6 +134,12 @@ export function createRegistry(modules: readonly EventModule[]): EventRegistry {
     // validating one value while storing another is the same hazard
     // `assertEventEnvelope` closes for the event envelope. `namespace` was
     // captured above, before the sort, and is not re-read here.
+    //
+    // The discipline covers reads of `declared`, which is the caller's object.
+    // Everything after the frozen copy is built re-reads *that* — `module.types`,
+    // `module.handlers`, `module.namespace` in messages — which is safe for the
+    // opposite reason: it is the engine's own value and cannot change under it.
+    // Two different guarantees, and only the first one needs the discipline.
     const description = declared.description;
     const stateful = declared.stateful;
     const declaredList: unknown = declared.types;
@@ -280,13 +286,21 @@ export function createRegistry(modules: readonly EventModule[]): EventRegistry {
         );
       }
 
-      const handler = module.handlers[type];
-      if (handler === undefined) {
+      // `undefined` and `null` are exactly the two values that throw on
+      // property access — every other wrong type yields `undefined` for `.type`
+      // and lands in a named error below — and the `=== undefined` check alone
+      // let `null` through to `handler.type` and a bare TypeError.
+      //
+      // The `unknown` local is a readability choice, matching how the module
+      // fields above are captured; the compiler is happy either way.
+      const candidate: unknown = module.handlers[type];
+      if (candidate === undefined || candidate === null) {
         throw new EventRegistryError(
           `module ${JSON.stringify(module.namespace)} lists ${JSON.stringify(type)} but has no ` +
-            `handler for it`,
+            `handler for it, got ${candidate === null ? "null" : "nothing"}`,
         );
       }
+      const handler = candidate as RegisteredHandler;
       // A handler carries its own `type` and `namespace`, and `step` trusts
       // both: it looks the handler up by type and then finds the module by
       // `handler.namespace`. `defineEventModule` always fills them correctly,

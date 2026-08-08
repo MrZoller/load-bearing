@@ -110,8 +110,35 @@ function readProbeHead(context: EventContext): {
   };
 }
 
-function advanced(slice: ProbeSlice, values: number): ProbeSlice {
-  return { events: slice.events + 1, values: slice.values + values };
+/**
+ * Advance the counters, refusing to produce one that cannot be read back.
+ *
+ * The guard belongs here, on the fold path, and not only at the restore
+ * boundary. Past `MAX_SAFE_INTEGER` addition stops being exact — `n + 1`
+ * returns `n`, `n + 3` lands 2 away — so the counter silently stops counting
+ * and the corruption survives re-serialization looking like an ordinary
+ * integer. Refusing costs one comparison per probe event.
+ *
+ * It cannot be replaced by a tighter bound at restore. Any ceiling `B` that
+ * restore accepts is a value the next fold turns into `B + growth`, which is
+ * larger than `B` and which restore would then refuse — so the engine would
+ * emit a snapshot it will not read back, whatever `B` is. The round-trip
+ * property is only available from this side.
+ */
+function advanced(
+  slice: ProbeSlice,
+  values: number,
+  where: string,
+): ProbeSlice {
+  const events = slice.events + 1;
+  const total = slice.values + values;
+  if (!Number.isSafeInteger(events) || !Number.isSafeInteger(total)) {
+    throw new Error(
+      `${where}: this probe would take the slice past ${String(Number.MAX_SAFE_INTEGER)}, where ` +
+        `addition stops being exact and the counter would silently stop counting.`,
+    );
+  }
+  return { events, values: total };
 }
 
 function readWeightedEntries(
@@ -170,20 +197,42 @@ function validateProbeSlice(slice: unknown, where: string): ProbeSlice {
   const counts = ["events", "values"] as const;
   for (const key of counts) {
     const count = record[key];
-    // `isSafeInteger`, not `isInteger`: at 2^53 the counter stops counting.
-    // `2**53 + 1` is not representable, so `events + 1` returns `events`
-    // unchanged and `values + 3` lands 4 away — corruption that survives
-    // re-serialization and looks like an ordinary integer. This is the last
-    // unbounded counter on the snapshot path; the clock is bounded by
-    // `MAX_EPOCH_MS`, cursors by `assertUint32`, payload integers by explicit
-    // bounds in `readInteger`, and `eventCount` by the transcript-length check.
+    // Exactly the safe-integer range, which is exactly what the fold path can
+    // produce: `advanced()` refuses to *create* a counter above
+    // `MAX_SAFE_INTEGER`, so accepting up to it here means restore takes back
+    // precisely the set of values the engine can emit. The two bounds are the
+    // same number for that reason, not by coincidence — together they are one
+    // invariant, that the engine never produces a counter it will not read
+    // back.
+    //
+    // A tighter ceiling here would break that rather than strengthen it: any
+    // value restore accepts, the next fold turns into a larger one, which
+    // restore would then refuse.
+    //
+    // ## Scope of this check, for #5–#13
+    //
+    // Within the modules that exist today this is the last unbounded counter on
+    // the snapshot path — the clock is bounded by `MAX_EPOCH_MS`, PRNG cursors
+    // by `assertUint32`, payload integers by the explicit bounds `readInteger`
+    // requires, and `eventCount` by the transcript-length equality in
+    // `restoreSnapshot` (which is a real bound, but an indirect one: it holds
+    // only because the transcript it is compared against is itself bounded).
+    //
+    // That is a statement about today, not a property of the design.
+    // `validateSlice` is per-module and there is no shared numeric-bound
+    // helper, so a stateful subsystem that adds a counter reintroduces this
+    // exact bug and owns bounding it — at both ends, as here. If a third module
+    // needs the same arithmetic, that is the point to extract the helper rather
+    // than to write this comment a third time.
     if (
       typeof count !== "number" ||
       !Number.isSafeInteger(count) ||
       count < 0
     ) {
       throw new Error(
-        `${where}: ${key} must be a non-negative integer below 2^53, got ${JSON.stringify(count)}`,
+        `${where}: ${key} must be an integer between 0 and ` +
+          `${String(Number.MAX_SAFE_INTEGER)}, got ${JSON.stringify(count)}. Past that, ` +
+          `addition stops being exact and the counter would silently stop counting.`,
       );
     }
   }
@@ -232,7 +281,7 @@ export const PROBE_MODULE = defineEventModule<ProbeSlice>({
         }
 
         return {
-          slice: advanced(slice, count),
+          slice: advanced(slice, count, context.where),
           summary: `stream=${stream.path} count=${String(count)} form=${form}`,
           detail: [
             ...chunkedLines(
@@ -266,7 +315,7 @@ export const PROBE_MODULE = defineEventModule<ProbeSlice>({
         }
 
         return {
-          slice: advanced(slice, count),
+          slice: advanced(slice, count, context.where),
           summary: `stream=${stream.path} count=${String(count)} max=${String(max)}`,
           detail: [
             ...tally.map(
@@ -298,7 +347,7 @@ export const PROBE_MODULE = defineEventModule<ProbeSlice>({
           0,
         );
         return {
-          slice: advanced(slice, count),
+          slice: advanced(slice, count, context.where),
           summary: `stream=${stream.path} count=${String(count)}`,
           detail: [
             ...entries.map(
