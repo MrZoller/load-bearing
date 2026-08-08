@@ -128,12 +128,16 @@ export interface SessionState {
  * neither of them describes.
  */
 export function readSlice(state: SessionState, namespace: string): unknown {
-  if (!Object.hasOwn(state.slices, namespace)) {
+  // Captured once: `state` may be a caller-owned object at an exported entry,
+  // and asking it for `slices` to check and again to read is the gap where the
+  // two answers can differ.
+  const slices = state.slices;
+  if (!Object.hasOwn(slices, namespace)) {
     throw new Error(
       `session state has no slice for module ${JSON.stringify(namespace)}; it was ` +
         `bootstrapped with a registry that does not include that module, so folding ` +
         `its events on would produce a session neither describes`,
     );
   }
-  return state.slices[namespace];
+  return slices[namespace];
 }

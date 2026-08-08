@@ -185,7 +185,14 @@ function readWeightedEntries(
   // Reachable from a log built in memory, not from a permalink: `clonePayload`
   // round-trips an appended payload through the canonical serializer, which
   // refuses a sparse array, and `JSON.parse` cannot produce a hole.
-  for (let index = 0; index < items.length; index += 1) {
+  // Captured, like every other index loop the engine owns — `captureOutcome`'s
+  // line count, `canonicalizeSlice`'s length, and `weightedPick`'s count, which
+  // consumes what this returns. Clause 2 does not cover this: it exempts the
+  // array iterator protocol's own reads, and this is the engine's own loop over
+  // a caller-owned array. Read per step, an index accessor that pushes grows
+  // the list mid-copy and a smuggled arm reaches the transcript.
+  const count = items.length;
+  for (let index = 0; index < count; index += 1) {
     const scope = `${where} entry ${String(index)}`;
     // A descriptor, not `index in items`: the latter consults the prototype
     // chain, so a numeric property planted on `Array.prototype` would report a
@@ -236,35 +243,67 @@ function validateProbeSlice(slice: unknown, where: string): ProbeSlice {
   }
   const record = slice as Readonly<Record<string, unknown>>;
   const counts = ["events", "values"] as const;
+
+  // One `getOwnPropertyDescriptors` pass, accessors refused, every value read
+  // out of the snapshot — the pattern `ownProperties` in
+  // `engine/serialize/canonical.ts` and `canonicalizeSlice` in
+  // `engine/events/reduce.ts` already use, adopted here rather than hand-rolled
+  // a third time.
+  //
+  // Ordering alone is not enough, and this function is the proof. Reading the
+  // key set *after* the values let a getter `delete` a sibling before the
+  // unknown-key check looked; reading it *first* let a getter `add` one that
+  // the check had already passed. Two mirror-image silent drops, and each
+  // ordering closes one. A descriptor pass closes both, because no
+  // caller code runs between the snapshot and the reads at all.
+  const descriptors = Object.getOwnPropertyDescriptors(record);
+
+  if (Object.getOwnPropertySymbols(descriptors).length > 0) {
+    throw new Error(
+      `${where}: has a symbol-keyed property, which cannot be recorded`,
+    );
+  }
+
+  // Extra keys are refused for the reason the cartridge loader refuses them: a
+  // field silently dropped on restore is one its author believes is in effect.
+  const unknownKeys = Object.keys(descriptors).filter(
+    (key) => !counts.includes(key as (typeof counts)[number]),
+  );
+  if (unknownKeys.length > 0) {
+    throw new Error(
+      `${where}: unexpected field(s) ${unknownKeys.sort().join(", ")}; this slice holds ` +
+        `${counts.join(", ")}`,
+    );
+  }
+
+  // ## Scope of this check, for #5–#13
+  //
+  // Within the modules that exist today this is the last unbounded counter on
+  // the snapshot path — the clock is bounded by `MAX_EPOCH_MS`, PRNG cursors by
+  // `assertUint32`, payload integers by the explicit bounds `readInteger`
+  // requires, and `eventCount` by the transcript-length equality in
+  // `restoreSnapshot` (a real bound, but an indirect one).
+  //
+  // That is a statement about today, not a property of the design.
+  // `validateSlice` is per-module and there is no shared numeric-bound helper,
+  // so a stateful subsystem that adds a counter reintroduces this exact bug and
+  // owns bounding it, at both ends as here. If a third module needs the same
+  // arithmetic, that is the point to extract the helper.
+  const captured: Record<string, number> = {};
   for (const key of counts) {
-    const count = record[key];
-    // Exactly the safe-integer range, which is exactly what the fold path can
-    // produce: `advanced()` refuses to *create* a counter above
-    // `MAX_SAFE_INTEGER`, so accepting up to it here means restore takes back
-    // precisely the set of values the engine can emit. The two bounds are the
-    // same number for that reason, not by coincidence — together they are one
-    // invariant, that the engine never produces a counter it will not read
-    // back.
-    //
-    // A tighter ceiling here would break that rather than strengthen it: any
-    // value restore accepts, the next fold turns into a larger one, which
-    // restore would then refuse.
-    //
-    // ## Scope of this check, for #5–#13
-    //
-    // Within the modules that exist today this is the last unbounded counter on
-    // the snapshot path — the clock is bounded by `MAX_EPOCH_MS`, PRNG cursors
-    // by `assertUint32`, payload integers by the explicit bounds `readInteger`
-    // requires, and `eventCount` by the transcript-length equality in
-    // `restoreSnapshot` (which is a real bound, but an indirect one: it holds
-    // only because the transcript it is compared against is itself bounded).
-    //
-    // That is a statement about today, not a property of the design.
-    // `validateSlice` is per-module and there is no shared numeric-bound
-    // helper, so a stateful subsystem that adds a counter reintroduces this
-    // exact bug and owns bounding it — at both ends, as here. If a third module
-    // needs the same arithmetic, that is the point to extract the helper rather
-    // than to write this comment a third time.
+    const descriptor = descriptors[key];
+    if (descriptor !== undefined && (descriptor.get ?? descriptor.set)) {
+      throw new Error(
+        `${where}: ${key} is an accessor; a slice is inert data, and reading it would run ` +
+          `code during restore`,
+      );
+    }
+    const count = descriptor?.value as unknown;
+    // The same number the fold path refuses to exceed. `advanced()` will not
+    // create a counter above `MAX_SAFE_INTEGER`, so restore accepts exactly
+    // what the fold can produce — the two bounds are the same number for that
+    // reason, not by coincidence. See `advanced` for why no restore-side
+    // ceiling below it would work.
     if (
       typeof count !== "number" ||
       !Number.isSafeInteger(count) ||
@@ -276,22 +315,12 @@ function validateProbeSlice(slice: unknown, where: string): ProbeSlice {
           `addition stops being exact and the counter would silently stop counting.`,
       );
     }
-  }
-  // Extra keys are refused for the reason the cartridge loader refuses them: a
-  // field silently dropped on restore is one its author believes is in effect.
-  const unknownKeys = Object.keys(record).filter(
-    (key) => !counts.includes(key as (typeof counts)[number]),
-  );
-  if (unknownKeys.length > 0) {
-    throw new Error(
-      `${where}: unexpected field(s) ${unknownKeys.sort().join(", ")}; this slice holds ` +
-        `${counts.join(", ")}`,
-    );
+    captured[key] = count;
   }
 
   return {
-    events: record["events"] as number,
-    values: record["values"] as number,
+    events: captured["events"] as number,
+    values: captured["values"] as number,
   };
 }
 

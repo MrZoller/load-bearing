@@ -62,8 +62,13 @@ export function padZero(value: number | string, width: number): string {
 /** One entry's lines: a header, then its detail, indented. */
 export function renderEntry(entry: TranscriptEntry): string[] {
   const header = `${padZero(entry.index, INDEX_WIDTH)}  ${entry.at}  ${entry.type}`;
+  // Captured: `renderEntry` is exported and takes a caller-owned entry, and
+  // reading `summary` to choose the branch and again to interpolate let the two
+  // differ — a dropped summary, or a trailing space where the branch said there
+  // was none.
+  const summary = entry.summary;
   return [
-    entry.summary === "" ? header : `${header} ${entry.summary}`,
+    summary === "" ? header : `${header} ${summary}`,
     ...entry.detail.map((line) => `${DETAIL_INDENT}${line}`),
   ];
 }

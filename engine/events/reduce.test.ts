@@ -8,7 +8,7 @@ import { deserialize, serialize } from "../serialize/canonical.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { ENGINE_VERSION } from "../version.js";
 import { defineEventModule } from "./module.js";
-import type { EventModule } from "./module.js";
+import type { EventModule, RegisteredHandler } from "./module.js";
 import { ENGINE_EVENT_REGISTRY } from "./modules.js";
 import {
   EventVersionError,
@@ -196,6 +196,70 @@ describe("reduce", () => {
     // `restoreSnapshot`'s documented precondition — and here that is the
     // registry the *first* read supplied, not the one a later read offered.
     expect(() => restoreSnapshot(snapshot(state), declared)).not.toThrow();
+  });
+
+  it("folds every event under the registry it bootstrapped, not a later read", () => {
+    // The test above reads `registry` with an empty log, so nothing ever
+    // reached the `step` call site — which is the read the source comment
+    // names as the sharpest one: "bootstrap the slices under one registry and
+    // fold every event under another". Two registries agreeing on namespace
+    // and type and disagreeing on what the handler does, so the divergence is
+    // a recorded transcript rather than a missing event type.
+    const build = (summary: string) =>
+      createRegistry([
+        defineEventModule<number>({
+          namespace: "counted",
+          description: "reports which registry folded the event",
+          initialSlice: () => 0,
+          events: {
+            "counted.go": {
+              version: 0,
+              apply: (_context, slice) => ({ slice: slice + 1, summary }),
+            },
+          },
+        }),
+      ]);
+    const declared = build("declared");
+    const later = build("LATER");
+    let reads = 0;
+    const state = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      events: [{ type: "counted.go" }, { type: "counted.go" }],
+      get registry(): EventRegistry {
+        reads += 1;
+        return reads > 1 ? later : declared;
+      },
+    });
+
+    expect(reads).toBe(1);
+    expect(state.transcript.map((entry) => entry.summary)).toEqual([
+      "declared",
+      "declared",
+    ]);
+  });
+
+  it("folds the log it was handed, not a later read of it", () => {
+    // The fourth field of the same input, and the only one the test above
+    // leaves with a plain value. The capture is what `for…of` walks, so a
+    // getter cannot swap the log out between the read that looks like the
+    // argument and the read that is actually folded — a session whose
+    // transcript records events its caller never submitted.
+    let reads = 0;
+    const state = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      get events(): readonly EngineEvent[] {
+        reads += 1;
+        return reads > 1
+          ? [{ type: "clock.tick", payload: { ms: 5000 } }]
+          : [{ type: "clock.tick", payload: { ms: 1 } }];
+      },
+    });
+
+    expect(reads).toBe(1);
+    expect(state.clock.elapsedMs).toBe(1);
+    expect(state.transcript).toHaveLength(1);
   });
 
   it("carries a cartridge no handler can write to", () => {
@@ -1840,6 +1904,47 @@ describe("transcript text a handler produces", () => {
     );
   });
 
+  it("stores the number of lines it checked the ceiling against", () => {
+    // The ceiling was checked against `source.length` and the copy then
+    // re-read it every step, so an array that grew during the copy stored more
+    // lines than were validated: snapshot succeeded and `restoreSnapshot`
+    // refused it. No Proxy involved — `length` is writable and an accessor on
+    // an index is an ordinary plain-array feature, so element 0's getter can
+    // push while the copy runs. Same writer-weaker-than-reader shape as the
+    // event type, one field over.
+    const growing: string[] = ["line 0"];
+    Object.defineProperty(growing, 0, {
+      configurable: true,
+      enumerable: true,
+      get: () => {
+        while (growing.length <= MAX_TRANSCRIPT_DETAIL_LINES) {
+          growing.push("grown");
+        }
+        return "line 0";
+      },
+    });
+
+    const state = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      registry: createRegistry([
+        defineEventModule({
+          namespace: "grow",
+          description: "hands over a detail array that grows while it is read",
+          events: {
+            "grow.go": { version: 0, apply: () => ({ detail: growing }) },
+          },
+        }),
+      ]),
+      events: [{ type: "grow.go" }],
+    });
+
+    expect(state.transcript[0]?.detail).toEqual(["line 0"]);
+    expect(() =>
+      restoreSnapshot(snapshot(state), ENGINE_EVENT_REGISTRY),
+    ).toThrow(/no module in this registry registers/);
+  });
+
   it("is refused when a detail line is not a string at all", () => {
     // Two routes to the same unrecordable state, and each closes half. A hole
     // — `new Array(1)`, validly typed and uncast — is skipped by `forEach`,
@@ -1911,5 +2016,683 @@ describe("the default registry", () => {
         }),
       ),
     );
+  });
+});
+
+describe("bootstrap's own inputs", () => {
+  /** A second world, so a `cartridge` getter has somewhere else to point. */
+  const other = loadCartridge({
+    ...(loadCartridgeFixture("minimal") as Record<string, unknown>),
+    meta: {
+      schemaVersion: 0,
+      number: 9,
+      date: "2027-01-01",
+      title: "WORLD B",
+      assignment: "A different world.",
+      startedAt: "2027-01-01T00:00:00.000Z",
+    },
+  });
+
+  it("starts the clock from the cartridge it recorded, not a later read", () => {
+    // `reduce`'s own read-once test cannot see this: `reduce` captures its
+    // input and hands `bootstrap` a fresh literal, so a getter on a
+    // `ReduceInput` never reaches these reads at all. `bootstrap` is an
+    // exported entry in its own right, and `input.cartridge` was read for the
+    // capture and again to start the clock — a session begun in world B and
+    // recorded as world A, which `restoreSnapshot`'s clock-against-cartridge
+    // check is what eventually reports.
+    let reads = 0;
+    const state = bootstrap({
+      get cartridge(): LoadedCartridge {
+        reads += 1;
+        return reads > 1 ? other : CARTRIDGE;
+      },
+      seed: SEED,
+    });
+
+    expect(reads).toBe(1);
+    expect(state.cartridge.meta.title).toBe(CARTRIDGE.meta.title);
+    expect(state.clock.startMs).toBe(parseTimestamp(CARTRIDGE.meta.startedAt));
+    expect(() => restoreSnapshot(snapshot(state))).not.toThrow();
+  });
+
+  it("keys the generator to the seed it recorded, not a later read", () => {
+    // The sibling: `input.seed` was read for the capture `state.seed` carries
+    // and again to derive the PRNG root. The two disagreeing is precisely what
+    // `restoreSnapshot` refuses — a session that can no longer be reproduced
+    // from its own inputs, which is the one sentence the engine exists to
+    // satisfy.
+    let reads = 0;
+    const state = bootstrap({
+      cartridge: CARTRIDGE,
+      get seed(): string {
+        reads += 1;
+        return reads > 1 ? "2026-08-05/1/quick-patch" : SEED;
+      },
+    });
+
+    expect(reads).toBe(1);
+    expect(state.seed).toBe(SEED);
+    expect(state.random.seed).toBe(hashString(SEED));
+    expect(() => restoreSnapshot(snapshot(state))).not.toThrow();
+  });
+});
+
+describe("step's own inputs", () => {
+  it("reads each state field once, so the fold and the result agree", () => {
+    // `state` is caller-owned at this exported entry, and it was read twice
+    // over — `state.cartridge` for the `EventContext` and again by `{...state}`
+    // — so a getter could have the handler fold against one world while the
+    // returned state recorded another. This is the failure `bootstrap`'s
+    // comment describes, closed there and left open here.
+    const other = loadCartridge({
+      ...(loadCartridgeFixture("minimal") as Record<string, unknown>),
+      meta: {
+        schemaVersion: 0,
+        number: 9,
+        date: "2027-01-01",
+        title: "WORLD B",
+        assignment: "A different world.",
+        startedAt: "2027-01-01T00:00:00.000Z",
+      },
+    });
+
+    let folded: string | undefined;
+    const watcher = defineEventModule({
+      namespace: "watcher",
+      description: "reports the world it folded against",
+      events: {
+        "watcher.look": {
+          version: 0,
+          apply: (context) => {
+            folded = context.cartridge.meta.title;
+            return { summary: context.state.cartridge.meta.title };
+          },
+        },
+      },
+    });
+    const registry = createRegistry([watcher]);
+    const start = bootstrap({ cartridge: CARTRIDGE, seed: SEED, registry });
+
+    let reads = 0;
+    const shifty: SessionState = {
+      ...start,
+      get cartridge(): LoadedCartridge {
+        reads += 1;
+        return reads > 1 ? other : CARTRIDGE;
+      },
+    };
+    const after = step(shifty, { type: "watcher.look" }, registry);
+
+    expect(reads).toBe(1);
+    expect(folded).toBe(CARTRIDGE.meta.title);
+    expect(after.transcript[0]?.summary).toBe(CARTRIDGE.meta.title);
+    expect(after.cartridge.meta.title).toBe(CARTRIDGE.meta.title);
+    // And the state it produced is internally consistent, which is what a
+    // restore would check.
+    expect(after.clock.startMs).toBe(
+      parseTimestamp(after.cartridge.meta.startedAt),
+    );
+  });
+
+  it("counts on from the index it captured, not a later read of it", () => {
+    // The test above pins `cartridge`; `eventCount` is the field of the same
+    // capture whose second read is arithmetic rather than storage, so nothing
+    // above it catches a revert. It is read once for the index the handler
+    // sees, the `EventContext`, the `where` prefix and the transcript entry —
+    // and again for the count the new state carries. A getter then produces a
+    // state claiming a hundred events with one transcript entry in it, which
+    // `restoreSnapshot` refuses for breaking the one-entry-per-event property
+    // that makes a transcript position an event position.
+    const sound = defineEventModule({
+      namespace: "alpha",
+      description: "reports the index it was folded at",
+      events: {
+        "alpha.go": {
+          version: 0,
+          apply: (context) => ({ summary: `i=${String(context.index)}` }),
+        },
+      },
+    });
+    const registry = createRegistry([sound]);
+    const start = bootstrap({ cartridge: CARTRIDGE, seed: SEED, registry });
+
+    let reads = 0;
+    const shifty: SessionState = {
+      ...start,
+      get eventCount(): number {
+        reads += 1;
+        return reads > 1 ? 100 : 0;
+      },
+    };
+    const after = step(shifty, { type: "alpha.go" }, registry);
+
+    expect(reads).toBe(1);
+    expect(after.eventCount).toBe(1);
+    expect(after.transcript[0]?.summary).toBe("i=0");
+    expect(after.transcript).toHaveLength(1);
+    expect(() => restoreSnapshot(snapshot(after), registry)).not.toThrow();
+  });
+
+  it("carries forward every state field it captured, not later reads", () => {
+    // The two tests above pin `cartridge` and `eventCount`. The other seven
+    // fields of the same capture were each separately revertible in silence,
+    // and so was the `before` view built from them — the object the handler is
+    // handed in place of the caller's. Every field gets a counting getter at
+    // once and the fold is required to be byte-identical to the same step over
+    // plain data, so a second read of any one of them moves a byte: `seed`,
+    // `engineVersion` and `eventSchemaVersion` are stored, `clock` and
+    // `random` are rebuilt into live handles, `slices` is both read from and
+    // merged into, and `transcript` is appended to.
+    const sound = defineEventModule<number>({
+      namespace: "alpha",
+      description: "counts alpha events",
+      initialSlice: () => 0,
+      events: {
+        "alpha.bump": {
+          version: 0,
+          apply: (context, slice) => ({
+            slice: slice + 1,
+            // Both halves of the `before` view: the slice arrives through
+            // `readSlice(before, …)` and the seed is read back off
+            // `context.state`, so handing the handler the caller's object
+            // instead of the capture shows up here.
+            summary: `n=${String(slice + 1)} seed=${context.state.seed}`,
+          }),
+        },
+      },
+    });
+    // A second stateful module, untouched by this event: with only one, the
+    // handler's own slice overwrites whatever `nextSlices` was given and a
+    // reverted `slices` read diverges nowhere.
+    const quiet = defineEventModule<number>({
+      namespace: "beta",
+      description: "holds a slice this event never writes",
+      initialSlice: () => 0,
+      events: { "beta.idle": { version: 0, apply: () => ({}) } },
+    });
+    const registry = createRegistry([sound, quiet]);
+    const start = bootstrap({ cartridge: CARTRIDGE, seed: SEED, registry });
+    const event: EngineEvent = { type: "alpha.bump" };
+    const overPlainData = serialize(step(start, event, registry));
+
+    let engineVersionReads = 0;
+    let eventSchemaVersionReads = 0;
+    let seedReads = 0;
+    let clockReads = 0;
+    let randomReads = 0;
+    let slicesReads = 0;
+    let transcriptReads = 0;
+    const shifty: SessionState = {
+      cartridge: start.cartridge,
+      eventCount: start.eventCount,
+      get engineVersion(): string {
+        engineVersionReads += 1;
+        return engineVersionReads > 1 ? "9.9.9-LATER" : start.engineVersion;
+      },
+      get eventSchemaVersion(): number {
+        eventSchemaVersionReads += 1;
+        return eventSchemaVersionReads > 1 ? 99 : start.eventSchemaVersion;
+      },
+      get seed(): string {
+        seedReads += 1;
+        return seedReads > 1 ? "2026-08-05/1/quick-patch" : start.seed;
+      },
+      get clock(): SessionState["clock"] {
+        clockReads += 1;
+        return clockReads > 1
+          ? { ...start.clock, elapsedMs: 60_000 }
+          : start.clock;
+      },
+      get random(): SessionState["random"] {
+        randomReads += 1;
+        return randomReads > 1 ? { seed: 12345, cursors: {} } : start.random;
+      },
+      get slices(): SessionState["slices"] {
+        slicesReads += 1;
+        return slicesReads > 1 ? { alpha: 500, beta: 500 } : start.slices;
+      },
+      get transcript(): SessionState["transcript"] {
+        transcriptReads += 1;
+        return transcriptReads > 1
+          ? [
+              {
+                index: 0,
+                at: STARTED_AT,
+                type: "alpha.bump",
+                summary: "LATER",
+                detail: [],
+              },
+            ]
+          : start.transcript;
+      },
+    };
+    const after = step(shifty, event, registry);
+
+    expect(engineVersionReads).toBe(1);
+    expect(eventSchemaVersionReads).toBe(1);
+    expect(seedReads).toBe(1);
+    expect(clockReads).toBe(1);
+    expect(randomReads).toBe(1);
+    expect(slicesReads).toBe(1);
+    expect(transcriptReads).toBe(1);
+
+    // Field by field first, so a revert says which capture came loose.
+    expect(after.engineVersion).toBe(start.engineVersion);
+    expect(after.eventSchemaVersion).toBe(start.eventSchemaVersion);
+    expect(after.seed).toBe(SEED);
+    expect(after.clock).toEqual(start.clock);
+    expect(after.random).toEqual(start.random);
+    expect(after.slices).toEqual({ alpha: 1, beta: 0 });
+    expect(after.transcript).toHaveLength(1);
+    expect(after.transcript[0]?.summary).toBe(`n=1 seed=${SEED}`);
+    // Then byte for byte against the same step over plain data, which is what
+    // a golden fixture would compare.
+    expect(serialize(after)).toBe(overPlainData);
+  });
+
+  it("refuses to write a transcript entry whose type is over a stored line", () => {
+    // The emitting side of the bound. `createRegistry` refuses an oversized
+    // type too, but a hand-built registry reaches `step` without passing
+    // through it — so this is the half the round-trip property rests on.
+    const long = `alpha.${"a".repeat(MAX_TRANSCRIPT_LINE_LENGTH)}`;
+    const sound = defineEventModule({
+      namespace: "alpha",
+      description: "",
+      events: { "alpha.ok": { version: 0, apply: () => ({}) } },
+    });
+    const real = sound.handlers["alpha.ok"] as RegisteredHandler;
+    const handBuilt: EventRegistry = {
+      modules: [sound],
+      namespaces: ["alpha"],
+      types: [long],
+      handler: (type) => (type === long ? { ...real, type: long } : undefined),
+      module: () => sound,
+    };
+    const start = bootstrap({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      registry: createRegistry([sound]),
+    });
+
+    expect(() => step(start, { type: long }, handBuilt)).toThrow(
+      /the event type is 4102 characters, over the 4096 a stored transcript line may hold/,
+    );
+  });
+});
+
+describe("a caller-owned registry, read once", () => {
+  const build = (namespace: string) =>
+    defineEventModule<{ n: number }>({
+      namespace,
+      description: "",
+      initialSlice: () => ({ n: 0 }),
+      events: {
+        [`${namespace}.go`]: {
+          version: 0,
+          apply: (context, slice) => ({
+            slice: { n: slice.n + 1 },
+            summary: `draw=${String(context.random.nextUint32())}`,
+          }),
+        },
+      },
+    });
+
+  it("names the version it compared against, not a later read", () => {
+    const sound = createRegistry([build("alpha")]);
+    const real = sound.handler("alpha.go") as RegisteredHandler;
+    let reads = 0;
+    const shifty: EventRegistry = {
+      ...sound,
+      handler: () => ({
+        ...real,
+        get version(): number {
+          reads += 1;
+          return reads > 1 ? 99 : 7;
+        },
+      }),
+    };
+    const start = bootstrap({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      registry: sound,
+    });
+
+    expect(() => step(start, { type: "alpha.go", version: 0 }, shifty)).toThrow(
+      /implements version 7 of alpha\.go/,
+    );
+  });
+
+  it("compares the payload version against the one it captured, not a later read", () => {
+    // The sibling of `appendEvent`'s "stamps the version it validated". There
+    // the capture is stored, so a divergent second read shows up in the log;
+    // here nothing is stored and the only observable is *which* value the
+    // comparison used — so it has to be read off both answers. The test above
+    // pins the message and cannot see this: with the guard reverted to a second
+    // read, a mismatch still throws and still names the captured 7.
+    const sound = createRegistry([build("alpha")]);
+    const real = sound.handler("alpha.go") as RegisteredHandler;
+    const start = bootstrap({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      registry: sound,
+    });
+
+    // The version the engine implements at the moment it is asked is 7; a
+    // second read says 99. An event stamped 7 was recorded against the schema
+    // this handler implements, so it folds.
+    let acceptedReads = 0;
+    const accepting: EventRegistry = {
+      ...sound,
+      handler: () => ({
+        ...real,
+        get version(): number {
+          acceptedReads += 1;
+          return acceptedReads > 1 ? 99 : 7;
+        },
+      }),
+    };
+
+    expect(
+      step(start, { type: "alpha.go", version: 7 }, accepting).eventCount,
+    ).toBe(1);
+    expect(acceptedReads).toBe(1);
+
+    // And one stamped 99 was not, however agreeable the second read is. Folded
+    // instead of refused, it would be reinterpreted under today's rules — the
+    // whole reason a payload version exists.
+    let refusedReads = 0;
+    const refusing: EventRegistry = {
+      ...sound,
+      handler: () => ({
+        ...real,
+        get version(): number {
+          refusedReads += 1;
+          return refusedReads > 1 ? 99 : 7;
+        },
+      }),
+    };
+
+    expect(() =>
+      step(start, { type: "alpha.go", version: 99 }, refusing),
+    ).toThrow(/implements version 7 of alpha\.go/);
+    expect(refusedReads).toBe(1);
+  });
+
+  it("forks the stream and stores the slice under one namespace", () => {
+    // The namespace picks both the PRNG stream and the slice key. Read twice
+    // inside one call, a getter forks `root/alpha` and stores under `beta` —
+    // state coherence, not a message. Scoped to a single `bootstrap`, because
+    // a value that changes *between* calls is the registry-swap precondition
+    // `step` documents, not this.
+    const drawing = defineEventModule<{ roll: number }>({
+      namespace: "alpha",
+      description: "",
+      initialSlice: (context) => ({ roll: context.random.nextUint32() }),
+      events: { "alpha.go": { version: 0, apply: () => ({}) } },
+    });
+    let reads = 0;
+    const shiftyModule = {
+      ...drawing,
+      get namespace(): string {
+        reads += 1;
+        return reads > 1 ? "beta" : "alpha";
+      },
+    } as unknown as EventModule;
+    const sane = createRegistry([drawing]);
+    const shifty: EventRegistry = {
+      ...sane,
+      modules: [shiftyModule],
+      module: () => shiftyModule,
+    };
+
+    const state = bootstrap({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      registry: shifty,
+    });
+
+    // One namespace throughout: the slice key and the drawn stream agree.
+    expect(Object.keys(state.slices)).toEqual(["alpha"]);
+    expect(Object.keys(state.random.cursors)).toEqual(["root/alpha"]);
+    expect(reads).toBe(1);
+  });
+
+  it("keeps restore's namespace consistent within one call", () => {
+    // The third namespace site. `requireSlices` read the name for the expected
+    // set, the lookup, the validator label and the stored key.
+    // Built on a snapshot with history. `requireSlices` runs first and takes
+    // read #1; the zero-event identity check then bootstraps, which is read #2,
+    // and throws — so on a zero-event snapshot this assertion never runs, and
+    // the test would pass for the wrong reason.
+    const sound = build("alpha");
+    const sane = createRegistry([sound]);
+    const text = snapshot(
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry: sane,
+        events: [{ type: "alpha.go" }],
+      }),
+    );
+    let reads = 0;
+    const shiftyModule = {
+      ...sane.modules[0],
+      get namespace(): string {
+        reads += 1;
+        return reads > 1 ? "beta" : "alpha";
+      },
+    } as unknown as EventModule;
+    const shifty: EventRegistry = {
+      ...sane,
+      modules: [shiftyModule],
+      module: () => shiftyModule,
+    };
+
+    expect(Object.keys(restoreSnapshot(text, shifty).slices)).toEqual([
+      "alpha",
+    ]);
+    expect(reads).toBe(1);
+  });
+
+  it("labels the slice it validates with the namespace it captured", () => {
+    // The fourth use of restore's namespace capture, and the one the test above
+    // cannot reach: with no validator declared, the label is never built. It is
+    // diagnostic-only — but a validator refuses a slice by throwing, and the
+    // label is how that message says which slice, so a second read sends a
+    // reader to a module the snapshot does not even contain.
+    const sane = createRegistry([build("alpha")]);
+    const text = snapshot(
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry: sane,
+        events: [{ type: "alpha.go" }],
+      }),
+    );
+    // One event, not zero, for the reason the test above gives: a zero-event
+    // snapshot bootstraps for the identity check and takes read #2 itself.
+    let reads = 0;
+    const shiftyModule = {
+      ...(sane.modules[0] as EventModule),
+      get namespace(): string {
+        reads += 1;
+        return reads > 1 ? "beta" : "alpha";
+      },
+      validateSlice: (_slice: unknown, where: string): unknown => {
+        throw new Error(`${where}: refused`);
+      },
+    } as unknown as EventModule;
+    const shifty: EventRegistry = {
+      ...sane,
+      modules: [shiftyModule],
+      module: () => shiftyModule,
+    };
+
+    expect(() => restoreSnapshot(text, shifty)).toThrow(
+      /snapshot: slices\.alpha: refused/,
+    );
+    expect(reads).toBe(1);
+  });
+
+  it("calls the slice validator it checked, not a later read of it", () => {
+    // The value checked and the value *executed* differ, and the output lands
+    // in state — stronger than the re-reads that only build a message. A second
+    // read that is not a function threw a bare TypeError out of this exported
+    // entry, naming neither module nor snapshot field.
+    const sound = defineEventModule<{ n: number }>({
+      namespace: "alpha",
+      description: "",
+      initialSlice: () => ({ n: 0 }),
+      validateSlice: (slice) => slice as { n: number },
+      events: { "alpha.go": { version: 0, apply: () => ({}) } },
+    });
+    const sane = createRegistry([sound]);
+    const text = snapshot(
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry: sane,
+        events: [{ type: "alpha.go" }],
+      }),
+    );
+    const shiftyModule = (second: unknown) => {
+      let reads = 0;
+      return {
+        ...sane.modules[0],
+        get validateSlice(): unknown {
+          reads += 1;
+          return reads > 1 ? second : (slice: unknown) => slice;
+        },
+      } as unknown as EventModule;
+    };
+    const withModule = (module: EventModule): EventRegistry => ({
+      ...sane,
+      modules: [module],
+      module: () => module,
+    });
+
+    // The identity validator it checked is the one that ran, so the slice is
+    // unchanged rather than replaced by the second read's function.
+    expect(
+      restoreSnapshot(text, withModule(shiftyModule(() => ({ n: 4242 }))))
+        .slices["alpha"],
+    ).toEqual({ n: 0 });
+    // And a non-function second read cannot reach a call site.
+    expect(() =>
+      restoreSnapshot(text, withModule(shiftyModule(42))),
+    ).not.toThrow();
+  });
+
+  it("calls a hand-built validator with its module as receiver", () => {
+    // Capturing `module.validateSlice` into a local drops the receiver the
+    // property access supplied. Both construction paths bind, so only a
+    // hand-built registry with a method-shorthand validator notices — which is
+    // exactly the failure round 9 reported and binding fixed, so reintroducing
+    // it here would be the same regression twice.
+    const sound = defineEventModule<{ n: number }>({
+      namespace: "alpha",
+      description: "",
+      initialSlice: () => ({ n: 0 }),
+      events: { "alpha.go": { version: 0, apply: () => ({}) } },
+    });
+    const sane = createRegistry([sound]);
+    const text = snapshot(
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry: sane,
+        events: [{ type: "alpha.go" }],
+      }),
+    );
+    const handBuilt = {
+      ...sane.modules[0],
+      marker: 7,
+      validateSlice(this: { marker: number }, slice: unknown): unknown {
+        return { n: (slice as { n: number }).n + this.marker };
+      },
+    } as unknown as EventModule;
+
+    expect(
+      restoreSnapshot(text, {
+        ...sane,
+        modules: [handBuilt],
+        module: () => handBuilt,
+      }).slices["alpha"],
+    ).toEqual({ n: 7 });
+  });
+
+  it("reads a module's statefulness once, for the slice in and the slice out", () => {
+    // `namespace` above is one of the two fields `step` captures off a
+    // caller-owned module; `stateful` is the other, and it was unpinned. One
+    // capture, two uses, and each revert has its own failure: re-read for the
+    // slice handed *in*, the handler is given `undefined` and behaves as if
+    // every event were its first, while the reducer stores the outcome
+    // anyway — the invariant-4 break `captureOutcome`'s docblock describes.
+    // Re-read for the slice stored *out*, `nextSlices` refuses a slice from a
+    // module that plainly has one.
+    const counting = defineEventModule<{ n: number }>({
+      namespace: "alpha",
+      description: "reports whether it was handed its own slice",
+      initialSlice: () => ({ n: 0 }),
+      events: {
+        "alpha.go": {
+          version: 0,
+          apply: (_context, slice) => {
+            const held = slice as { n: number } | undefined;
+            return {
+              slice: { n: (held?.n ?? -1) + 1 },
+              summary: held === undefined ? "no slice" : `n=${String(held.n)}`,
+            };
+          },
+        },
+      },
+    });
+    const sane = createRegistry([counting]);
+    const start = bootstrap({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      registry: sane,
+    });
+    let reads = 0;
+    const shiftyModule = {
+      ...(sane.modules[0] as EventModule),
+      get stateful(): boolean {
+        reads += 1;
+        return reads > 1 ? false : true;
+      },
+    } as unknown as EventModule;
+    const shifty: EventRegistry = { ...sane, module: () => shiftyModule };
+
+    const after = step(start, { type: "alpha.go" }, shifty);
+
+    expect(reads).toBe(1);
+    expect(after.transcript[0]?.summary).toBe("n=0");
+    expect(after.slices["alpha"]).toEqual({ n: 1 });
+  });
+
+  it("keeps step's namespace consistent within the fold", () => {
+    const sound = build("alpha");
+    const sane = createRegistry([sound]);
+    const start = bootstrap({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      registry: sane,
+    });
+    let reads = 0;
+    const shiftyModule = {
+      ...sound,
+      get namespace(): string {
+        reads += 1;
+        return reads > 1 ? "beta" : "alpha";
+      },
+    } as unknown as EventModule;
+    const shifty: EventRegistry = { ...sane, module: () => shiftyModule };
+
+    const after = step(start, { type: "alpha.go" }, shifty);
+
+    expect(Object.keys(after.slices)).toEqual(["alpha"]);
+    expect(Object.keys(after.random.cursors)).toEqual(["root/alpha"]);
+    expect(reads).toBe(1);
   });
 });

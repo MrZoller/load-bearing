@@ -382,3 +382,96 @@ describe("state", () => {
     }
   });
 });
+
+describe("caller-supplied random state and weights", () => {
+  it("reads the cursors record once, so unvalidated cursors cannot be seated", () => {
+    let reads = 0;
+    const valid = { "root/probe": 7 };
+    const shifty = {
+      seed: 1,
+      get cursors(): Record<string, number> {
+        reads += 1;
+        return reads > 1 ? { "root/BAD LABEL": -5 } : valid;
+      },
+    };
+
+    expect(restoreRandom(shifty).toState().cursors).toEqual(valid);
+    expect(reads).toBe(1);
+  });
+
+  it("captures each weight in the pass that validated it", () => {
+    // Reading a weight to check it and again to accumulate it let a getter pass
+    // validation with one number and steer selection with another —
+    // overshooting the running total, or falling through to the error the
+    // function calls unreachable.
+    let reads = 0;
+    const entries = [
+      {
+        value: "first",
+        get weight(): number {
+          reads += 1;
+          return reads > 1 ? 0 : 1;
+        },
+      },
+      { value: "second", weight: 0 },
+    ];
+
+    // Weight 1 against 0 means the first arm always wins; a second read of 0
+    // would make the walk fall past both arms.
+    expect(createRandom("seed").weightedPick(entries)).toBe("first");
+  });
+
+  it("captures each arm's value in the pass that validated it", () => {
+    // `weight` above is half of the arm. `value` is the other half and is what
+    // actually leaves the function: copied into `arms` during the validating
+    // pass, so the selection walk returns the value that was on the entry when
+    // its weight was checked. Reading it again at the end lets a getter be
+    // weighed as one arm and returned as another — the arm the roll landed on
+    // is not the arm the caller receives.
+    let reads = 0;
+    const entries = [
+      {
+        get value(): string {
+          reads += 1;
+          return reads > 1 ? "LATER" : "declared";
+        },
+        weight: 1,
+      },
+      { value: "never", weight: 0 },
+    ];
+
+    expect(createRandom("seed").weightedPick(entries)).toBe("declared");
+    expect(reads).toBe(1);
+  });
+});
+
+describe("caller-supplied array lengths", () => {
+  it("uses the length it checked, in pick and in weightedPick", () => {
+    // Both read `length` for the empty check and again for the bound, so a
+    // getter could pass the non-empty check and then hand a different count to
+    // the work. Testable without a Proxy: a plain object with a length getter,
+    // cast to the array type these take.
+    const shifty = (values: readonly unknown[]) => {
+      let reads = 0;
+      return {
+        ...values,
+        get length(): number {
+          reads += 1;
+          return reads > 1 ? 0 : values.length;
+        },
+      } as unknown as readonly unknown[];
+    };
+
+    // `int(0)` is out of range, so a second read of 0 would throw from the
+    // bound rather than picking.
+    expect(createRandom("seed").pick(shifty(["a", "b", "c"]))).toBe("a");
+    expect(
+      createRandom("seed").weightedPick(
+        shifty([
+          { value: "a", weight: 1 },
+          { value: "b", weight: 0 },
+        ]) as readonly { value: string; weight: number }[],
+      ),
+    ).toBe("a");
+  });
+});

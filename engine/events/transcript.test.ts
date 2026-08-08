@@ -42,6 +42,24 @@ describe("renderEntry", () => {
   });
 });
 
+describe("a caller-owned transcript entry", () => {
+  it("renders the summary it branched on", () => {
+    // `renderEntry` is exported and takes a caller-owned entry, and `summary`
+    // was read to choose the branch and again to interpolate.
+    let reads = 0;
+    const shifty = {
+      ...entry(),
+      get summary(): string {
+        reads += 1;
+        return reads > 1 ? "swapped" : "original";
+      },
+    };
+
+    expect(renderEntry(shifty)[0]).toContain("original");
+    expect(reads).toBe(1);
+  });
+});
+
 describe("renderTranscript", () => {
   it("renders nothing for a session that folded nothing", () => {
     expect(renderTranscript([])).toEqual([]);

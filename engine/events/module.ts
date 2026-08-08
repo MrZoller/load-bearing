@@ -335,10 +335,16 @@ export function defineEventModule<S>(
   // dereferences: `Object.entries(null)` and `.bind()` on a non-function both
   // throw bare TypeErrors here, so a malformed definition would never reach the
   // validator that is supposed to describe it.
+  // Read once, then used everywhere below. `namespace` was read per handler
+  // *and* again for the module, so a getter could stamp one namespace into a
+  // handler and another into the module — and `createRegistry` then reported a
+  // prefix mismatch naming a namespace the author never wrote.
+  const namespace = definition.namespace;
+  const description = definition.description;
   const events: unknown = definition.events;
   if (typeof events !== "object" || events === null || Array.isArray(events)) {
     throw new EventRegistryError(
-      `module ${JSON.stringify(definition.namespace)} must declare its events as an object keyed ` +
+      `module ${JSON.stringify(namespace)} must declare its events as an object keyed ` +
         `by full event type, got ${Array.isArray(events) ? "an array" : typeof events}`,
     );
   }
@@ -349,8 +355,14 @@ export function defineEventModule<S>(
   // `null` here would throw the bare TypeError the check exists to prevent.
   const guardedEvents = events as EventModuleDefinition<S>["events"];
 
+  // Enumerated exactly once. `Object.entries` for the handlers and
+  // `Object.keys` for the types walked the same object twice, so a getter
+  // could hand out one set of keys to each — and `createRegistry` then blamed
+  // the module for a mismatch the front door had produced.
+  const declaredEvents = Object.entries(guardedEvents);
+
   const handlers = Object.fromEntries(
-    Object.entries(guardedEvents).map(([type, handler]) => {
+    declaredEvents.map(([type, handler]) => {
       // Resolved here, once, rather than read off `handler` at dispatch time.
       // The module and this wrapper are frozen; the *definition's* handler
       // object is not, and a late-bound `handler.apply(…)` would look it up
@@ -377,7 +389,7 @@ export function defineEventModule<S>(
         type,
         Object.freeze({
           type,
-          namespace: definition.namespace,
+          namespace,
           version: handler.version,
           // The one cast in the extension point, and it is sound by
           // construction: `bootstrap` seeds this module's slice from the
@@ -403,14 +415,14 @@ export function defineEventModule<S>(
   const initialSlice = definition.initialSlice;
   if (initialSlice !== undefined && typeof initialSlice !== "function") {
     throw new EventRegistryError(
-      `module ${JSON.stringify(definition.namespace)} has an initialSlice that is not a ` +
+      `module ${JSON.stringify(namespace)} has an initialSlice that is not a ` +
         `function, got ${typeof initialSlice}. Omit it entirely for a module that holds no state.`,
     );
   }
   const validateSlice = definition.validateSlice;
   if (validateSlice !== undefined && typeof validateSlice !== "function") {
     throw new EventRegistryError(
-      `module ${JSON.stringify(definition.namespace)} has a validateSlice that is not a ` +
+      `module ${JSON.stringify(namespace)} has a validateSlice that is not a ` +
         `function, got ${typeof validateSlice}. Omit it entirely for a module that does not ` +
         `validate its slice.`,
     );
@@ -434,8 +446,8 @@ export function defineEventModule<S>(
   const boundValidateSlice = validateSlice?.bind(definition);
 
   return Object.freeze({
-    namespace: definition.namespace,
-    description: definition.description,
+    namespace,
+    description,
     stateful: boundInitialSlice !== undefined,
     initialSlice: (context: BootstrapContext): unknown =>
       boundInitialSlice === undefined ? undefined : boundInitialSlice(context),
@@ -447,7 +459,7 @@ export function defineEventModule<S>(
           validateSlice: (slice: unknown, where: string): unknown =>
             boundValidateSlice(slice, where),
         }),
-    types: Object.freeze(Object.keys(guardedEvents).sort()),
+    types: Object.freeze(declaredEvents.map(([type]) => type).sort()),
     handlers: Object.freeze(handlers),
   });
 }

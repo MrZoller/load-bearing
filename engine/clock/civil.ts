@@ -184,15 +184,24 @@ export function civilFromEpochMs(epochMs: number): CivilTime {
  * authoring mistake, and rolling it into the next month would hide it.
  */
 export function epochMsFromCivil(civil: CivilInput): number {
+  // Every field captured before any is validated. The optional four already
+  // were; `year`, `month` and `day` were read once for the bounds check and
+  // several times afterwards, so a getter could satisfy the range and then
+  // supply something else to the arithmetic. Reachable only from a
+  // caller-built `CivilInput` — `parseTimestamp` constructs its own from a
+  // regex match — but this is exported API.
+  const year = civil.year;
+  const month = civil.month;
+  const day = civil.day;
   const hour = civil.hour ?? 0;
   const minute = civil.minute ?? 0;
   const second = civil.second ?? 0;
   const millisecond = civil.millisecond ?? 0;
 
   const bounds: readonly (readonly [string, number, number, number])[] = [
-    ["year", civil.year, 1970, 9999],
-    ["month", civil.month, 1, 12],
-    ["day", civil.day, 1, 31],
+    ["year", year, 1970, 9999],
+    ["month", month, 1, 12],
+    ["day", day, 1, 31],
     ["hour", hour, 0, 23],
     ["minute", minute, 0, 59],
     ["second", second, 0, 59],
@@ -206,17 +215,17 @@ export function epochMsFromCivil(civil: CivilInput): number {
       );
     }
   }
-  if (civil.day > daysInMonth(civil.year, civil.month)) {
+  if (day > daysInMonth(year, month)) {
     throw new Error(
-      `clock: ${String(civil.year)}-${pad(civil.month, 2)} has ${String(daysInMonth(civil.year, civil.month))} days, got day ${String(civil.day)}`,
+      `clock: ${String(year)}-${pad(month, 2)} has ${String(daysInMonth(year, month))} days, got day ${String(day)}`,
     );
   }
 
-  const shiftedYear = civil.year - (civil.month <= 2 ? 1 : 0);
+  const shiftedYear = year - (month <= 2 ? 1 : 0);
   const era = Math.floor(shiftedYear / 400);
   const yearOfEra = shiftedYear - era * 400;
-  const marchMonth = civil.month + (civil.month > 2 ? -3 : 9);
-  const dayOfYear = Math.floor((153 * marchMonth + 2) / 5) + civil.day - 1;
+  const marchMonth = month + (month > 2 ? -3 : 9);
+  const dayOfYear = Math.floor((153 * marchMonth + 2) / 5) + day - 1;
   const dayOfEra =
     yearOfEra * 365 +
     Math.floor(yearOfEra / 4) -

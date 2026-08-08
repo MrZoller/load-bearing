@@ -9,10 +9,12 @@ import { defineEventModule } from "./module.js";
 import type {
   EventHandlerDefinition,
   EventModule,
+  EventModuleDefinition,
   RegisteredHandler,
 } from "./module.js";
-import { reduce } from "./reduce.js";
+import { reduce, restoreSnapshot, snapshot } from "./reduce.js";
 import { EventRegistryError, createRegistry } from "./registry.js";
+import { MAX_TRANSCRIPT_LINE_LENGTH } from "./transcript.js";
 import type { EngineEvent } from "./state.js";
 
 const CARTRIDGE: LoadedCartridge = loadCartridge(
@@ -308,6 +310,153 @@ describe("createRegistry", () => {
     ).toBe(1);
   });
 
+  it("builds that copy from the fields it captured, not later reads", () => {
+    // The copy above is only as good as where its fields come from. Every one
+    // is read once into a local before anything is validated against it, and
+    // each is separately revertible: `description` and `stateful` are stored,
+    // `initialSlice` and `validateSlice` are bound and later *called*, and
+    // `handlers` is copied. Pinning the copy without pinning its sources left
+    // all five silently reversible.
+    const sound = counter("alpha");
+
+    // Stored, and read back off the published module.
+    let descriptionReads = 0;
+    const described = createRegistry([
+      {
+        ...sound,
+        get description(): string {
+          descriptionReads += 1;
+          return descriptionReads > 1 ? "LATER" : "counts alpha events";
+        },
+      } as EventModule,
+    ]);
+    expect(descriptionReads).toBe(1);
+    expect(described.module("alpha")?.description).toBe("counts alpha events");
+
+    // Stored, and load-bearing: the flag decides whether bootstrap gives the
+    // module a key in `slices` at all, so a second read is a missing slice
+    // rather than a wrong label.
+    let statefulReads = 0;
+    const flagged = createRegistry([
+      {
+        ...sound,
+        get stateful(): boolean {
+          statefulReads += 1;
+          return statefulReads > 1 ? false : true;
+        },
+      } as EventModule,
+    ]);
+    expect(statefulReads).toBe(1);
+    expect(flagged.module("alpha")?.stateful).toBe(true);
+    expect(
+      Object.keys(
+        reduce({
+          cartridge: CARTRIDGE,
+          seed: SEED,
+          registry: flagged,
+          events: [],
+        }).slices,
+      ),
+    ).toEqual(["alpha"]);
+
+    // Bound, then called by `bootstrap` — so a second read seats a slice the
+    // registry never checked was a function.
+    let initialReads = 0;
+    const seeded = createRegistry([
+      {
+        ...sound,
+        get initialSlice(): EventModule["initialSlice"] {
+          initialReads += 1;
+          return initialReads > 1 ? () => 999 : () => 0;
+        },
+      } as EventModule,
+    ]);
+    expect(initialReads).toBe(1);
+    expect(
+      reduce({ cartridge: CARTRIDGE, seed: SEED, registry: seeded, events: [] })
+        .slices["alpha"],
+    ).toBe(0);
+  });
+
+  it("binds the validateSlice it captured, not a later read of it", () => {
+    // The fourth module field, and the one whose output lands in restored
+    // state. `validateSlice` is read once to decide whether the module has one
+    // at all and again to bind, so a getter could answer the check with the
+    // author's validator and hand the registry a different function — which
+    // `restoreSnapshot` then runs against a recorded slice.
+    const sound = defineEventModule<number>({
+      namespace: "alpha",
+      description: "counts alpha events",
+      initialSlice: () => 0,
+      validateSlice: (slice) => slice as number,
+      events: {
+        "alpha.bump": {
+          version: 0,
+          apply: (_context, slice) => ({ slice: slice + 1 }),
+        },
+      },
+    });
+    let reads = 0;
+    const registry = createRegistry([
+      {
+        ...sound,
+        get validateSlice(): EventModule["validateSlice"] {
+          reads += 1;
+          return reads > 1 ? () => 999 : (slice: unknown) => slice;
+        },
+      } as EventModule,
+    ]);
+    const text = snapshot(
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry,
+        events: [{ type: "alpha.bump" }],
+      }),
+    );
+
+    expect(reads).toBe(1);
+    expect(registry.module("alpha")?.validateSlice?.(7, "w")).toBe(7);
+    // And end to end: the identity validator it checked is the one that ran,
+    // so the restored slice is the recorded one.
+    expect(restoreSnapshot(text, registry).slices["alpha"]).toBe(1);
+  });
+
+  it("copies the handlers record it captured, not a later read of it", () => {
+    // The fifth. `Object.freeze({...handlers})` is a shallow copy of the
+    // caller's record, and reading the record a second time to make it means
+    // the published record — the one `./module.ts` lists under "frozen and
+    // copied, therefore safe" — describes handlers the registry never
+    // validated, and `byType` is then built from those.
+    const sound = counter("alpha");
+    const real = sound.handlers["alpha.bump"] as RegisteredHandler;
+    const swapped: RegisteredHandler = {
+      ...real,
+      apply: () => ({ summary: "LATER" }),
+    };
+    let reads = 0;
+    const registry = createRegistry([
+      {
+        ...sound,
+        get handlers(): EventModule["handlers"] {
+          reads += 1;
+          return reads > 1 ? { "alpha.bump": swapped } : sound.handlers;
+        },
+      } as EventModule,
+    ]);
+
+    expect(reads).toBe(1);
+    expect(registry.modules[0]?.handlers["alpha.bump"]).toBe(real);
+    expect(
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry,
+        events: [{ type: "alpha.bump" }],
+      }).transcript[0]?.summary,
+    ).toMatch(/^n=1 draw=\d+$/);
+  });
+
   it("captures a handler's version before validating it", () => {
     // The one handler field that was read twice — once to check, once to
     // store. A getter passing the check and then landing `-1` in the frozen
@@ -323,7 +472,7 @@ describe("createRegistry", () => {
       apply: real.apply,
       get version(): number {
         reads += 1;
-        return reads > 2 ? -1 : 0;
+        return reads > 1 ? -1 : 0;
       },
     };
     const registry = createRegistry([
@@ -335,6 +484,42 @@ describe("createRegistry", () => {
       appendEvent(EMPTY_EVENT_LOG, { type: "alpha.bump" }, registry)[0]
         ?.version,
     ).toBe(0);
+  });
+
+  it("dispatches the apply it captured, not a later read of it", () => {
+    // The other half of the pair — the source says `apply` and `version`
+    // "complete the set", and only `version` was pinned. `apply` is read once
+    // for the `typeof` guard and again to bind, so a getter answering the
+    // guard with a function and the bind with a different one puts a function
+    // nothing validated into the frozen copy dispatch actually calls. That is
+    // strictly worse than the `version` case: the swapped function decides how
+    // every event of this type folds, while every frozen surface still reports
+    // the module as sealed.
+    const sound = counter("alpha");
+    const real = sound.handlers["alpha.bump"] as RegisteredHandler;
+    let reads = 0;
+    const shifty = {
+      type: real.type,
+      namespace: real.namespace,
+      version: real.version,
+      get apply(): RegisteredHandler["apply"] {
+        reads += 1;
+        return reads > 1 ? () => ({ summary: "LATER" }) : real.apply;
+      },
+    };
+    const registry = createRegistry([
+      { ...sound, handlers: { "alpha.bump": shifty } },
+    ]);
+
+    expect(reads).toBe(1);
+    const folded = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      registry,
+      events: [{ type: "alpha.bump" }],
+    });
+    expect(folded.slices["alpha"]).toBe(1);
+    expect(folded.transcript[0]?.summary).toMatch(/^n=1 draw=\d+$/);
   });
 
   it("rejects a handler its module's types do not list", () => {
@@ -668,5 +853,436 @@ describe("a handler captured at definition time", () => {
         events: [{ type: "receiver.read" }],
       }).transcript[0]?.summary,
     ).toBe("from this");
+  });
+});
+
+describe("values derived from caller-owned data", () => {
+  it("materializes the module list before deciding it is iterable", () => {
+    // Reading `Symbol.iterator` to check it and then spreading reads it twice,
+    // so a getter answering "function" once produced exactly the bare
+    // `TypeError: modules is not iterable` that guard's own comment says it
+    // exists to prevent.
+    const sound = counter("alpha");
+    let reads = 0;
+    const shifty = {
+      get [Symbol.iterator](): unknown {
+        reads += 1;
+        // A working iterator the first time, nothing the second.
+        return reads > 1
+          ? undefined
+          : function* (): Generator<EventModule> {
+              yield sound;
+            };
+      },
+    };
+
+    // One read, so the list materializes. Reading to check and reading to
+    // spread threw `TypeError: modules is not iterable` right here.
+    const registry = createRegistry(
+      shifty as unknown as readonly EventModule[],
+    );
+    expect(registry.namespaces).toEqual(["alpha"]);
+    expect(reads).toBe(1);
+  });
+
+  it("copies the declared types from the values it validated", () => {
+    // The array `types` points at was validated element by element and then
+    // spread again — capturing the reference is not capturing the contents.
+    let reads = 0;
+    const types: unknown[] = ["alpha.bump"];
+    Object.defineProperty(types, 0, {
+      enumerable: true,
+      configurable: true,
+      get: () => {
+        reads += 1;
+        return reads > 1 ? null : "alpha.bump";
+      },
+    });
+    const sound = counter("alpha");
+    const handBuilt = { ...sound, types } as unknown as EventModule;
+
+    const registry = createRegistry([handBuilt]);
+    expect(registry.types).toEqual(["alpha.bump"]);
+    expect(registry.modules[0]?.types).toEqual(["alpha.bump"]);
+  });
+
+  it("enumerates a definition's events once, for handlers and for types", () => {
+    // `Object.entries` for handlers and `Object.keys` for types walked the same
+    // object twice, so a getter handed out one set of keys to each and
+    // `createRegistry` then blamed the module for the front door's mismatch.
+    let walks = 0;
+    const backing: Record<string, EventHandlerDefinition<unknown>> = {
+      "alpha.a": { version: 0, apply: () => ({}) },
+      "alpha.b": { version: 0, apply: () => ({}) },
+    };
+    // A Proxy, because only an exotic object can report different own keys to
+    // two walks — which is exactly what two walks made possible.
+    const events = new Proxy(backing, {
+      ownKeys: () => {
+        walks += 1;
+        return walks > 1 ? ["alpha.a", "alpha.b"] : ["alpha.a"];
+      },
+    });
+
+    const module = defineEventModule({
+      namespace: "alpha",
+      description: "",
+      events: events as unknown as Record<
+        string,
+        EventHandlerDefinition<unknown>
+      >,
+    });
+
+    // Whatever the getters do, the handlers and the types come from one walk.
+    expect(module.types).toEqual(Object.keys(module.handlers).sort());
+    expect(() => createRegistry([module])).not.toThrow();
+  });
+
+  it("reads a definition's namespace once, for the module and its handlers", () => {
+    let reads = 0;
+    const module = defineEventModule({
+      get namespace(): string {
+        reads += 1;
+        return reads > 1 ? "beta" : "alpha";
+      },
+      description: "",
+      events: { "alpha.a": { version: 0, apply: () => ({}) } },
+    } as unknown as EventModuleDefinition<unknown>);
+
+    // The module and its handler agree, so no prefix error names a namespace
+    // the author never wrote.
+    expect(module.namespace).toBe("alpha");
+    expect(module.handlers["alpha.a"]?.namespace).toBe("alpha");
+    expect(() => createRegistry([module])).not.toThrow();
+  });
+
+  it("builds the module from the fields it captured, not later reads", () => {
+    // `namespace` and the single enumeration above were pinned; the other four
+    // fields `defineEventModule` takes off the caller's definition were not.
+    // Each is separately revertible, so each gets its own definition here —
+    // the shape `createRegistry`'s equivalent test already uses.
+
+    // Stored, and read straight back off the module.
+    let descriptionReads = 0;
+    expect(
+      defineEventModule({
+        namespace: "alpha",
+        get description(): string {
+          descriptionReads += 1;
+          return descriptionReads > 1 ? "LATER" : "counts alpha events";
+        },
+        events: { "alpha.a": { version: 0, apply: () => ({}) } },
+      }).description,
+    ).toBe("counts alpha events");
+    expect(descriptionReads).toBe(1);
+
+    // Checked for shape, then bound and later *called* by `bootstrap`, so a
+    // second read seats a slice nothing checked was even a function.
+    let initialReads = 0;
+    const seeded = defineEventModule<number>({
+      namespace: "alpha",
+      description: "",
+      get initialSlice(): () => number {
+        initialReads += 1;
+        return initialReads > 1 ? () => 999 : () => 1;
+      },
+      events: {
+        "alpha.a": { version: 0, apply: (_context, slice) => ({ slice }) },
+      },
+    });
+    expect(initialReads).toBe(1);
+    expect(
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry: createRegistry([seeded]),
+        events: [],
+      }).slices["alpha"],
+    ).toBe(1);
+
+    // The same pair for the validator, whose output lands in restored state.
+    let validateReads = 0;
+    const validated = defineEventModule<number>({
+      namespace: "alpha",
+      description: "",
+      initialSlice: () => 0,
+      get validateSlice(): (slice: unknown) => number {
+        validateReads += 1;
+        return validateReads > 1
+          ? () => 999
+          : (slice: unknown) => slice as number;
+      },
+      events: { "alpha.a": { version: 0, apply: () => ({}) } },
+    });
+    expect(validateReads).toBe(1);
+    expect(validated.validateSlice?.(7, "w")).toBe(7);
+
+    // `events` is read once for the guard and everything after it reads the
+    // capture. Re-reading past the check is the validate-then-use gap the
+    // guard exists to close: the source's own example is a getter answering
+    // the check with an object and the enumeration with `null`.
+    let eventsReads = 0;
+    const handler: EventHandlerDefinition<unknown> = {
+      version: 0,
+      apply: () => ({}),
+    };
+    const enumerated = defineEventModule({
+      namespace: "alpha",
+      description: "",
+      get events(): Record<string, EventHandlerDefinition<unknown>> {
+        eventsReads += 1;
+        return eventsReads > 1
+          ? { "alpha.later": handler }
+          : { "alpha.declared": handler };
+      },
+    });
+    expect(eventsReads).toBe(1);
+    expect(enumerated.types).toEqual(["alpha.declared"]);
+    expect(Object.keys(enumerated.handlers)).toEqual(["alpha.declared"]);
+  });
+
+  it("binds the apply it captured, not a later read of the definition's", () => {
+    // The same shape as `createRegistry`'s handler `apply`, which is pinned —
+    // and the sharper of the two, because this is the front door every module
+    // in `./modules.ts` comes through. Read once for the `typeof` guard and
+    // again to bind, a getter puts a function nothing validated behind an
+    // event type, on a module every frozen surface reports as sealed.
+    let reads = 0;
+    const module = defineEventModule<number>({
+      namespace: "alpha",
+      description: "",
+      initialSlice: () => 0,
+      events: {
+        "alpha.bump": {
+          version: 0,
+          get apply(): EventHandlerDefinition<number>["apply"] {
+            reads += 1;
+            return reads > 1
+              ? () => ({ summary: "LATER" })
+              : (_context, slice) => ({
+                  slice: slice + 1,
+                  summary: `n=${String(slice + 1)}`,
+                });
+          },
+        },
+      },
+    });
+    const folded = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      registry: createRegistry([module]),
+      events: [{ type: "alpha.bump" }],
+    });
+
+    expect(reads).toBe(1);
+    expect(folded.slices["alpha"]).toBe(1);
+    expect(folded.transcript[0]?.summary).toBe("n=1");
+  });
+
+  it("registers the type list it captured, not a later read of it", () => {
+    // The neighbour above pins the array's *contents*; this pins the read of
+    // the property itself. `declared.types` is checked with `Array.isArray`
+    // and then walked, so a getter could show an array to the check and hand
+    // the walk a different list — registering event types the module never
+    // declared, under a module the registry reports as validated.
+    let reads = 0;
+    const sound = counter("alpha");
+    const registry = createRegistry([
+      {
+        ...sound,
+        get types(): readonly string[] {
+          reads += 1;
+          return reads > 1 ? ["alpha.LATER"] : ["alpha.bump"];
+        },
+      } as EventModule,
+    ]);
+
+    expect(reads).toBe(1);
+    expect(registry.types).toEqual(["alpha.bump"]);
+    expect(registry.modules[0]?.types).toEqual(["alpha.bump"]);
+  });
+
+  it("accepts a handler whose own type and namespace are read once", () => {
+    // The other direction of "names the value that failed" below, and the one
+    // that matters more: there the comparison passes and only the message is
+    // wrong, here a second read makes a perfectly sound module *fail to
+    // register*. Each getter answers the truth first and something else after,
+    // so a registry that re-read either field would refuse a module the author
+    // wrote correctly.
+    const sound = counter("alpha");
+    const real = sound.handlers["alpha.bump"] as RegisteredHandler;
+    const shiftyField = (field: "type" | "namespace", first: string) => {
+      let reads = 0;
+      return createRegistry([
+        {
+          ...sound,
+          handlers: {
+            "alpha.bump": {
+              ...real,
+              get [field](): string {
+                reads += 1;
+                return reads > 1 ? "LATER" : first;
+              },
+            },
+          },
+        } as unknown as EventModule,
+      ]);
+    };
+
+    expect(shiftyField("type", "alpha.bump").types).toEqual(["alpha.bump"]);
+    expect(shiftyField("namespace", "alpha").namespaces).toEqual(["alpha"]);
+  });
+
+  it("names the version it refused, not a later read of it", () => {
+    // `version` is captured and the frozen copy is built from the capture —
+    // that half is pinned. The message is the other half, and diagnostics are
+    // inside this family rather than a lesser cousin of it: an error naming a
+    // number that was never the one that failed sends its reader to the wrong
+    // line of the wrong module.
+    const sound = counter("alpha");
+    const real = sound.handlers["alpha.bump"] as RegisteredHandler;
+    let reads = 0;
+
+    expect(() =>
+      createRegistry([
+        {
+          ...sound,
+          handlers: {
+            "alpha.bump": {
+              ...real,
+              get version(): number {
+                reads += 1;
+                return reads > 1 ? 7 : -1;
+              },
+            },
+          },
+        } as unknown as EventModule,
+      ]),
+    ).toThrow(/version must be a non-negative integer, got -1/);
+  });
+
+  it("names the value that failed, not a later read of it", () => {
+    // `module.handlers[type]` is the caller's handler object, and `type` and
+    // `namespace` were read once for the comparison and again to build the
+    // message — so the error named a value that was never the one that failed.
+    // Label-only divergence, and the same class closed in `log.ts`: a known
+    // member left inside a family declared closed is how the next one arrives.
+    const sound = counter("alpha");
+    const real = sound.handlers["alpha.bump"] as RegisteredHandler;
+    const shiftyField = (field: "type" | "namespace", second: string) => {
+      let reads = 0;
+      return createRegistry.bind(null, [
+        {
+          ...sound,
+          handlers: {
+            "alpha.bump": {
+              ...real,
+              get [field](): string {
+                reads += 1;
+                return reads > 1 ? second : "alpha.declared";
+              },
+            },
+          },
+        } as unknown as EventModule,
+      ]);
+    };
+
+    expect(shiftyField("type", "alpha.LATER")).toThrow(
+      /that calls itself "alpha\.declared"/,
+    );
+    expect(shiftyField("namespace", "LATER")).toThrow(
+      /claims namespace "alpha\.declared"/,
+    );
+  });
+
+  it("refuses an event type longer than a stored transcript line", () => {
+    // Bounded at registry construction for the diagnostic — a startup failure
+    // naming the module beats a mid-fold throw — and in `makeEntry` for the
+    // property, since a hand-built registry reaches `step` without passing
+    // through here.
+    const long = `alpha.${"a".repeat(MAX_TRANSCRIPT_LINE_LENGTH)}`;
+
+    expect(() =>
+      createRegistry([
+        defineEventModule({
+          namespace: "alpha",
+          description: "",
+          events: { [long]: { version: 0, apply: () => ({}) } },
+        }),
+      ]),
+    ).toThrow(/over the 4096 a stored transcript line may hold/);
+  });
+
+  it("requires types to be listed once each and sorted", () => {
+    // Three properties of one documented sentence — both directions of set
+    // equality, uniqueness, and order — compared against one canonical form,
+    // with the two set-mismatch messages kept distinct.
+    const sound = counter("alpha");
+    const real = sound.handlers["alpha.bump"] as RegisteredHandler;
+    const withTypes = (types: readonly string[]) => () =>
+      createRegistry([{ ...sound, types } as unknown as EventModule]);
+
+    expect(withTypes(["alpha.bump", "alpha.bump"])).toThrow(
+      /listed once each and in sorted order/,
+    );
+    expect(withTypes(["alpha.bump", "alpha.other"])).toThrow(
+      /lists "alpha\.other" but has no handler for it/,
+    );
+    expect(() =>
+      createRegistry([
+        {
+          ...sound,
+          types: ["alpha.bump"],
+          handlers: {
+            "alpha.bump": real,
+            "alpha.other": { ...real, type: "alpha.other" },
+          },
+        } as unknown as EventModule,
+      ]),
+    ).toThrow(/has handler\(s\) for alpha\.other that its types do not list/);
+
+    // A pair that a degenerate comparison would call equal. Concatenated with
+    // no separator both sides read "alpha.aalpha.aalpha.ab", so a joined
+    // comparison is only as strong as the separator it picks — and at this
+    // point the elements are known to be strings and nothing else, so no
+    // character is provably safe. Element-wise rests on nothing.
+    //
+    // The exact strength of this pin: it fails against `join("")` and would
+    // still pass against a separator no type contains. That is the intended
+    // reach — with the comparison element-wise there is no join left to
+    // degrade, so reintroducing one would be a visible rewrite rather than a
+    // silent edit.
+    const collide = defineEventModule({
+      namespace: "alpha",
+      description: "",
+      events: {
+        "alpha.a": { version: 0, apply: () => ({}) },
+        "alpha.aalpha.ab": { version: 0, apply: () => ({}) },
+      },
+    });
+    expect(() =>
+      createRegistry([
+        {
+          ...collide,
+          types: ["alpha.aalpha.a", "alpha.ab"],
+        } as unknown as EventModule,
+      ]),
+    ).toThrow(/has handler\(s\) for/);
+
+    // Unsorted, with both lists otherwise agreeing.
+    const two = defineEventModule({
+      namespace: "alpha",
+      description: "",
+      events: {
+        "alpha.aaa": { version: 0, apply: () => ({}) },
+        "alpha.bbb": { version: 0, apply: () => ({}) },
+      },
+    });
+    expect(() =>
+      createRegistry([
+        { ...two, types: ["alpha.bbb", "alpha.aaa"] } as unknown as EventModule,
+      ]),
+    ).toThrow(/listed once each and in sorted order/);
+    expect(() => createRegistry([two])).not.toThrow();
   });
 });

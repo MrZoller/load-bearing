@@ -100,25 +100,34 @@ export function hashString(
  * permalink carries, and what `hashString` turns into the root seed.
  */
 export function formatSeed(material: SeedMaterial): string {
-  if (!INCIDENT_DATE_PATTERN.test(material.incidentDate)) {
+  // Captured before any of the three guards, and the join built from the
+  // captures. `material` is caller-owned at an exported entry, and each field
+  // was read once to validate and again to join — so a `dailySeed` getter
+  // answering `1` to the checks and `"1/x"` to `String()` smuggled a separator
+  // past validation. Two different materials then produce one seed string and
+  // therefore one PRNG root, which is the injectivity the field rules at the
+  // top of this file exist to guarantee: not a hygiene point but invariant 2,
+  // since the two sessions share a generator and a replay permalink reproduces
+  // the wrong one.
+  const incidentDate = material.incidentDate;
+  const dailySeed = material.dailySeed;
+  const model = material.model;
+
+  if (!INCIDENT_DATE_PATTERN.test(incidentDate)) {
     throw new Error(
-      `seed material: incidentDate must be YYYY-MM-DD, got ${JSON.stringify(material.incidentDate)}`,
+      `seed material: incidentDate must be YYYY-MM-DD, got ${JSON.stringify(incidentDate)}`,
     );
   }
-  if (!Number.isSafeInteger(material.dailySeed) || material.dailySeed < 0) {
+  if (!Number.isSafeInteger(dailySeed) || dailySeed < 0) {
     throw new Error(
-      `seed material: dailySeed must be a non-negative integer, got ${String(material.dailySeed)}`,
+      `seed material: dailySeed must be a non-negative integer, got ${String(dailySeed)}`,
     );
   }
-  if (!MODEL_ID_PATTERN.test(material.model)) {
+  if (!MODEL_ID_PATTERN.test(model)) {
     throw new Error(
-      `seed material: model must be a lowercase slug, got ${JSON.stringify(material.model)}`,
+      `seed material: model must be a lowercase slug, got ${JSON.stringify(model)}`,
     );
   }
 
-  return [
-    material.incidentDate,
-    String(material.dailySeed),
-    material.model,
-  ].join(SEED_FIELD_SEPARATOR);
+  return [incidentDate, String(dailySeed), model].join(SEED_FIELD_SEPARATOR);
 }

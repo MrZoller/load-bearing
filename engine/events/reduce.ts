@@ -161,12 +161,17 @@ export function bootstrap(input: BootstrapInput): SessionState {
 
   const slices: [string, unknown][] = [];
   for (const module of registry.modules) {
+    // Captured. With a hand-built registry these are the caller's modules, and
+    // this namespace picks both the PRNG stream and the slice key — read
+    // separately for each, a getter forks `root/alpha` and stores under
+    // `beta`, which breaks state coherence rather than a message.
+    const namespace = module.namespace;
     if (!module.stateful) continue;
     const slice = module.initialSlice({
       cartridge,
       seed,
       startedAtMs,
-      random: random.fork(module.namespace),
+      random: random.fork(namespace),
     });
     // Statefulness follows from *declaring* `initialSlice`, not from what it
     // returns on the day — that is the contract `./module.ts` states, and this
@@ -177,7 +182,7 @@ export function bootstrap(input: BootstrapInput): SessionState {
     // never chose. Caught here, at the module that did it.
     if (slice === undefined) {
       throw new Error(
-        `module ${JSON.stringify(module.namespace)} declares initialSlice but returned undefined. ` +
+        `module ${JSON.stringify(namespace)} declares initialSlice but returned undefined. ` +
           `A module either holds state — in which case its initial slice is a value — or omits ` +
           `initialSlice entirely and occupies no key at all. Deciding per session is not a ` +
           `third option: the slices record is part of the snapshot contract, and one recorded ` +
@@ -185,8 +190,8 @@ export function bootstrap(input: BootstrapInput): SessionState {
       );
     }
     slices.push([
-      module.namespace,
-      freezeSlice(slice, `module ${JSON.stringify(module.namespace)}`),
+      namespace,
+      freezeSlice(slice, `module ${JSON.stringify(namespace)}`),
     ]);
   }
 
@@ -221,13 +226,57 @@ export function bootstrap(input: BootstrapInput): SessionState {
  * `SessionState` — a snapshot format change, and one more thing every recorded
  * fixture pins — to close a path reachable only by deliberately passing `step` a
  * different registry than `bootstrap`. Pass the same one.
+ *
+ * One residual inside that, worth naming rather than leaving to be found: a
+ * *stateless* module whose namespace differs between `bootstrap` and `step`
+ * forks `root/beta` with nothing to catch it in-session, because there is no
+ * slice for `readSlice` to miss. Per-call capture cannot close it — it would
+ * need the registry fingerprint this docstring prices and declines — and a
+ * snapshot of such a session is refused on restore by the cursor-namespace
+ * check — but only when that stream was actually drawn from. `toState()`
+ * records a cursor only for a stream something drew from, so a stateless
+ * handler that never touches `context.random` leaves no trace; that is also no
+ * divergence, since nothing was drawn under either name. `CLOCK_MODULE` is
+ * exactly that case today, and it is the module a new subsystem is most likely
+ * to copy.
  */
 export function step(
   state: SessionState,
   event: EngineEvent,
   registry: EventRegistry = ENGINE_EVENT_REGISTRY,
 ): SessionState {
+  // Every field of `state` read exactly once, here, and the returned state
+  // built from these locals rather than from `{...state}`. `state` is a
+  // caller-owned object at this exported entry, and it was read twice over —
+  // `state.cartridge` for the `EventContext` and again by the spread — so a
+  // getter could have the handler fold against one world while the state it
+  // returned recorded another. That is the failure `bootstrap`'s own comment
+  // describes, closed for its input and left open for this one, and
+  // `captureOutcome`'s docblock parked it as a further candidate.
+  const engineVersion = state.engineVersion;
+  const eventSchemaVersion = state.eventSchemaVersion;
+  const seed = state.seed;
+  const cartridge = state.cartridge;
+  const previousClock = state.clock;
+  const previousRandom = state.random;
+  const previousSlices = state.slices;
+  const previousTranscript = state.transcript;
   const index = state.eventCount;
+
+  // The captured view, handed to the handler in place of the caller's object,
+  // so `context.state` and the fold agree by construction.
+  const before: SessionState = Object.freeze({
+    engineVersion,
+    eventSchemaVersion,
+    seed,
+    cartridge,
+    eventCount: index,
+    clock: previousClock,
+    random: previousRandom,
+    slices: previousSlices,
+    transcript: previousTranscript,
+  });
+
   // Captured once, and the only thing read from here on. Re-reading
   // `event.type` would let a getter hand the handler lookup one string and the
   // transcript another — see `assertEventEnvelope`.
@@ -238,53 +287,64 @@ export function step(
   if (handler === undefined) {
     throw new UnknownEventTypeError(envelope.type, index, registry.namespaces);
   }
-  if (envelope.version !== undefined && envelope.version !== handler.version) {
+  // Captured, so the version the comparison rejected is the one the error
+  // names. A getter answering 7 then 99 reported "implements version 99" for a
+  // mismatch against 7.
+  const implemented = handler.version;
+  if (envelope.version !== undefined && envelope.version !== implemented) {
     throw new EventVersionError(
       where,
       envelope.type,
       envelope.version,
-      handler.version,
+      implemented,
     );
   }
 
   // Present by construction: a handler only exists because its module was
   // registered, and both indexes are built in the same pass.
   const module = registry.module(handler.namespace) as EventModule;
+  // Captured. A hand-built registry hands back a caller-owned module, and this
+  // namespace picks the PRNG stream *and* the slice key — read twice, a getter
+  // forks `root/alpha` and stores the slice under `beta`, which is invariant 4
+  // rather than a diagnostic.
+  const namespace = module.namespace;
+  const stateful = module.stateful;
 
-  const clock = restoreClock(state.clock);
-  const random = restoreRandom(state.random);
+  const clock = restoreClock(previousClock);
+  const random = restoreRandom(previousRandom);
   // Stamped before the event is applied, so a `clock.tick` reads as the moment
   // it was issued rather than the moment it finished.
   const at = clock.timestamp();
 
   const context: EventContext = {
-    state,
-    cartridge: state.cartridge,
+    state: before,
+    cartridge,
     index,
     // The captured envelope, not the caller's object: a handler reading
     // `context.event.type` must see the string the reducer dispatched on.
     event: envelope,
     clock,
-    random: random.fork(module.namespace),
+    random: random.fork(namespace),
     where,
   };
 
-  const slice = module.stateful
-    ? readSlice(state, module.namespace)
-    : undefined;
+  const slice = stateful ? readSlice(before, namespace) : undefined;
   // Materialized once, immediately. An `EventOutcome` is a caller-owned object
   // like the event envelope, and everything downstream now reads the capture
   // rather than the handler's object — see `captureOutcome`.
   const outcome = captureOutcome(handler.apply(context, slice), where);
 
   return freezeState({
-    ...state,
+    engineVersion,
+    eventSchemaVersion,
+    seed,
+    cartridge,
     eventCount: index + 1,
     clock: clock.toState(),
     random: random.toState(),
-    slices: nextSlices(state, module, outcome, where),
+    slices: nextSlices(previousSlices, namespace, stateful, outcome, where),
     transcript: Object.freeze([
-      ...state.transcript,
+      ...previousTranscript,
       makeEntry(index, at, envelope.type, outcome, where),
     ]),
   });
@@ -305,8 +365,8 @@ interface CapturedOutcome {
  * The rule this applies is stated in five other places in the engine —
  * `assertEventEnvelope` is the worked example — and `EventOutcome` was a
  * boundary object it had not been applied to. (`BootstrapInput` and
- * `ReduceInput` were two more, closed in the same change; `SessionState` at the
- * exported `step` entry is a further candidate.) A handler may return an object
+ * `ReduceInput` were two more, closed in the same change, and `SessionState` at
+ * the exported `step` entry was a third, closed since.) A handler may return an object
  * whose properties are getters, and every consumer that read one twice was a
  * place where the value checked and the value used could differ:
  *
@@ -380,9 +440,17 @@ function captureOutcome(raw: unknown, where: string): CapturedOutcome {
       );
     }
     const source: readonly unknown[] = detail;
-    if (source.length > MAX_TRANSCRIPT_DETAIL_LINES) {
+    // The count captured before the ceiling is checked against it, and used as
+    // the loop bound below. Checking `source.length` and then re-reading it per
+    // step let the array grow during the copy and store more lines than were
+    // validated — and no Proxy is needed for that: `length` is writable, and an
+    // accessor on an index is an ordinary plain-array feature, so a getter on
+    // element 0 can push while the copy is running. Same writer-weaker-than-
+    // reader shape as the event type, through the neighbouring field.
+    const lineCount = source.length;
+    if (lineCount > MAX_TRANSCRIPT_DETAIL_LINES) {
       throw new Error(
-        `${where}: this event would write ${String(source.length)} transcript lines, over the ` +
+        `${where}: this event would write ${String(lineCount)} transcript lines, over the ` +
           `${String(MAX_TRANSCRIPT_DETAIL_LINES)} one entry may hold. A transcript is an ` +
           `artifact a person reads and a fixture records.`,
       );
@@ -394,7 +462,7 @@ function captureOutcome(raw: unknown, where: string): CapturedOutcome {
     // text check as the string "undefined". Either way the state that came back
     // could not be serialized, so `reduce` succeeded and produced something
     // unrecordable.
-    for (let offset = 0; offset < source.length; offset += 1) {
+    for (let offset = 0; offset < lineCount; offset += 1) {
       const line = source[offset];
       if (typeof line !== "string") {
         throw new Error(
@@ -738,30 +806,27 @@ export function restoreSnapshot(
  * first.
  */
 function nextSlices(
-  state: SessionState,
-  module: EventModule,
+  slices: Readonly<Record<string, unknown>>,
+  namespace: string,
+  stateful: boolean,
   outcome: CapturedOutcome,
   where: string,
 ): Readonly<Record<string, unknown>> {
   // `hasSlice` is a boolean decided once by `captureOutcome`, and `outcome.slice`
   // is the value it was decided from. Asking the outcome object twice is what
   // let the guard see an object and the store see `undefined`.
-  if (!outcome.hasSlice) return state.slices;
-  if (!module.stateful) {
+  if (!outcome.hasSlice) return slices;
+  if (!stateful) {
     throw new Error(
-      `${where}: module ${JSON.stringify(module.namespace)} declares no initialSlice but its ` +
+      `${where}: module ${JSON.stringify(namespace)} declares no initialSlice but its ` +
         `handler returned one, which the reducer has nowhere to keep`,
     );
   }
   return Object.freeze({
-    ...state.slices,
+    ...slices,
     // The previous canonical slice, so the walk can stop wherever the handler
     // shared structure with it rather than rebuilding the whole tree.
-    [module.namespace]: freezeSlice(
-      outcome.slice,
-      where,
-      state.slices[module.namespace],
-    ),
+    [namespace]: freezeSlice(outcome.slice, where, slices[namespace]),
   });
 }
 
@@ -785,6 +850,42 @@ function makeEntry(
   outcome: CapturedOutcome,
   where: string,
 ): TranscriptEntry {
+  // The emitting side of the type bound, and the load-bearing half. Round 7
+  // established that a round-trip property is only available from the side that
+  // produces the value: `createRegistry` also refuses an oversized type, but it
+  // is not structurally the writer — `EventRegistry` is an exported plain
+  // interface, so `step(state, event, handBuiltRegistry)` never passes through
+  // it. Registry construction gets the check for the diagnostic; this one is
+  // what makes the property hold.
+  //
+  // The bound is on the *stored* line. A rendered line is longer —
+  // `renderEntry` prepends an index, two spaces, the instant, two spaces and
+  // the type — so a maximal summary renders past this number. That gap is not
+  // closed here and does not need to be: nothing validates rendered output, so
+  // it is not a round-trip break.
+  //
+  // It is bounded, though, and this check is part of why. With `type` capped
+  // here, `summary` and each detail line capped in `captureOutcome`, and `at`
+  // exactly 24 characters (`MIN_EPOCH_MS`/`MAX_EPOCH_MS` confine the year to
+  // 1970–9999 and `formatTimestamp` pads it to four digits), a rendered header
+  // is 8225 characters for the first 10,000 events:
+  // 4 + 2 + 24 + 2 + 4096 + 1 + 4096.
+  //
+  // It grows by one character per decade of the event index after that —
+  // `8225 + max(0, digits(eventCount - 1) - 4)`, over the largest index rather
+  // than the count, since the two differ at exactly the powers of ten — because
+  // `INDEX_WIDTH` is a
+  // minimum pad width, `padZero` is `padStart` and never truncates, and
+  // `eventCount` has no ceiling: `reduce` folds an arbitrary event array and
+  // `restoreSnapshot` only rejects a negative. Measured: 8225 at index 9999,
+  // 8226 at 10,000, 8228 at 1,000,000. A rendered detail line is smaller
+  // still, at 6 + 4096.
+  if (type.length > MAX_TRANSCRIPT_LINE_LENGTH) {
+    throw new Error(
+      `${where}: the event type is ${String(type.length)} characters, over the ` +
+        `${String(MAX_TRANSCRIPT_LINE_LENGTH)} a stored transcript line may hold.`,
+    );
+  }
   const summaryProblem = describeUnwritableText(outcome.summary);
   if (summaryProblem !== undefined) {
     throw new Error(`${where}: transcript summary contains ${summaryProblem}`);
@@ -1306,8 +1407,14 @@ function requireSlices(
   registry: EventRegistry,
 ): Readonly<Record<string, unknown>> {
   const slices = requireObject(value, "slices");
-  const stateful = registry.modules.filter((module) => module.stateful);
-  const expected = stateful.map((module) => module.namespace);
+  // Namespace captured alongside its module, so the key checked against the
+  // snapshot is the key the slice is stored under. With a hand-built registry
+  // these are the caller's modules, and the name was read for the expected-set,
+  // for the lookup, for the validator's label and for the stored key.
+  const stateful = registry.modules
+    .filter((module) => module.stateful)
+    .map((module) => ({ namespace: module.namespace, module }));
+  const expected = stateful.map((entry) => entry.namespace);
   const found = Object.keys(slices).sort();
 
   const missing = expected.filter((namespace) => !found.includes(namespace));
@@ -1321,12 +1428,26 @@ function requireSlices(
 
   return Object.freeze(
     Object.fromEntries(
-      stateful.map((module) => {
-        const raw = slices[module.namespace];
+      stateful.map(({ namespace, module }) => {
+        const raw = slices[namespace];
+        // Captured. Read once to choose the branch and again to call, the
+        // function checked and the function executed could differ — and its
+        // output lands in state, so this is stronger than the re-reads that
+        // only build a message. A second read that is not a function threw a
+        // bare TypeError out of this exported entry, naming neither module nor
+        // field.
+        const validate = module.validateSlice;
+        // `.call(module, …)` because the capture would otherwise invoke it
+        // unbound, where `module.validateSlice(…)` passed the module as
+        // receiver. Both construction paths bind all three callbacks, so only a
+        // hand-built registry with a method-shorthand validator notices — which
+        // is the failure round 9 reported and binding fixed, and this keeps
+        // today's semantics exactly rather than reintroducing it. It does not
+        // touch the parked thread that declines to detach the receiver.
         const validated =
-          module.validateSlice === undefined
+          validate === undefined
             ? raw
-            : module.validateSlice(raw, `snapshot: slices.${module.namespace}`);
+            : validate.call(module, raw, `snapshot: slices.${namespace}`);
         // The third and last door into `slices`, and the one that was open.
         // `bootstrap` refuses an `initialSlice` returning `undefined` and
         // `captureOutcome`'s `hasSlice` refuses a handler doing it; a validator
@@ -1338,14 +1459,14 @@ function requireSlices(
         // drift.
         if (validated === undefined) {
           throw new Error(
-            `snapshot: slices.${module.namespace}: validateSlice returned undefined. A validator ` +
+            `snapshot: slices.${namespace}: validateSlice returned undefined. A validator ` +
               `either accepts the slice, returning it, or refuses it by throwing — returning ` +
               `nothing leaves the module holding an absent slice under a key that exists.`,
           );
         }
         return [
-          module.namespace,
-          freezeSlice(validated, `snapshot: slices.${module.namespace}`),
+          namespace,
+          freezeSlice(validated, `snapshot: slices.${namespace}`),
         ];
       }),
     ),

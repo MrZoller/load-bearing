@@ -153,7 +153,13 @@ export function appendEvent(
   event: EngineEvent,
   registry: EventRegistry = ENGINE_EVENT_REGISTRY,
 ): readonly EngineEvent[] {
-  const where = `appended event ${String(log.length)}`;
+  // The caller's log, captured once. `log.length` for the label and the spread
+  // below are two reads, so a getter could label the error with one position
+  // and append at another. Divergence is confined to a message today; leaving a
+  // known member of a family this engine declares closed is how the next one
+  // arrives.
+  const previous: readonly EngineEvent[] = [...log];
+  const where = `appended event ${String(previous.length)}`;
   // Captured once. Everything below reads the envelope, never `event` again —
   // see `assertEventEnvelope` for what re-reading a getter would buy a caller.
   const envelope = assertEventEnvelope(event, where);
@@ -165,10 +171,17 @@ export function appendEvent(
         `Registered namespaces: ${registry.namespaces.join(", ")}.`,
     );
   }
-  if (envelope.version !== undefined && envelope.version !== handler.version) {
+  // Captured once and used for the check, the message and the stamp. A
+  // hand-built registry is caller-owned — `makeEntry` says so and guards for it
+  // — so reading `handler.version` three times let a getter validate as one
+  // number and *stamp* another into the log. That is the strongest form in this
+  // family: not a diagnostic, a stored value that was never validated, and
+  // exactly the mismatch `createRegistry` describes as closed.
+  const implemented = handler.version;
+  if (envelope.version !== undefined && envelope.version !== implemented) {
     throw new Error(
       `${where} (${envelope.type}): declares payload schema version ${String(envelope.version)}, ` +
-        `but this engine implements version ${String(handler.version)}.`,
+        `but this engine implements version ${String(implemented)}.`,
     );
   }
 
@@ -177,10 +190,10 @@ export function appendEvent(
     ...(envelope.payload === undefined
       ? {}
       : { payload: clonePayload(envelope.payload, where) }),
-    version: handler.version,
+    version: implemented,
   });
 
-  return Object.freeze([...log, stamped]);
+  return Object.freeze([...previous, stamped]);
 }
 
 /**

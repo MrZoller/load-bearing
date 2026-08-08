@@ -5,8 +5,10 @@ import { deserialize, serialize } from "../serialize/canonical.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { EMPTY_EVENT_LOG, appendEvent, assertEventEnvelope } from "./log.js";
 import { defineEventModule } from "./module.js";
+import type { RegisteredHandler } from "./module.js";
 import { reduce } from "./reduce.js";
 import { createRegistry } from "./registry.js";
+import type { EventRegistry } from "./registry.js";
 import type { EngineEvent } from "./state.js";
 import { renderTranscript } from "./transcript.js";
 
@@ -418,5 +420,77 @@ describe("assertEventEnvelope", () => {
     ]) {
       expect(() => assertEventEnvelope(event, "event 0")).not.toThrow();
     }
+  });
+});
+
+describe("the log a caller hands over", () => {
+  it("is read once, so the label and the append agree on the position", () => {
+    // `log.length` for the error label and the spread below were two reads.
+    // The divergence is confined to a message, which is why it is cheap rather
+    // than urgent — but leaving a known member of a family this engine declares
+    // closed is how the next one arrives.
+    let reads = 0;
+    const growing = {
+      get length(): number {
+        reads += 1;
+        return reads > 1 ? 99 : 1;
+      },
+      0: { type: "clock.tick", payload: { ms: 1 }, version: 0 },
+      [Symbol.iterator]: Array.prototype[Symbol.iterator],
+    } as unknown as readonly EngineEvent[];
+
+    // 99, not 1: the array iterator re-reads `length` as it goes, so the
+    // captured log really is that long and the label names the position the
+    // event would land at. Reading `log.length` for the label and spreading
+    // separately labelled it 1 while appending at 99 — the label and the append
+    // disagreeing is the whole defect, whatever the number.
+    expect(() => appendEvent(growing, { type: "nope.nope" })).toThrow(
+      /appended event 99 \(nope\.nope\)/,
+    );
+    expect(appendEvent(growing, TICK)).toHaveLength(100);
+  });
+});
+
+describe("a caller-owned registry's handler", () => {
+  it("stamps the version it validated, not a later read of it", () => {
+    // A hand-built registry is caller-owned — `makeEntry` says so and guards
+    // for it — and `handler.version` was read to validate, to report, and to
+    // stamp. The stamp is the strongest form in this family: a stored value
+    // that was never validated, and exactly the log/reducer mismatch
+    // `createRegistry` describes as closed.
+    let reads = 0;
+    const registry = createRegistry([
+      defineEventModule({
+        namespace: "alpha",
+        description: "",
+        events: { "alpha.go": { version: 0, apply: () => ({}) } },
+      }),
+    ]);
+    const real = registry.handler("alpha.go") as RegisteredHandler;
+    const shifty: EventRegistry = {
+      ...registry,
+      handler: () => ({
+        ...real,
+        get version(): number {
+          reads += 1;
+          return reads > 1 ? -1 : 7;
+        },
+      }),
+    };
+
+    // `version: 7` is load-bearing. Without it the pre-fix guard
+    // short-circuits on `envelope.version !== undefined` and never reads
+    // `handler.version` at all, so validated and stored cannot diverge and the
+    // test asserts nothing.
+    const log = appendEvent(
+      EMPTY_EVENT_LOG,
+      { type: "alpha.go", version: 7 },
+      shifty,
+    );
+
+    // The stored stamp is the validated value, and it is one the reducer's own
+    // envelope check accepts.
+    expect(log[0]?.version).toBe(7);
+    expect(() => assertEventEnvelope(log[0], "event 0")).not.toThrow();
   });
 });

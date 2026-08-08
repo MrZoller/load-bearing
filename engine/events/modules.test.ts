@@ -223,6 +223,121 @@ describe("the probe events", () => {
     ).toThrow(/count must be an integer/);
   });
 
+  it("weighs the arms it validated, not ones that arrived mid-copy", () => {
+    // `items.length` was read once per step of the engine's own index loop, so
+    // an index accessor that pushes grows the list while it is being copied and
+    // the smuggled arm reaches the transcript. Every arm that lands is
+    // validated, so nothing diverges between checked and stored — this
+    // falsifies the read-once property rather than corrupting state.
+    const entries: unknown[] = [{ value: "declared", weight: 1 }];
+    Object.defineProperty(entries, 0, {
+      configurable: true,
+      enumerable: true,
+      get: () => {
+        if (entries.length < 2) {
+          entries.push({ value: "smuggled", weight: 5 });
+        }
+        return { value: "declared", weight: 1 };
+      },
+    });
+
+    const rendered = lines([
+      { type: "probe.weighted", payload: { stream: "a", count: 3, entries } },
+    ]);
+
+    expect(rendered.filter((line) => line.includes("smuggled"))).toEqual([]);
+    expect(rendered[1]).toMatch(/declared\s+weight=\s+1\s+picks=\s+3/);
+  });
+
+  it("refuses an accessor rather than ordering around it", () => {
+    // One `getOwnPropertyDescriptors` pass, accessors refused, values read out
+    // of the snapshot — the pattern `ownProperties` and `canonicalizeSlice`
+    // already use. Ordering alone cannot close this: reading the key set after
+    // the values let a getter `delete` a sibling, and reading it first let a
+    // getter `add` one. Both are silent drops, each ordering closes one, and
+    // the descriptor pass closes both because no caller code runs between the
+    // snapshot and the reads.
+    const validate = PROBE_MODULE.validateSlice;
+    if (validate === undefined) {
+      expect.unreachable("the probe module declares a slice validator");
+    }
+    const withGetter = (
+      build: (record: Record<string, unknown>) => unknown,
+    ) => {
+      const record: Record<string, unknown> = { values: 0 };
+      Object.defineProperty(record, "events", {
+        enumerable: true,
+        configurable: true,
+        get: () => build(record),
+      });
+      return record;
+    };
+
+    // The delete direction, and the add direction — the mirror image the
+    // key-set reorder opened while closing the first.
+    let reads = 0;
+    expect(() =>
+      validate(
+        withGetter((record) => {
+          delete record["junk"];
+          return reads++ ? "oops" : 0;
+        }),
+        "snapshot: slices.probe",
+      ),
+    ).toThrow(/events is an accessor/);
+    expect(() =>
+      validate(
+        withGetter((record) => {
+          record["smuggled"] = 1;
+          return 0;
+        }),
+        "snapshot: slices.probe",
+      ),
+    ).toThrow(/events is an accessor/);
+
+    // Plain data still validates, and both returned fields come from the
+    // snapshot rather than a second read.
+    expect(validate({ events: 2, values: 9 }, "w")).toEqual({
+      events: 2,
+      values: 9,
+    });
+  });
+
+  it("refuses a symbol-keyed slice, which no snapshot could carry", () => {
+    // The descriptor pass that closes the accessor hole above enumerates
+    // string keys only, so a symbol-keyed property would sail past the
+    // unknown-field check and the counter checks alike — validated clean, then
+    // dropped by the canonical serializer. Refused explicitly instead, and the
+    // branch had no test at all: deleting it changed nothing anywhere.
+    const validate = PROBE_MODULE.validateSlice;
+    if (validate === undefined) {
+      expect.unreachable("the probe module declares a slice validator");
+    }
+    const slice: Record<string, unknown> = { events: 2, values: 9 };
+    Object.defineProperty(slice, Symbol("smuggled"), {
+      enumerable: true,
+      value: 1,
+    });
+
+    expect(() => validate(slice, "snapshot: slices.probe")).toThrow(
+      /has a symbol-keyed property, which cannot be recorded/,
+    );
+  });
+
+  it("reports an unknown key before a bad counter, and keeps doing so", () => {
+    // Pinned because the key check and the value checks changed order in this
+    // round, and the message a caller sees is an error surface this work
+    // otherwise treats as contractual.
+    const validate = PROBE_MODULE.validateSlice;
+    if (validate === undefined) {
+      expect.unreachable("the probe module declares a slice validator");
+    }
+
+    expect(() => validate({ events: "bad", values: 0, junk: 1 }, "w")).toThrow(
+      /unexpected field\(s\) junk/,
+    );
+  });
+
   it("checks its own slice on the way back from a snapshot", () => {
     // The worked example of `validateSlice`. Only this module knows the shape,
     // so only this module can refuse it — the reducer can confirm the slice

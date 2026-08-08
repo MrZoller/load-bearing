@@ -116,17 +116,29 @@ export function createClock(start: number | string): SimulatedClock {
 
 /** Rebuild a clock from serialized state, stopped exactly where it was. */
 export function restoreClock(state: ClockState): SimulatedClock {
+  // Each field captured before it is used. `state` is caller-owned at an
+  // exported entry, and `elapsedMs` was read four times — three in the
+  // condition and once in `makeClock` — so a getter could pass the range check
+  // and still seat a value outside it.
+  //
+  // What that costs, stated as the failure that can actually occur: a clock
+  // seated past `MAX_EPOCH_MS` makes `clock.timestamp()` throw from
+  // `assertEpochMs` in the middle of a `step`, out of an exported reducer
+  // entry. It does not widen the rendered instant — `formatTimestamp` cannot
+  // emit a five-digit year, because `civilFromEpochMs` refuses the input
+  // first.
   const startMs = assertStart(state.startMs);
+  const elapsedMs = state.elapsedMs;
   if (
-    !Number.isInteger(state.elapsedMs) ||
-    state.elapsedMs < 0 ||
-    startMs + state.elapsedMs > MAX_EPOCH_MS
+    !Number.isInteger(elapsedMs) ||
+    elapsedMs < 0 ||
+    startMs + elapsedMs > MAX_EPOCH_MS
   ) {
     throw new Error(
-      `clock: elapsed must be an integer keeping the clock inside the representable range, got ${String(state.elapsedMs)}`,
+      `clock: elapsed must be an integer keeping the clock inside the representable range, got ${String(elapsedMs)}`,
     );
   }
-  return makeClock(startMs, state.elapsedMs);
+  return makeClock(startMs, elapsedMs);
 }
 
 function assertStart(startMs: number): number {

@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { serialize } from "../serialize/canonical.js";
-import { MAX_EPOCH_MS, MS_PER_HOUR, parseTimestamp } from "./civil.js";
+import {
+  formatTimestamp,
+  MAX_EPOCH_MS,
+  MS_PER_HOUR,
+  parseTimestamp,
+} from "./civil.js";
 import { createClock, restoreClock } from "./clock.js";
 
 const START = "2026-08-05T09:14:22.000Z";
@@ -142,5 +147,50 @@ describe("state", () => {
     expect(() => restoreClock({ ...valid, elapsedMs: MAX_EPOCH_MS })).toThrow(
       /elapsed must be an integer/,
     );
+  });
+});
+
+describe("a caller-supplied clock state", () => {
+  it("has each field read once, so a getter cannot outrun the range check", () => {
+    // `elapsedMs` was read twice to validate and once more to build the clock,
+    // so a getter could satisfy the range and still seat a value outside it.
+    // Not contained: an elapsed past MAX_EPOCH_MS renders a year beyond four
+    // digits, and the transcript's rendered-line arithmetic rests on the
+    // 24-character instant that range guarantees.
+    let reads = 0;
+    const shifty = {
+      startMs: 0,
+      get elapsedMs(): number {
+        reads += 1;
+        return reads > 1 ? Number.MAX_SAFE_INTEGER : 1000;
+      },
+    };
+
+    const restored = restoreClock(shifty);
+    expect(reads).toBe(1);
+    expect(restored.toState().elapsedMs).toBe(1000);
+    expect(formatTimestamp(restored.now())).toHaveLength(24);
+  });
+
+  it("seats the clock at the start it range-checked, not a later read", () => {
+    // The sibling capture, and the one the test above leaves revertible:
+    // `startMs` was read once for `assertStart` and again to seat the clock.
+    // Both reads are in range here, so nothing refuses — the session simply
+    // resumes in a different week, and `restoreSnapshot`'s
+    // clock-against-cartridge check is what eventually reports a session whose
+    // stamps belong to a world its cartridge never declared.
+    let reads = 0;
+    const shifty = {
+      get startMs(): number {
+        reads += 1;
+        return reads > 1 ? 0 : parseTimestamp(START);
+      },
+      elapsedMs: 1000,
+    };
+
+    const restored = restoreClock(shifty);
+    expect(reads).toBe(1);
+    expect(restored.toState().startMs).toBe(parseTimestamp(START));
+    expect(restored.timestamp()).toBe("2026-08-05T09:14:23.000Z");
   });
 });
