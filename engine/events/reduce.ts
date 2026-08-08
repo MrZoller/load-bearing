@@ -20,9 +20,10 @@
  * Every state this module returns is frozen, and so are the transcript array,
  * each transcript entry, the slices record, and each slice in it. Under strict
  * mode an in-place edit therefore throws where it happens rather than being
- * inferred later from a serialized comparison. Slices are frozen one level
- * deep, not recursively — see `freezeSlice` for why, and for what covers the
- * rest.
+ * inferred later from a serialized comparison. A slice is canonicalized and
+ * frozen all the way down through the plain data it holds — see `freezeSlice`
+ * for how that is affordable, and for what it deliberately leaves to the
+ * canonical serializer.
  *
  * ## Nothing degrades silently
  *
@@ -53,6 +54,10 @@ import {
 import type { RandomState } from "../random/stream.js";
 import { deserialize, serialize } from "../serialize/canonical.js";
 import { describeUnwritableText } from "../text.js";
+import {
+  MAX_TRANSCRIPT_DETAIL_LINES,
+  MAX_TRANSCRIPT_LINE_LENGTH,
+} from "./transcript.js";
 import { assertEventEnvelope } from "./log.js";
 import type { EventContext, EventModule, EventOutcome } from "./module.js";
 import { ENGINE_EVENT_REGISTRY } from "./modules.js";
@@ -285,29 +290,6 @@ export function step(
   });
 }
 
-/**
- * Ceilings on one transcript entry, in the two dimensions an entry has.
- *
- * The `MAX_PROBE_*` constants in `engine/events/probe.ts` each gesture at the
- * same invariant — "so a fixture stays a readable artifact" — one input at a
- * time, and there are more inputs than constants: a probe's entry count, the
- * length of a `weightedPick` arm's label amplified by `padEnd`, and the depth
- * of a stream path all reach the transcript, and only the first was bounded.
- * Bounding the *output* covers all of them, and covers whatever #5–#13 write
- * without each module having to invent its own ceiling.
- *
- * Generous on purpose: the largest committed fixture entry is around 125 detail
- * lines of roughly 80 characters, so nothing legitimate is near these.
- *
- * The residual, which matters: this bounds the artifact, not the work. A stream
- * path of fifty thousand segments costs most of a second on an event whose
- * transcript entry is one line, and no output ceiling sees that. A per-event
- * work budget is Phase 3's problem, alongside the rest of hostile-permalink
- * handling; it is not addressed here.
- */
-export const MAX_TRANSCRIPT_DETAIL_LINES = 4096;
-export const MAX_TRANSCRIPT_LINE_LENGTH = 4096;
-
 /** An `EventOutcome` after every field has been read exactly once. */
 interface CapturedOutcome {
   /** Whether the handler returned a slice. A boolean, never a re-read. */
@@ -357,10 +339,12 @@ interface CapturedOutcome {
  * lines from `summary` and applied only to `detail`: the same one-member-short
  * shape this capture exists to stop repeating.
  *
- * What this does not cover: a getter on the *slice* the handler returns is
- * captured by reference here, and `freezeSlice` hardens only its top level.
- * Depth is the canonical serializer's question, and it answers it at record
- * time with a JSON pointer.
+ * The slice itself is captured by reference here and handed on to
+ * `freezeSlice`, which is where it is walked: accessors on it are refused
+ * there, not here, and what survives that walk is a canonical frozen copy. What
+ * neither covers is depth past a value `canFreezeInPlace` refuses — a nested
+ * `Map` is passed through untouched, and the canonical serializer names it at
+ * record time with a JSON pointer.
  */
 function captureOutcome(raw: unknown, where: string): CapturedOutcome {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
@@ -918,6 +902,9 @@ function freezeSlice(
  * that subtree was canonicalized and frozen on an earlier event and cannot have
  * changed since, because everything this function returns is frozen.
  */
+/** An array index as a property key: `0 … 2**32 - 2`, no leading zeros. */
+const ARRAY_INDEX = /^(?:0|[1-9]\d*)$/;
+
 function canonicalizeSlice(
   next: unknown,
   previous: unknown,
@@ -925,10 +912,17 @@ function canonicalizeSlice(
   path: string,
   active: Set<object>,
 ): unknown {
-  if (next === previous) return next;
   // `-0` and `0` are the same JSON document and different JavaScript values;
   // the serializer normalizes, so this does too.
+  //
+  // Above the identity shortcut, not below it: `-0 === 0` is true, so a `-0`
+  // recomputed at a position whose previous canonical value was `0` took the
+  // shortcut and was stored unnormalized — the slice going stale on the one
+  // axis this walk exists to fix, and only when the prior value happened to be
+  // zero. `NaN` needs no such care: `NaN === NaN` is false, so it never
+  // shortcuts.
   if (Object.is(next, -0)) return 0;
+  if (next === previous) return next;
   if (typeof next !== "object" || next === null) return next;
 
   // Left alone deliberately — see the residuals note above.
@@ -942,32 +936,79 @@ function canonicalizeSlice(
   }
   active.add(next);
   try {
-    if (Array.isArray(next)) {
-      const before = Array.isArray(previous) ? previous : undefined;
-      const source: readonly unknown[] = next;
-      const rebuilt: unknown[] = [];
-      for (let index = 0; index < source.length; index += 1) {
-        rebuilt.push(
-          canonicalizeSlice(
-            source[index],
-            before?.[index],
-            where,
-            `${path}[${String(index)}]`,
-            active,
-          ),
-        );
-      }
-      return Object.freeze(rebuilt);
-    }
+    // One reflective pass, and the same guards for an array as for an object.
+    // Rebuilding is destructive in a way freezing was not: whatever this walk
+    // does not copy is simply gone, silently, inside the fold — where before it
+    // survived to the canonical serializer and came back as a named error with
+    // a JSON pointer. Every check below exists because skipping it turned a
+    // loud refusal into quiet destruction.
+    const descriptors = Object.getOwnPropertyDescriptors(next);
 
-    // Symbol keys are refused rather than dropped. `Object.keys` omits them, so
-    // rebuilding without this would lose them silently — and the serializer,
-    // which refuses them loudly, would never see them to complain.
-    if (Object.getOwnPropertySymbols(next).length > 0) {
+    if (Object.getOwnPropertySymbols(descriptors).length > 0) {
       throw new Error(
         `${where}: slice${path} has a symbol-keyed property, which cannot be recorded and ` +
           `would be dropped without trace by the canonical form.`,
       );
+    }
+
+    /** Reject a property that is state but would not survive the rebuild. */
+    const inertValue = (
+      descriptor: PropertyDescriptor,
+      at: string,
+    ): unknown => {
+      // Descriptors, never a property read: a getter is handler code, and
+      // running it here would both execute inside the fold and let it answer
+      // this walk differently from the next reader.
+      if (descriptor.get !== undefined || descriptor.set !== undefined) {
+        throw new Error(
+          `${where}: slice${at} is an accessor. A slice is inert data; reading it would run ` +
+            `code during the fold, and freezing could not make it inert.`,
+        );
+      }
+      if (descriptor.enumerable !== true) {
+        throw new Error(
+          `${where}: slice${at} is a non-enumerable property. It is state the canonical form ` +
+            `would drop without trace.`,
+        );
+      }
+      return descriptor.value;
+    };
+
+    if (Array.isArray(next)) {
+      const before = Array.isArray(previous) ? previous : undefined;
+      const length = next.length;
+      const rebuilt: unknown[] = [];
+      for (let index = 0; index < length; index += 1) {
+        const at = `${path}[${String(index)}]`;
+        const descriptor = descriptors[String(index)];
+        // A hole, which the copy would materialize as `undefined`. Named here
+        // rather than left to the serializer, since the fold is where it
+        // entered.
+        if (descriptor === undefined) {
+          throw new Error(`${where}: slice${at} is a hole in a sparse array.`);
+        }
+        rebuilt.push(
+          canonicalizeSlice(
+            inertValue(descriptor, at),
+            before?.[index],
+            where,
+            at,
+            active,
+          ),
+        );
+      }
+      // Anything an array carries beyond its indices — `Object.assign([], {…})`
+      // — is state, and the rebuild has nowhere to put it.
+      for (const key of Object.keys(descriptors)) {
+        if (key === "length") continue;
+        if (!ARRAY_INDEX.test(key) || Number(key) >= length) {
+          throw new Error(
+            `${where}: slice${path} has a non-index property ${JSON.stringify(key)}. An array's ` +
+              `extra properties cannot be recorded and would be dropped without trace.`,
+          );
+        }
+      }
+      return Object.freeze(rebuilt);
     }
 
     const before =
@@ -975,24 +1016,16 @@ function canonicalizeSlice(
         ? (previous as Record<string, unknown>)
         : undefined;
     const rebuilt: Record<string, unknown> = {};
-    for (const key of Object.keys(next).sort()) {
-      // Descriptors, not reads: a getter here is handler code running inside
-      // the fold, and it could return a different value to this walk than to
-      // the next reader. `deepFreeze` refuses accessors for the same reason.
-      const descriptor = Object.getOwnPropertyDescriptor(next, key);
+    for (const key of Object.keys(descriptors).sort()) {
+      const descriptor = descriptors[key];
       if (descriptor === undefined) continue;
-      if (descriptor.get !== undefined || descriptor.set !== undefined) {
-        throw new Error(
-          `${where}: slice${path}.${key} is an accessor. A slice is inert data; reading it would ` +
-            `run code during the fold, and freezing could not make it inert.`,
-        );
-      }
+      const value = inertValue(descriptor, `${path}.${key}`);
       // Dropped, matching the serializer: an own key holding `undefined` is
       // absent from the recorded form, so keeping it here is the difference
       // `Object.hasOwn` reports before and after a round trip.
-      if (descriptor.value === undefined) continue;
+      if (value === undefined) continue;
       rebuilt[key] = canonicalizeSlice(
-        descriptor.value,
+        value,
         before?.[key],
         where,
         `${path}.${key}`,
@@ -1043,6 +1076,12 @@ function requireInteger(value: unknown, what: string): number {
  */
 function requireLine(value: unknown, what: string): string {
   const line = requireString(value, what);
+  if (line.length > MAX_TRANSCRIPT_LINE_LENGTH) {
+    throw new Error(
+      `snapshot: "${what}" is ${String(line.length)} characters, over the ` +
+        `${String(MAX_TRANSCRIPT_LINE_LENGTH)} a single line may hold.`,
+    );
+  }
   const problem = describeUnwritableText(line);
   if (problem !== undefined) {
     throw new Error(`snapshot: "${what}" contains ${problem}`);
@@ -1145,6 +1184,18 @@ function requireTranscript(
         );
       }
       const lines: readonly unknown[] = detail;
+      // The same ceiling `captureOutcome` applies on the way in. `requireLine`
+      // eighty lines below states the rule: a check belongs on both doors into
+      // the transcript, not only the one the reducer writes through. Without it
+      // the exported constants bound what `step` produces and not what a
+      // `SessionState` may hold, which is not what a reader of them — or
+      // #5–#13 — would take them to mean.
+      if (lines.length > MAX_TRANSCRIPT_DETAIL_LINES) {
+        throw new Error(
+          `snapshot: "transcript[${String(position)}].detail" holds ${String(lines.length)} ` +
+            `lines, over the ${String(MAX_TRANSCRIPT_DETAIL_LINES)} one entry may hold.`,
+        );
+      }
       // One entry per event, at the event's own index — the property that lets
       // a reader treat a transcript position as an event position. A snapshot
       // whose entries are renumbered or reordered was not produced by this

@@ -25,7 +25,7 @@ import { defineEventModule } from "./module.js";
 import type { EventContext } from "./module.js";
 import { readInteger, readString, requirePayload } from "./payload.js";
 import type { EventPayload } from "./payload.js";
-import { padZero } from "./transcript.js";
+import { MAX_TRANSCRIPT_DETAIL_LINES, padZero } from "./transcript.js";
 
 /** Raw draws printed per transcript line by a `probe.random` in uint32 form. */
 const UINT32_PER_LINE = 8;
@@ -33,8 +33,24 @@ const UINT32_PER_LINE = 8;
 /** Floats per transcript line — four, because each is far wider. */
 const FLOAT_PER_LINE = 4;
 
-/** Ceiling on a probe's draw count, so a fixture stays a readable artifact. */
-const MAX_PROBE_COUNT = 20000;
+/**
+ * Ceiling on a probe's draw count, derived from the transcript's line budget
+ * rather than chosen.
+ *
+ * Picking a second number is how these two came to contradict each other: at
+ * 20000, a `probe.random` in float form rendered 5001 lines, so a payload
+ * `readInteger` declared legal was then refused by `captureOutcome` — one
+ * engine, two ceilings, and a shipped event type failing between them.
+ *
+ * Float is the worst case at four values per line, so the budget divided by
+ * that is the largest count any form can ask for. One line of the budget is
+ * reserved for the trailing `cursor=` line every probe writes. The other forms
+ * come out well inside it: the same count in uint32 form is 2049 lines,
+ * `probe.int` renders `max` rows and is bounded separately at
+ * `MAX_PROBE_INT_BOUND`, and `probe.weighted` renders one row per arm, which
+ * the transcript bound limits directly.
+ */
+const MAX_PROBE_COUNT = (MAX_TRANSCRIPT_DETAIL_LINES - 1) * FLOAT_PER_LINE;
 
 /** Ceiling on `probe.int`'s bound, so its histogram stays readable. */
 const MAX_PROBE_INT_BOUND = 1024;
@@ -153,19 +169,25 @@ function readWeightedEntries(
   const items: readonly unknown[] = raw;
   const seen = new Set<string>();
   const entries: WeightedEntry<string>[] = [];
-  // An index loop, because `map` skips holes. A sparse `entries` array — from a
-  // hand-built log or a decoded permalink — passed validation untouched and
-  // reached `weightedPick`'s own hole check as a bare `TypeError` on
+  // An index loop, because `map` skips holes. A sparse `entries` array reaching
+  // a handler passed validation untouched and then threw a bare `TypeError` on
   // `entry.value`, naming no event and no module. `weightedPick` carries an
   // explicit named check for exactly this and `captureOutcome` carries a
   // paragraph about `forEach` skipping holes; the validator sitting between
   // them did neither.
+  //
+  // Reachable from a log built in memory, not from a permalink: `clonePayload`
+  // round-trips an appended payload through the canonical serializer, which
+  // refuses a sparse array, and `JSON.parse` cannot produce a hole.
   for (let index = 0; index < items.length; index += 1) {
     const scope = `${where} entry ${String(index)}`;
-    const item = items[index];
-    if (!(index in items)) {
+    // A descriptor, not `index in items`: the latter consults the prototype
+    // chain, so a numeric property planted on `Array.prototype` would report a
+    // hole as present. `canonical.ts` documents the same choice.
+    if (Object.getOwnPropertyDescriptor(items, index) === undefined) {
       throw new Error(`${scope}: is a hole in a sparse array`);
     }
+    const item = items[index];
     if (typeof item !== "object" || item === null || Array.isArray(item)) {
       throw new Error(`${scope}: must be an object`);
     }

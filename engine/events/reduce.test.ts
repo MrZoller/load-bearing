@@ -12,8 +12,6 @@ import type { EventModule } from "./module.js";
 import { ENGINE_EVENT_REGISTRY } from "./modules.js";
 import {
   EventVersionError,
-  MAX_TRANSCRIPT_DETAIL_LINES,
-  MAX_TRANSCRIPT_LINE_LENGTH,
   UnknownEventTypeError,
   bootstrap,
   reduce,
@@ -23,6 +21,10 @@ import {
 } from "./reduce.js";
 import type { ReduceInput } from "./reduce.js";
 import { createRegistry } from "./registry.js";
+import {
+  MAX_TRANSCRIPT_DETAIL_LINES,
+  MAX_TRANSCRIPT_LINE_LENGTH,
+} from "./transcript.js";
 import type { EventRegistry } from "./registry.js";
 import { EVENT_SCHEMA_VERSION } from "./state.js";
 import type { EngineEvent, SessionState } from "./state.js";
@@ -485,6 +487,114 @@ describe("snapshots", () => {
     expect(live["left"] === live["right"]).toBe(back["left"] === back["right"]);
   });
 
+  it("normalizes -0 even where the previous canonical value was 0", () => {
+    // The identity shortcut and the `-0` rule interact: `-0 === 0` is true, so
+    // ordering the shortcut first let a recomputed `-0` land on top of a
+    // canonical `0` and be stored unnormalized — the slice going stale on the
+    // one axis this walk exists to fix, and only when the prior value happened
+    // to be zero, which is the worst kind to find.
+    const drifting = defineEventModule<{ drift: number }>({
+      namespace: "drift",
+      description: "writes 0 and then recomputes it as -0",
+      initialSlice: () => ({ drift: 0 }),
+      events: {
+        "drift.go": {
+          version: 0,
+          apply: (context) => ({
+            slice: { drift: context.index === 0 ? 0 : -0 },
+          }),
+        },
+      },
+    });
+    const registry = createRegistry([drifting]);
+    const state = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      registry,
+      events: [{ type: "drift.go" }, { type: "drift.go" }],
+    });
+    const live = (state.slices["drift"] as { drift: number }).drift;
+    const back = (
+      restoreSnapshot(snapshot(state), registry).slices["drift"] as {
+        drift: number;
+      }
+    ).drift;
+
+    expect(Object.is(live, -0)).toBe(false);
+    expect(1 / live).toBe(Number.POSITIVE_INFINITY);
+    expect(Object.is(live, back)).toBe(true);
+  });
+
+  it("refuses the properties a rebuild would drop, in arrays as well as objects", () => {
+    // Rebuilding is destructive where freezing was not: whatever the walk does
+    // not copy is gone inside the fold, where before it survived to the
+    // canonical serializer and came back named with a JSON pointer. Each case
+    // here used to throw at record time and briefly became silent destruction.
+    const holding = (build: () => unknown): EventModule =>
+      defineEventModule<unknown>({
+        namespace: "shape",
+        description: "returns a slice the canonical form could not carry",
+        initialSlice: () => ({}),
+        events: {
+          "shape.go": { version: 0, apply: () => ({ slice: build() }) },
+        },
+      });
+    const fold = (build: () => unknown) =>
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry: createRegistry([holding(build)]),
+        events: [{ type: "shape.go" }],
+      });
+
+    // An array carrying a non-index property.
+    expect(() => fold(() => Object.assign([1, 2], { foo: "state" }))).toThrow(
+      /non-index property "foo"/,
+    );
+    // An array carrying a symbol key.
+    expect(() =>
+      fold(() => {
+        const array: unknown[] = [1];
+        (array as unknown as Record<symbol, unknown>)[Symbol("s")] = "state";
+        return array;
+      }),
+    ).toThrow(/symbol-keyed property/);
+    // An array index defined as a getter — which must not run.
+    let reads = 0;
+    expect(() =>
+      fold(() => {
+        const array: unknown[] = [];
+        Object.defineProperty(array, "0", {
+          enumerable: true,
+          configurable: true,
+          get: () => {
+            reads += 1;
+            return 1;
+          },
+        });
+        array.length = 1;
+        return array;
+      }),
+    ).toThrow(/is an accessor/);
+    expect(reads).toBe(0);
+    // A hole.
+    expect(() => fold(() => [1, , 3] as unknown[])).toThrow(
+      /hole in a sparse array/,
+    );
+    // And a non-enumerable own property on a plain object, which `Object.keys`
+    // never showed the walk at all.
+    expect(() =>
+      fold(() => {
+        const held: Record<string, unknown> = { visible: 1 };
+        Object.defineProperty(held, "hidden", {
+          value: "state",
+          enumerable: false,
+        });
+        return held;
+      }),
+    ).toThrow(/non-enumerable property/);
+  });
+
   it("keeps the shared structure a handler hands it, and refuses a cycle", () => {
     // The walk is incremental: it stops wherever the new slice shares structure
     // with the previous canonical one, which is what makes canonicalizing per
@@ -914,6 +1024,38 @@ describe("snapshots", () => {
       /the clock has advanced 86400000ms but the transcript is empty/,
     );
     expect(() => restoreSnapshot(text)).not.toThrow();
+  });
+
+  it("applies the transcript bounds on the restore door too", () => {
+    // `requireTranscript` is the other way an entry enters a `SessionState`,
+    // and it applied neither ceiling — so a hand-edited snapshot restored with
+    // an entry no fold could have written, and the exported constants bounded
+    // what `step` produces rather than what a state may hold. `requireLine`
+    // states the rule: both doors, not only the one the reducer writes through.
+    const text = snapshot(fold([{ type: "clock.tick", payload: { ms: 1 } }]));
+    const withEntry = (change: (entry: Record<string, unknown>) => void) => {
+      const parsed = deserialize(text) as Record<string, unknown>;
+      const entries = parsed["transcript"] as Record<string, unknown>[];
+      change(entries[0] as Record<string, unknown>);
+      return serialize(parsed);
+    };
+
+    expect(() =>
+      restoreSnapshot(
+        withEntry((entry) => {
+          entry["detail"] = new Array<string>(
+            MAX_TRANSCRIPT_DETAIL_LINES + 1,
+          ).fill("x");
+        }),
+      ),
+    ).toThrow(/holds 4097 lines/);
+    expect(() =>
+      restoreSnapshot(
+        withEntry((entry) => {
+          entry["summary"] = "z".repeat(MAX_TRANSCRIPT_LINE_LENGTH + 1);
+        }),
+      ),
+    ).toThrow(/is 4097 characters/);
   });
 
   it("refuses a PRNG cursor belonging to no registered module", () => {
@@ -1566,7 +1708,9 @@ describe("transcript text a handler produces", () => {
     ).toThrow(/transcript summary is 4097 characters/);
 
     // Comfortably inside, which is where every committed fixture sits: the
-    // largest is 126 detail lines of at most 99 characters.
+    // largest entry is 126 detail lines of at most 84 characters. (The 99-char
+    // lines in `002-random-clock/transcript.txt` are *rendered* lines, which
+    // carry the index/timestamp/type header this bound does not cover.)
     expect(() =>
       say({
         detail: new Array<string>(MAX_TRANSCRIPT_DETAIL_LINES).fill("x"),

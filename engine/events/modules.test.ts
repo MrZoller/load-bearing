@@ -10,7 +10,7 @@ import { ENGINE_EVENT_MODULES, ENGINE_EVENT_REGISTRY } from "./modules.js";
 import { PROBE_MODULE } from "./probe.js";
 import { reduce, restoreSnapshot, snapshot, step } from "./reduce.js";
 import type { EngineEvent, SessionState } from "./state.js";
-import { renderTranscript } from "./transcript.js";
+import { MAX_TRANSCRIPT_DETAIL_LINES, renderTranscript } from "./transcript.js";
 
 const SEED = "2026-08-05/0/deep-foundation";
 const STARTED_AT = "2026-08-05T09:14:22.000Z";
@@ -179,6 +179,48 @@ describe("the probe events", () => {
         { type: "probe.int", payload: { stream: "a", count: 2, max: 4 } },
       ]).slices,
     ).toEqual({ probe: { events: 2, values: 5 } });
+  });
+
+  it("accepts every count its own validator admits, in every form", () => {
+    // Two ceilings in one engine contradicted each other: `MAX_PROBE_COUNT` was
+    // 20000, and a float probe at that count rendered 5001 detail lines — over
+    // the transcript bound — so a shipped event type declared a payload legal
+    // that the fold then refused. `MAX_PROBE_COUNT` is now derived from
+    // `MAX_TRANSCRIPT_DETAIL_LINES`, so the two cannot drift apart.
+    //
+    // Checked against every form, not just the one that set the bound.
+    const largest = (MAX_TRANSCRIPT_DETAIL_LINES - 1) * 4;
+    for (const form of ["float", "uint32"] as const) {
+      const rendered = lines([
+        {
+          type: "probe.random",
+          payload: { stream: "a", count: largest, form },
+        },
+      ]);
+      expect(rendered.length - 1).toBeLessThanOrEqual(
+        MAX_TRANSCRIPT_DETAIL_LINES,
+      );
+    }
+    // `probe.int` renders one row per bucket, bounded separately, and
+    // `probe.weighted` one row per arm, bounded by the transcript itself.
+    expect(() =>
+      lines([
+        {
+          type: "probe.int",
+          payload: { stream: "a", count: largest, max: 1024 },
+        },
+      ]),
+    ).not.toThrow();
+    // One past the derived ceiling is refused by the payload validator, not by
+    // the transcript — which is the point: the complaint names the count.
+    expect(() =>
+      lines([
+        {
+          type: "probe.random",
+          payload: { stream: "a", count: largest + 1, form: "float" },
+        },
+      ]),
+    ).toThrow(/count must be an integer/);
   });
 
   it("checks its own slice on the way back from a snapshot", () => {

@@ -53,6 +53,8 @@ export {
 export type { BootstrapInput, ReduceInput } from "./events/reduce.js";
 export {
   DETAIL_INDENT,
+  MAX_TRANSCRIPT_DETAIL_LINES,
+  MAX_TRANSCRIPT_LINE_LENGTH,
   renderEntry,
   renderTranscript,
 } from "./events/transcript.js";
