@@ -215,11 +215,10 @@ const BRAND_KEY = {};
  * which needs no name at all. The table runs first because it gives a better
  * one and costs less.
  *
- * The residual is a value that is branded *and* carries its own data
- * properties *and* wears a re-pointed prototype *and* is one of the built-ins
- * this file cannot name. Three deliberate acts, and it loses only the branded
- * content rather than everything. Recorded here rather than left to be
- * rediscovered.
+ * The residual is a value that holds an object-valued own property *and* wears
+ * a re-pointed prototype *and* is one of the built-ins this file cannot name.
+ * Three deliberate acts, and it loses only the branded content rather than
+ * everything. Recorded here rather than left to be rediscovered.
  */
 const BRAND_PROBES: readonly (readonly [string, (value: object) => unknown])[] =
   [
@@ -327,17 +326,56 @@ export function detectBrand(value: object): string | undefined {
     }
   }
 
-  // Nothing above named it, and it reports nothing of its own — so the caller
-  // is about to write `{}` over it. That is the one shape where a disguised
-  // built-in loses everything in silence, and the only point at which asking
-  // the host is worth it.
-  if (
-    Object.getOwnPropertyNames(value).length === 0 &&
-    Object.getOwnPropertySymbols(value).length === 0
-  ) {
-    return detectByCloning(value);
-  }
+  // Nothing above named it. Ask the host — but only where the question can be
+  // asked without reading anything unexamined.
+  if (canProbeByCloning(value)) return detectByCloning(value);
   return undefined;
+}
+
+/**
+ * Whether cloning `value` would reach past what has already been inspected.
+ *
+ * Structured clone descends. An object-valued property would put an unexamined
+ * getter on the far side of it — invoked inside the function whose whole job
+ * is to classify a value without executing any of it, and before the caller's
+ * own descriptor pass has had a chance to find it. So a property holding
+ * anything but a primitive ends the probe.
+ *
+ * Descriptors, never `value[key]`: reading a property is exactly what an
+ * accessor is waiting for. An accessor is recognised by its own `get`/`set`
+ * rather than by a missing `value`, because `"value" in descriptor` consults
+ * `Object.prototype` — and a `value` planted there would make every accessor
+ * descriptor look like data, permitting the probe that then runs the getter.
+ * That is the pollution this file already refuses to serialize under; the
+ * check for it has to fail closed too.
+ *
+ * Functions and symbols are excluded for a second reason: structured clone
+ * refuses them, so probing an ordinary object that holds one would come back
+ * "built-in that structured clone refuses to copy" — a confident answer to a
+ * question that was never asked. They are not JSON either, and the walk
+ * reports them where they are.
+ */
+function canProbeByCloning(value: object): boolean {
+  if (Object.getOwnPropertySymbols(value).length > 0) return false;
+  for (const key of Object.getOwnPropertyNames(value)) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (descriptor === undefined) return false;
+    if (descriptor.get !== undefined || descriptor.set !== undefined)
+      return false;
+    const own: unknown = descriptor.value;
+    if (own === null) continue;
+    switch (typeof own) {
+      case "string":
+      case "number":
+      case "boolean":
+      case "bigint":
+      case "undefined":
+        continue;
+      default:
+        return false;
+    }
+  }
+  return true;
 }
 
 /**
@@ -355,11 +393,19 @@ export function detectBrand(value: object): string | undefined {
  * but the names it does not have — including the ones the purity gate forbids
  * this file from writing — end up here.
  *
- * Only reached for a value with no own properties, so it reads nothing and can
- * run no accessor. A branded object carrying its own data properties is still
- * caught by the probes above; one carrying data properties *and* a
- * gate-unnameable brand *and* a re-pointed prototype is the documented
- * residual, and needs three deliberate acts to construct.
+ * Reached only where cloning cannot read past what has already been inspected
+ * — see `canProbeByCloning`. That covers a value with no own properties at all
+ * and one whose own properties are plain data holding primitives, which is
+ * where a disguised built-in does its quietest damage: the walk copies the
+ * data across and drops the internal state without a word.
+ *
+ * The residual is a value that is branded *and* holds an object-valued own
+ * property *and* wears a re-pointed prototype *and* is one of the built-ins
+ * this file cannot name. Following the object-valued property is the one thing
+ * this check will not trade for: reading unvalidated structure is a live
+ * hazard, and the residual takes three deliberate acts to construct: choose a
+ * built-in this file cannot name, give it an object-valued property, re-point
+ * its prototype.
  */
 function detectByCloning(value: object): string | undefined {
   let clone: object;

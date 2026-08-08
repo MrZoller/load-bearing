@@ -146,9 +146,9 @@ describe("loadCartridge", () => {
     // up later in `createClock` — on the wrong side of the line that decides
     // whether the fallback episode ships.
     for (const startedAt of [
-      "1969-12-31T23:59:59Z",
-      "2026-13-40T25:61:61Z",
-      "2026-02-30T00:00:00Z",
+      "1969-12-31T23:59:59.000Z",
+      "2026-13-40T25:61:61.000Z",
+      "2026-02-30T00:00:00.000Z",
     ]) {
       const source = minimal();
       (source["meta"] as Record<string, unknown>)["startedAt"] = startedAt;
@@ -211,6 +211,47 @@ describe("loadCartridge", () => {
 
     (models[0] as Record<string, unknown>)["name"] = "\u{1f9f1}".repeat(61);
     expect(issuesOf(source)[0]?.expected).toBe("at most 60 characters");
+  });
+
+  it("counts surrogates the way spreading did, without materializing them", () => {
+    // The count is walked by hand now — `[...value]` built an array of every
+    // character of every string, including the unbounded file contents that
+    // never reach a comparison. Unpaired surrogates are where a hand-rolled
+    // walk goes wrong: one at the very end tests the lookahead's own bound,
+    // and one followed by an ordinary character tests the pair check.
+    const name = `${"\u{1f9f1}".repeat(58)}\ud800x`;
+    expect([...name].length).toBe(60);
+
+    const source = minimal();
+    const models = source["models"] as Record<string, unknown>[];
+    (models[0] as Record<string, unknown>)["name"] = name;
+    expect(() => loadCartridge(source)).not.toThrow();
+
+    (models[0] as Record<string, unknown>)["name"] = `${name}\ud800`;
+    expect(issuesOf(source)[0]?.expected).toBe("at most 60 characters");
+  });
+
+  it("accepts one spelling of an instant, not four", () => {
+    // `…22Z`, `.0Z`, `.00Z` and `.000Z` are the same moment written four ways,
+    // and the loader does not rewrite what it validates — so replay state,
+    // which embeds the loaded cartridge, came out with different bytes for
+    // sessions identical in every simulated respect.
+    for (const startedAt of [
+      "2026-08-05T09:14:22Z",
+      "2026-08-05T09:14:22.0Z",
+      "2026-08-05T09:14:22.00Z",
+    ]) {
+      const source = minimal();
+      (source["meta"] as Record<string, unknown>)["startedAt"] = startedAt;
+
+      expect(issuesOf(source), startedAt).toEqual([
+        {
+          pointer: "/meta/startedAt",
+          expected: "YYYY-MM-DDTHH:MM:SS.mmmZ",
+          found: JSON.stringify(startedAt),
+        },
+      ]);
+    }
   });
 
   it("rejects a sparse or decorated array in a schema section too", () => {
@@ -443,6 +484,63 @@ describe("loadCartridge", () => {
         found: expect.stringContaining("which JSON cannot carry") as string,
       });
     }
+  });
+
+  it("rejects one carrying its own data, which used to slip past the probe", () => {
+    // The clone test was gated on having no own properties at all, so a single
+    // primitive property put a disguised built-in back out of reach: the walk
+    // copied the property across and dropped the internal state in silence.
+    // The gate is now about what cloning would *read*, and a primitive is
+    // already in hand.
+    const value: object = Promise.resolve(1);
+    Object.defineProperty(value, "label", {
+      value: "not a promise, apparently",
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    });
+    Object.setPrototypeOf(value, Object.prototype);
+    const source = minimal();
+    source["story"] = { payload: value };
+
+    expect(issuesOf(source)[0]).toEqual({
+      pointer: "/story/payload",
+      expected: "an object of plain JSON values",
+      found: expect.stringContaining("which JSON cannot carry") as string,
+    });
+  });
+
+  it("will not clone-probe past a property it has not examined", () => {
+    // The limit, pinned deliberately. Following an object-valued property
+    // means structured clone descends into structure no descriptor pass has
+    // seen yet, and invokes any getter waiting there — inside the function
+    // whose job is to classify a value without executing any of it. So this
+    // one loads, and the residual is recorded rather than traded for a live
+    // hazard.
+    const value: object = Promise.resolve(1);
+    Object.defineProperty(value, "nested", {
+      value: { deep: true },
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    });
+    Object.setPrototypeOf(value, Object.prototype);
+    const source = minimal();
+    source["story"] = { payload: value };
+
+    expect(loadCartridge(source).story).toEqual({
+      payload: { nested: { deep: true } },
+    });
+  });
+
+  it("does not mistake an ordinary object holding a function for a built-in", () => {
+    // Structured clone refuses a function, so probing here would answer
+    // "built-in that structured clone refuses to copy" — confidently, about
+    // something that is not one. The walk reports the function where it is.
+    const source = minimal();
+    source["story"] = { payload: { handler: () => 1 } };
+
+    expect(issuesOf(source)[0]?.found).not.toContain("structured clone");
   });
 
   it("rejects these already when their prototype is intact", () => {

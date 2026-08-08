@@ -119,6 +119,30 @@ function describe(value: unknown): string {
   }
 }
 
+/**
+ * Code points in `value`, counted rather than materialized.
+ *
+ * `[...value].length` is the same number and one line, but it builds an array
+ * of every character first: a five-million-character file costs tens of
+ * megabytes to learn a length that is then compared against nothing. This
+ * walks the surrogate pairs by hand instead, in constant space.
+ */
+function countCodePoints(value: string): number {
+  let count = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    const unit = value.charCodeAt(index);
+    // A high surrogate followed by a low one is one code point written as two
+    // units. A lone surrogate is one code point of its own — malformed, but
+    // this function counts rather than judges.
+    if (unit >= 0xd800 && unit <= 0xdbff && index + 1 < value.length) {
+      const next = value.charCodeAt(index + 1);
+      if (next >= 0xdc00 && next <= 0xdfff) index += 1;
+    }
+    count += 1;
+  }
+  return count;
+}
+
 /** "1 entry", "0 entries" — these counts are read by people, and by generators. */
 function entryCount(count: number): string {
   return count === 1 ? "1 entry" : `${String(count)} entries`;
@@ -483,7 +507,15 @@ function validate(
       // it. Only `maxLength` can actually diverge, since UTF-16 length is
       // never the smaller of the two, but the three-way agreement this schema
       // is built on has to hold in both directions.
-      const characters = [...value].length;
+      //
+      // Counted only where a bound is declared. The bounded strings are
+      // titles and summaries; the unbounded ones are file contents, man pages
+      // and log lines, and counting those meant walking every character of
+      // the whole world to reach two `undefined` comparisons.
+      const characters =
+        node.minLength !== undefined || node.maxLength !== undefined
+          ? countCodePoints(value)
+          : 0;
       if (node.minLength !== undefined && characters < node.minLength) {
         report.add(
           pointer,

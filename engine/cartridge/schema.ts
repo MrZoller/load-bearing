@@ -277,8 +277,8 @@ function refineCalendarDate(value: string): string | undefined {
 }
 
 /**
- * Rejects `2026-13-40T25:61:61Z` and `1969-12-31T23:59:59Z`, which the pattern
- * alone accepts.
+ * Rejects `2026-13-40T25:61:61.000Z` and `1969-12-31T23:59:59.000Z`, which the
+ * pattern alone accepts.
  *
  * The shape check is not enough, and the gap is the one place it matters most:
  * `meta.startedAt` is required precisely so a generated cartridge cannot open a
@@ -304,9 +304,18 @@ function refineInstant(value: string): string | undefined {
 const TIMESTAMP = {
   kind: "string",
   description:
-    "A UTC instant, `YYYY-MM-DDTHH:MM:SS[.mmm]Z`. The simulated machine has no other timezone.",
-  pattern: pattern(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/),
-  patternLabel: "YYYY-MM-DDTHH:MM:SS[.mmm]Z",
+    "A UTC instant, `YYYY-MM-DDTHH:MM:SS.mmmZ`. Fixed width, so one instant has exactly one spelling. The simulated machine has no other timezone.",
+  // Fixed width rather than `[.mmm]` with 1-3 digits, which gave one instant
+  // four spellings. The loader does not rewrite what it validates, so a
+  // cartridge keeps whichever it was written with — and replay state embeds
+  // the loaded cartridge, so two sessions identical in every simulated respect
+  // would produce different `state.json` bytes. Determinism survives that
+  // (different input, different output) but the fixtures that pin it stop
+  // meaning what they say. Requiring the canonical form is also the half a
+  // generator can check against the published schema; normalizing on load
+  // would be invisible there.
+  pattern: pattern(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
+  patternLabel: "YYYY-MM-DDTHH:MM:SS.mmmZ",
   refine: refineInstant,
 } satisfies StringNode;
 
