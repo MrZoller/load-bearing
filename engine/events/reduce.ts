@@ -44,7 +44,11 @@ import { formatTimestamp, parseTimestamp } from "../clock/civil.js";
 import { createClock, restoreClock } from "../clock/clock.js";
 import type { ClockState } from "../clock/clock.js";
 import { hashString } from "../random/seed.js";
-import { createRandom, restoreRandom } from "../random/stream.js";
+import {
+  PATH_SEPARATOR,
+  createRandom,
+  restoreRandom,
+} from "../random/stream.js";
 import type { RandomState } from "../random/stream.js";
 import { deserialize, serialize } from "../serialize/canonical.js";
 import { describeUnwritableText } from "../text.js";
@@ -356,6 +360,30 @@ export function restoreSnapshot(
         `seed, so these disagreeing means one of them was edited and the session can no longer ` +
         `be reproduced from its inputs.`,
     );
+  }
+
+  // Every cursor belongs to a stream some module forked. There are only two
+  // fork sites — `bootstrap` and `step`, both `random.fork(module.namespace)` —
+  // and `toState()` records only streams actually drawn from, so a recorded
+  // path is always `root/<namespace>[/…]` and bare `root` never appears.
+  //
+  // Nothing diverges if an extra cursor is present: `fork` derives a stream
+  // from the seed and the path, never from another stream's position, so an
+  // unreachable cursor perturbs no draw anywhere. What it breaks is the
+  // snapshot's claim to be `reduce(cartridge, seed, log)` — the same property
+  // the seed, clock and transcript checks defend, which is why this belongs
+  // with them rather than being waved through as harmless.
+  for (const path of Object.keys(random.cursors)) {
+    const namespace = path.split(PATH_SEPARATOR)[1];
+    if (namespace === undefined || registry.module(namespace) === undefined) {
+      throw new Error(
+        `snapshot: "random.cursors" holds ${JSON.stringify(path)}, which belongs to no module in ` +
+          `this registry. Streams are forked as root/<namespace>, so either the cursors were ` +
+          `edited, or the snapshot was recorded under a registry that has since changed — a ` +
+          `module renamed or removed will land here, and the envelope version does not move for ` +
+          `that. Registered namespaces: ${registry.namespaces.join(", ")}.`,
+      );
+    }
   }
 
   const cartridge = loadCartridge(parsed["cartridge"]);

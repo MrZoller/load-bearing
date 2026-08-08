@@ -170,9 +170,20 @@ function validateProbeSlice(slice: unknown, where: string): ProbeSlice {
   const counts = ["events", "values"] as const;
   for (const key of counts) {
     const count = record[key];
-    if (typeof count !== "number" || !Number.isInteger(count) || count < 0) {
+    // `isSafeInteger`, not `isInteger`: at 2^53 the counter stops counting.
+    // `2**53 + 1` is not representable, so `events + 1` returns `events`
+    // unchanged and `values + 3` lands 4 away — corruption that survives
+    // re-serialization and looks like an ordinary integer. This is the last
+    // unbounded counter on the snapshot path; the clock is bounded by
+    // `MAX_EPOCH_MS`, cursors by `assertUint32`, payload integers by explicit
+    // bounds in `readInteger`, and `eventCount` by the transcript-length check.
+    if (
+      typeof count !== "number" ||
+      !Number.isSafeInteger(count) ||
+      count < 0
+    ) {
       throw new Error(
-        `${where}: ${key} must be a non-negative integer, got ${JSON.stringify(count)}`,
+        `${where}: ${key} must be a non-negative integer below 2^53, got ${JSON.stringify(count)}`,
       );
     }
   }

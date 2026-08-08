@@ -617,6 +617,42 @@ describe("snapshots", () => {
     ).toThrow(/"transcript\[0\]\.detail\[1\]" contains a control character/);
   });
 
+  it("refuses a PRNG cursor belonging to no registered module", () => {
+    // No divergence is possible from an extra cursor — `fork` derives a stream
+    // from the seed and the path, never from another stream's position — so
+    // what this defends is the snapshot's claim to be
+    // `reduce(cartridge, seed, log)`, exactly like the seed and clock checks.
+    const text = snapshot(
+      fold([
+        {
+          type: "probe.random",
+          payload: { stream: "a", count: 2, form: "uint32" },
+        },
+      ]),
+    );
+    const withCursor = (path: string, at: number): string => {
+      const parsed = deserialize(text) as Record<string, unknown>;
+      const random = parsed["random"] as Record<string, unknown>;
+      (random["cursors"] as Record<string, number>)[path] = at;
+      return serialize(parsed);
+    };
+
+    expect(() => restoreSnapshot(withCursor("root/ghost", 12345))).toThrow(
+      /"random\.cursors" holds "root\/ghost", which belongs to no module/,
+    );
+    // Bare `root` cannot be recorded either: nothing draws from the root
+    // stream, only from `root/<namespace>` forks.
+    expect(() => restoreSnapshot(withCursor("root", 777))).toThrow(
+      /belongs to no module in this registry/,
+    );
+    // Same registry-drift framing as the transcript-type check: a renamed
+    // module lands here legitimately, so the message says so.
+    expect(() => restoreSnapshot(withCursor("root/ghost", 1))).toThrow(
+      /recorded under a registry that has since changed/,
+    );
+    expect(() => restoreSnapshot(text)).not.toThrow();
+  });
+
   it("refuses a transcript entry whose type nothing registers", () => {
     // The missing member of the family: transcript text, transcript instants,
     // seed against PRNG root, clock against `startedAt` — and now the type.

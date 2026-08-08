@@ -195,6 +195,17 @@ describe("the probe events", () => {
       [{ events: 1.5, values: 0 }, /events must be a non-negative integer/],
       [{ events: 0 }, /values must be a non-negative integer/],
       [{ events: 0, values: 0, extra: 1 }, /unexpected field\(s\) extra/],
+      // At 2^53 the counter stops counting: `events + 1` returns `events`
+      // unchanged and `values + 3` lands 4 away, and the corruption survives
+      // re-serialization looking like an ordinary integer.
+      [
+        { events: Number.MAX_SAFE_INTEGER + 1, values: 0 },
+        /events must be a non-negative integer below 2\^53/,
+      ],
+      [
+        { events: 0, values: Number.MAX_SAFE_INTEGER + 1 },
+        /values must be a non-negative integer below 2\^53/,
+      ],
     ];
 
     for (const [slice, expected] of rejections) {

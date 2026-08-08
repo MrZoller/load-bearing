@@ -56,8 +56,10 @@
  * - the registry's handler for a type (`registry.handler(t)`) — a frozen copy
  *   with `apply` bound at registration
  * - the registry's module (`registry.module(ns)`, `registry.modules[i]`) — a
- *   frozen copy, with `initialSlice` and `validateSlice` bound, built from
- *   fields each read exactly once
+ *   frozen copy, with `initialSlice` and `validateSlice` bound, its `types` and
+ *   `handlers` copied, built from fields each read exactly once. The handler
+ *   *objects* inside that record remain the module's own, which changes
+ *   nothing: dispatch reads `registry.handler(t)`, never this record.
  * - everything `defineEventModule` returns
  * - every `SessionState` the reducer produces, its clock, its PRNG state, its
  *   transcript entries, its slices record and each slice one level deep
@@ -90,6 +92,10 @@
 import type { LoadedCartridge } from "../cartridge/types.js";
 import type { SimulatedClock } from "../clock/clock.js";
 import type { RandomStream } from "../random/stream.js";
+// A value import, where `./registry.ts` takes only types from here — so the
+// dependency runs one way at runtime and there is no cycle. One error type for
+// "this module is malformed" is worth more than keeping the edge type-only.
+import { EventRegistryError } from "./registry.js";
 import type { EngineEvent, SessionState } from "./state.js";
 
 /**
@@ -278,8 +284,27 @@ export interface EventModule {
 export function defineEventModule<S>(
   definition: EventModuleDefinition<S>,
 ): EventModule {
+  // Two guards, and only two. Validation is `createRegistry`'s job — but that
+  // only holds for what this function passes *through*, and these two it
+  // dereferences: `Object.entries(null)` and `.bind()` on a non-function both
+  // throw bare TypeErrors here, so a malformed definition would never reach the
+  // validator that is supposed to describe it.
+  const events: unknown = definition.events;
+  if (typeof events !== "object" || events === null || Array.isArray(events)) {
+    throw new EventRegistryError(
+      `module ${JSON.stringify(definition.namespace)} must declare its events as an object keyed ` +
+        `by full event type, got ${Array.isArray(events) ? "an array" : typeof events}`,
+    );
+  }
+
+  // `events`, not `definition.events` — here and at `types` below. Re-reading
+  // the property after guarding it is the validate-then-use gap this function
+  // already closes elsewhere: a getter returning an object to the check and
+  // `null` here would throw the bare TypeError the check exists to prevent.
+  const guardedEvents = events as EventModuleDefinition<S>["events"];
+
   const handlers = Object.fromEntries(
-    Object.entries(definition.events).map(([type, handler]) => {
+    Object.entries(guardedEvents).map(([type, handler]) => {
       // Resolved here, once, rather than read off `handler` at dispatch time.
       // The module and this wrapper are frozen; the *definition's* handler
       // object is not, and a late-bound `handler.apply(…)` would look it up
@@ -292,7 +317,16 @@ export function defineEventModule<S>(
       // shorthand that touches `this` would break for a reason nothing in this
       // file explains. No handler in the repository uses `this`; that is a
       // fact about today, not a property of the contract.
-      const apply = handler.apply.bind(handler);
+      const declaredApply: unknown = handler?.apply;
+      if (typeof declaredApply !== "function") {
+        throw new EventRegistryError(
+          `handler ${JSON.stringify(type)} has no apply function, got ${typeof declaredApply}. ` +
+            `A handler that cannot be called is an event type that cannot be folded.`,
+        );
+      }
+      const apply = (declaredApply as EventHandlerDefinition<S>["apply"]).bind(
+        handler,
+      );
       return [
         type,
         Object.freeze({
@@ -313,8 +347,29 @@ export function defineEventModule<S>(
     }),
   );
 
+  // Checked before wrapping, and that order is the whole point. The wrappers
+  // below are functions whatever they close over, so wrapping an
+  // `initialSlice: 42` produces something `createRegistry`'s
+  // `typeof initialSlice !== "function"` guard accepts — the value is laundered
+  // straight past the check added for it, and surfaces instead as a bare
+  // TypeError at bootstrap, mid-fold, naming no module. A wrapper must never be
+  // the thing a downstream type check sees.
   const initialSlice = definition.initialSlice;
+  if (initialSlice !== undefined && typeof initialSlice !== "function") {
+    throw new EventRegistryError(
+      `module ${JSON.stringify(definition.namespace)} has an initialSlice that is not a ` +
+        `function, got ${typeof initialSlice}. Omit it entirely for a module that holds no state.`,
+    );
+  }
   const validateSlice = definition.validateSlice;
+  if (validateSlice !== undefined && typeof validateSlice !== "function") {
+    throw new EventRegistryError(
+      `module ${JSON.stringify(definition.namespace)} has a validateSlice that is not a ` +
+        `function, got ${typeof validateSlice}. Omit it entirely for a module that does not ` +
+        `validate its slice.`,
+    );
+  }
+
   return Object.freeze({
     namespace: definition.namespace,
     description: definition.description,
@@ -329,7 +384,7 @@ export function defineEventModule<S>(
           validateSlice: (slice: unknown, where: string): unknown =>
             validateSlice(slice, where),
         }),
-    types: Object.freeze(Object.keys(definition.events).sort()),
+    types: Object.freeze(Object.keys(guardedEvents).sort()),
     handlers: Object.freeze(handlers),
   });
 }

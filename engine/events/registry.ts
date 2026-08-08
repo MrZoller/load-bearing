@@ -38,7 +38,10 @@ const NAMESPACE_SHAPE = /^[a-z][a-z0-9-]*$/;
  */
 const EVENT_NAME_SHAPE = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)*$/;
 
-/** Thrown while building a registry. Always a programming error, never data. */
+/**
+ * Thrown while building a module or a registry. Always a programming error,
+ * never data — a cartridge cannot reach this, only engine or subsystem code can.
+ */
 export class EventRegistryError extends Error {
   constructor(detail: string) {
     super(`event registry: ${detail}`);
@@ -64,10 +67,55 @@ export interface EventRegistry {
  * @throws EventRegistryError if any module is malformed or two collide.
  */
 export function createRegistry(modules: readonly EventModule[]): EventRegistry {
+  // The argument itself, before the loop that reads it. `createRegistry` is
+  // exported, so a caller can hand it anything; a non-iterable would otherwise
+  // throw a bare TypeError out of `for…of` — the one rough edge left after
+  // every field on a hand-built module gained a named guard.
+  const candidateModules: unknown = modules;
+  if (
+    candidateModules === null ||
+    candidateModules === undefined ||
+    typeof (candidateModules as Iterable<unknown>)[Symbol.iterator] !==
+      "function"
+  ) {
+    throw new EventRegistryError(
+      `the module list must be iterable, got ${candidateModules === null ? "null" : typeof candidateModules}`,
+    );
+  }
+
+  // Entry shape before anything else, because the sort below orders by
+  // `namespace` — so a module that is not an object, or whose namespace is not
+  // a string, would throw out of `sort` before a single check could name it.
+  //
+  // Decorate-sort-undecorate: the namespace is *captured* here and everything
+  // afterwards uses the capture. A comparator re-reading `entry.namespace`
+  // would read it a second time and the main loop a third, so a getter could
+  // pass this check, throw a bare TypeError inside `sort`, or — worse — sort
+  // under one value and register under another. This file's own rule, stated
+  // where the module fields are captured below, is that every field is read
+  // exactly once before anything is validated against it; `namespace` is the
+  // field that has to prove it first.
+  const decorated = [...modules].map((entry) => {
+    const candidate: unknown = entry;
+    if (typeof candidate !== "object" || candidate === null) {
+      throw new EventRegistryError(
+        `a module must be an object, got ${typeof candidate === "object" ? "null" : typeof candidate}`,
+      );
+    }
+    const namespace: unknown = (candidate as EventModule).namespace;
+    if (typeof namespace !== "string") {
+      throw new EventRegistryError(
+        `a module's namespace must be a string, got ${typeof namespace}. It is read before ` +
+          `anything else here, because it is what the module list is sorted by.`,
+      );
+    }
+    return { namespace, declared: candidate as EventModule };
+  });
+
   // Sorted by namespace, so every listing this registry produces — error
   // messages, the slices record built at bootstrap, a debug dump — reads the
   // same whichever order the caller assembled the list in.
-  const sorted = [...modules].sort((left, right) =>
+  const sorted = decorated.sort((left, right) =>
     left.namespace < right.namespace
       ? -1
       : left.namespace > right.namespace
@@ -80,18 +128,37 @@ export function createRegistry(modules: readonly EventModule[]): EventRegistry {
 
   const registered: EventModule[] = [];
 
-  for (const declared of sorted) {
+  for (const { namespace, declared } of sorted) {
     // Every field read exactly once, into a local, before anything is validated
     // against it. A hand-built `EventModule` can define these as getters, and
     // validating one value while storing another is the same hazard
-    // `assertEventEnvelope` closes for the event envelope.
-    const namespace = declared.namespace;
+    // `assertEventEnvelope` closes for the event envelope. `namespace` was
+    // captured above, before the sort, and is not re-read here.
     const description = declared.description;
     const stateful = declared.stateful;
-    const types = Object.freeze([...declared.types]);
+    const declaredList: unknown = declared.types;
     const handlers = declared.handlers;
     const validateSlice = declared.validateSlice;
     const initialSlice = declared.initialSlice;
+
+    // Checked before the spread, which is what would throw on a non-iterable,
+    // and before the element loop below, where `type.startsWith` would throw on
+    // anything that is not a string.
+    if (!Array.isArray(declaredList)) {
+      throw new EventRegistryError(
+        `module ${JSON.stringify(namespace)} must declare its types as an array, got ` +
+          `${typeof declaredList}`,
+      );
+    }
+    for (const type of declaredList as readonly unknown[]) {
+      if (typeof type !== "string") {
+        throw new EventRegistryError(
+          `module ${JSON.stringify(namespace)} declares a type that is not a string, got ` +
+            `${typeof type}. Event types appear verbatim in recorded transcripts.`,
+        );
+      }
+    }
+    const types = Object.freeze([...(declaredList as readonly string[])]);
 
     if (!NAMESPACE_SHAPE.test(namespace)) {
       throw new EventRegistryError(
@@ -113,6 +180,12 @@ export function createRegistry(modules: readonly EventModule[]): EventRegistry {
     // Required by the interface, but the interface is one a caller can satisfy
     // by hand — and binding a missing one below would throw a bare TypeError
     // out of registry construction instead of saying what is wrong.
+    if (typeof validateSlice !== "function" && validateSlice !== undefined) {
+      throw new EventRegistryError(
+        `module ${JSON.stringify(namespace)} has a validateSlice that is not a function, got ` +
+          `${typeof validateSlice}. Omit it entirely for a module that does not validate its slice.`,
+      );
+    }
     if (typeof initialSlice !== "function") {
       throw new EventRegistryError(
         `module ${JSON.stringify(namespace)} has no initialSlice function. A module with no ` +
@@ -128,10 +201,20 @@ export function createRegistry(modules: readonly EventModule[]): EventRegistry {
     // `namespace` re-forked the PRNG stream; setting `stateful` false made
     // `step` throw.
     //
-    // So `registry.modules[i]` is a copy, like `registry.handler(t)`. Its
-    // `handlers` record is deliberately the module's own: dispatch never reads
-    // it — that goes through `byType` — and copying it would only obscure what
-    // the module published.
+    // So `registry.modules[i]` is a copy, like `registry.handler(t)` — and the
+    // `handlers` record is a frozen copy too. An earlier version left it as the
+    // module's own on the grounds that dispatch never reads it (that goes
+    // through `byType`), which was true and still made the standing answer in
+    // `./module.ts` false: a hand-built module could add `alpha.late` to
+    // `registry.modules[0].handlers` after registration, so a record the engine
+    // presents as its own would list a type it will not dispatch. Copying costs
+    // one shallow object per module and makes "frozen and copied, therefore
+    // safe" simply true of the whole value.
+    //
+    // Shallow, deliberately: the handler objects inside are the module's own,
+    // and freezing those is the `EventHandlerDefinition` case that was
+    // considered and rejected. Nothing reads them — `byType` holds the frozen
+    // bound copies dispatch uses — so what they contain cannot affect a fold.
     const module: EventModule = Object.freeze({
       namespace,
       description,
@@ -141,7 +224,7 @@ export function createRegistry(modules: readonly EventModule[]): EventRegistry {
         ? {}
         : { validateSlice: validateSlice.bind(declared) }),
       types,
-      handlers,
+      handlers: Object.freeze({ ...handlers }),
     });
     byNamespace.set(namespace, module);
     registered.push(module);
@@ -159,6 +242,24 @@ export function createRegistry(modules: readonly EventModule[]): EventRegistry {
       throw new EventRegistryError(
         `module ${JSON.stringify(module.namespace)} declares validateSlice but no initialSlice, ` +
           `so it holds no slice for a snapshot to carry and the validator could never run.`,
+      );
+    }
+
+    // The other direction of the pair checked below ("lists X but has no
+    // handler for it"). A handler present in the record but missing from
+    // `types` is never registered, so `registry.handler(t)` is undefined while
+    // `registry.modules[i].handlers` still lists it — an event type that
+    // appears to exist and cannot be dispatched. Checking one direction and not
+    // the other is a stranger end state than checking both.
+    const declaredTypes = new Set(module.types);
+    const unlisted = Object.keys(module.handlers)
+      .filter((type) => !declaredTypes.has(type))
+      .sort();
+    if (unlisted.length > 0) {
+      throw new EventRegistryError(
+        `module ${JSON.stringify(namespace)} has handler(s) for ${unlisted.join(", ")} that its ` +
+          `types do not list. An unlisted handler is never registered, so the event type would ` +
+          `look declared and fail to dispatch.`,
       );
     }
 
@@ -208,10 +309,28 @@ export function createRegistry(modules: readonly EventModule[]): EventRegistry {
             `module — and therefore its state slice and its PRNG stream — through that name.`,
         );
       }
-      if (!Number.isInteger(handler.version) || handler.version < 0) {
+      // Captured before it is checked, like the module fields above — and this
+      // is the one handler field that was not. `type` comes from the loop key
+      // and `namespace` from the already-copied module, but `version` was read
+      // once to validate and again to store, so a getter could pass the check
+      // and then land `-1` in the frozen copy. `appendEvent` stamps from that
+      // copy, producing a log entry the reducer's own `assertEventEnvelope`
+      // then refuses: two engine components disagreeing about the same event.
+      // The same rough edge as `initialSlice` above, and the last one: binding
+      // a missing `apply` below throws a bare TypeError out of registry
+      // construction, naming neither the module nor the type.
+      const apply = handler.apply;
+      if (typeof apply !== "function") {
+        throw new EventRegistryError(
+          `handler ${JSON.stringify(type)} has no apply function, got ${typeof apply}. A handler ` +
+            `that cannot be called is an event type that cannot be folded.`,
+        );
+      }
+      const version = handler.version;
+      if (!Number.isInteger(version) || version < 0) {
         throw new EventRegistryError(
           `event type ${JSON.stringify(type)}: version must be a non-negative integer, got ` +
-            `${String(handler.version)}`,
+            `${String(version)}`,
         );
       }
       // Stored as a frozen copy, not by reference. `EventModule` is a plain
@@ -238,8 +357,8 @@ export function createRegistry(modules: readonly EventModule[]): EventRegistry {
         Object.freeze({
           type,
           namespace: module.namespace,
-          version: handler.version,
-          apply: handler.apply.bind(handler),
+          version,
+          apply: apply.bind(handler),
         }),
       );
     }

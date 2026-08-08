@@ -4,6 +4,7 @@ import { loadCartridge } from "../cartridge/load.js";
 import type { LoadedCartridge } from "../cartridge/types.js";
 import { serialize } from "../serialize/canonical.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
+import { EMPTY_EVENT_LOG, appendEvent } from "./log.js";
 import { defineEventModule } from "./module.js";
 import type {
   EventHandlerDefinition,
@@ -307,6 +308,78 @@ describe("createRegistry", () => {
     ).toBe(1);
   });
 
+  it("captures a handler's version before validating it", () => {
+    // The one handler field that was read twice — once to check, once to
+    // store. A getter passing the check and then landing `-1` in the frozen
+    // copy makes `appendEvent` stamp a log entry that the reducer's own
+    // `assertEventEnvelope` refuses: two engine components disagreeing about
+    // the same event.
+    const sound = counter("alpha");
+    const real = sound.handlers["alpha.bump"] as RegisteredHandler;
+    let reads = 0;
+    const shifty = {
+      type: real.type,
+      namespace: real.namespace,
+      apply: real.apply,
+      get version(): number {
+        reads += 1;
+        return reads > 2 ? -1 : 0;
+      },
+    };
+    const registry = createRegistry([
+      { ...sound, handlers: { "alpha.bump": shifty } },
+    ]);
+
+    expect(registry.handler("alpha.bump")?.version).toBe(0);
+    expect(
+      appendEvent(EMPTY_EVENT_LOG, { type: "alpha.bump" }, registry)[0]
+        ?.version,
+    ).toBe(0);
+  });
+
+  it("rejects a handler its module's types do not list", () => {
+    // The other direction of the pair already checked ("lists X but has no
+    // handler for it"). Unlisted means never registered, so the type would
+    // look declared on `registry.modules[i].handlers` and fail to dispatch.
+    const sound = counter("alpha");
+    const real = sound.handlers["alpha.bump"] as RegisteredHandler;
+
+    expect(() =>
+      createRegistry([
+        {
+          ...sound,
+          handlers: {
+            "alpha.bump": real,
+            "alpha.ghost": { ...real, type: "alpha.ghost" },
+          },
+        },
+      ]),
+    ).toThrow(/handler\(s\) for alpha\.ghost that its types do not list/);
+  });
+
+  it("freezes a copy of the handlers record it publishes", () => {
+    // `./module.ts`'s standing answer lists `registry.modules[i]` under
+    // "frozen and copied, therefore safe". That was false while the record was
+    // the caller's: a hand-built module could add an entry after registration,
+    // so a record the engine presents as its own would list a type it will
+    // never dispatch.
+    const sound = counter("alpha");
+    const handlers: Record<string, RegisteredHandler> = {
+      "alpha.bump": sound.handlers["alpha.bump"] as RegisteredHandler,
+    };
+    const registry = createRegistry([{ ...sound, handlers }]);
+    const published = (registry.modules[0] as EventModule).handlers;
+
+    handlers["alpha.late"] = {
+      ...(sound.handlers["alpha.bump"] as RegisteredHandler),
+      type: "alpha.late",
+    };
+
+    expect(Object.isFrozen(published)).toBe(true);
+    expect(Object.keys(published)).toEqual(["alpha.bump"]);
+    expect(registry.types).toEqual(["alpha.bump"]);
+  });
+
   it("rejects a module with no initialSlice function", () => {
     // Required by the interface, but the interface is one a caller satisfies
     // by hand — and binding a missing one would throw a bare TypeError out of
@@ -317,6 +390,131 @@ describe("createRegistry", () => {
     expect(() => createRegistry([without as EventModule])).toThrow(
       /has no initialSlice function/,
     );
+  });
+
+  it("reports every dereferenced field as a registry error, never a bare TypeError", () => {
+    // The closed set: every field `createRegistry` reaches on a hand-built
+    // module and then calls, spreads, or pattern-matches. Each would otherwise
+    // surface as a TypeError naming neither the module nor the field.
+    const sound = counter("gamma");
+    const real = sound.handlers["gamma.bump"] as RegisteredHandler;
+    const withModule = (patch: Record<string, unknown>) => () =>
+      createRegistry([{ ...sound, ...patch } as unknown as EventModule]);
+
+    const cases: readonly (readonly [string, () => unknown, RegExp])[] = [
+      [
+        "a module list that is not iterable",
+        () => createRegistry(null as unknown as readonly EventModule[]),
+        /module list must be iterable/,
+      ],
+      [
+        "not an object",
+        () => createRegistry([null as unknown as EventModule]),
+        /a module must be an object/,
+      ],
+      [
+        "a non-string namespace",
+        withModule({ namespace: 7 }),
+        /namespace must be a string/,
+      ],
+      [
+        "types that are not an array",
+        withModule({ types: "gamma.bump" }),
+        /must declare its types as an array/,
+      ],
+      [
+        "a non-string type",
+        withModule({ types: [7] }),
+        /declares a type that is not a string/,
+      ],
+      [
+        "a non-function validateSlice",
+        withModule({ validateSlice: "nope" }),
+        /validateSlice that is not a function/,
+      ],
+      [
+        "a handler with no apply",
+        withModule({
+          handlers: { "gamma.bump": { ...real, apply: undefined } },
+        }),
+        /handler "gamma\.bump" has no apply function/,
+      ],
+    ];
+
+    for (const [what, build, expected] of cases) {
+      expect(build, what).toThrow(EventRegistryError);
+      expect(build, what).toThrow(expected);
+    }
+  });
+
+  it("rejects a definition whose events or handlers it cannot dereference", () => {
+    // `defineEventModule` defers validation to `createRegistry` — but only for
+    // what it passes through. These two it dereferences itself, so a malformed
+    // definition would never reach the validator meant to describe it.
+    expect(() =>
+      defineEventModule({
+        namespace: "gamma",
+        description: "",
+        events: undefined as unknown as Record<string, never>,
+      }),
+    ).toThrow(/must declare its events as an object/);
+
+    expect(() =>
+      defineEventModule({
+        namespace: "gamma",
+        description: "",
+        events: {
+          "gamma.bump": {
+            version: 0,
+          } as unknown as EventHandlerDefinition<unknown>,
+        },
+      }),
+    ).toThrow(/handler "gamma\.bump" has no apply function/);
+  });
+
+  it("rejects a non-function initialSlice or validateSlice before wrapping it", () => {
+    // The wrappers `defineEventModule` builds are functions whatever they close
+    // over, so wrapping first would launder a bad value straight past
+    // `createRegistry`'s `typeof … !== "function"` guard — the module would
+    // register cleanly and then throw a bare TypeError at bootstrap, mid-fold,
+    // naming nothing. A wrapper must never be what a downstream type check sees.
+    const definition = (patch: Record<string, unknown>) => () =>
+      defineEventModule({
+        namespace: "gamma",
+        description: "",
+        events: { "gamma.bump": { version: 0, apply: () => ({}) } },
+        ...patch,
+      } as never);
+
+    expect(definition({ initialSlice: 42 })).toThrow(EventRegistryError);
+    expect(definition({ initialSlice: 42 })).toThrow(
+      /initialSlice that is not a function, got number/,
+    );
+    expect(definition({ validateSlice: "nope" })).toThrow(EventRegistryError);
+    expect(definition({ validateSlice: "nope" })).toThrow(
+      /validateSlice that is not a function, got string/,
+    );
+  });
+
+  it("reads each namespace once, before the sort orders by it", () => {
+    // Same discipline as the `version` capture, and the field that has to
+    // prove it first: a comparator re-reading `entry.namespace` reads it twice
+    // more, so a getter could pass the shape check and then sort under one
+    // value while registering under another.
+    const sound = counter("alpha");
+    let reads = 0;
+    const shifty = {
+      ...sound,
+      get namespace(): string {
+        reads += 1;
+        return reads > 1 ? "zzz" : "alpha";
+      },
+    };
+    const registry = createRegistry([shifty as EventModule, counter("beta")]);
+
+    expect(registry.namespaces).toEqual(["alpha", "beta"]);
+    expect(registry.module("alpha")?.namespace).toBe("alpha");
+    expect(registry.types).toEqual(["alpha.bump", "beta.bump"]);
   });
 
   it("leaves the module's own handlers record as the module declared it", () => {
