@@ -19,7 +19,9 @@ import {
   snapshot,
   step,
 } from "./reduce.js";
+import type { ReduceInput } from "./reduce.js";
 import { createRegistry } from "./registry.js";
+import type { EventRegistry } from "./registry.js";
 import { EVENT_SCHEMA_VERSION } from "./state.js";
 import type { EngineEvent, SessionState } from "./state.js";
 
@@ -115,6 +117,81 @@ describe("reduce", () => {
     );
 
     expect(second).toBe(first);
+  });
+
+  it("reads each of its inputs exactly once", () => {
+    // `input` is a caller-owned object like any other, and `cartridge`, `seed`
+    // and `registry` were each read several times. A getter could then start
+    // the clock from one cartridge while recording another, or key the
+    // generator to one seed while `state.seed` named a second — a session that
+    // lies about its own inputs, which the golden replay suite cannot see
+    // because it folds the same lie twice.
+    let cartridgeReads = 0;
+    let seedReads = 0;
+    let registryReads = 0;
+    const other = loadCartridge({
+      ...(loadCartridgeFixture("minimal") as Record<string, unknown>),
+      meta: {
+        schemaVersion: 0,
+        number: 9,
+        date: "2027-01-01",
+        title: "Other",
+        assignment: "A different world.",
+        startedAt: "2027-01-01T00:00:00.000Z",
+      },
+    });
+    // `registry` gets a counting getter too, because it is the read whose
+    // double consequence is sharpest: bootstrapping the slices under one
+    // registry and folding every event under another.
+    const declared = createRegistry([
+      defineEventModule<number>({
+        namespace: "counted",
+        description: "the module the first read of `registry` supplies",
+        initialSlice: () => 0,
+        events: { "counted.go": { version: 0, apply: () => ({}) } },
+      }),
+    ]);
+    const shifty: ReduceInput = {
+      get cartridge(): LoadedCartridge {
+        cartridgeReads += 1;
+        return cartridgeReads > 1 ? other : CARTRIDGE;
+      },
+      get seed(): string {
+        seedReads += 1;
+        return seedReads > 1 ? "2026-08-05/1/quick-patch" : SEED;
+      },
+      get registry(): EventRegistry {
+        registryReads += 1;
+        return registryReads > 1 ? ENGINE_EVENT_REGISTRY : declared;
+      },
+      events: [],
+    };
+
+    const state = reduce(shifty);
+
+    // Exactly one read each — the property itself, and the crispest way to
+    // state it. Asserting only self-consistency would not discriminate: a
+    // getter that flips once and then stays gives a state consistently built
+    // from the *second* value, which passes every internal cross-check while
+    // being a session the caller never asked for.
+    expect(cartridgeReads).toBe(1);
+    expect(seedReads).toBe(1);
+    expect(registryReads).toBe(1);
+
+    // And the value used is the first one observed, not a later one.
+    expect(state.cartridge.meta.title).toBe(CARTRIDGE.meta.title);
+    expect(state.seed).toBe(SEED);
+    expect(Object.keys(state.slices)).toEqual(["counted"]);
+
+    // Self-consistency too, since that is what a restore would check.
+    expect(state.clock.startMs).toBe(
+      parseTimestamp(state.cartridge.meta.startedAt),
+    );
+    expect(state.random.seed).toBe(hashString(state.seed));
+    // Restored under the registry the state was produced under, which is
+    // `restoreSnapshot`'s documented precondition — and here that is the
+    // registry the *first* read supplied, not the one a later read offered.
+    expect(() => restoreSnapshot(snapshot(state), declared)).not.toThrow();
   });
 
   it("carries a cartridge no handler can write to", () => {
@@ -617,6 +694,85 @@ describe("snapshots", () => {
     ).toThrow(/"transcript\[0\]\.detail\[1\]" contains a control character/);
   });
 
+  it("requires a zero-event state to be exactly what bootstrap produces", () => {
+    // The total check is only possible here: with no events folded the state is
+    // determined entirely by cartridge, seed and registry, all three of which
+    // the snapshot carries. At N events it also depends on the event log, which
+    // a snapshot does not contain — so there is no "now do it for N" version of
+    // this. It is also not a hand-written rule like "zero events means no
+    // cursors", which would be wrong for a module that draws inside
+    // `initialSlice`; bootstrap reproduces whatever that module does.
+    const text = snapshot(bootstrap({ cartridge: CARTRIDGE, seed: SEED }));
+    const edited = (change: (state: Record<string, unknown>) => void) => {
+      const parsed = deserialize(text) as Record<string, unknown>;
+      change(parsed);
+      return serialize(parsed);
+    };
+
+    expect(() =>
+      restoreSnapshot(
+        edited((s) => {
+          (s["slices"] as Record<string, unknown>)["probe"] = {
+            events: 3,
+            values: 9,
+          };
+        }),
+      ),
+    ).toThrow(/must be exactly what bootstrapping this cartridge and seed/);
+
+    expect(() =>
+      restoreSnapshot(
+        edited((s) => {
+          const random = s["random"] as Record<string, unknown>;
+          random["cursors"] = { "root/probe": 12345 };
+        }),
+      ),
+    ).toThrow(/must be exactly what bootstrapping this cartridge and seed/);
+
+    expect(() => restoreSnapshot(text)).not.toThrow();
+  });
+
+  it("round-trips a zero-event state whose slice was drawn or derived", () => {
+    // The two positive properties the check's comment argues from, which the
+    // refusal cases above do not exercise. Both were asserted in prose only,
+    // which is the shape that was wrong in an earlier round.
+    //
+    // A module drawing inside `initialSlice` records a cursor at zero events,
+    // so a hand-written "zero events means no cursors" rule would be wrong;
+    // comparing against bootstrap reproduces whatever the module does.
+    const drawing = defineEventModule<{ roll: number }>({
+      namespace: "drawing",
+      description: "draws from its own stream while building its first slice",
+      initialSlice: (context) => ({ roll: context.random.nextUint32() }),
+      events: { "drawing.go": { version: 0, apply: () => ({}) } },
+    });
+    // And a cartridge-dependent slice has to survive the cartridge itself
+    // going through `serialize` and `loadCartridge` on the way back.
+    const derived = defineEventModule<{ title: string; files: number }>({
+      namespace: "derived",
+      description: "builds its first slice out of the cartridge",
+      initialSlice: (context) => ({
+        title: context.cartridge.meta.title,
+        files: Object.keys(context.cartridge.repository.files).length,
+      }),
+      events: { "derived.go": { version: 0, apply: () => ({}) } },
+    });
+
+    const registry = createRegistry([drawing, derived]);
+    const state = bootstrap({ cartridge: CARTRIDGE, seed: SEED, registry });
+
+    // Preconditions, so this cannot pass vacuously if a later change stops the
+    // module drawing or stops the slice depending on the cartridge.
+    expect(Object.keys(state.random.cursors)).toEqual(["root/drawing"]);
+    expect(state.slices["derived"]).toEqual({
+      title: CARTRIDGE.meta.title,
+      files: Object.keys(CARTRIDGE.repository.files).length,
+    });
+
+    const restored = restoreSnapshot(snapshot(state), registry);
+    expect(serialize(restored)).toBe(serialize(state));
+  });
+
   it("refuses an empty transcript whose clock has nonetheless moved", () => {
     // The bounds that tie the clock to the transcript need a transcript. With
     // zero events there is nothing for them to bound, so a bootstrap snapshot
@@ -757,15 +913,30 @@ describe("snapshots", () => {
   it("leaves a slice alone when its module declares no validator", () => {
     // The hook is optional on purpose, and a module without one must behave
     // exactly as it did before the hook existed.
+    //
+    // Built on a snapshot with history rather than a bootstrap one. A
+    // zero-event state is now checked whole against a fresh `bootstrap`, so an
+    // edited slice there is refused before any per-module question is reached:
+    // `restoreSnapshot` would throw and this assertion would fail, testing the
+    // zero-event check rather than the property named above. With one event
+    // folded, the state is no longer determined by its inputs alone, and the
+    // absence of narrowing is the only thing left to observe.
     const lax = defineEventModule<unknown>({
       namespace: "lax",
       description: "declares no slice validator",
       initialSlice: () => ({ anything: true }),
-      events: { "lax.noop": { version: 0, apply: () => ({}) } },
+      events: {
+        "lax.noop": { version: 0, apply: () => ({ slice: { folded: true } }) },
+      },
     });
     const registry = createRegistry([lax]);
     const text = snapshot(
-      bootstrap({ cartridge: CARTRIDGE, seed: SEED, registry }),
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry,
+        events: [{ type: "lax.noop" }],
+      }),
     );
     const parsed = deserialize(text) as Record<string, unknown>;
     (parsed["slices"] as Record<string, unknown>)["lax"] = { whatever: 1 };
@@ -834,6 +1005,115 @@ describe("a module's own state", () => {
     // counter cannot have reached it: the reducer takes only the slice the
     // handler returns and discards everything else.
     expect(state.slices).toEqual({ counter: 1, observer: [] });
+  });
+
+  it("must be a shape Object.freeze can actually make inert", () => {
+    // The one-level promise `freezeSlice` makes requires that freezing works at
+    // that level, and on a branded value it does not: `map.set(…)` after
+    // `Object.freeze` is `slice.count += 1` in another spelling — the exact
+    // accident the freeze exists to stop, through a surface reporting frozen.
+    // A typed array does not survive `Object.freeze` at all.
+    //
+    // Hardening, not representability: a *nested* Map still passes here and is
+    // refused by the canonical serializer at record time, with a pointer to the
+    // path. That is a better error than this could produce, and costs nothing
+    // per event.
+    const holding = (slice: unknown): EventModule =>
+      defineEventModule({
+        namespace: "branded",
+        description: "keeps its state in internal slots",
+        initialSlice: () => slice,
+        events: { "branded.go": { version: 0, apply: () => ({}) } },
+      });
+    const boot = (slice: unknown) =>
+      bootstrap({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry: createRegistry([holding(slice)]),
+      });
+
+    for (const branded of [
+      new Map([["a", 1]]),
+      new Set([1]),
+      new Date(0),
+      new Uint8Array([1, 2, 3]),
+    ]) {
+      expect(() => boot(branded)).toThrow(
+        /must be a plain object or array at its top level/,
+      );
+    }
+
+    // A class instance with plain fields is genuinely protected by
+    // `Object.freeze`, but its prototype is not one of the three, so it is
+    // refused too — the predicate is a prototype question, not a mutability
+    // audit, and that is what gives it an end.
+    expect(() => boot(new (class Holder {})())).toThrow(/internal slots/);
+
+    // Nested is not this function's question, and passes.
+    expect(() => boot({ inner: new Map([["a", 1]]) })).not.toThrow();
+  });
+
+  it("is checked on every path a slice enters state by, not just bootstrap", () => {
+    // `freezeSlice` has three call sites and the case above exercises one.
+    // A branded slice arriving from a *handler* or from a *snapshot* is the
+    // same accident through a different door.
+    const returning = defineEventModule<unknown>({
+      namespace: "branded",
+      description: "returns a branded slice from its handler",
+      initialSlice: () => ({ n: 0 }),
+      events: {
+        "branded.go": {
+          version: 0,
+          apply: () => ({ slice: new Map([["a", 1]]) }),
+        },
+      },
+    });
+    const registry = createRegistry([returning]);
+
+    // The fold path, through `nextSlices`.
+    expect(() =>
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry,
+        events: [{ type: "branded.go" }],
+      }),
+    ).toThrow(/must be a plain object or array at its top level/);
+
+    // The restore path, through `requireSlices`. A `Map` cannot survive the
+    // canonical serializer, so the snapshot is built by hand — which is how a
+    // tampered one would arrive anyway.
+    const plain = defineEventModule<unknown>({
+      namespace: "branded",
+      description: "same namespace, keeps its slice plain",
+      initialSlice: () => ({ n: 0 }),
+      events: { "branded.go": { version: 0, apply: () => ({}) } },
+    });
+    const plainRegistry = createRegistry([plain]);
+    const parsed = deserialize(
+      snapshot(
+        bootstrap({
+          cartridge: CARTRIDGE,
+          seed: SEED,
+          registry: plainRegistry,
+        }),
+      ),
+    ) as Record<string, unknown>;
+
+    expect(() =>
+      restoreSnapshot(
+        serialize(parsed),
+        createRegistry([
+          defineEventModule<unknown>({
+            namespace: "branded",
+            description: "a validator that hands back a branded value",
+            initialSlice: () => ({ n: 0 }),
+            validateSlice: () => new Map([["a", 1]]),
+            events: { "branded.go": { version: 0, apply: () => ({}) } },
+          }),
+        ]),
+      ),
+    ).toThrow(/must be a plain object or array at its top level/);
   });
 
   it("must be a value, not a per-session decision", () => {
@@ -1027,6 +1307,102 @@ describe("transcript text a handler produces", () => {
     );
     expect(() => say(noisy("", ["fine", "not\rfine"]))).toThrow(
       /transcript detail line 1 contains a control character/,
+    );
+  });
+
+  it("is read once, so a getter cannot show the check and the store two values", () => {
+    // `EventOutcome` is a caller-owned object like the event envelope, and it
+    // was a boundary the read-once discipline had not been applied to.
+    // (`BootstrapInput` and `ReduceInput` were two more, closed in the same
+    // change — see "reads each of its inputs exactly once" above.) Each case
+    // below is a field that was read twice.
+    const returning = (outcome: unknown): EventModule =>
+      defineEventModule({
+        namespace: "shifty",
+        description: "returns an outcome whose fields change between reads",
+        initialSlice: () => ({ n: 0 }),
+        events: {
+          "shifty.go": { version: 0, apply: () => outcome as never },
+        },
+      });
+    const fold = (outcome: unknown) =>
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry: createRegistry([returning(outcome)]),
+        events: [{ type: "shifty.go" }],
+      });
+
+    // `slice`: the guard saw an object and the store saw `undefined`, leaving an
+    // own key holding `undefined`. `readSlice`'s `Object.hasOwn` then answered
+    // true, so the module was handed `undefined` from then on — behaving as if
+    // every event were its first, which is the failure `nextSlices` exists to
+    // prevent. It is the only member of this family that corrupts state in
+    // memory: `snapshot()` succeeds, because JSON drops undefined-valued
+    // properties, and the restore blames registry drift instead.
+    let sliceReads = 0;
+    const shiftySlice = {
+      get slice(): unknown {
+        sliceReads += 1;
+        return sliceReads > 1 ? undefined : { n: 1 };
+      },
+    };
+    expect(fold(shiftySlice).slices["shifty"]).toEqual({ n: 1 });
+
+    // `detail`: a getter drawing from `context.random` is the sharpest version.
+    // The fold still replays identically, so this is not a determinism break —
+    // it is an invariant-4 coherence break plus a PRNG stream stuck in place.
+    let detailReads = 0;
+    const shiftyDetail = {
+      get detail(): readonly string[] {
+        detailReads += 1;
+        return detailReads > 1 ? ["swapped"] : ["original"];
+      },
+    };
+    expect(fold(shiftyDetail).transcript[0]?.detail).toEqual(["original"]);
+
+    // `summary`: same shape, and the field the detail-line comment's own
+    // coercion argument had never been applied to.
+    let summaryReads = 0;
+    const shiftySummary = {
+      get summary(): string {
+        summaryReads += 1;
+        return summaryReads > 1 ? "swapped" : "original";
+      },
+    };
+    expect(fold(shiftySummary).transcript[0]?.summary).toBe("original");
+  });
+
+  it("is refused when it is not an object, or its summary is not a string", () => {
+    // A non-object outcome dereferenced into a bare TypeError naming no event.
+    // A *string* was worse: `"".slice` is a function, so `String.prototype.slice`
+    // was stored as the module's state and only the canonical serializer
+    // noticed, much later.
+    const returning = (outcome: unknown): EventModule =>
+      defineEventModule({
+        namespace: "shifty",
+        description: "returns something that is not an outcome",
+        events: { "shifty.go": { version: 0, apply: () => outcome as never } },
+      });
+    const fold = (outcome: unknown) =>
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry: createRegistry([returning(outcome)]),
+        events: [{ type: "shifty.go" }],
+      });
+
+    for (const bad of [undefined, null, "text", 42, ["a"]]) {
+      expect(() => fold(bad)).toThrow(/must return an outcome object/);
+    }
+    // `describeUnwritableText` takes a string but tests with a regex, which
+    // coerces — so a number summary passed the text check and landed in a
+    // `TranscriptEntry` typed `string`.
+    expect(() => fold({ summary: 42 })).toThrow(
+      /transcript summary must be a string, got number/,
+    );
+    expect(() => fold({ detail: "lines" })).toThrow(
+      /transcript detail must be an array, got string/,
     );
   });
 

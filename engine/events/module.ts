@@ -263,6 +263,14 @@ export interface EventModuleDefinition<S> {
    *
    * Only meaningful alongside `initialSlice` — `createRegistry` rejects a
    * stateless module that declares one, since it would never be called.
+   *
+   * **Narrow, do not normalize.** A zero-event snapshot is checked whole
+   * against a fresh `bootstrap`, and that comparison does not call this hook —
+   * so a validator that *rewrote* its slice rather than merely accepting or
+   * refusing it would make a legitimate zero-event snapshot differ from
+   * bootstrap and fail to restore. No module does that today, and "returns it
+   * narrowed" is the contract; the carve-out is written down because this is a
+   * hook and a future module could.
    */
   readonly validateSlice?: (slice: unknown, where: string) => S;
   /** Keyed by full event type (`vfs.write`), not by the part after the dot. */

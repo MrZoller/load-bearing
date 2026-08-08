@@ -93,20 +93,42 @@ export function deepFreeze<T>(value: T): T {
   return freezeReachable(value, new WeakSet<object>());
 }
 
+/**
+ * Whether `Object.freeze` can actually make this object inert.
+ *
+ * True for a plain object, an array, or a null-prototype object — the three
+ * shapes whose entire contents are properties. False for anything keeping state
+ * in internal slots, where freezing the properties succeeds and protects
+ * nothing: `map.set(…)` still works on a frozen `Map`, `date.setTime(…)` on a
+ * frozen `Date`. A typed array does not survive `Object.freeze` at all.
+ *
+ * A prototype question rather than a list of brands, so it needs no
+ * maintenance as new built-ins appear. What it does *not* answer is whether the
+ * value can be serialized — a plain object holding a cycle passes this and the
+ * canonical serializer still refuses it. Hardening and representability are
+ * different questions with different owners.
+ *
+ * Shared so `engine/events/reduce.ts` can ask it of a module slice without a
+ * second implementation drifting from this one.
+ */
+export function canFreezeInPlace(value: object): boolean {
+  const prototype: unknown = Object.getPrototypeOf(value);
+  return (
+    prototype === Object.prototype ||
+    prototype === Array.prototype ||
+    prototype === null
+  );
+}
+
 function freezeReachable<T>(value: T, seen: WeakSet<object>): T {
   if (typeof value !== "object" || value === null) return value;
 
   const container = value as object;
 
-  // One predicate, every brand at once. See the header: freezing a branded
-  // built-in reports success and protects nothing, because its contents live in
-  // internal slots rather than properties.
-  const prototype: unknown = Object.getPrototypeOf(container);
-  if (
-    prototype !== Object.prototype &&
-    prototype !== Array.prototype &&
-    prototype !== null
-  ) {
+  // See `canFreezeInPlace`: freezing a branded built-in reports success and
+  // protects nothing, because its contents live in internal slots rather than
+  // properties.
+  if (!canFreezeInPlace(container)) {
     throw new Error(
       "deepFreeze: only plain objects, arrays and null-prototype objects can be frozen all " +
         "the way down. This value keeps its contents in internal slots, where freezing its " +

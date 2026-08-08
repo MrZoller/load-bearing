@@ -234,9 +234,25 @@ describe("the probe events", () => {
     expect(validate(atCeiling, "snapshot: slices.probe")).toEqual(atCeiling);
 
     // And one fold from there is refused rather than silently losing precision.
+    //
+    // Built on a snapshot with one event already folded, not a zero-event one.
+    // `restoreSnapshot` now checks that a zero-event state is exactly what
+    // bootstrapping produces, and it correctly refuses this fixture: a session
+    // that has folded nothing cannot have a probe slice at the ceiling. The
+    // check caught this test's own synthetic state, which is the argument for
+    // it working.
     const state = restoreSnapshot(
       serialize({
-        ...(deserialize(snapshot(fold([]))) as Record<string, unknown>),
+        ...(deserialize(
+          snapshot(
+            fold([
+              {
+                type: "probe.random",
+                payload: { stream: "a", count: 1, form: "uint32" },
+              },
+            ]),
+          ),
+        ) as Record<string, unknown>),
         slices: { probe: atCeiling },
       }),
     );

@@ -39,6 +39,7 @@
 
 import { ENGINE_VERSION } from "../version.js";
 import { loadCartridge } from "../cartridge/load.js";
+import { canFreezeInPlace } from "../freeze.js";
 import type { LoadedCartridge } from "../cartridge/types.js";
 import { formatTimestamp, parseTimestamp } from "../clock/civil.js";
 import { createClock, restoreClock } from "../clock/clock.js";
@@ -135,17 +136,30 @@ export interface ReduceInput extends BootstrapInput {
  * in — see `./module.ts`.
  */
 export function bootstrap(input: BootstrapInput): SessionState {
+  // Each input field read exactly once, the same discipline `assertEventEnvelope`
+  // applies to an event and `createRegistry` to a module. `input` is the
+  // caller's object and its properties can be getters, and `cartridge` and
+  // `seed` were each read more than once — twice here plus once per stateful
+  // module — while `registry` was read once here and again by `reduce`. A
+  // `cartridge` getter could start the clock from world A
+  // while `state.cartridge` recorded world B, and a `seed` getter could make
+  // `state.seed` name one seed while the generator was keyed to another. Both
+  // produce a session that lies about its own inputs, and the golden replay
+  // suite cannot see it, because it folds the same lie twice.
+  const cartridge = input.cartridge;
+  const seed = input.seed;
   const registry = input.registry ?? ENGINE_EVENT_REGISTRY;
-  const clock = createClock(input.cartridge.meta.startedAt);
-  const random = createRandom(input.seed);
+
+  const clock = createClock(cartridge.meta.startedAt);
+  const random = createRandom(seed);
   const startedAtMs = clock.now();
 
   const slices: [string, unknown][] = [];
   for (const module of registry.modules) {
     if (!module.stateful) continue;
     const slice = module.initialSlice({
-      cartridge: input.cartridge,
-      seed: input.seed,
+      cartridge,
+      seed,
       startedAtMs,
       random: random.fork(module.namespace),
     });
@@ -165,14 +179,17 @@ export function bootstrap(input: BootstrapInput): SessionState {
           `without this module's key cannot be restored against a registry that has it.`,
       );
     }
-    slices.push([module.namespace, freezeSlice(slice)]);
+    slices.push([
+      module.namespace,
+      freezeSlice(slice, `module ${JSON.stringify(module.namespace)}`),
+    ]);
   }
 
   return freezeState({
     engineVersion: ENGINE_VERSION,
     eventSchemaVersion: EVENT_SCHEMA_VERSION,
-    seed: input.seed,
-    cartridge: input.cartridge,
+    seed,
+    cartridge,
     eventCount: 0,
     clock: clock.toState(),
     random: random.toState(),
@@ -250,7 +267,10 @@ export function step(
   const slice = module.stateful
     ? readSlice(state, module.namespace)
     : undefined;
-  const outcome = handler.apply(context, slice);
+  // Materialized once, immediately. An `EventOutcome` is a caller-owned object
+  // like the event envelope, and everything downstream now reads the capture
+  // rather than the handler's object — see `captureOutcome`.
+  const outcome = captureOutcome(handler.apply(context, slice), where);
 
   return freezeState({
     ...state,
@@ -265,6 +285,118 @@ export function step(
   });
 }
 
+/** An `EventOutcome` after every field has been read exactly once. */
+interface CapturedOutcome {
+  /** Whether the handler returned a slice. A boolean, never a re-read. */
+  readonly hasSlice: boolean;
+  readonly slice: unknown;
+  readonly summary: string;
+  readonly detail: readonly string[];
+}
+
+/**
+ * Read a handler's outcome once, into values nothing downstream can re-read.
+ *
+ * The rule this applies is stated in five other places in the engine —
+ * `assertEventEnvelope` is the worked example — and `EventOutcome` was a
+ * boundary object it had not been applied to. (`BootstrapInput` and
+ * `ReduceInput` were two more, closed in the same change; `SessionState` at the
+ * exported `step` entry is a further candidate.) A handler may return an object
+ * whose properties are getters, and every consumer that read one twice was a
+ * place where the value checked and the value used could differ:
+ *
+ * - `nextSlices` read `slice` to decide whether there was one and again to
+ *   store it. The guard saw an object, the store saw `undefined`, and the
+ *   result was an own key holding `undefined` — so `readSlice`'s `Object.hasOwn`
+ *   answered true and the module was handed `undefined` from then on, behaving
+ *   as if every event were its first. That is the failure `nextSlices` exists
+ *   to prevent, arriving through the door it was watching. It is also the only
+ *   member of this family that corrupts state in memory rather than failing at
+ *   restore: `snapshot()` succeeds, because JSON drops undefined-valued
+ *   properties, and the restore then blames registry drift.
+ * - `makeEntry` read `detail` to validate and again to copy, so a `detail`
+ *   getter could pass a clean array to the check and hand a different one to
+ *   the transcript. A getter drawing from `context.random` is the sharpest
+ *   version: the draw happens inside the getter, after the reducer has taken
+ *   the stream's position, so the cursor never advances and every event draws
+ *   the same value. Note what that is and is not — the fold still replays
+ *   identically, so it is not a determinism break; it is an invariant-4
+ *   coherence break plus a stream stuck in place.
+ * - A non-object outcome dereferenced straight into a bare `TypeError` naming
+ *   no event. A *string* outcome was worse: `"".slice` is a function, so
+ *   `String.prototype.slice` was stored as the module's state and only the
+ *   canonical serializer noticed, much later.
+ *
+ * `summary` gets a `typeof` check here for the reason the detail-line comment
+ * below already argues at length — `describeUnwritableText` takes a `string`
+ * but tests with a regex, which coerces, so a number passes the text check and
+ * lands in a `TranscriptEntry` typed `string`. That argument was written two
+ * lines from `summary` and applied only to `detail`: the same one-member-short
+ * shape this capture exists to stop repeating.
+ *
+ * What this does not cover: a getter on the *slice* the handler returns is
+ * captured by reference here, and `freezeSlice` hardens only its top level.
+ * Depth is the canonical serializer's question, and it answers it at record
+ * time with a JSON pointer.
+ */
+function captureOutcome(raw: unknown, where: string): CapturedOutcome {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    throw new Error(
+      `${where}: a handler must return an outcome object, got ${
+        raw === null ? "null" : Array.isArray(raw) ? "an array" : typeof raw
+      }. An empty object is how a handler says it changed nothing.`,
+    );
+  }
+
+  const outcome = raw as EventOutcome<unknown>;
+  const slice: unknown = outcome.slice;
+  const summary: unknown = outcome.summary;
+  const detail: unknown = outcome.detail;
+
+  if (summary !== undefined && typeof summary !== "string") {
+    throw new Error(
+      `${where}: transcript summary must be a string, got ${typeof summary}`,
+    );
+  }
+
+  let lines: readonly string[] = [];
+  if (detail !== undefined) {
+    if (!Array.isArray(detail)) {
+      throw new Error(
+        `${where}: transcript detail must be an array, got ${typeof detail}`,
+      );
+    }
+    const source: readonly unknown[] = detail;
+    const copied: string[] = [];
+    // Element by element, with the copy validated and the copy stored. A hole —
+    // `new Array(1)`, validly typed and uncast — is skipped by `forEach` and
+    // materialized by a spread, and an explicit `undefined` passes a regex-based
+    // text check as the string "undefined". Either way the state that came back
+    // could not be serialized, so `reduce` succeeded and produced something
+    // unrecordable.
+    for (let offset = 0; offset < source.length; offset += 1) {
+      const line = source[offset];
+      if (typeof line !== "string") {
+        throw new Error(
+          `${where}: transcript detail line ${String(offset)} is ${
+            offset in source ? typeof line : "a hole in a sparse array"
+          }; every line must be a string, because state that cannot be ` +
+            `serialized cannot be recorded or replayed`,
+        );
+      }
+      copied.push(line);
+    }
+    lines = copied;
+  }
+
+  return {
+    hasSlice: slice !== undefined,
+    slice,
+    summary: summary ?? "",
+    detail: lines,
+  };
+}
+
 /**
  * Fold a whole log.
  *
@@ -275,11 +407,20 @@ export function step(
  * later optimization cannot quietly break it.
  */
 export function reduce(input: ReduceInput): SessionState {
+  // Read once here and handed to `bootstrap` as values, rather than passing
+  // `input` along for it to read again. `registry` in particular was read by
+  // both, so a getter could bootstrap the slices under one registry and fold
+  // every event under another — the same object supplying two answers to the
+  // same question.
+  const cartridge = input.cartridge;
+  const seed = input.seed;
   const registry = input.registry ?? ENGINE_EVENT_REGISTRY;
-  let state = bootstrap(input);
+  const events = input.events;
+
+  let state = bootstrap({ cartridge, seed, registry });
   // `for…of` rather than `Array.prototype.reduce`, which skips holes: a sparse
   // log would silently fold fewer events than it appears to contain.
-  for (const event of input.events) {
+  for (const event of events) {
     state = step(state, event, registry);
   }
   return state;
@@ -476,19 +617,77 @@ export function restoreSnapshot(
           `instant the clock started.`,
       );
     }
-  } else if (clock.elapsedMs !== 0) {
-    // Zero events, and the clock has moved. The bounds above are the only
-    // thing tying the clock to anything, and with no entries there is nothing
-    // for them to bound — so a bootstrap snapshot with `elapsedMs` edited
-    // restores cleanly and stamps its first event a day after the cartridge's
-    // declared start. Nothing can advance the clock before the first event:
-    // `BootstrapContext` carries no clock, which is the same proof the
-    // first-entry bound above rests on, applied where there is no first entry.
-    throw new Error(
-      `snapshot: the clock has advanced ${String(clock.elapsedMs)}ms but the transcript is ` +
-        `empty. Time moves only when an event advances it, so a session that has folded ` +
-        `nothing is still at the instant its cartridge declares.`,
-    );
+  }
+
+  const slices = requireSlices(parsed["slices"], registry);
+
+  if (transcript.length === 0) {
+    // A message specialization, not a redundant guard: the check below compares
+    // the clock too, so it would catch a moved one — but only by reporting that
+    // the state as a whole differs from bootstrap. This says which part and
+    // why, for the commonest way a zero-event snapshot goes wrong, and runs
+    // first for that reason.
+    if (clock.elapsedMs !== 0) {
+      throw new Error(
+        `snapshot: the clock has advanced ${String(clock.elapsedMs)}ms but the transcript is ` +
+          `empty. Time moves only when an event advances it, so a session that has folded ` +
+          `nothing is still at the instant its cartridge declares.`,
+      );
+    }
+
+    // With no events folded, the state is fully determined by the cartridge,
+    // the seed and the registry — all three of which the snapshot carries — so
+    // it can be checked against a fresh `bootstrap` in whole rather than field
+    // by field. That is only possible here: at N events the state also depends
+    // on the event log, which a snapshot does not contain, so there is no
+    // "now do it for N" to ask for next.
+    //
+    // Compared through the canonical serializer because that is what the
+    // snapshot is written in, so the comparison sees exactly what was recorded.
+    //
+    // Precisely: this check introduces no per-module narrowing of its own. It
+    // does not call `validateSlice` — but the `recorded` operand's slices came
+    // from `requireSlices`, which does, so the hook shapes what is compared.
+    // The optionality contract in `./module.ts` is untouched either way: a
+    // module that declares no validator still gets nothing narrowed, and one
+    // that declares a narrowing validator sees the same values it would have
+    // seen without this check. What the hook must not do is *normalize* — see
+    // the residual below, which is the same fact read from the other side.
+    //
+    // Nor is this a hand-written rule such as "zero events means no cursors",
+    // which would be wrong for a module that draws inside `initialSlice`;
+    // bootstrap reproduces whatever that module does.
+    //
+    // The residual: a `validateSlice` that *normalizes* rather than narrows
+    // would make a legitimate zero-event snapshot differ from bootstrap and
+    // fail here. No module does that today, and the hook's contract says it
+    // "returns it narrowed" — but it is a hook, and a future module could.
+    // All three of the fields bootstrap determines — not two of them, which is
+    // what let the sentence above describe the `elapsedMs` branch as subsumed
+    // by a comparison that did not include the clock at all.
+    //
+    // Including it changes no behaviour today, and saying so is the point:
+    // `ClockState` has exactly `startMs` and `elapsedMs`, the cartridge
+    // cross-check above pins the first and the specialization pins the second,
+    // so by here the clock is already equal to bootstrap's and no test can
+    // distinguish the two forms. It is in the comparison so the comparison is
+    // over everything bootstrap determines, which is what makes the claim true
+    // and keeps it true if either of those two checks is ever relaxed or
+    // `ClockState` grows a third field.
+    const fresh = bootstrap({ cartridge, seed, registry });
+    const recorded = serialize({ clock, slices, random });
+    const expected = serialize({
+      clock: fresh.clock,
+      slices: fresh.slices,
+      random: fresh.random,
+    });
+    if (recorded !== expected) {
+      throw new Error(
+        `snapshot: no events have been folded, so the state must be exactly what bootstrapping ` +
+          `this cartridge and seed produces, and it is not. Recorded ${recorded}, but bootstrap ` +
+          `gives ${expected}.`,
+      );
+    }
   }
 
   return freezeState({
@@ -499,7 +698,7 @@ export function restoreSnapshot(
     eventCount,
     clock,
     random,
-    slices: requireSlices(parsed["slices"], registry),
+    slices,
     transcript,
   });
 }
@@ -515,10 +714,13 @@ export function restoreSnapshot(
 function nextSlices(
   state: SessionState,
   module: EventModule,
-  outcome: EventOutcome<unknown>,
+  outcome: CapturedOutcome,
   where: string,
 ): Readonly<Record<string, unknown>> {
-  if (outcome.slice === undefined) return state.slices;
+  // `hasSlice` is a boolean decided once by `captureOutcome`, and `outcome.slice`
+  // is the value it was decided from. Asking the outcome object twice is what
+  // let the guard see an object and the store see `undefined`.
+  if (!outcome.hasSlice) return state.slices;
   if (!module.stateful) {
     throw new Error(
       `${where}: module ${JSON.stringify(module.namespace)} declares no initialSlice but its ` +
@@ -527,78 +729,49 @@ function nextSlices(
   }
   return Object.freeze({
     ...state.slices,
-    [module.namespace]: freezeSlice(outcome.slice),
+    [module.namespace]: freezeSlice(outcome.slice, where),
   });
 }
 
 /**
- * Build one transcript entry, checking the text a handler produced.
+ * Build one transcript entry from an already-captured outcome.
  *
- * Checked here rather than only in the harness because the reducer is where the
- * text is created: a newline in a summary would render one event as two lines,
- * and a lone surrogate would make an artifact no re-record could ever match.
- * The detail array is copied so a handler holding a reference to it cannot edit
- * recorded state afterwards.
+ * Only the text pass is left here: `captureOutcome` has already established
+ * that `summary` is a string and that `detail` is an array of strings copied
+ * into a fresh array, so this reads materialized values and cannot see anything
+ * a getter might change between checks.
+ *
+ * The text pass belongs in the reducer rather than only in the harness because
+ * the reducer is where the text is created: a newline in a summary would render
+ * one event as two lines, and a lone surrogate would make an artifact no
+ * re-record could ever match.
  */
 function makeEntry(
   index: number,
   at: string,
   type: string,
-  outcome: EventOutcome<unknown>,
+  outcome: CapturedOutcome,
   where: string,
 ): TranscriptEntry {
-  const summary = outcome.summary ?? "";
-  const detail = outcome.detail ?? [];
-
-  const summaryProblem = describeUnwritableText(summary);
+  const summaryProblem = describeUnwritableText(outcome.summary);
   if (summaryProblem !== undefined) {
     throw new Error(`${where}: transcript summary contains ${summaryProblem}`);
   }
-  // An index loop, not `forEach`, and a `typeof` check before the text check.
-  // Both halves are load-bearing. `forEach` skips a hole, so `new Array(1)` —
-  // validly typed as `string[]`, no cast — passed straight through, the spread
-  // below materialized the hole as `undefined`, and the state that came back
-  // could not be snapshotted at all: the canonical serializer refuses an
-  // undefined array element, so `reduce` succeeded and produced something
-  // unrecordable. And `describeUnwritableText` takes a `string` but tests with
-  // a regex, which coerces — so an *explicit* `undefined` element passed the
-  // text check as the string "undefined". Checking holes alone would close half
-  // of one axis and invite the other half back.
-  //
-  // `Array.isArray` first, because the index loop is more permissive than the
-  // `forEach` it replaced: a non-array `detail` used to crash on `.forEach`,
-  // and a bare string would otherwise iterate per character and record its
-  // letters as lines. Cast-only either way, but a loud refusal beats quietly
-  // recording something nobody wrote.
-  if (!Array.isArray(detail)) {
-    throw new Error(
-      `${where}: transcript detail must be an array of lines, got ${typeof detail}`,
-    );
-  }
-  for (let offset = 0; offset < detail.length; offset += 1) {
-    const line = detail[offset];
-    if (typeof line !== "string") {
-      throw new Error(
-        `${where}: transcript detail line ${String(offset)} is ${
-          offset in detail ? typeof line : "a hole in a sparse array"
-        }; every line must be a string, because state that cannot be serialized ` +
-          `cannot be recorded or replayed`,
-      );
-    }
+  outcome.detail.forEach((line, offset) => {
     const problem = describeUnwritableText(line);
     if (problem !== undefined) {
       throw new Error(
         `${where}: transcript detail line ${String(offset)} contains ${problem}`,
       );
     }
-  }
+  });
 
   return Object.freeze({
     index,
     at,
     type,
-    summary,
-    detail: Object.freeze([...detail]),
+    summary: outcome.summary,
+    detail: Object.freeze([...outcome.detail]),
   });
 }
 
@@ -632,12 +805,30 @@ function freezeState(state: SessionState): SessionState {
  * down, and would freeze structures a module has every right to build fresh and
  * hand over.
  *
- * The remaining depth is covered by the golden replay suite, which folds every
- * fixture twice from frozen inputs and compares the recording, and by the
- * canonical serializer, which cannot record a slice holding anything but plain
- * data in the first place.
+ * What the one-level promise requires, and did not have, is that
+ * `Object.freeze` can actually keep it at that level. On a `Map` it cannot:
+ * `map.set(…)` after freezing is `slice.count += 1` in another spelling — the
+ * same accident, through a value whose surface reports frozen. `Date` and `Set`
+ * are the same shape, and a typed array throws a bare `TypeError` out of
+ * `bootstrap`. So the prototype question `canFreezeInPlace` asks — shared with
+ * `deepFreeze` rather than reimplemented — is asked here too, about the slice
+ * itself.
+ *
+ * That is a hardening check, not a serializability one, and the distinction is
+ * the reason it stops at one level. A nested `Map` still passes here; the
+ * canonical serializer refuses it at record time with a JSON pointer to the
+ * exact path, which is a better error than this function could produce and
+ * costs nothing per event. A cycle passes here too, for the same reason.
  */
-function freezeSlice(slice: unknown): unknown {
+function freezeSlice(slice: unknown, where: string): unknown {
+  if (typeof slice === "object" && slice !== null && !canFreezeInPlace(slice)) {
+    throw new Error(
+      `${where}: a module slice must be a plain object or array at its top level. This value ` +
+        `keeps its contents in internal slots, so freezing it would report success while its ` +
+        `contents stayed writable — the mutation this freeze exists to stop, in another ` +
+        `spelling.`,
+    );
+  }
   return typeof slice === "object" && slice !== null
     ? Object.freeze(slice)
     : slice;
@@ -886,7 +1077,10 @@ function requireSlices(
           module.validateSlice === undefined
             ? raw
             : module.validateSlice(raw, `snapshot: slices.${module.namespace}`);
-        return [module.namespace, freezeSlice(validated)];
+        return [
+          module.namespace,
+          freezeSlice(validated, `snapshot: slices.${module.namespace}`),
+        ];
       }),
     ),
   );

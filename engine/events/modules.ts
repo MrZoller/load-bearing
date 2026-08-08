@@ -32,7 +32,10 @@
  *   more. A module without the hook restores whatever the snapshot claims, so
  *   `{ events: "oops" }` becomes `"oops1"` on the next event. `PROBE_MODULE` is
  *   the worked example; a stateless module must not declare one, and
- *   `createRegistry` says so.
+ *   `createRegistry` says so. It must narrow rather than normalize: a
+ *   zero-event snapshot is compared whole against a fresh `bootstrap` without
+ *   calling the hook, so a validator that rewrote its slice would make a
+ *   legitimate zero-event snapshot fail to restore.
  * - per-handler `version` — the payload schema version, bumped when the same
  *   fields would be read differently.
  */
