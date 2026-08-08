@@ -80,13 +80,68 @@ describe("the event log", () => {
     }).toThrow(TypeError);
   });
 
-  it("refuses a payload structured clone cannot copy at all", () => {
+  it("refuses a payload holding something JSON cannot carry", () => {
+    // Structured clone refuses a function too, but the serializer now runs
+    // first and refuses it by shape — so there is one designed error rather
+    // than a second message about copying.
     expect(() =>
       appendEvent(EMPTY_EVENT_LOG, {
         type: "clock.tick",
         payload: { ms: 5, andThen: () => 1 },
       }),
-    ).toThrow(/"payload" holds a value that cannot be copied/);
+    ).toThrow(/"payload" is not plain data/);
+  });
+
+  it("refuses the properties a clone would drop in silence", () => {
+    // The reason the serializer judges the *original* rather than the copy.
+    // Structured clone drops a non-enumerable and a symbol-keyed property
+    // without a word, so cloning first meant the payload appended as clean
+    // data and the original was never examined — a field its author believes
+    // is in effect, gone.
+    const nonEnumerable: Record<string, unknown> = { ms: 1 };
+    Object.defineProperty(nonEnumerable, "hidden", {
+      value: "dropped",
+      enumerable: false,
+    });
+    expect(() =>
+      appendEvent(EMPTY_EVENT_LOG, {
+        type: "clock.tick",
+        payload: nonEnumerable,
+      }),
+    ).toThrow(/"payload" is not plain data/);
+
+    const symbolKeyed: Record<string, unknown> = { ms: 1 };
+    (symbolKeyed as Record<symbol, unknown>)[Symbol("secret")] = "dropped";
+    expect(() =>
+      appendEvent(EMPTY_EVENT_LOG, {
+        type: "clock.tick",
+        payload: symbolKeyed,
+      }),
+    ).toThrow(/"payload" is not plain data/);
+  });
+
+  it("refuses an accessor without ever calling it", () => {
+    // Reading it is exactly what an accessor is waiting for. The serializer
+    // inspects descriptors instead of properties, so the getter is refused
+    // rather than run — the same care `engine/serialize/canonical.ts` takes
+    // throughout, and which cloning first quietly undid.
+    let reads = 0;
+    const withGetter: Record<string, unknown> = { ms: 1 };
+    Object.defineProperty(withGetter, "computed", {
+      enumerable: true,
+      get: () => {
+        reads += 1;
+        return 1;
+      },
+    });
+
+    expect(() =>
+      appendEvent(EMPTY_EVENT_LOG, {
+        type: "clock.tick",
+        payload: withGetter,
+      }),
+    ).toThrow(/"payload" is not plain data/);
+    expect(reads).toBe(0);
   });
 
   it("refuses a payload that clones cleanly but is not plain data", () => {

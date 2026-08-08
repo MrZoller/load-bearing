@@ -130,20 +130,29 @@ export function appendEvent(
  * then fold to a different distribution. Deterministic replay of an
  * already-recorded log is exactly what that breaks.
  *
- * Two steps, because neither does the other's job:
+ * Three steps, in this order, and the order is the whole design:
  *
- * - **`structuredClone` detaches.** It copies by internal slot, so it cannot be
- *   fooled by a re-pointed prototype the way a prototype-reading copy would be.
- *   It is the engine's one allowlisted host global (`engine/globals.d.ts`).
- *   What it does *not* do is judge: it refuses functions, symbols and host
- *   objects, but it copies a `Date`, a `Map`, a `Set`, a `RegExp` and a typed
- *   array quite happily — and it *preserves* cycles rather than rejecting them.
- * - **The canonical serializer judges.** `serialize` is the exact predicate
- *   wanted here, because the requirement on a payload is precisely that it can
- *   be written to a fixture and read back. It rejects every built-in listed
- *   above, plus cycles, `NaN`, sparse arrays, accessors and symbol keys, and it
- *   names the offending path. Running it now moves that failure from record
- *   time — long after the event was accepted — to append time.
+ * 1. **`serialize` judges the original.** It is the exact predicate wanted here,
+ *    because the requirement on a payload is precisely that it can be written
+ *    to a fixture and read back. It rejects `Date`, `Map`, `Set`, `RegExp` and
+ *    typed arrays, plus cycles, `NaN`, sparse arrays, symbol keys, accessors
+ *    and non-enumerable properties, and it names the offending path.
+ * 2. **`structuredClone` detaches.** It copies by internal slot, so it cannot be
+ *    fooled by a re-pointed prototype the way a prototype-reading copy would be.
+ *    It is the engine's one allowlisted host global (`engine/globals.d.ts`).
+ * 3. **`deepFreeze` hardens** what is by then known to be finite, acyclic plain
+ *    data — which is what makes its recursion safe here regardless of what
+ *    arrived.
+ *
+ * **Judging the original rather than the copy is load-bearing.** Cloning first
+ * hides exactly the properties the serializer exists to refuse: structured
+ * clone silently drops a non-enumerable property and a symbol-keyed one, and it
+ * *invokes* an enumerable getter and stores the result. So the copy looks like
+ * clean data and the original never gets examined — a payload whose author
+ * believes a field is in effect appends without it, and an accessor runs during
+ * append in a module whose sibling (`engine/serialize/canonical.ts`) goes to
+ * considerable lengths never to run one. `serialize` reads descriptors instead
+ * of properties, so it refuses an accessor without calling it.
  *
  * Reusing `serialize` rather than reimplementing the predicate is the point.
  * The cartridge loader's `cloneJson` asks the same question, but as a
@@ -152,9 +161,13 @@ export function appendEvent(
  * takes the same authority one level further down, where it needs no
  * extraction.
  *
- * Freezing happens last and inside the guarded block, so it only ever runs on a
- * value the serializer has already vouched for — which is what makes
- * `deepFreeze`'s recursion safe here regardless of what arrived.
+ * One guarded block, not two. With the serializer running first there is no
+ * shape left for `structuredClone` to refuse — everything it rejects
+ * (functions, symbols, host objects) the serializer has already rejected, and
+ * everything the serializer accepts clones. A separate catch around the clone
+ * would be a branch that cannot fire, with a comment claiming it does. If the
+ * clone ever fails anyway it will be for a host reason rather than a shape one,
+ * and `cause` carries it.
  *
  * This hardens **the append path only.** `reduce` and `step` take a raw
  * `readonly EngineEvent[]`, which is how a fixture and a decoded replay
@@ -167,27 +180,16 @@ function clonePayload(
   payload: Readonly<Record<string, unknown>>,
   where: string,
 ): Readonly<Record<string, unknown>> {
-  let copy: Record<string, unknown>;
   try {
-    copy = structuredClone(payload) as Record<string, unknown>;
-  } catch (cause) {
-    throw new Error(
-      `${where}: "payload" holds a value that cannot be copied — a function, a symbol, or ` +
-        `another host object. An event payload is plain data, because it has to survive ` +
-        `being written to a fixture and read back.`,
-      { cause },
-    );
-  }
-
-  try {
-    serialize(copy);
-    return deepFreeze(copy);
+    serialize(payload);
+    return deepFreeze(structuredClone(payload) as Record<string, unknown>);
   } catch (cause) {
     throw new Error(
       `${where}: "payload" is not plain data. It has to survive being written to a fixture ` +
         `and read back, so it may hold only null, booleans, finite numbers, strings, arrays ` +
-        `and plain objects — no Date, Map, Set, RegExp or typed array, and nothing that ` +
-        `contains itself. The cause below names the offending path.`,
+        `and plain objects — no Date, Map, Set, RegExp or typed array, nothing that contains ` +
+        `itself, and no accessor, symbol key or non-enumerable property, each of which would ` +
+        `be dropped or invoked in silence. The cause below names the offending path.`,
       { cause },
     );
   }

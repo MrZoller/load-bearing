@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { loadCartridge } from "../cartridge/load.js";
 import type { LoadedCartridge } from "../cartridge/types.js";
-import { parseTimestamp } from "../clock/civil.js";
+import { MS_PER_DAY, parseTimestamp } from "../clock/civil.js";
 import { hashString } from "../random/seed.js";
 import { deserialize, serialize } from "../serialize/canonical.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
@@ -414,6 +414,56 @@ describe("snapshots", () => {
     // which is what makes the check safe to apply unconditionally.
     const state = fold();
     expect(state.random.seed).toBe(hashString(state.seed));
+  });
+
+  it("refuses a clock that does not start where the cartridge says", () => {
+    // The sibling of the seed check, on the same footing: `bootstrap` always
+    // starts the clock with `createClock(cartridge.meta.startedAt)`, so these
+    // are one fact recorded twice. Edit either and the session restores
+    // cleanly while stamping instants `reduce(cartridge, seed, log)` would
+    // never produce.
+    const text = snapshot(fold());
+    const edited = (
+      change: (state: Record<string, unknown>) => void,
+    ): string => {
+      const parsed = deserialize(text) as Record<string, unknown>;
+      change(parsed);
+      return serialize(parsed);
+    };
+
+    expect(() =>
+      restoreSnapshot(
+        edited((s) => {
+          const clock = s["clock"] as Record<string, number>;
+          clock["startMs"] = (clock["startMs"] as number) + MS_PER_DAY;
+        }),
+      ),
+    ).toThrow(/the clock starts at \d+, but the cartridge declares/);
+
+    // And the other direction: moving the cartridge's declared start instead.
+    expect(() =>
+      restoreSnapshot(
+        edited((s) => {
+          const cartridge = s["cartridge"] as Record<string, unknown>;
+          (cartridge["meta"] as Record<string, unknown>)["startedAt"] =
+            "2026-08-06T09:14:22.000Z";
+        }),
+      ),
+    ).toThrow(/"2026-08-06T09:14:22\.000Z"/);
+
+    // A malformed clock still reports what is wrong with the clock, rather
+    // than the two disagreeing — which is why the cross-check runs after
+    // `restoreClock` and not before it.
+    expect(() =>
+      restoreSnapshot(
+        edited((s) => (s["clock"] = { startMs: 0, elapsedMs: -1 })),
+      ),
+    ).toThrow(/elapsed must be an integer/);
+
+    // The invariant holds for every state the reducer produces, which is what
+    // makes the check safe to apply unconditionally.
+    const state = fold();
+    expect(state.clock.startMs).toBe(parseTimestamp(STARTED_AT));
   });
 
   it("refuses transcript text that could not have been recorded", () => {

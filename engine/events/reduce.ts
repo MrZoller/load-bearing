@@ -352,15 +352,42 @@ export function restoreSnapshot(
     );
   }
 
+  const cartridge = loadCartridge(parsed["cartridge"]);
+  // Restored before the cross-check below, not after: `restoreClock` is what
+  // rejects a malformed clock at all, and comparing a start instant first would
+  // report the two disagreeing instead of the elapsed value being nonsense.
+  const clock = restoreClock(
+    requireObject(parsed["clock"], "clock") as unknown as ClockState,
+  ).toState();
+
+  // The sibling of the seed check above, on the same footing. `bootstrap` is
+  // the only producer of a `SessionState` and always starts the clock with
+  // `createClock(cartridge.meta.startedAt)`, so the cartridge's declared start
+  // and the clock's `startMs` are one fact recorded twice. A snapshot reports
+  // them independently: edit either — the clock by a day, or `meta.startedAt` —
+  // and the session restores cleanly while stamping instants that
+  // `reduce(cartridge, seed, log)` would never produce.
+  //
+  // `createClock` rather than `parseTimestamp` so the comparison runs through
+  // the same function `bootstrap` uses; the schema already guarantees
+  // `meta.startedAt` is a well-formed timestamp, so this cannot throw here.
+  const declaredStart = createClock(cartridge.meta.startedAt).toState().startMs;
+  if (clock.startMs !== declaredStart) {
+    throw new Error(
+      `snapshot: the clock starts at ${String(clock.startMs)}, but the cartridge declares the ` +
+        `session begins at ${JSON.stringify(cartridge.meta.startedAt)} (${String(declaredStart)}). ` +
+        `A session's clock is started from its cartridge, so these disagreeing means one of them ` +
+        `was edited and every timestamp after this point belongs to neither.`,
+    );
+  }
+
   return freezeState({
     engineVersion,
     eventSchemaVersion,
     seed,
-    cartridge: loadCartridge(parsed["cartridge"]),
+    cartridge,
     eventCount,
-    clock: restoreClock(
-      requireObject(parsed["clock"], "clock") as unknown as ClockState,
-    ).toState(),
+    clock,
     random,
     slices: requireSlices(parsed["slices"], registry),
     transcript,

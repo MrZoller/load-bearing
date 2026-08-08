@@ -123,10 +123,20 @@ export interface EventHandlerDefinition<S> {
   /**
    * Fold this event in.
    *
-   * Pure with respect to session state: read whatever `context.state` holds,
-   * return a new slice, and never edit what you were given. The clock and the
-   * PRNG are the two deliberate exceptions — they are live handles scoped to
-   * this one call, and the reducer takes their positions afterwards.
+   * **A handler must be a pure function of `(context, slice)`.** Everything it
+   * reads has to arrive through those two arguments; everything it changes has
+   * to leave through its return value. The clock and the PRNG are the two
+   * deliberate exceptions — live handles scoped to this one call, whose
+   * positions the reducer takes afterwards. Never edit what you were given.
+   *
+   * That rule is wider than it looks, and this layer cannot enforce any of it.
+   * Reading mutable state through `this`, through a closure variable, or
+   * through a module-level binding breaks determinism in exactly the same way:
+   * two folds of one event log produce two different sessions, the golden
+   * fixture records whichever ran first, and nothing in the diff says why.
+   * Freezing the handler object would close none of those — it is shallow, and
+   * two of the three routes never touch it — so the contract is stated here
+   * rather than half-enforced. Invariant 2 is the general form of it.
    *
    * A stateless module's handler simply omits the `slice` parameter.
    */
@@ -205,6 +215,15 @@ export interface EventModule {
  * after the fact — the registry would then describe a set of event types the
  * module's own file does not. `engine/pattern.ts` makes the same argument about
  * validators for the same reason.
+ *
+ * What that freeze does **not** cover is the handler definitions themselves,
+ * which the caller owns and this function only reads. A handler that keeps
+ * mutable state — on `this`, in a closure, or in a module-level binding — will
+ * fold the same event log two different ways, and no amount of freezing here
+ * would change that: `Object.freeze` is shallow, and two of those three routes
+ * never touch the handler object at all. The requirement is stated on
+ * `EventHandlerDefinition.apply`: a handler is a pure function of
+ * `(context, slice)`. This layer relies on it rather than checking it.
  *
  * Nothing is validated here; `createRegistry` does that, so a namespace typo is
  * reported once, against the whole registry, with the other modules' namespaces
