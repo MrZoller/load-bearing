@@ -13,6 +13,7 @@
  * see the gap without having to notice an absence.
  */
 
+import { MAX_DEFERRED_DEPTH } from "./load.js";
 import { CARTRIDGE_SCHEMA, CARTRIDGE_SCHEMA_VERSION } from "./schema.js";
 import type { Pattern, SchemaNode } from "./schema.js";
 
@@ -145,7 +146,7 @@ function emitNode(node: SchemaNode): Record<string, unknown> {
       return {
         type: "object",
         description: node.description,
-        $comment: `Declared but not validated in schema v0. Tightened by: ${node.owner}. The gap is a decision, not an oversight.`,
+        $comment: `Declared but not validated in schema v0. Tightened by: ${node.owner}. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most ${String(MAX_DEFERRED_DEPTH)} levels of nesting.`,
       };
   }
 }

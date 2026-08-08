@@ -6,7 +6,11 @@ import {
   loadCartridgeFixture,
   loadInvalidCartridgeFixture,
 } from "../testing/fixtures.js";
-import { CartridgeValidationError, loadCartridge } from "./load.js";
+import {
+  CartridgeValidationError,
+  MAX_DEFERRED_DEPTH,
+  loadCartridge,
+} from "./load.js";
 import type { CartridgeIssue } from "./load.js";
 import { CARTRIDGE_SCHEMA } from "./schema.js";
 import type { SchemaNode } from "./schema.js";
@@ -455,6 +459,34 @@ describe("loadCartridge", () => {
 
       expect(issuesOf(source)[0]?.found, label).toBe(
         "an object with a prototype JSON cannot produce",
+      );
+    }
+  });
+
+  it("bounds how deep a deferred subtree may nest", () => {
+    // Reachable from an ordinary cartridge file, unlike most of what this
+    // guard catches: `JSON.parse` accepts a few thousand levels, the published
+    // schema leaves these sections unconstrained, and the recursive clone then
+    // exhausted the stack — so `loadCartridge` escaped with a bare `RangeError`
+    // and the validation boundary failed open.
+    function nested(levels: number): unknown {
+      let node: Record<string, unknown> = { leaf: true };
+      for (let index = 0; index < levels; index += 1) node = { next: node };
+      // Round-tripped, so this is exactly the shape a cartridge file yields.
+      return JSON.parse(JSON.stringify(node)) as unknown;
+    }
+
+    const shallow = minimal();
+    shallow["story"] = nested(MAX_DEFERRED_DEPTH - 2);
+    expect(() => loadCartridge(shallow)).not.toThrow();
+
+    for (const levels of [MAX_DEFERRED_DEPTH + 40, 3000, 20000]) {
+      const source = minimal();
+      source["story"] = nested(levels);
+
+      // A validation issue, not a host error — that is the whole point.
+      expect(issuesOf(source)[0]?.expected, String(levels)).toBe(
+        `at most ${String(MAX_DEFERRED_DEPTH)} levels of nesting`,
       );
     }
   });

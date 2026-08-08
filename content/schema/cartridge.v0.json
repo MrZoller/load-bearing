@@ -120,7 +120,7 @@
       "type": "array"
     },
     "presentation": {
-      "$comment": "Declared but not validated in schema v0. Tightened by: Phase 2 shapes it, Phase 4 hardens it. The gap is a decision, not an oversight.",
+      "$comment": "Declared but not validated in schema v0. Tightened by: Phase 2 shapes it, Phase 4 hardens it. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
       "default": {},
       "description": "Status curves, share lines, spinner verb pools, preview card, UI disturbances.",
       "type": "object"
@@ -197,7 +197,7 @@
           "default": [],
           "description": "Commit history for the repository at `cwd`.",
           "items": {
-            "$comment": "Declared but not validated in schema v0. Tightened by: issue #6. The gap is a decision, not an oversight.",
+            "$comment": "Declared but not validated in schema v0. Tightened by: issue #6. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
             "description": "One entry. Commit history for the repository at `cwd`.",
             "type": "object"
           },
@@ -207,7 +207,7 @@
           "default": [],
           "description": "Log entries queryable from the shell.",
           "items": {
-            "$comment": "Declared but not validated in schema v0. Tightened by: issue #7. The gap is a decision, not an oversight.",
+            "$comment": "Declared but not validated in schema v0. Tightened by: issue #7. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
             "description": "One entry. Log entries queryable from the shell.",
             "type": "object"
           },
@@ -230,7 +230,7 @@
           "default": [],
           "description": "Process table rows, as `ps` would show them.",
           "items": {
-            "$comment": "Declared but not validated in schema v0. Tightened by: issue #7. The gap is a decision, not an oversight.",
+            "$comment": "Declared but not validated in schema v0. Tightened by: issue #7. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
             "description": "One entry. Process table rows, as `ps` would show them.",
             "type": "object"
           },
@@ -240,7 +240,7 @@
           "default": [],
           "description": "Service units, with states, health and ports.",
           "items": {
-            "$comment": "Declared but not validated in schema v0. Tightened by: issue #7. The gap is a decision, not an oversight.",
+            "$comment": "Declared but not validated in schema v0. Tightened by: issue #7. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
             "description": "One entry. Service units, with states, health and ports.",
             "type": "object"
           },
@@ -259,7 +259,7 @@
           "default": [],
           "description": "Simulated test-runner cases and their reactions.",
           "items": {
-            "$comment": "Declared but not validated in schema v0. Tightened by: issue #12. The gap is a decision, not an oversight.",
+            "$comment": "Declared but not validated in schema v0. Tightened by: issue #12. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
             "description": "One entry. Simulated test-runner cases and their reactions.",
             "type": "object"
           },
@@ -269,7 +269,7 @@
           "default": [],
           "description": "The in-world ticket archive.",
           "items": {
-            "$comment": "Declared but not validated in schema v0. Tightened by: issue #7. The gap is a decision, not an oversight.",
+            "$comment": "Declared but not validated in schema v0. Tightened by: issue #7. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
             "description": "One entry. The in-world ticket archive.",
             "type": "object"
           },
@@ -283,7 +283,7 @@
       "type": "object"
     },
     "story": {
-      "$comment": "Declared but not validated in schema v0. Tightened by: Phase 2 shapes it, Phase 4 hardens it. The gap is a decision, not an oversight.",
+      "$comment": "Declared but not validated in schema v0. Tightened by: Phase 2 shapes it, Phase 4 hardens it. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
       "default": {},
       "description": "Premise, reveals, intents, consequences, callbacks, rare events, endings.",
       "type": "object"

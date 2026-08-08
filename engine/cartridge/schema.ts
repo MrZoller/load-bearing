@@ -44,6 +44,8 @@
  */
 
 import { parseTimestamp } from "../clock/civil.js";
+import { pattern } from "../pattern.js";
+import type { Pattern } from "../pattern.js";
 import { INCIDENT_DATE_PATTERN, MODEL_ID_PATTERN } from "../random/seed.js";
 
 /**
@@ -90,7 +92,7 @@ export const ARCHETYPES = Object.freeze([
  * a file key names a location in that filesystem. It also gives `cwd` something
  * to be checked against.
  */
-export const ABSOLUTE_PATH_PATTERN = Object.freeze(
+export const ABSOLUTE_PATH_PATTERN = pattern(
   /^\/$|^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F]+)+$/,
 );
 
@@ -104,7 +106,7 @@ export const ABSOLUTE_PATH_PATTERN = Object.freeze(
  * would approve a cartridge whose cwd collides with a file. `cwd` keeps the
  * wider pattern: opening a session at the root is legitimate.
  */
-export const FILE_PATH_PATTERN = Object.freeze(
+export const FILE_PATH_PATTERN = pattern(
   /^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F]+)+$/,
 );
 
@@ -118,36 +120,23 @@ export const FILE_PATH_PATTERN = Object.freeze(
  * broken row — so it belongs at the validation boundary with everything else
  * the fallback episode depends on.
  */
-export const SINGLE_LINE_PATTERN = Object.freeze(
+export const SINGLE_LINE_PATTERN = pattern(
   /^[^\u0000-\u001F\u007F-\u009F\u2028\u2029]*$/,
 );
 
 /** Four octal digits, as `ls -l` renders a mode. */
-export const FILE_MODE_PATTERN = Object.freeze(/^[0-7]{4}$/);
+export const FILE_MODE_PATTERN = pattern(/^[0-7]{4}$/);
 
 /** A POSIX user or group name. */
-export const ACCOUNT_NAME_PATTERN = Object.freeze(/^[a-z_][a-z0-9_-]*$/);
+export const ACCOUNT_NAME_PATTERN = pattern(/^[a-z_][a-z0-9_-]*$/);
 
 /** An environment variable name, as the shell would accept it. */
-export const ENV_NAME_PATTERN = Object.freeze(/^[A-Za-z_][A-Za-z0-9_]*$/);
+export const ENV_NAME_PATTERN = pattern(/^[A-Za-z_][A-Za-z0-9_]*$/);
 
 /** A man page name, e.g. `systemd.service` or `ls`. */
-export const MAN_PAGE_PATTERN = Object.freeze(/^[a-z0-9][a-z0-9._-]*$/);
+export const MAN_PAGE_PATTERN = pattern(/^[a-z0-9][a-z0-9._-]*$/);
 
-/**
- * The slice of a regular expression this schema needs.
- *
- * Structural rather than `RegExp`, and not to route around the purity gate but
- * because the gate is right: `RegExp`'s legacy statics (`RegExp.$1`,
- * `RegExp.lastMatch`) carry the last match made anywhere in the realm, which
- * is ambient state a replay cannot survive. A regex literal satisfies this
- * interface, and nothing reachable through it can read a static.
- */
-export interface Pattern {
-  /** The spelling between the slashes, which is what JSON Schema wants. */
-  readonly source: string;
-  test(value: string): boolean;
-}
+export type { Pattern };
 
 export interface StringNode {
   readonly kind: "string";

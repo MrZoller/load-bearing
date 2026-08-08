@@ -109,26 +109,33 @@ describe("the descriptor tree", () => {
     ]);
   });
 
-  it("freezes every exported pattern at its declaration", () => {
-    // A `RegExp` is an ordinary object, so `PATTERN.test = () => true` turns a
-    // validator into a rubber stamp. The schema's deep freeze reaches these
-    // too — but only once this module has loaded, so before this, whether a
-    // pattern was frozen depended on which module a consumer imported first.
-    for (const [name, pattern] of [
+  it("exports patterns a consumer cannot weaken", () => {
+    // Freezing a RegExp was not enough. `Object.freeze` protects properties;
+    // `RegExp.prototype.compile` mutates internal slots — in V8 it installs the
+    // new matcher and only *then* fails writing the frozen `lastIndex`, so a
+    // caller who catches that error is left holding a permanently different
+    // pattern with no property changed. The regex is now private to a closure
+    // and only `source` and `test` are exposed, so there is no `compile` to
+    // reach.
+    for (const [name, value] of [
       ["ABSOLUTE_PATH_PATTERN", ABSOLUTE_PATH_PATTERN],
       ["MODEL_ID_PATTERN", MODEL_ID_PATTERN],
       ["INCIDENT_DATE_PATTERN", INCIDENT_DATE_PATTERN],
     ] as const) {
-      expect(Object.isFrozen(pattern), name).toBe(true);
+      expect(Object.isFrozen(value), name).toBe(true);
+      expect(
+        (value as unknown as { compile?: unknown }).compile,
+        `${name} must not expose compile`,
+      ).toBeUndefined();
       expect(() => {
-        (pattern as unknown as { test: unknown }).test = () => true;
+        (value as unknown as { test: unknown }).test = () => true;
       }, name).toThrow();
     }
 
-    // And they still work: `test` writes `lastIndex` only on a global or
-    // sticky pattern, and none of these are either.
+    // And it still answers, unchanged, after both attempts.
     expect(MODEL_ID_PATTERN.test("deep-foundation")).toBe(true);
     expect(MODEL_ID_PATTERN.test("Deep Foundation")).toBe(false);
+    expect(MODEL_ID_PATTERN.source).toContain("a-z0-9");
   });
 
   it("is frozen, since it is the validation authority", () => {

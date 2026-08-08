@@ -169,6 +169,25 @@ function objectFromEntries(
   return Object.fromEntries(entries);
 }
 
+/**
+ * How deep a `deferred` subtree may nest.
+ *
+ * The validated sections are bounded by the schema itself, but `story`,
+ * `presentation` and the deferred world lists are explicitly unconstrained —
+ * so their depth is whatever a cartridge says, and the clone below is
+ * recursive. `JSON.parse` happily accepts a few thousand levels; the clone
+ * then exhausts the stack and `loadCartridge` escapes with a bare `RangeError`
+ * instead of a validation issue, which is the validation boundary failing open
+ * on ordinary parsed JSON rather than on anything exotic.
+ *
+ * A limit rather than an iterative rewrite, because the limit is the honest
+ * statement: a story graph sixty-four levels deep is not a story graph, and a
+ * cartridge that nests that far is wrong in a way the pipeline should hear
+ * about. The published schema carries the number too, since JSON Schema cannot
+ * express it.
+ */
+export const MAX_DEFERRED_DEPTH = 64;
+
 export const DENSE_ARRAY_EXPECTED = "a dense array with no extra properties";
 const DENSE_ARRAY_FOUND = "an array with holes or properties JSON cannot carry";
 const ARRAY_SUBCLASS_FOUND =
@@ -335,6 +354,7 @@ function cloneJson(
    * confuse the second for the first and start rejecting valid cartridges.
    */
   active: Set<object> = new Set(),
+  depth = 0,
 ): unknown {
   if (
     value === null ||
@@ -350,6 +370,21 @@ function cloneJson(
     }
     return value;
   }
+  // Checked before recursing rather than after, so the issue is reported at
+  // the pointer that is too deep instead of one level past it.
+  if (
+    depth > MAX_DEFERRED_DEPTH &&
+    typeof value === "object" &&
+    value !== null
+  ) {
+    report.addPhrase(
+      pointer,
+      `at most ${String(MAX_DEFERRED_DEPTH)} levels of nesting`,
+      "a tree too deep to copy without exhausting the stack",
+    );
+    return Array.isArray(value) ? [] : {};
+  }
+
   if (Array.isArray(value)) {
     if (!isPlainArray(value)) {
       report.addPhrase(pointer, DENSE_ARRAY_EXPECTED, ARRAY_SUBCLASS_FOUND);
@@ -363,7 +398,7 @@ function cloneJson(
     if (active.has(value)) return reportCycle(pointer, report, []);
     active.add(value);
     const copied = value.map((item, index) =>
-      cloneJson(item, child(pointer, index), report, active),
+      cloneJson(item, child(pointer, index), report, active, depth + 1),
     );
     active.delete(value);
     return copied;
@@ -382,7 +417,7 @@ function cloneJson(
         .sort()
         .map((key) => [
           key,
-          cloneJson(value[key], child(pointer, key), report, active),
+          cloneJson(value[key], child(pointer, key), report, active, depth + 1),
         ]),
     );
     active.delete(value);
@@ -412,7 +447,9 @@ function validate(
         return "";
       }
       if (node.pattern !== undefined && !node.pattern.test(value)) {
-        report.add(pointer, node.patternLabel ?? String(node.pattern), value);
+        // `.source`, not `String(...)`: a `Pattern` is a wrapper object now, so
+        // coercing it would report "[object Object]" as the expectation.
+        report.add(pointer, node.patternLabel ?? node.pattern.source, value);
         return value;
       }
       // Code points, not UTF-16 code units. JSON Schema counts characters as
