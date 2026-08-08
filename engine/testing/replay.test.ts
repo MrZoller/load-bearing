@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { loadCartridge } from "../cartridge/load.js";
+import type { LoadedCartridge } from "../cartridge/types.js";
+
 import {
   listReplayFixtures,
   loadReplayFixture,
@@ -25,6 +28,16 @@ function deepFreeze(value: unknown): unknown {
   }
   return Object.freeze(value);
 }
+
+/**
+ * Stand-in for the disk resolver `fixtures.ts` supplies.
+ *
+ * These tests are about `fixture.json`'s own shape, so the cartridge it names
+ * is resolved to a marker rather than a real world — the loader has its own
+ * tests, and pulling one in here would make a fixture-shape failure look like
+ * a cartridge failure.
+ */
+const RESOLVE_CARTRIDGE = (name: string) => ({ resolved: name });
 
 describe("golden replay fixtures", () => {
   it("has fixtures to replay", () => {
@@ -78,13 +91,18 @@ describe("golden replay fixtures", () => {
 
       expect(third).toEqual(second);
 
-      // And twice with the *same* object. Every call above receives a freshly
-      // parsed fixture, so a reducer that remembers input identities — in a
-      // WeakMap, which the gate allows — would answer identically to all of
-      // them while behaving differently in production, where the cartridge is
-      // loaded once and reused across a session.
+      // And twice with the *same* objects — fixture *and* loaded cartridge.
+      // A reducer that remembers input identities in a WeakMap, which the gate
+      // allows, would answer identically to two separately loaded cartridges
+      // while behaving differently in production, where a session loads once
+      // and reuses it. Passing the cartridge explicitly is what makes this
+      // branch test identity at all: `replayFixture` loads per call by
+      // default, so every other call above holds a fresh one.
       const shared = loadReplayFixture(name);
-      const sharedFirst = freshModule.replayFixture(shared);
+      const sharedCartridge = deepFreeze(
+        loadCartridge(shared.cartridge),
+      ) as LoadedCartridge;
+      const sharedFirst = freshModule.replayFixture(shared, sharedCartridge);
 
       // Drained between the two, so a mutation deferred to a microtask has
       // landed before the second call reads it. The gate bans asynchrony in
@@ -92,7 +110,9 @@ describe("golden replay fixtures", () => {
       // ban were ever lifted or evaded.
       await Promise.resolve();
 
-      expect(freshModule.replayFixture(shared)).toEqual(sharedFirst);
+      expect(freshModule.replayFixture(shared, sharedCartridge)).toEqual(
+        sharedFirst,
+      );
 
       // And against the committed recording. Everything above compares
       // isolated output with isolated output, which agrees even when module
@@ -109,16 +129,26 @@ describe("golden replay fixtures", () => {
     const fixture = loadReplayFixture(name);
     const before = serialize(fixture as unknown);
 
+    // The *loaded* cartridge is what a reducer actually holds, and it has to
+    // be frozen and passed explicitly: `replayFixture` loads a fresh one per
+    // call by default, so freezing the raw fixture alone leaves the object
+    // under test mutable and unexamined.
+    const cartridge = deepFreeze(
+      loadCartridge(fixture.cartridge),
+    ) as LoadedCartridge;
+    const cartridgeBefore = serialize(cartridge);
+
     // Frozen as well as compared, because the comparison alone cannot see
     // every edit: `serialize` drops undefined-valued properties by JSON
     // convention, so `cartridge.touched = undefined` would add an own property
     // observable to a later session and still compare equal. Freezing makes
     // the assignment itself throw — modules are strict mode.
-    replayFixture(deepFreeze(fixture) as typeof fixture);
+    replayFixture(deepFreeze(fixture) as typeof fixture, cartridge);
 
     // The cartridge is loaded once per session and reused, so a reducer that
     // edited it in place would have a later session start from altered state.
     expect(serialize(fixture as unknown)).toBe(before);
+    expect(serialize(cartridge)).toBe(cartridgeBefore);
   });
 });
 
@@ -192,7 +222,7 @@ describe("fixture loading", () => {
       name: "sample",
       description: "sample",
       seed: "sample",
-      cartridge: null,
+      cartridge: "minimal",
       events,
     });
 
@@ -201,12 +231,19 @@ describe("fixture loading", () => {
         parseReplayFixture(
           withEvents([{ type: "session.start" }, bad]),
           "sample",
+          "sample",
+          RESOLVE_CARTRIDGE,
         ),
       ).toThrow(/events\[1\]/);
     }
 
     expect(() =>
-      parseReplayFixture(withEvents([{ type: "session.start" }]), "sample"),
+      parseReplayFixture(
+        withEvents([{ type: "session.start" }]),
+        "sample",
+        "sample",
+        RESOLVE_CARTRIDGE,
+      ),
     ).not.toThrow();
   });
 
@@ -237,10 +274,17 @@ describe("fixture loading", () => {
   });
 
   it("rejects a fixture that is not an object, or is missing a field", () => {
-    expect(() => parseReplayFixture([], "sample")).toThrow(/JSON object/);
-    expect(() => parseReplayFixture({ name: "sample" }, "sample")).toThrow(
-      /"description" must be a string/,
-    );
+    expect(() =>
+      parseReplayFixture([], "sample", "sample", RESOLVE_CARTRIDGE),
+    ).toThrow(/JSON object/);
+    expect(() =>
+      parseReplayFixture(
+        { name: "sample" },
+        "sample",
+        "sample",
+        RESOLVE_CARTRIDGE,
+      ),
+    ).toThrow(/"description" must be a string/);
   });
 
   it("rejects an unpaired surrogate in an event type", () => {
@@ -251,19 +295,34 @@ describe("fixture loading", () => {
       name: "sample",
       description: "d",
       seed: "s",
-      cartridge: null,
+      cartridge: "minimal",
       events: [{ type }],
     });
 
-    expect(() => parseReplayFixture(withType("a\ud800b"), "sample")).toThrow(
-      /unpaired surrogate/,
-    );
-    expect(() => parseReplayFixture(withType("a\udc00"), "sample")).toThrow(
-      /unpaired surrogate/,
-    );
+    expect(() =>
+      parseReplayFixture(
+        withType("a\ud800b"),
+        "sample",
+        "sample",
+        RESOLVE_CARTRIDGE,
+      ),
+    ).toThrow(/unpaired surrogate/);
+    expect(() =>
+      parseReplayFixture(
+        withType("a\udc00"),
+        "sample",
+        "sample",
+        RESOLVE_CARTRIDGE,
+      ),
+    ).toThrow(/unpaired surrogate/);
     // A correctly paired astral character is fine.
     expect(() =>
-      parseReplayFixture(withType("shell.exec.\u{1f9f1}"), "sample"),
+      parseReplayFixture(
+        withType("shell.exec.\u{1f9f1}"),
+        "sample",
+        "sample",
+        RESOLVE_CARTRIDGE,
+      ),
     ).not.toThrow();
   });
 
@@ -274,21 +333,36 @@ describe("fixture loading", () => {
       name: "sample",
       description: "d",
       seed: "s",
-      cartridge: null,
+      cartridge: "minimal",
       events: [{ type: "shell.exec", payload }],
     });
 
     for (const bad of [null, ["a"], 42, "text"]) {
-      expect(() => parseReplayFixture(withPayload(bad), "sample")).toThrow(
-        /"payload"/,
-      );
+      expect(() =>
+        parseReplayFixture(
+          withPayload(bad),
+          "sample",
+          "sample",
+          RESOLVE_CARTRIDGE,
+        ),
+      ).toThrow(/"payload"/);
     }
 
     expect(() =>
-      parseReplayFixture(withPayload({ input: "pwd" }), "sample"),
+      parseReplayFixture(
+        withPayload({ input: "pwd" }),
+        "sample",
+        "sample",
+        RESOLVE_CARTRIDGE,
+      ),
     ).not.toThrow();
     expect(() =>
-      parseReplayFixture(withPayload(undefined), "sample"),
+      parseReplayFixture(
+        withPayload(undefined),
+        "sample",
+        "sample",
+        RESOLVE_CARTRIDGE,
+      ),
     ).not.toThrow();
   });
 
@@ -300,32 +374,88 @@ describe("fixture loading", () => {
       name: "sample",
       description: "d",
       seed: "s",
-      cartridge: null,
+      cartridge: "minimal",
       events: [{ type }],
     });
 
-    expect(() => parseReplayFixture(withType("a\nb"), "sample")).toThrow(
-      /control character/,
-    );
-    expect(() => parseReplayFixture(withType("a\rb"), "sample")).toThrow(
-      /control character/,
-    );
     expect(() =>
-      parseReplayFixture(withType("shell.exec"), "sample"),
+      parseReplayFixture(
+        withType("a\nb"),
+        "sample",
+        "sample",
+        RESOLVE_CARTRIDGE,
+      ),
+    ).toThrow(/control character/);
+    expect(() =>
+      parseReplayFixture(
+        withType("a\rb"),
+        "sample",
+        "sample",
+        RESOLVE_CARTRIDGE,
+      ),
+    ).toThrow(/control character/);
+    expect(() =>
+      parseReplayFixture(
+        withType("shell.exec"),
+        "sample",
+        "sample",
+        RESOLVE_CARTRIDGE,
+      ),
     ).not.toThrow();
   });
 
-  it("requires a cartridge key, which may be null but may not be absent", () => {
+  it("requires a cartridge name, and resolves it exactly once", () => {
     // Without this, a misspelled key replays as `cartridge: undefined`, the
     // serializer drops the undefined property, and `fixtures:update` records a
     // green baseline for two thirds of the input triple.
     const fields = { name: "sample", description: "d", seed: "s", events: [] };
 
-    expect(() => parseReplayFixture(fields, "sample")).toThrow(
-      /"cartridge" is required/,
-    );
     expect(() =>
-      parseReplayFixture({ ...fields, cartridge: null }, "sample"),
-    ).not.toThrow();
+      parseReplayFixture(fields, "sample", "sample", RESOLVE_CARTRIDGE),
+    ).toThrow(/"cartridge" must be a string/);
+    expect(() =>
+      parseReplayFixture(
+        { ...fields, cartridge: {} },
+        "sample",
+        "sample",
+        RESOLVE_CARTRIDGE,
+      ),
+    ).toThrow(/"cartridge" must be a string/);
+
+    const asked: string[] = [];
+    const fixture = parseReplayFixture(
+      { ...fields, cartridge: "minimal" },
+      "sample",
+      "sample",
+      (name) => {
+        asked.push(name);
+        return { resolved: name };
+      },
+    );
+
+    expect(asked).toEqual(["minimal"]);
+    expect(fixture.cartridgeName).toBe("minimal");
+    expect(fixture.cartridge).toEqual({ resolved: "minimal" });
+  });
+
+  it("reports a malformed fixture before chasing its cartridge reference", () => {
+    // Otherwise a fixture with a bad event list and a bad cartridge name
+    // reports the missing file, which is the less useful of the two.
+    expect(() =>
+      parseReplayFixture(
+        {
+          name: "sample",
+          description: "d",
+          seed: "s",
+          cartridge: "does-not-exist",
+          events: [{ kind: "oops" }],
+        },
+        "sample",
+        "sample",
+        () => {
+          throw new Error("cartridge should not have been read");
+        },
+      ),
+    ).toThrow(/events\[0\]/);
   });
 });

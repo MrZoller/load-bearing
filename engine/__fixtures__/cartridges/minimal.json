@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 0,
+    "date": "2026-08-05",
+    "title": "Fixture World",
+    "assignment": "Exercise the loader. Do not make this interesting.",
+    "startedAt": "2026-08-05T09:14:22.000Z"
+  },
+  "repository": {
+    "cwd": "/production/service",
+    "files": {
+      "/production/service/src/index.ts": {
+        "contents": "export const load = 1;\n",
+        "mode": "0644",
+        "owner": "greg",
+        "group": "departed",
+        "mtime": "2026-07-31T02:11:09.000Z"
+      },
+      "/production/service/README.md": {
+        "contents": "# service\n"
+      },
+      "/etc/motd": {
+        "contents": "This system is load-bearing.\n",
+        "mode": "0444",
+        "owner": "root",
+        "group": "root"
+      }
+    },
+    "env": {
+      "PATH": "/usr/local/bin:/usr/bin:/bin",
+      "SERVICE_TIER": "critical"
+    },
+    "manPages": {
+      "service": "SERVICE(8)\n\nNAME\n     service - the service\n"
+    },
+    "shellHistory": ["cd /production/service", "git status", "npm test"]
+  },
+  "models": [
+    {
+      "id": "deep-foundation",
+      "name": "Deep Foundation",
+      "archetype": "paranoid",
+      "description": "Thorough. Expensive. Excavation permit required.",
+      "costMultiplier": 48000,
+      "quirks": ["Surveys before it reads."]
+    },
+    {
+      "id": "quick-patch",
+      "name": "Quick Patch",
+      "archetype": "reckless",
+      "description": "Ships first. Reads the diff later, or never.",
+      "costMultiplier": 3
+    }
+  ]
+}

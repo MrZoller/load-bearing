@@ -28,6 +28,7 @@ import { ENGINE_VERSION } from "./version.js";
 import { createClock } from "./clock/clock.js";
 import type { ClockState, SimulatedClock } from "./clock/clock.js";
 import { createRandom } from "./random/stream.js";
+import type { LoadedCartridge } from "./cartridge/types.js";
 import type {
   RandomState,
   RandomStream,
@@ -47,8 +48,15 @@ export interface EngineEvent {
 
 /** The triple that fully determines a session. */
 export interface ReplayInput {
-  /** The world. Unvalidated here; issue #3 introduces the loader. */
-  readonly cartridge: unknown;
+  /**
+   * The world, already through `loadCartridge`.
+   *
+   * Validation is a precondition of the fold, not a step in it: `reduce` is
+   * defined over a cartridge the engine can trust, and a document that failed
+   * validation never becomes one. `engine/testing/replay.ts` loads it on the
+   * fixture path.
+   */
+  readonly cartridge: LoadedCartridge;
   /** Seed material for the PRNG, in the canonical form `formatSeed` renders. */
   readonly seed: string;
   readonly events: readonly EngineEvent[];
@@ -58,7 +66,7 @@ export interface ReplayInput {
 export interface SessionState {
   readonly engineVersion: string;
   readonly seed: string;
-  readonly cartridge: unknown;
+  readonly cartridge: LoadedCartridge;
   readonly eventCount: number;
   readonly clock: ClockState;
   readonly random: RandomState;
@@ -69,19 +77,6 @@ export interface ReplayOutput {
   /** Transcript lines, LF-joined by the harness into `transcript.txt`. */
   readonly transcript: readonly string[];
 }
-
-/**
- * Where the clock starts when a cartridge does not say.
- *
- * The epoch, deliberately. A transcript stamped 1970 is a cartridge that
- * forgot to declare `meta.startedAt`, and it says so at a glance; a
- * plausible-looking default would be a wrong date nobody notices.
- *
- * @provisional Where that field lives is issue #3's to formalize with the rest
- * of the cartridge schema. Issue #2 needs *a* cartridge-declared start time,
- * so it picks one.
- */
-export const DEFAULT_SESSION_START_MS = 0;
 
 /** Indent for a transcript line elaborating the event line above it. */
 const DETAIL_INDENT = "      ";
@@ -113,26 +108,6 @@ function asRecord(
     return undefined;
   }
   return value as Readonly<Record<string, unknown>>;
-}
-
-/**
- * Read the cartridge-declared session start.
- *
- * Tolerant about the cartridge being shapeless — it is `unknown` until issue
- * #3 — but not about the field itself: a `startedAt` that is present and not a
- * UTC timestamp is an authoring error worth failing on, while an absent one is
- * a cartridge that predates the field.
- */
-function readSessionStart(cartridge: unknown): number | string {
-  const meta = asRecord(asRecord(cartridge)?.["meta"]);
-  const startedAt = meta?.["startedAt"];
-  if (startedAt === undefined) return DEFAULT_SESSION_START_MS;
-  if (typeof startedAt !== "string") {
-    throw new Error(
-      `cartridge: meta.startedAt must be a UTC timestamp string, got ${JSON.stringify(startedAt)}`,
-    );
-  }
-  return startedAt;
 }
 
 function requirePayload(
@@ -376,7 +351,7 @@ function applyEvent(
  * wall-clock time, randomness, or ambient environment.
  */
 export function replaySession(input: ReplayInput): ReplayOutput {
-  const clock = createClock(readSessionStart(input.cartridge));
+  const clock = createClock(input.cartridge.meta.startedAt);
   const random = createRandom(input.seed);
   const transcript: string[] = [];
 

@@ -7,3 +7,16 @@ package-lock.json
 CLAUDE.md
 ROADMAP.md
 docs/
+
+# Generated artifacts whose exact bytes are the contract. The canonical
+# serializer (engine/serialize/canonical.ts) defines them: keys sorted by
+# UTF-16 code unit, every array expanded one item per line, LF, one trailing
+# newline. Prettier collapses short arrays onto one line — different bytes,
+# and therefore a replay that no longer matches its recording.
+#
+# The two agreed by accident until a recording first contained a non-empty
+# array. Whichever tool writes a file owns its formatting; regenerate these
+# with `npm run fixtures:update` and `npm run schema:update`.
+engine/__fixtures__/replay/*/state.json
+engine/__fixtures__/replay/*/transcript.txt
+content/schema/cartridge.v0.json

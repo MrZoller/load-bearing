@@ -15,6 +15,8 @@
 
 import { replaySession } from "../session.js";
 import type { EngineEvent } from "../session.js";
+import { loadCartridge } from "../cartridge/load.js";
+import type { LoadedCartridge } from "../cartridge/types.js";
 import { serialize } from "../serialize/canonical.js";
 import { formatTextDiff } from "./diff.js";
 import { describeUnwritableText } from "./text.js";
@@ -29,6 +31,17 @@ export interface ReplayFixture {
   /** What this fixture is protecting. Read by humans, not by the runner. */
   readonly description: string;
   readonly seed: string;
+  /**
+   * Which cartridge under `engine/__fixtures__/cartridges/` this replays, by
+   * name.
+   *
+   * Referenced rather than inlined so every fixture replays *the* fixture
+   * cartridge. Embedded copies would drift, and a change to the shared world
+   * would then show up in one recording and not the others — which is the
+   * opposite of what a contract artifact is for.
+   */
+  readonly cartridgeName: string;
+  /** That cartridge's parsed JSON, still unvalidated. */
   readonly cartridge: unknown;
   readonly events: readonly EngineEvent[];
 }
@@ -48,9 +61,24 @@ export interface ReplayRecording {
  * well-formed text — a fixture with no transcript entries records as an empty
  * file rather than a file containing one blank line.
  */
-export function replayFixture(fixture: ReplayFixture): ReplayRecording {
+export function replayFixture(
+  fixture: ReplayFixture,
+  /**
+   * An already-loaded cartridge, for a caller that needs two replays to
+   * receive the *same* object.
+   *
+   * Loading per call is the right default — every fixture then exercises the
+   * validator on the way in, and a world that stops validating fails the
+   * replay suite. But it also means no two calls ever share a cartridge
+   * identity, which quietly disarms the isolation test: a reducer keying a
+   * `WeakMap` on its cartridge, or editing one in place, would answer
+   * identically to two freshly loaded objects while behaving differently in
+   * production, where a session loads once and reuses it.
+   */
+  cartridge: LoadedCartridge = loadCartridge(fixture.cartridge),
+): ReplayRecording {
   const result = replaySession({
-    cartridge: fixture.cartridge,
+    cartridge,
     seed: fixture.seed,
     events: fixture.events,
   });

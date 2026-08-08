@@ -116,6 +116,33 @@ describe("serialize rejections", () => {
     expect(() => serialize(set)).toThrow(/Set with a replaced prototype/);
   });
 
+  it("refuses one the probe table cannot name, even carrying its own data", () => {
+    // The clone probe's own path through the serializer, not just the loader's.
+    // The table cannot name a Promise — the purity gate forbids writing the
+    // word in engine source — and the probe used to be skipped entirely once a
+    // value had any own property, so this serialized as `{"label":"x"}` with
+    // the promise discarded.
+    const disguised: unknown = Promise.resolve(1);
+    Object.defineProperty(disguised as object, "label", {
+      value: "x",
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    });
+    Object.setPrototypeOf(disguised as object, Object.prototype);
+
+    expect(() => serialize(disguised)).toThrow(/replaced prototype/);
+  });
+
+  it("still serializes an ordinary object of primitives", () => {
+    // Every all-primitive object now reaches the clone probe, so the cheap
+    // path is worth pinning: the probe has to answer "not a built-in" for the
+    // shape almost every cartridge value has.
+    expect(serialize({ b: true, n: 1, s: "x", nothing: null })).toBe(
+      '{\n  "b": true,\n  "n": 1,\n  "nothing": null,\n  "s": "x"\n}\n',
+    );
+  });
+
   it("refuses Map and Set", () => {
     expect(() => serialize({ m: new Map() })).toThrow(
       /Map is not a plain object/,

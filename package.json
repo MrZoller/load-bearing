@@ -5,6 +5,9 @@
   "type": "module",
   "description": "A daily interactive comedy wearing the costume of a serious developer tool.",
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
@@ -14,6 +17,7 @@
     "format:check": "prettier --check .",
     "gate:purity": "node scripts/gate-purity.mjs",
     "fixtures:update": "vite-node scripts/update-fixtures.ts",
+    "schema:update": "vite-node scripts/update-schema.ts",
     "verify": "npm run typecheck && npm run format:check && npm run gate:purity && npm run test:timezones"
   },
   "devDependencies": {

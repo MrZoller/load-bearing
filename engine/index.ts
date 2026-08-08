@@ -11,7 +11,7 @@
  */
 
 export { ENGINE_VERSION } from "./version.js";
-export { DEFAULT_SESSION_START_MS, replaySession } from "./session.js";
+export { replaySession } from "./session.js";
 export type {
   EngineEvent,
   ReplayInput,
@@ -66,3 +66,22 @@ export {
 export type { CivilInput, CivilTime } from "./clock/civil.js";
 export { createClock, restoreClock } from "./clock/clock.js";
 export type { ClockState, SimulatedClock } from "./clock/clock.js";
+
+export { CartridgeValidationError, loadCartridge } from "./cartridge/load.js";
+export type { CartridgeIssue } from "./cartridge/load.js";
+export {
+  ABSOLUTE_PATH_PATTERN,
+  ARCHETYPES,
+  CARTRIDGE_SCHEMA,
+  CARTRIDGE_SCHEMA_VERSION,
+} from "./cartridge/schema.js";
+export { CARTRIDGE_SCHEMA_ID, emitJsonSchema } from "./cartridge/jsonSchema.js";
+export type {
+  Archetype,
+  CartridgeFile,
+  CartridgeMeta,
+  CartridgeModel,
+  CartridgeRepository,
+  DeferredObject,
+  LoadedCartridge,
+} from "./cartridge/types.js";

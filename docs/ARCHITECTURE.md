@@ -157,21 +157,33 @@ The agent's mind is engine state, distinct from machine truth:
 
 ## Cartridge specification
 
-A cartridge is a validated JSON package. Illustrative shape (the versioned
-schema lives at `content/schema/` and is hardened in Phase 4):
+A cartridge is a validated JSON package. The schema is real as of Phase 0:
+`content/schema/cartridge.v0.json` is the published document, emitted from
+`engine/cartridge/schema.ts` so it can never describe a loader that no longer
+exists, and `loadCartridge` validates and normalizes against it. Illustrative
+shape:
 
 ```json
 {
-  "meta": { "number": 48, "date": "2026-09-01",
+  "meta": { "schemaVersion": 0, "number": 48, "date": "2026-09-01",
+            "startedAt": "2026-09-01T09:14:22.000Z",
             "title": "The Load-Bearing Health Check",
             "assignment": "Restore observability without making the service healthy" },
   "repository": {
     "cwd": "/production/availability-service",
-    "files": { "src/healthcheck.ts": "..." },
-    "gitHistory": ["..."], "services": ["..."], "tests": ["..."], "logs": ["..."]
+    "files": {
+      "/production/availability-service/src/healthcheck.ts": {
+        "contents": "...", "owner": "greg", "group": "departed", "mode": "0644"
+      }
+    },
+    "env": { "SERVICE_TIER": "critical" },
+    "manPages": { "healthcheck": "HEALTHCHECK(8)\n..." },
+    "shellHistory": ["git status", "npm test"],
+    "gitHistory": [{ "...": "..." }], "services": [{ "...": "..." }],
+    "tests": [{ "...": "..." }], "logs": [{ "...": "..." }]
   },
   "models": [
-    { "name": "Deep Foundation", "archetype": "paranoid",
+    { "id": "deep-foundation", "name": "Deep Foundation", "archetype": "paranoid",
       "description": "Thorough. Expensive. Excavation permit required.",
       "costMultiplier": 48000, "quirks": ["..."] }
   ],
@@ -186,6 +198,26 @@ schema lives at `content/schema/` and is hardened in Phase 4):
                     "previewCard": "...", "uiDisturbances": ["..."] }
 }
 ```
+
+Three things worth noting, because each is a decision rather than a detail:
+
+- **File keys are absolute paths**, not paths relative to `cwd`. The world is a
+  filesystem, not a project folder — `cat /etc/motd` and `ls /var/log` are part
+  of the joke surface — and `cwd` is then checkable against it. v0's one
+  cross-reference check is that some declared file lives under `cwd`.
+- **`meta.startedAt` is required.** A cartridge that does not say when its
+  session begins is a generation bug, and Phase 5 has no human in the loop to
+  notice a plausible-looking wrong date. Invariant 7 says a pipeline failure
+  ships the fallback episode; that only works if the failure is detected.
+- **Unknown fields are rejected, not ignored.** A silently dropped typo is a
+  field its author believes is in effect. `meta.schemaVersion` is what makes
+  this safe: a later version that adds fields declares itself rather than
+  relying on old engines to shrug.
+
+`story`, `presentation`, and the interiors of `gitHistory`, `processes`,
+`services`, `tests`, `logs` and `tickets` are **declared but not validated** in
+v0 — each is marked in the emitted schema with the issue or phase that tightens
+it, so the gap reads as a decision rather than as something forgotten.
 
 **Cartridge owns:** world (scene, repo, files with ownership metadata, git,
 processes, services, logs, env, man pages, shell history), models (names, archetypes, multipliers, quirks), story (premise,

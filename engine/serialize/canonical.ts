@@ -204,6 +204,21 @@ const BRAND_KEY = {};
  * The gate's `prototype-mutation` rule is the other half, and the load-bearing
  * one: engine code cannot re-point a prototype at all. This is the containment
  * for a value that arrives some other way.
+ *
+ * ## Completeness
+ *
+ * The probe table is an enumeration, and an enumeration is incomplete by
+ * construction — it cannot name whatever the language added most recently, and
+ * it cannot name the constructors the purity gate bans from this file
+ * (`SharedArrayBuffer`, `Promise`, `WeakRef`, `FinalizationRegistry`). So the
+ * table is not the last word: `detectByCloning` below asks the host instead,
+ * which needs no name at all. The table runs first because it gives a better
+ * one and costs less.
+ *
+ * The residual is a value that holds an object-valued own property *and* wears
+ * a re-pointed prototype *and* is one of the built-ins this file cannot name.
+ * Three deliberate acts, and it loses only the branded content rather than
+ * everything. Recorded here rather than left to be rediscovered.
  */
 const BRAND_PROBES: readonly (readonly [string, (value: object) => unknown])[] =
   [
@@ -234,13 +249,56 @@ const BRAND_PROBES: readonly (readonly [string, (value: object) => unknown])[] =
       (value) =>
         WeakSet.prototype.has.call(value as WeakSet<object>, BRAND_KEY),
     ],
+    [
+      "ArrayBuffer",
+      (value) =>
+        Object.getOwnPropertyDescriptor(
+          ArrayBuffer.prototype,
+          "byteLength",
+        )?.get?.call(value),
+    ],
+    [
+      "DataView",
+      (value) =>
+        Object.getOwnPropertyDescriptor(
+          DataView.prototype,
+          "byteLength",
+        )?.get?.call(value),
+    ],
+    [
+      // One probe for every typed array. They share %TypedArray%.prototype,
+      // whose `length` getter throws without the [[TypedArrayName]] slot, so
+      // naming the nine concrete constructors would be nine ways to forget one.
+      "TypedArray",
+      (value) =>
+        Object.getOwnPropertyDescriptor(
+          Object.getPrototypeOf(Int8Array.prototype) as object,
+          "length",
+        )?.get?.call(value),
+    ],
   ];
 
 /**
  * The built-in a value really is, whatever its prototype claims, or
  * `undefined` when it is ordinary data.
+ *
+ * Exported because the cartridge loader needs the same answer. A `Map` whose
+ * prototype has been repointed at `Object.prototype` has no own keys, so a
+ * loader checking only the prototype copies an empty object over it and loses
+ * every entry in silence — while this function, and therefore the serializer,
+ * would have refused it. Two implementations of "what is really plain data"
+ * would be two chances to disagree.
+ *
+ * Two preconditions, both of which exist because this function reads
+ * `Symbol.toStringTag` and must never run an accessor to do it. The caller
+ * must already have established that the value's prototype is
+ * `Object.prototype` or null, so that is the only chain member left to check;
+ * and that the value has no own symbol-keyed properties, since an own
+ * accessor at `Symbol.toStringTag` would answer the Get below. `plainEntries`
+ * satisfies both before calling, and so does the cartridge loader — the
+ * second one is easy to lose when this function moves to a new call site.
  */
-function detectBrand(value: object): string | undefined {
+export function detectBrand(value: object): string | undefined {
   // `Object.prototype.toString` performs a Get of `Symbol.toStringTag`, which
   // an *inherited* accessor would answer. The caller has already established
   // that this value's prototype is `Object.prototype` or null, so that is the
@@ -267,7 +325,99 @@ function detectBrand(value: object): string | undefined {
       // Not that built-in: the probe threw on a missing internal slot.
     }
   }
+
+  // Nothing above named it. Ask the host — but only where the question can be
+  // asked without reading anything unexamined.
+  if (canProbeByCloning(value)) return detectByCloning(value);
   return undefined;
+}
+
+/**
+ * Whether cloning `value` would reach past what has already been inspected.
+ *
+ * Structured clone descends. An object-valued property would put an unexamined
+ * getter on the far side of it — invoked inside the function whose whole job
+ * is to classify a value without executing any of it, and before the caller's
+ * own descriptor pass has had a chance to find it. So a property holding
+ * anything but a primitive ends the probe.
+ *
+ * Descriptors, never `value[key]`: reading a property is exactly what an
+ * accessor is waiting for. An accessor is recognised by its own `get`/`set`
+ * rather than by a missing `value`, because `"value" in descriptor` consults
+ * `Object.prototype` — and a `value` planted there would make every accessor
+ * descriptor look like data, permitting the probe that then runs the getter.
+ * That is the pollution this file already refuses to serialize under; the
+ * check for it has to fail closed too.
+ *
+ * Functions and symbols are excluded for a second reason: structured clone
+ * refuses them, so probing an ordinary object that holds one would come back
+ * "built-in that structured clone refuses to copy" — a confident answer to a
+ * question that was never asked. They are not JSON either, and the walk
+ * reports them where they are.
+ */
+function canProbeByCloning(value: object): boolean {
+  if (Object.getOwnPropertySymbols(value).length > 0) return false;
+  for (const key of Object.getOwnPropertyNames(value)) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (descriptor === undefined) return false;
+    if (descriptor.get !== undefined || descriptor.set !== undefined)
+      return false;
+    const own: unknown = descriptor.value;
+    if (own === null) continue;
+    switch (typeof own) {
+      case "string":
+      case "number":
+      case "boolean":
+      case "bigint":
+      case "undefined":
+        continue;
+      default:
+        return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * The general brand test: ask the host to copy the value.
+ *
+ * Structured clone reads internal slots rather than the prototype chain, which
+ * is exactly the thing a re-pointed prototype cannot lie about. It either
+ * refuses the value — a `Promise`, a `WeakRef`, a `FinalizationRegistry` — or
+ * hands back a copy wearing the true prototype, and that copy is safe to ask
+ * `Object.prototype.toString` about because the host built it, not the
+ * cartridge.
+ *
+ * This is what makes the check complete rather than an enumeration. The probe
+ * table above still runs first because it gives a better name and costs less,
+ * but the names it does not have — including the ones the purity gate forbids
+ * this file from writing — end up here.
+ *
+ * Reached only where cloning cannot read past what has already been inspected
+ * — see `canProbeByCloning`. That covers a value with no own properties at all
+ * and one whose own properties are plain data holding primitives, which is
+ * where a disguised built-in does its quietest damage: the walk copies the
+ * data across and drops the internal state without a word.
+ *
+ * The residual is a value that is branded *and* holds an object-valued own
+ * property *and* wears a re-pointed prototype *and* is one of the built-ins
+ * this file cannot name. Following the object-valued property is the one thing
+ * this check will not trade for: reading unvalidated structure is a live
+ * hazard, and the residual takes three deliberate acts to construct: choose a
+ * built-in this file cannot name, give it an object-valued property, re-point
+ * its prototype.
+ */
+function detectByCloning(value: object): string | undefined {
+  let clone: object;
+  try {
+    clone = structuredClone(value);
+  } catch {
+    return "built-in that structured clone refuses to copy";
+  }
+
+  const prototype: unknown = Object.getPrototypeOf(clone);
+  if (prototype === Object.prototype || prototype === null) return undefined;
+  return Object.prototype.toString.call(clone).slice(8, -1);
 }
 
 /**

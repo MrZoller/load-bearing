@@ -37,14 +37,27 @@ A fixture is a directory under `engine/__fixtures__/replay/`:
 | `name`        | must equal the directory name                               |
 | `description` | what this fixture protects, for the human reading a failure |
 | `seed`        | seed material for the PRNG                                  |
-| `cartridge`   | the world                                                   |
+| `cartridge`   | names a file under `engine/__fixtures__/cartridges/`        |
 | `events`      | the append-only event log to fold                           |
+
+`cartridge` is a **name, not an inlined world**. Every fixture replays the same
+committed cartridge, so a change to that world shows up in all of their
+recordings at once; embedded copies would drift, and a shared contract that
+holds in one recording and not the others is not a contract. The named file is
+parsed and then run through `loadCartridge`, so every fixture exercises the
+validator on the way in and records the _normalized_ world.
 
 The recorded artifacts are written by the canonical serializer
 (`engine/serialize/canonical.ts`): keys sorted by UTF-16 code unit, exact
 number formatting, LF endings, one trailing newline. Comparison is byte for
 byte — a single changed byte fails the suite, with a diff of the region that
 moved.
+
+Those bytes belong to the serializer, so the recordings are in
+`.prettierignore` along with `content/schema/cartridge.v0.json`. Prettier
+collapses a short array onto one line and the serializer always expands it;
+the two agreed by accident until a recording first held a non-empty array.
+Whichever tool writes a file owns its formatting.
 
 ### Adding one
 
@@ -62,13 +75,36 @@ against the replay contract.
 
 ### The fixtures so far
 
-| fixture            | what it pins                                                                                                                                                                      |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `001-engine-smoke` | the loop itself: an input triple folds, records, and compares. Its cartridge has unsorted keys and no `meta.startedAt`, so key ordering and the 1970 default both fail here first |
-| `002-random-clock` | the seed hash, the mulberry32 constants, `fork`'s path derivation, `int`'s rejection window, `weightedPick`'s distribution, and the UTC calendar arithmetic                       |
+| fixture              | what it pins                                                                                                                                                |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `001-engine-smoke`   | the loop itself: an input triple folds, records, and compares. The shared cartridge is written with unsorted keys, so a key-ordering regression fails here  |
+| `002-random-clock`   | the seed hash, the mulberry32 constants, `fork`'s path derivation, `int`'s rejection window, `weightedPick`'s distribution, and the UTC calendar arithmetic |
+| `003-cartridge-load` | load to initial state with an empty event log — normalization alone, isolated from the fold                                                                 |
 
 `002` records 1000 raw draws eight to a line with their index, so a divergence
 names the draw it started at rather than reporting that a file changed.
+
+`003` exists so two contracts can fail apart. A change to the reducer moves
+`001` and `002` and leaves `003` alone; a diff in `003` means normalization
+changed — a default filled differently, a section defaulting to something other
+than empty, or key ordering moving.
+
+### Cartridge fixtures
+
+`engine/__fixtures__/cartridges/` holds the worlds, not the sessions:
+
+```
+minimal.json            the tests-only cartridge every replay fixture names
+invalid/*.json          one malformed cartridge per rejection worth asserting
+```
+
+`minimal.json` lives here rather than under `content/incidents/` because it is
+not an incident and must never appear in the archive.
+
+The `invalid/` set is exercised by `engine/cartridge/load.test.ts`, which
+asserts each one's full issue list — pointer, expectation and what was found —
+rather than just that it threw. A validator that rejects for the wrong reason
+is a validator that will accept the wrong thing later.
 
 ### When one fails
 
@@ -272,11 +308,32 @@ the engine `document`, `window`, and `fetch` types along with it.
 ### Allowlist
 
 `ALLOWLIST` in `scripts/gate-purity.mjs` exempts a specific file from a
-specific rule, with a written reason. It currently has one entry:
+specific rule, with a written reason. It has two entries, and each earns it
+differently.
+
 `engine/testing/fixtures.ts` reads fixture files from disk, which is the one
 legitimate use of `node:fs` under `engine/` — it is test infrastructure, never
 imported by simulation code, and never bundled for the browser. The pure half
 of the harness (`replay.ts`) has no such dependency.
+
+`engine/globals.d.ts` declares `structuredClone`, and nothing else. The
+engine's program is `lib: ["ES2022"]` with `types: []`, so an ambient
+declaration is the only way to reach a host global — which is exactly what the
+`ambient-declaration` rule exists to stop, and why this file is one line long.
+
+It earns the exemption by closing something no alternative can. The serializer
+has to answer whether a value is really plain data, and a prototype can be
+re-pointed, so `getPrototypeOf` can be lied to. Structured clone reads internal
+slots instead: it either refuses the value or returns a copy wearing the true
+prototype. Every other approach is an enumeration of named built-ins —
+incomplete by construction, and unable to name the constructors this gate
+itself bans (`SharedArrayBuffer`, `Promise`, `WeakRef`,
+`FinalizationRegistry`). Before it, a `Map` with a re-pointed prototype was
+caught and a `Promise` with one was not, for no better reason than which
+identifiers the gate permits.
+
+Adding a _second_ global to that file would not be a formality. The paragraph
+above is the shape a new one has to match.
 
 Entries that point at a missing file, or that no longer suppress anything, fail
 the gate. An allowlist that rots is worse than no allowlist.
@@ -310,5 +367,7 @@ hostile proxy gets one opportunity to lie rather than one per check. And the
 `proxy-reflection` rule stops engine code creating a proxy at all — which is
 the realistic defence, since cartridges arrive as JSON and cannot carry one.
 
-Adding a second entry should feel like a design decision worth arguing about,
-because it is one.
+Adding a third entry should feel like a design decision worth arguing about,
+because it is one. The second took ten rounds of review to argue for, and the
+argument that won was not "this is inconvenient" — it was that the alternative
+was incomplete in a way no amount of care could fix.
