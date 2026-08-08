@@ -181,8 +181,9 @@ describe("loadCartridge", () => {
   it("rejects the root directory as a file key", () => {
     // `/` is a directory, and it is the one path for which cwd containment
     // degenerates — the trailing-slash prefix that excludes cwd itself for
-    // every other path matches `/` against itself, so the world's only
-    // filesystem coherence check would approve a cwd that collides with a file.
+    // every other path matches `/` against itself, so a cartridge whose only
+    // file is `/` would satisfy containment by colliding with its own cwd.
+    // Collisions at every other path are `checkCwd`'s to catch, below.
     const source = minimal();
     const repository = source["repository"] as Record<string, unknown>;
     repository["cwd"] = "/";
@@ -1062,6 +1063,57 @@ describe("rejection", () => {
       "/repository/files/relative",
       "/repository/cwd",
     ]);
+  });
+
+  it("rejects a cwd the cartridge also declares as a file", () => {
+    // Containment passes here — `/srv/app/main.ts` lives under `/srv/app/` —
+    // so the check that ran before this one accepted a world where `/srv/app`
+    // is at once the directory the session opens in and a file `cat` prints.
+    const source = minimal();
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["cwd"] = "/srv/app";
+    repository["files"] = {
+      "/srv/app": { contents: "not a directory\n" },
+      "/srv/app/main.ts": { contents: "x\n" },
+    };
+
+    expect(issuesOf(source)).toEqual([
+      {
+        pointer: "/repository/cwd",
+        expected:
+          "a directory, not a path the cartridge also declares as a file",
+        found: '"/srv/app", which is declared as a file',
+      },
+    ]);
+  });
+
+  it("reports a colliding cwd once, not also as containing no files", () => {
+    // With no descendant, both readings hold — but one edit to either field
+    // fixes both, so the containment issue would be a derived complaint. The
+    // collision is the more specific of the two.
+    const source = minimal();
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["cwd"] = "/srv/app";
+    repository["files"] = { "/srv/app": { contents: "not a directory\n" } };
+
+    expect(issuesOf(source).map((issue) => issue.expected)).toEqual([
+      "a directory, not a path the cartridge also declares as a file",
+    ]);
+  });
+
+  it("does not mistake a prefix of a file path for a collision", () => {
+    // `/srv/appliance` starts with `/srv/app` without being it. The collision
+    // is exact-key, and the containment prefix carries the trailing slash for
+    // the same reason.
+    const source = minimal();
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["cwd"] = "/srv/app";
+    repository["files"] = {
+      "/srv/appliance": { contents: "x\n" },
+      "/srv/app/main.ts": { contents: "y\n" },
+    };
+
+    expect(loadCartridge(source).repository.cwd).toBe("/srv/app");
   });
 
   it("says nothing about cwd when no file key could be read at all", () => {

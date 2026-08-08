@@ -782,6 +782,28 @@ function checkCwd(repository: CartridgeRepository, report: Report): void {
   // here would edit `cwd`, resubmit, and get the same issue back.
   if (usable.length === 0) return;
 
+  // Containment alone cannot see this. The trailing-slash prefix deliberately
+  // excludes `cwd` itself, so one descendant satisfies the check while `cwd`
+  // sits in the same record as a regular file with contents — a path that is
+  // at once the directory the session opens in and a file `cat` would print.
+  //
+  // Reported instead of the containment issue rather than alongside it: when
+  // both hold, one edit to either field fixes both, so the second would be a
+  // derived complaint. This one is the more specific of the two.
+  //
+  // Only where `cwd` is involved. A file declared under another file —
+  // `/a/b` and `/a/b/c`, no `cwd` in sight — is the same incoherence, but
+  // catching it means building the tree the paths imply, which is issue #5's
+  // filesystem model rather than a cross-check bolted onto this one.
+  if (usable.includes(repository.cwd)) {
+    report.addPhrase(
+      "/repository/cwd",
+      "a directory, not a path the cartridge also declares as a file",
+      `${JSON.stringify(repository.cwd)}, which is declared as a file`,
+    );
+    return;
+  }
+
   const contained = usable.some((path) => path.startsWith(prefix));
   if (!contained) {
     report.addPhrase(

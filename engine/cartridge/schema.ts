@@ -99,12 +99,17 @@ export const ABSOLUTE_PATH_PATTERN = pattern(
 /**
  * The same, minus the bare root.
  *
- * `/` is a directory and cannot also be a regular file with contents — and it
- * is the one path for which `cwd`'s containment check degenerates, since the
+ * `/` is a directory and cannot also be a regular file with contents. It is
+ * also the one path for which `cwd`'s containment check degenerates: the
  * trailing-slash prefix that excludes `cwd` itself for every other path
- * matches `/` against itself. So the world's only filesystem coherence check
- * would approve a cartridge whose cwd collides with a file. `cwd` keeps the
- * wider pattern: opening a session at the root is legitimate.
+ * matches `/` against itself, so a cartridge whose only file is `/` would
+ * satisfy containment by colliding with its own cwd.
+ *
+ * That degenerate case is all this pattern closes. A cwd that collides with a
+ * file at any other path is caught by `checkCwd`, which has to look for it
+ * directly — containment cannot, since a single descendant satisfies it while
+ * the collision stands. `cwd` keeps the wider pattern either way: opening a
+ * session at the root is legitimate.
  */
 export const FILE_PATH_PATTERN = pattern(
   /^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F]+)+$/,
