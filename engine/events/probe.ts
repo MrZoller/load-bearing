@@ -153,11 +153,53 @@ function readWeightedEntries(
   });
 }
 
+/**
+ * Check a `probe` slice arriving from a snapshot.
+ *
+ * The worked example of the `validateSlice` hook, and the reason it exists: the
+ * reducer can confirm the snapshot has a `probe` key and nothing more, so
+ * `{ events: "oops" }` would restore cleanly and the next probe event would
+ * fold `"oops1"` into recorded state. Only this module knows the shape, so only
+ * this module can refuse it.
+ */
+function validateProbeSlice(slice: unknown, where: string): ProbeSlice {
+  if (typeof slice !== "object" || slice === null || Array.isArray(slice)) {
+    throw new Error(`${where}: must be an object`);
+  }
+  const record = slice as Readonly<Record<string, unknown>>;
+  const counts = ["events", "values"] as const;
+  for (const key of counts) {
+    const count = record[key];
+    if (typeof count !== "number" || !Number.isInteger(count) || count < 0) {
+      throw new Error(
+        `${where}: ${key} must be a non-negative integer, got ${JSON.stringify(count)}`,
+      );
+    }
+  }
+  // Extra keys are refused for the reason the cartridge loader refuses them: a
+  // field silently dropped on restore is one its author believes is in effect.
+  const unknownKeys = Object.keys(record).filter(
+    (key) => !counts.includes(key as (typeof counts)[number]),
+  );
+  if (unknownKeys.length > 0) {
+    throw new Error(
+      `${where}: unexpected field(s) ${unknownKeys.sort().join(", ")}; this slice holds ` +
+        `${counts.join(", ")}`,
+    );
+  }
+
+  return {
+    events: record["events"] as number,
+    values: record["values"] as number,
+  };
+}
+
 export const PROBE_MODULE = defineEventModule<ProbeSlice>({
   namespace: "probe",
   description:
     "Diagnostics that draw from the seeded PRNG so a fixture can lock the generator itself.",
   initialSlice: () => ({ events: 0, values: 0 }),
+  validateSlice: validateProbeSlice,
   events: {
     /** Raw draws, as hex uint32s or as the floats derived from them. */
     "probe.random": {

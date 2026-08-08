@@ -16,6 +16,25 @@
  * Order is irrelevant — `createRegistry` sorts by namespace and rejects
  * collisions, and no module can observe another's registration. Append rather
  * than insert anyway, so the diff says what was added.
+ *
+ * ## What a module may declare
+ *
+ * Three optional pieces beyond `namespace`, `description` and `events`, all
+ * defined on `EventModuleDefinition` in `./module.ts`:
+ *
+ * - `initialSlice(context)` — the module's state at session start. Omit it and
+ *   the module holds none, and occupies no key in `SessionState.slices`.
+ * - `validateSlice(slice, where)` — checks a slice arriving from a snapshot and
+ *   returns it narrowed. **Optional, and worth implementing.**
+ *   `restoreSnapshot` rebuilds the cartridge, the clock and the PRNG through
+ *   their own validators, but a slice's shape is known only to its module: the
+ *   reducer can check that the *set* of slices matches the registry and nothing
+ *   more. A module without the hook restores whatever the snapshot claims, so
+ *   `{ events: "oops" }` becomes `"oops1"` on the next event. `PROBE_MODULE` is
+ *   the worked example; a stateless module must not declare one, and
+ *   `createRegistry` says so.
+ * - per-handler `version` — the payload schema version, bumped when the same
+ *   fields would be read differently.
  */
 
 import { CLOCK_MODULE } from "./core.js";

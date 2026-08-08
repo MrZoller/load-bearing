@@ -112,6 +112,42 @@ describe("loadCartridge", () => {
     expect(serialize(loaded)).toBe(before);
   });
 
+  it("is frozen all the way down, because every subsystem shares one copy", () => {
+    // A loaded cartridge is handed to every event handler as
+    // `EventContext.cartridge`, and it sits inside every session state. Nobody
+    // owns it, so nobody may write to it: without the freeze,
+    // `context.cartridge.meta.title = "…"` from one handler rewrites the world
+    // for every later event and for the caller that loaded it.
+    const loaded = loadCartridge(minimal());
+
+    for (const frozen of [
+      loaded,
+      loaded.meta,
+      loaded.repository,
+      loaded.repository.files,
+      loaded.repository.files["/etc/motd"],
+      loaded.repository.env,
+      loaded.repository.shellHistory,
+      loaded.models,
+      loaded.models[0],
+      loaded.models[0]?.quirks,
+      loaded.story,
+      loaded.presentation,
+    ]) {
+      expect(Object.isFrozen(frozen)).toBe(true);
+    }
+
+    expect(() => {
+      (loaded.meta as { title: string }).title = "MUTATED";
+    }).toThrow(TypeError);
+    expect(() => {
+      (loaded.models as unknown as unknown[]).push({});
+    }).toThrow(TypeError);
+    expect(() => {
+      (loaded.repository.env as Record<string, string>)["PATH"] = "/tampered";
+    }).toThrow(TypeError);
+  });
+
   it("survives the canonical serializer, which recorded state depends on", () => {
     expect(() => serialize(loadCartridge(minimal()))).not.toThrow();
   });

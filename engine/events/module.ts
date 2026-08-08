@@ -144,6 +144,27 @@ export interface EventModuleDefinition<S> {
    * the slices record then carries no key for it at all, rather than a null.
    */
   readonly initialSlice?: (context: BootstrapContext) => S;
+  /**
+   * Check a slice arriving from a snapshot, and return it narrowed.
+   *
+   * **Optional, and deliberately so.** `restoreSnapshot` rebuilds the cartridge,
+   * the clock and the PRNG through their own validators, but a slice is a shape
+   * only its module knows — the reducer can confirm the *set* of slices matches
+   * the registry and nothing more. Without this hook a snapshot claiming
+   * `{ events: "oops" }` restores cleanly and the next event folds `"oops1"`
+   * into recorded state.
+   *
+   * A module that omits it keeps today's behaviour exactly: its slice is taken
+   * as read. The hook exists now so #5–#13 can implement it as they are
+   * written, rather than it being retrofitted across ten shipped subsystems.
+   *
+   * `where` is a message prefix such as `snapshot: slices.probe`; throw with it
+   * so the reader learns which slice was wrong, not only that one was.
+   *
+   * Only meaningful alongside `initialSlice` — `createRegistry` rejects a
+   * stateless module that declares one, since it would never be called.
+   */
+  readonly validateSlice?: (slice: unknown, where: string) => S;
   /** Keyed by full event type (`vfs.write`), not by the part after the dot. */
   readonly events: Readonly<Record<string, EventHandlerDefinition<S>>>;
 }
@@ -170,6 +191,8 @@ export interface EventModule {
   readonly stateful: boolean;
   /** `undefined` for a stateless module. */
   initialSlice(context: BootstrapContext): unknown;
+  /** Absent when the module declares no slice validator. See the definition. */
+  readonly validateSlice?: (slice: unknown, where: string) => unknown;
   /** Every type this module owns, sorted. */
   readonly types: readonly string[];
   readonly handlers: Readonly<Record<string, RegisteredHandler>>;
@@ -191,30 +214,56 @@ export function defineEventModule<S>(
   definition: EventModuleDefinition<S>,
 ): EventModule {
   const handlers = Object.fromEntries(
-    Object.entries(definition.events).map(([type, handler]) => [
-      type,
-      Object.freeze({
+    Object.entries(definition.events).map(([type, handler]) => {
+      // Resolved here, once, rather than read off `handler` at dispatch time.
+      // The module and this wrapper are frozen; the *definition's* handler
+      // object is not, and a late-bound `handler.apply(…)` would look it up
+      // again on every event — so reassigning it after `createRegistry` would
+      // change how a session folds while every frozen surface still reported
+      // the module as sealed.
+      //
+      // `bind` rather than a bare `const fn = handler.apply`: the bare form
+      // silently drops the receiver, so the first handler written in method
+      // shorthand that touches `this` would break for a reason nothing in this
+      // file explains. No handler in the repository uses `this`; that is a
+      // fact about today, not a property of the contract.
+      const apply = handler.apply.bind(handler);
+      return [
         type,
-        namespace: definition.namespace,
-        version: handler.version,
-        // The one cast in the extension point, and it is sound by
-        // construction: `bootstrap` seeds this module's slice from the
-        // `initialSlice` right above, and `step` only ever hands a handler the
-        // slice its own module produced. Nothing else can reach it — that is
-        // what the namespace key in `SessionState.slices` buys.
-        apply: (context: EventContext, slice: unknown): EventOutcome<unknown> =>
-          handler.apply(context, slice as S),
-      }),
-    ]),
+        Object.freeze({
+          type,
+          namespace: definition.namespace,
+          version: handler.version,
+          // The one cast in the extension point, and it is sound by
+          // construction: `bootstrap` seeds this module's slice from the
+          // `initialSlice` right above, and `step` only ever hands a handler
+          // the slice its own module produced. Nothing else can reach it —
+          // that is what the namespace key in `SessionState.slices` buys.
+          apply: (
+            context: EventContext,
+            slice: unknown,
+          ): EventOutcome<unknown> => apply(context, slice as S),
+        }),
+      ];
+    }),
   );
 
   const initialSlice = definition.initialSlice;
+  const validateSlice = definition.validateSlice;
   return Object.freeze({
     namespace: definition.namespace,
     description: definition.description,
     stateful: initialSlice !== undefined,
     initialSlice: (context: BootstrapContext): unknown =>
       initialSlice === undefined ? undefined : initialSlice(context),
+    // Same late-binding argument as `apply`, and the same fix: captured now,
+    // so what `restoreSnapshot` runs is what the module declared.
+    ...(validateSlice === undefined
+      ? {}
+      : {
+          validateSlice: (slice: unknown, where: string): unknown =>
+            validateSlice(slice, where),
+        }),
     types: Object.freeze(Object.keys(definition.events).sort()),
     handlers: Object.freeze(handlers),
   });

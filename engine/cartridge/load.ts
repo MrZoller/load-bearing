@@ -33,6 +33,7 @@
  * cartridge happened to be written.
  */
 
+import { deepFreeze } from "../freeze.js";
 import { detectBrand } from "../serialize/canonical.js";
 import { CARTRIDGE_SCHEMA, CARTRIDGE_SCHEMA_VERSION } from "./schema.js";
 import type { SchemaNode, ObjectNode } from "./schema.js";
@@ -936,7 +937,19 @@ export function loadCartridge(value: unknown): LoadedCartridge {
   if (report.issues.length > 0)
     throw new CartridgeValidationError(report.issues);
 
-  return cartridge;
+  // Frozen all the way down before it leaves. A loaded cartridge is the one
+  // value every event handler holds at once — `EventContext.cartridge` hands
+  // the same object to all of them, and it also sits inside every session
+  // state and every recorded fixture. Nobody owns it, so nobody may write to
+  // it: without this, `context.cartridge.meta.title = "…"` from one handler
+  // would rewrite the world for every later event, for the caller that loaded
+  // it, and for any other session sharing the load.
+  //
+  // Once per load rather than once per event, which is why the cost argument
+  // that keeps `engine/events/reduce.ts` from deep-freezing a *slice* does not
+  // apply here. Freezing happens last so `fillDerivedDefaults` above still has
+  // a writable tree to fill.
+  return deepFreeze(cartridge);
 }
 
 /**

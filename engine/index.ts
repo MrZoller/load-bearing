@@ -62,6 +62,7 @@ export { CLOCK_MODULE, MAX_TICK_MS } from "./events/core.js";
 export { PROBE_MODULE } from "./events/probe.js";
 export type { ProbeSlice } from "./events/probe.js";
 
+export { deepFreeze } from "./freeze.js";
 export {
   CONTROL_CHARACTER,
   LONE_SURROGATE,

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { loadCartridge } from "../cartridge/load.js";
 import type { LoadedCartridge } from "../cartridge/types.js";
 import { parseTimestamp } from "../clock/civil.js";
+import { hashString } from "../random/seed.js";
 import { deserialize, serialize } from "../serialize/canonical.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { ENGINE_VERSION } from "../version.js";
@@ -114,6 +115,21 @@ describe("reduce", () => {
     );
 
     expect(second).toBe(first);
+  });
+
+  it("carries a cartridge no handler can write to", () => {
+    // Every handler is handed the same `context.cartridge`, and it also sits
+    // inside every session state and every recorded fixture. `loadCartridge`
+    // freezes it all the way down so one subsystem cannot rewrite the world
+    // for the nine after it — see engine/cartridge/load.ts.
+    const state = fold();
+
+    expect(Object.isFrozen(state.cartridge)).toBe(true);
+    expect(Object.isFrozen(state.cartridge.meta)).toBe(true);
+    expect(Object.isFrozen(state.cartridge.repository.files)).toBe(true);
+    expect(() => {
+      (state.cartridge.meta as { title: string }).title = "MUTATED";
+    }).toThrow(TypeError);
   });
 
   it("leaves the cartridge and the log it was given untouched", () => {
@@ -368,6 +384,104 @@ describe("snapshots", () => {
       ),
     ).toThrow(/cartridge is not valid/);
   });
+
+  it("refuses a seed that does not hash to the recorded PRNG root", () => {
+    // `bootstrap` derives the generator from the seed string, so the two are
+    // one fact recorded twice. Editing either alone produces a session that
+    // draws from one generator while claiming the seed of another — and
+    // `reduce(cartridge, seed, log)` could never reproduce it.
+    const text = snapshot(fold());
+    const edited = (
+      change: (state: Record<string, unknown>) => void,
+    ): string => {
+      const parsed = deserialize(text) as Record<string, unknown>;
+      change(parsed);
+      return serialize(parsed);
+    };
+
+    expect(() =>
+      restoreSnapshot(edited((s) => (s["seed"] = "2026-08-05/1/quick-patch"))),
+    ).toThrow(/hashes to \d+, but the recorded PRNG root is/);
+    expect(() =>
+      restoreSnapshot(
+        edited((s) => {
+          (s["random"] as Record<string, unknown>)["seed"] = 12345;
+        }),
+      ),
+    ).toThrow(/recorded PRNG root is 12345/);
+
+    // The invariant it enforces holds for every state the reducer produces,
+    // which is what makes the check safe to apply unconditionally.
+    const state = fold();
+    expect(state.random.seed).toBe(hashString(state.seed));
+  });
+
+  it("refuses transcript text that could not have been recorded", () => {
+    // `deserialize` is bare `JSON.parse`, so the check `step` runs on a
+    // handler's output has to be repeated on the way back in — otherwise a
+    // snapshot restores cleanly and breaks `renderTranscript`'s one-string-
+    // per-line contract afterwards.
+    const text = snapshot(fold());
+    const withEntry = (
+      change: (entry: Record<string, unknown>) => void,
+    ): string => {
+      const parsed = deserialize(text) as Record<string, unknown>;
+      const entries = parsed["transcript"] as Record<string, unknown>[];
+      change(entries[0] as Record<string, unknown>);
+      return serialize(parsed);
+    };
+
+    expect(() =>
+      restoreSnapshot(withEntry((entry) => (entry["summary"] = "a\nb"))),
+    ).toThrow(/"transcript\[0\]\.summary" contains a control character/);
+    expect(() =>
+      restoreSnapshot(withEntry((entry) => (entry["type"] = "a b"))),
+    ).toThrow(/"transcript\[0\]\.type" contains a control character/);
+    expect(() =>
+      restoreSnapshot(withEntry((entry) => (entry["at"] = "\ud800"))),
+    ).toThrow(/"transcript\[0\]\.at" contains an unpaired surrogate/);
+    expect(() =>
+      restoreSnapshot(
+        withEntry((entry) => (entry["detail"] = ["fine", "not\rfine"])),
+      ),
+    ).toThrow(/"transcript\[0\]\.detail\[1\]" contains a control character/);
+  });
+
+  it("routes each slice to the module that knows its shape", () => {
+    // The reducer can check that the *set* of slices matches the registry and
+    // nothing more. Without the module's own validator this restores happily
+    // and the next probe event folds `"oops1"` into recorded state.
+    const parsed = deserialize(snapshot(fold())) as Record<string, unknown>;
+    (parsed["slices"] as Record<string, unknown>)["probe"] = {
+      events: "oops",
+      values: 0,
+    };
+
+    expect(() => restoreSnapshot(serialize(parsed))).toThrow(
+      /snapshot: slices\.probe: events must be a non-negative integer/,
+    );
+  });
+
+  it("leaves a slice alone when its module declares no validator", () => {
+    // The hook is optional on purpose, and a module without one must behave
+    // exactly as it did before the hook existed.
+    const lax = defineEventModule<unknown>({
+      namespace: "lax",
+      description: "declares no slice validator",
+      initialSlice: () => ({ anything: true }),
+      events: { "lax.noop": { version: 0, apply: () => ({}) } },
+    });
+    const registry = createRegistry([lax]);
+    const text = snapshot(
+      bootstrap({ cartridge: CARTRIDGE, seed: SEED, registry }),
+    );
+    const parsed = deserialize(text) as Record<string, unknown>;
+    (parsed["slices"] as Record<string, unknown>)["lax"] = { whatever: 1 };
+
+    expect(restoreSnapshot(serialize(parsed), registry).slices["lax"]).toEqual({
+      whatever: 1,
+    });
+  });
 });
 
 describe("a module's own state", () => {
@@ -485,6 +599,51 @@ describe("a module's own state", () => {
         events: [{ type: "smuggler.hide" }],
       }),
     ).toThrow(/declares no initialSlice but its handler returned one/);
+  });
+
+  it("is what a mismatched registry is caught by, and the limit of it", () => {
+    // Documenting a precondition, not locking in a bug. `reduce` threads one
+    // registry through bootstrap and every step, so this is reachable only by
+    // stepping by hand with a different one.
+    //
+    // Caught: a slice the state does not carry.
+    const withoutCounter = bootstrap({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      registry: createRegistry([observer]),
+    });
+    expect(() =>
+      step(withoutCounter, { type: "counter.bump" }, registry),
+    ).toThrow(/has no slice for module "counter"/);
+
+    // Caught: a snapshot whose slice set disagrees with the registry.
+    expect(() => restoreSnapshot(snapshot(withoutCounter), registry)).toThrow(
+      /one entry per stateful module/,
+    );
+
+    // NOT caught, deliberately: same namespaces, different semantics. Closing
+    // it needs a registry fingerprint in SessionState — a snapshot format
+    // change — for a path only a caller passing two different registries can
+    // reach. `step`'s docstring states the precondition.
+    const doppelganger = createRegistry([
+      observer,
+      defineEventModule<number>({
+        namespace: "counter",
+        description: "same name, counts by a hundred",
+        initialSlice: () => 0,
+        events: {
+          "counter.bump": {
+            version: 0,
+            apply: (_c, slice) => ({ slice: slice + 100 }),
+          },
+        },
+      }),
+    ]);
+    const state = bootstrap({ cartridge: CARTRIDGE, seed: SEED, registry });
+
+    expect(
+      step(state, { type: "counter.bump" }, doppelganger).slices["counter"],
+    ).toBe(100);
   });
 
   it("must exist in the state being stepped", () => {

@@ -98,6 +98,15 @@ export function createRegistry(modules: readonly EventModule[]): EventRegistry {
           `module is either an unfinished subsystem or a stale entry in the module list.`,
       );
     }
+    // A slice validator on a module with no slice would never run, and its
+    // author would believe their snapshot was being checked. Refusing is
+    // cheaper than a hook that silently does nothing.
+    if (!module.stateful && module.validateSlice !== undefined) {
+      throw new EventRegistryError(
+        `module ${JSON.stringify(module.namespace)} declares validateSlice but no initialSlice, ` +
+          `so it holds no slice for a snapshot to carry and the validator could never run.`,
+      );
+    }
 
     for (const type of module.types) {
       const prefix = `${module.namespace}.`;
@@ -121,6 +130,28 @@ export function createRegistry(modules: readonly EventModule[]): EventRegistry {
         throw new EventRegistryError(
           `module ${JSON.stringify(module.namespace)} lists ${JSON.stringify(type)} but has no ` +
             `handler for it`,
+        );
+      }
+      // A handler carries its own `type` and `namespace`, and `step` trusts
+      // both: it looks the handler up by type and then finds the module by
+      // `handler.namespace`. `defineEventModule` always fills them correctly,
+      // but `EventModule` is a plain interface a caller can satisfy by hand, and
+      // a mismatch here surfaces much later as a `TypeError` on an undefined
+      // module — with nothing pointing back at the module that was malformed.
+      // These two lines are what make the comment in `reduce.ts` ("present by
+      // construction") true rather than merely intended.
+      if (handler.type !== type) {
+        throw new EventRegistryError(
+          `module ${JSON.stringify(module.namespace)} files a handler under ${JSON.stringify(type)} ` +
+            `that calls itself ${JSON.stringify(handler.type)}. The key and the handler's own type ` +
+            `must agree; dispatch uses one and diagnostics use the other.`,
+        );
+      }
+      if (handler.namespace !== module.namespace) {
+        throw new EventRegistryError(
+          `handler ${JSON.stringify(type)} claims namespace ${JSON.stringify(handler.namespace)} but ` +
+            `belongs to module ${JSON.stringify(module.namespace)}. The reducer finds a handler's ` +
+            `module — and therefore its state slice and its PRNG stream — through that name.`,
         );
       }
       if (!Number.isInteger(handler.version) || handler.version < 0) {

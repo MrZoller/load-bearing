@@ -12,6 +12,8 @@
  * all — a permalink would decode to a log the original session never ran.
  */
 
+import { deepFreeze } from "../freeze.js";
+import { serialize } from "../serialize/canonical.js";
 import { describeUnwritableText } from "../text.js";
 import { ENGINE_EVENT_REGISTRY } from "./modules.js";
 import type { EventRegistry } from "./registry.js";
@@ -110,11 +112,85 @@ export function appendEvent(
     type: event.type,
     ...(event.payload === undefined
       ? {}
-      : { payload: Object.freeze({ ...event.payload }) }),
+      : { payload: clonePayload(event.payload, where) }),
     version: handler.version,
   });
 
   return Object.freeze([...log, stamped]);
+}
+
+/**
+ * Detach a payload from the caller, all the way down, and refuse one that is
+ * not plain data.
+ *
+ * A one-level copy is not enough, and the gap is reachable rather than
+ * theoretical: `probe.weighted` folds `payload.entries` straight into
+ * `weightedPick`, so a caller keeping a reference to that array could change a
+ * weight — or add an arm — after the event was appended, and the same log would
+ * then fold to a different distribution. Deterministic replay of an
+ * already-recorded log is exactly what that breaks.
+ *
+ * Two steps, because neither does the other's job:
+ *
+ * - **`structuredClone` detaches.** It copies by internal slot, so it cannot be
+ *   fooled by a re-pointed prototype the way a prototype-reading copy would be.
+ *   It is the engine's one allowlisted host global (`engine/globals.d.ts`).
+ *   What it does *not* do is judge: it refuses functions, symbols and host
+ *   objects, but it copies a `Date`, a `Map`, a `Set`, a `RegExp` and a typed
+ *   array quite happily — and it *preserves* cycles rather than rejecting them.
+ * - **The canonical serializer judges.** `serialize` is the exact predicate
+ *   wanted here, because the requirement on a payload is precisely that it can
+ *   be written to a fixture and read back. It rejects every built-in listed
+ *   above, plus cycles, `NaN`, sparse arrays, accessors and symbol keys, and it
+ *   names the offending path. Running it now moves that failure from record
+ *   time — long after the event was accepted — to append time.
+ *
+ * Reusing `serialize` rather than reimplementing the predicate is the point.
+ * The cartridge loader's `cloneJson` asks the same question, but as a
+ * `Report`-accumulating walk built for reporting every cartridge issue at once;
+ * its own brand check already defers to `detectBrand` in the serializer. This
+ * takes the same authority one level further down, where it needs no
+ * extraction.
+ *
+ * Freezing happens last and inside the guarded block, so it only ever runs on a
+ * value the serializer has already vouched for — which is what makes
+ * `deepFreeze`'s recursion safe here regardless of what arrived.
+ *
+ * This hardens **the append path only.** `reduce` and `step` take a raw
+ * `readonly EngineEvent[]`, which is how a fixture and a decoded replay
+ * permalink arrive, and those never pass through here. That is deliberate: the
+ * fold must stay defined over a plain array of plain events. What it means is
+ * that a caller who builds a log by hand still owns not mutating it, and the
+ * golden replay suite is what checks that the engine does not.
+ */
+function clonePayload(
+  payload: Readonly<Record<string, unknown>>,
+  where: string,
+): Readonly<Record<string, unknown>> {
+  let copy: Record<string, unknown>;
+  try {
+    copy = structuredClone(payload) as Record<string, unknown>;
+  } catch (cause) {
+    throw new Error(
+      `${where}: "payload" holds a value that cannot be copied — a function, a symbol, or ` +
+        `another host object. An event payload is plain data, because it has to survive ` +
+        `being written to a fixture and read back.`,
+      { cause },
+    );
+  }
+
+  try {
+    serialize(copy);
+    return deepFreeze(copy);
+  } catch (cause) {
+    throw new Error(
+      `${where}: "payload" is not plain data. It has to survive being written to a fixture ` +
+        `and read back, so it may hold only null, booleans, finite numbers, strings, arrays ` +
+        `and plain objects — no Date, Map, Set, RegExp or typed array, and nothing that ` +
+        `contains itself. The cause below names the offending path.`,
+      { cause },
+    );
+  }
 }
 
 /** A short, safe description of a bad value, for an error message. */

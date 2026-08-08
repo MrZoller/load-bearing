@@ -42,6 +42,7 @@ import { loadCartridge } from "../cartridge/load.js";
 import type { LoadedCartridge } from "../cartridge/types.js";
 import { createClock, restoreClock } from "../clock/clock.js";
 import type { ClockState } from "../clock/clock.js";
+import { hashString } from "../random/seed.js";
 import { createRandom, restoreRandom } from "../random/stream.js";
 import type { RandomState } from "../random/stream.js";
 import { deserialize, serialize } from "../serialize/canonical.js";
@@ -166,9 +167,21 @@ export function bootstrap(input: BootstrapInput): SessionState {
 /**
  * Fold one event onto a state.
  *
- * The registry must be the one the state was bootstrapped with; stepping with a
- * different set of modules is refused rather than reconciled, because a slice
- * that appeared or vanished mid-session is a state no event log describes.
+ * ## Precondition: the registry is the one the state was bootstrapped under
+ *
+ * `reduce` threads a single registry through bootstrap and every step, so this
+ * only arises for a caller stepping by hand. Two of the three ways to get it
+ * wrong are caught: a state missing a module's slice fails in `readSlice`, and
+ * a snapshot whose slice set disagrees with the registry fails in
+ * `requireSlices`.
+ *
+ * The third is **not detected**, and is a documented precondition rather than a
+ * checked one: a registry whose namespaces match but whose handlers mean
+ * something different will fold happily and produce a session neither registry
+ * describes. Catching it would mean fingerprinting the registry into
+ * `SessionState` — a snapshot format change, and one more thing every recorded
+ * fixture pins — to close a path reachable only by deliberately passing `step` a
+ * different registry than `bootstrap`. Pass the same one.
  */
 export function step(
   state: SessionState,
@@ -270,8 +283,13 @@ export function snapshot(state: SessionState): string {
  * are rebuilt through them. A cursor that is not a uint32 would otherwise
  * produce a session that diverges from the recorded one instead of failing.
  *
+ * A slice's *contents* are checked only by the module that owns them, through
+ * the optional `validateSlice` hook — see `./modules.ts`.
+ *
  * The result is `step`-able: restoring and continuing is the same as never
- * having stopped.
+ * having stopped. It carries `step`'s precondition with it — the registry
+ * passed here must be the one the snapshot was produced under, and a registry
+ * with matching namespaces but different handler semantics is not detected.
  */
 export function restoreSnapshot(
   text: string,
@@ -310,21 +328,40 @@ export function restoreSnapshot(
     );
   }
 
+  const seed = requireString(parsed["seed"], "seed");
+  // Rebuilt through the same validators a live session uses, then reduced back
+  // to state — so an out-of-range cursor or a clock past the last representable
+  // instant is refused here rather than diverging later.
+  const random = restoreRandom(
+    requireObject(parsed["random"], "random") as unknown as RandomState,
+  ).toState();
+
+  // `bootstrap` derives the PRNG root from the seed string, so
+  // `random.seed === hashString(seed)` holds for every state this reducer has
+  // ever produced. A snapshot reports the two independently, and nothing else
+  // here cross-checks them: a tampered top-level `seed` would restore cleanly,
+  // and the resumed session would draw from the old generator while advertising
+  // the new seed. `reduce(cartridge, seed, log)` could then never reproduce it,
+  // which is the one sentence the whole engine exists to satisfy.
+  if (hashString(seed) !== random.seed) {
+    throw new Error(
+      `snapshot: seed ${JSON.stringify(seed)} hashes to ${String(hashString(seed))}, but the ` +
+        `recorded PRNG root is ${String(random.seed)}. A session's generator is derived from its ` +
+        `seed, so these disagreeing means one of them was edited and the session can no longer ` +
+        `be reproduced from its inputs.`,
+    );
+  }
+
   return freezeState({
     engineVersion,
     eventSchemaVersion,
-    seed: requireString(parsed["seed"], "seed"),
+    seed,
     cartridge: loadCartridge(parsed["cartridge"]),
     eventCount,
-    // Rebuilt through the same validators a live session uses, then reduced
-    // back to state — so an out-of-range cursor or a clock past the last
-    // representable instant is refused here rather than diverging later.
     clock: restoreClock(
       requireObject(parsed["clock"], "clock") as unknown as ClockState,
     ).toState(),
-    random: restoreRandom(
-      requireObject(parsed["random"], "random") as unknown as RandomState,
-    ).toState(),
+    random,
     slices: requireSlices(parsed["slices"], registry),
     transcript,
   });
@@ -465,6 +502,25 @@ function requireInteger(value: unknown, what: string): number {
   return value;
 }
 
+/**
+ * A string that can be one line of a recorded artifact.
+ *
+ * `step` checks every summary and detail line a handler produces, but
+ * `deserialize` is bare `JSON.parse` — so a snapshot carrying an embedded
+ * newline or a lone surrogate would restore cleanly and only break later, in
+ * `renderTranscript`, whose contract is one string per line. The check belongs
+ * on both doors into the transcript, not just the one the reducer writes
+ * through.
+ */
+function requireLine(value: unknown, what: string): string {
+  const line = requireString(value, what);
+  const problem = describeUnwritableText(line);
+  if (problem !== undefined) {
+    throw new Error(`snapshot: "${what}" contains ${problem}`);
+  }
+  return line;
+}
+
 function requireTranscript(value: unknown): readonly TranscriptEntry[] {
   if (!Array.isArray(value)) {
     throw new Error(`snapshot: "transcript" must be an array`);
@@ -498,18 +554,18 @@ function requireTranscript(value: unknown): readonly TranscriptEntry[] {
       }
       return Object.freeze({
         index,
-        at: requireString(entry["at"], `transcript[${String(position)}].at`),
-        type: requireString(
+        at: requireLine(entry["at"], `transcript[${String(position)}].at`),
+        type: requireLine(
           entry["type"],
           `transcript[${String(position)}].type`,
         ),
-        summary: requireString(
+        summary: requireLine(
           entry["summary"],
           `transcript[${String(position)}].summary`,
         ),
         detail: Object.freeze(
           lines.map((line, offset) =>
-            requireString(
+            requireLine(
               line,
               `transcript[${String(position)}].detail[${String(offset)}]`,
             ),
@@ -527,15 +583,20 @@ function requireTranscript(value: unknown): readonly TranscriptEntry[] {
  * subsystem this engine has and the recording did not; an extra one means the
  * reverse. Either way the snapshot describes a different engine, and folding on
  * top of it would produce a session neither ever ran.
+ *
+ * The *contents* are a shape only the owning module knows, so each is offered
+ * to that module's `validateSlice` if it declares one. Without that hook a
+ * snapshot claiming `{ events: "oops" }` restores happily and the next event
+ * folds `"oops1"` into recorded state — a slice cannot be checked from here,
+ * only routed to something that can.
  */
 function requireSlices(
   value: unknown,
   registry: EventRegistry,
 ): Readonly<Record<string, unknown>> {
   const slices = requireObject(value, "slices");
-  const expected = registry.modules
-    .filter((module) => module.stateful)
-    .map((module) => module.namespace);
+  const stateful = registry.modules.filter((module) => module.stateful);
+  const expected = stateful.map((module) => module.namespace);
   const found = Object.keys(slices).sort();
 
   const missing = expected.filter((namespace) => !found.includes(namespace));
@@ -549,7 +610,14 @@ function requireSlices(
 
   return Object.freeze(
     Object.fromEntries(
-      expected.map((namespace) => [namespace, freezeSlice(slices[namespace])]),
+      stateful.map((module) => {
+        const raw = slices[module.namespace];
+        const validated =
+          module.validateSlice === undefined
+            ? raw
+            : module.validateSlice(raw, `snapshot: slices.${module.namespace}`);
+        return [module.namespace, freezeSlice(validated)];
+      }),
     ),
   );
 }

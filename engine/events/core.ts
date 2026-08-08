@@ -12,6 +12,12 @@
  * way to say "time passed" that belongs to nobody in particular. Which events
  * advance it *incidentally* — a simulated test run taking four seconds — is a
  * judgement for the module raising them, per docs/ARCHITECTURE.md.
+ *
+ * This module holds no slice, and so declares no `validateSlice`: the clock's
+ * position lives in `SessionState.clock`, where `restoreClock` already
+ * validates it on the way back from a snapshot. `createRegistry` refuses a
+ * `validateSlice` on a stateless module, because it could never run.
+ * `engine/events/probe.ts` is the worked example of the hook.
  */
 
 import { defineEventModule } from "./module.js";

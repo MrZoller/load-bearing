@@ -4,8 +4,9 @@ import { loadCartridge } from "../cartridge/load.js";
 import type { LoadedCartridge } from "../cartridge/types.js";
 import { parseTimestamp } from "../clock/civil.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
-import { MAX_TICK_MS } from "./core.js";
+import { CLOCK_MODULE, MAX_TICK_MS } from "./core.js";
 import { ENGINE_EVENT_MODULES, ENGINE_EVENT_REGISTRY } from "./modules.js";
+import { PROBE_MODULE } from "./probe.js";
 import { reduce } from "./reduce.js";
 import type { EngineEvent, SessionState } from "./state.js";
 import { renderTranscript } from "./transcript.js";
@@ -39,6 +40,16 @@ describe("the engine's module list", () => {
 
   it("is frozen, so nothing can register an event type at runtime", () => {
     expect(Object.isFrozen(ENGINE_EVENT_MODULES)).toBe(true);
+  });
+
+  it("declares a slice validator exactly where there is a slice to validate", () => {
+    // The clock holds no slice — its position lives in `SessionState.clock`,
+    // which `restoreClock` already validates — so it declares no validator,
+    // and `createRegistry` would refuse one.
+    expect(CLOCK_MODULE.stateful).toBe(false);
+    expect(CLOCK_MODULE.validateSlice).toBeUndefined();
+    expect(PROBE_MODULE.stateful).toBe(true);
+    expect(PROBE_MODULE.validateSlice).toBeTypeOf("function");
   });
 });
 
@@ -159,6 +170,36 @@ describe("the probe events", () => {
         { type: "probe.int", payload: { stream: "a", count: 2, max: 4 } },
       ]).slices,
     ).toEqual({ probe: { events: 2, values: 5 } });
+  });
+
+  it("checks its own slice on the way back from a snapshot", () => {
+    // The worked example of `validateSlice`. Only this module knows the shape,
+    // so only this module can refuse it — the reducer can confirm the slice
+    // *set* matches the registry and nothing more.
+    const validate = PROBE_MODULE.validateSlice;
+    if (validate === undefined) {
+      expect.unreachable("the probe module declares a slice validator");
+    }
+    const where = "snapshot: slices.probe";
+
+    expect(validate({ events: 2, values: 9 }, where)).toEqual({
+      events: 2,
+      values: 9,
+    });
+
+    const rejections: readonly (readonly [unknown, RegExp])[] = [
+      [null, /must be an object/],
+      [[], /must be an object/],
+      [{ events: "oops", values: 0 }, /events must be a non-negative integer/],
+      [{ events: 0, values: -1 }, /values must be a non-negative integer/],
+      [{ events: 1.5, values: 0 }, /events must be a non-negative integer/],
+      [{ events: 0 }, /values must be a non-negative integer/],
+      [{ events: 0, values: 0, extra: 1 }, /unexpected field\(s\) extra/],
+    ];
+
+    for (const [slice, expected] of rejections) {
+      expect(() => validate(slice, where)).toThrow(expected);
+    }
   });
 
   it("rejects a payload it cannot trust", () => {
