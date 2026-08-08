@@ -140,6 +140,9 @@ function emitNode(node: SchemaNode): Record<string, unknown> {
           description: `Each key is ${node.keyLabel}.`,
         },
         additionalProperties: emitNode(node.values),
+        ...(node.minEntries !== undefined
+          ? { minProperties: node.minEntries }
+          : {}),
       };
 
     case "deferred":

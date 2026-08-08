@@ -187,6 +187,7 @@
             "type": "object"
           },
           "description": "The simulated filesystem, keyed by absolute path.",
+          "minProperties": 1,
           "propertyNames": {
             "description": "Each key is an absolute POSIX path naming a file, not the root directory.",
             "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$"

@@ -1067,7 +1067,9 @@ describe("rejection", () => {
   it("says nothing about cwd when no file key could be read at all", () => {
     // The other side of the same rule. With nothing readable there is no
     // answer, only an absence of one — "contains no files" would be a second
-    // complaint about the first mistake.
+    // complaint about the first mistake. This also pins `minEntries` to the
+    // keys that were written rather than the ones that validated: a misnamed
+    // file is still a file, and "no files" on top would be a third complaint.
     const source = minimal();
     const repository = source["repository"] as Record<string, unknown>;
     repository["cwd"] = "/missing";
@@ -1075,6 +1077,41 @@ describe("rejection", () => {
 
     expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
       "/repository/files/relative",
+    ]);
+  });
+
+  it("rejects a world with no files at the record, not at the cwd", () => {
+    // Not the same case as the one above, though both leave `checkCwd` with
+    // nothing to compare against. Keys that failed to validate make the
+    // question unanswerable; declaring none answers it — and the answer is
+    // that there is no world here. It is reported at `files` because that is
+    // the field that has to change: with an empty map no value of `cwd`
+    // satisfies the cross-check, so a generator sent to `cwd` would edit it,
+    // resubmit, and get the same issue back.
+    const source = minimal();
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["files"] = {};
+
+    expect(issuesOf(source)).toEqual([
+      {
+        pointer: "/repository/files",
+        expected: "at least 1 entry",
+        found: "an object with 0 entries",
+      },
+    ]);
+  });
+
+  it("reports an empty file map once, not again through the cross-check", () => {
+    // `/` is the one cwd every path is under, so a containment check that ran
+    // anyway would still report — and the generator would get two issues for
+    // one mistake, the second of them unactionable.
+    const source = minimal();
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["cwd"] = "/";
+    repository["files"] = {};
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
+      "/repository/files",
     ]);
   });
 

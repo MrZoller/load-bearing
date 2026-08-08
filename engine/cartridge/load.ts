@@ -119,6 +119,11 @@ function describe(value: unknown): string {
   }
 }
 
+/** "1 entry", "0 entries" — these counts are read by people, and by generators. */
+function entryCount(count: number): string {
+  return count === 1 ? "1 entry" : `${String(count)} entries`;
+}
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -567,10 +572,18 @@ function validate(
         return {};
       }
       if (!isDataObject(value, pointer, report)) return {};
-      const entries: [string, unknown][] = [];
       // Sorted, so the order issues are reported in comes from the schema and
       // the data rather than from how the JSON happened to be written.
-      for (const key of Object.keys(value).sort()) {
+      const keys = Object.keys(value).sort();
+      if (node.minEntries !== undefined && keys.length < node.minEntries) {
+        report.addPhrase(
+          pointer,
+          `at least ${entryCount(node.minEntries)}`,
+          `an object with ${entryCount(keys.length)}`,
+        );
+      }
+      const entries: [string, unknown][] = [];
+      for (const key of keys) {
         const at = child(pointer, key);
         if (!node.keyPattern.test(key)) {
           report.addPhrase(at, `a key that is ${node.keyLabel}`, describe(key));
@@ -758,10 +771,15 @@ function checkCwd(repository: CartridgeRepository, report: Report): void {
     Object.keys(repository.files),
   );
 
-  // With nothing readable, there is no answer — only an absence of one.
-  // "Contains no files" would be a claim about a world this cartridge has not
-  // successfully described yet, and a second complaint about the first
-  // mistake.
+  // With nothing readable, there is no answer — only an absence of one, and
+  // "contains no files" would be a second complaint about the first mistake.
+  //
+  // A record that declares nothing never reaches here: `minEntries` on the
+  // files record reports it at `/repository/files`, which the caller's gate
+  // reads. That split is deliberate. An empty map is a defect this check can
+  // see but cannot name, because with no files at all *no* value of `cwd`
+  // satisfies "a directory a declared file lives under" — a generator sent
+  // here would edit `cwd`, resubmit, and get the same issue back.
   if (usable.length === 0) return;
 
   const contained = usable.some((path) => path.startsWith(prefix));

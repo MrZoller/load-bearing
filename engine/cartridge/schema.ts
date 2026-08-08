@@ -184,6 +184,7 @@ export interface RecordNode {
   readonly keyPattern: Pattern;
   readonly keyLabel: string;
   readonly values: SchemaNode;
+  readonly minEntries?: number;
 }
 
 /**
@@ -417,6 +418,15 @@ const REPOSITORY = {
       keyPattern: FILE_PATH_PATTERN,
       keyLabel: "an absolute POSIX path naming a file, not the root directory",
       values: FILE,
+      // A world with no files is not a world, and `cwd` already implies this:
+      // no directory can be one that a declared file lives under when nothing
+      // is declared. Stated here rather than left to that cross-check so the
+      // complaint names the field that has to change — with an empty map no
+      // value of `cwd` satisfies the cross-check, so a generator sent there
+      // would edit `cwd`, resubmit, and get the same issue back. It is also
+      // the half of the rule JSON Schema can express, so a generator
+      // validating against the published document catches it too.
+      minEntries: 1,
     }),
     env: optional(
       {
