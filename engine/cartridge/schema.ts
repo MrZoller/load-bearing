@@ -299,7 +299,7 @@ const TIMESTAMP = {
   kind: "string",
   description:
     "A UTC instant, `YYYY-MM-DDTHH:MM:SS[.mmm]Z`. The simulated machine has no other timezone.",
-  pattern: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/,
+  pattern: pattern(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/),
   patternLabel: "YYYY-MM-DDTHH:MM:SS[.mmm]Z",
   refine: refineInstant,
 } satisfies StringNode;

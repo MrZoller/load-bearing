@@ -128,14 +128,33 @@ class Report {
   readonly issues: CartridgeIssue[] = [];
 
   /**
-   * Records whose keys are not all usable, by the record's own pointer.
+   * The unusable keys of each record, by the record's own pointer.
    *
    * Recorded rather than inferred, because it cannot be inferred: a bad *key*
    * and a bad whole *value* are reported at the same pointer, so no amount of
    * pointer inspection tells them apart. A cross-check that reads keys needs
    * the first and not the second.
+   *
+   * Per key rather than per record, so a check can work with the keys that did
+   * validate. One typo among a hundred file paths should not switch off the
+   * world's only filesystem coherence check.
    */
-  readonly unusableKeys = new Set<string>();
+  readonly unusableKeys = new Map<string, Set<string>>();
+
+  /** Note that `key` of the record at `pointer` could not be read. */
+  noteUnusableKey(pointer: string, key: string): void {
+    const keys = this.unusableKeys.get(pointer);
+    if (keys === undefined) this.unusableKeys.set(pointer, new Set([key]));
+    else keys.add(key);
+  }
+
+  /** The keys of the record at `pointer` that this check can trust. */
+  usableKeys(pointer: string, all: readonly string[]): readonly string[] {
+    const unusable = this.unusableKeys.get(pointer);
+    return unusable === undefined
+      ? all
+      : all.filter((key) => !unusable.has(key));
+  }
 
   add(pointer: string, expected: string, found: unknown): void {
     this.issues.push({ pointer, expected, found: describe(found) });
@@ -555,7 +574,7 @@ function validate(
         const at = child(pointer, key);
         if (!node.keyPattern.test(key)) {
           report.addPhrase(at, `a key that is ${node.keyLabel}`, describe(key));
-          report.unusableKeys.add(pointer);
+          report.noteUnusableKey(pointer, key);
         }
         // Collected and defined rather than assigned: these keys come from the
         // cartridge, and one of them names an accessor on `Object.prototype`.
@@ -730,9 +749,22 @@ function checkCwd(repository: CartridgeRepository, report: Report): void {
   const prefix = repository.cwd.endsWith("/")
     ? repository.cwd
     : `${repository.cwd}/`;
-  const contained = Object.keys(repository.files).some((path) =>
-    path.startsWith(prefix),
+  // Against the keys that validated, not against all of them. An unreadable
+  // key elsewhere in the record says nothing about whether the session opens
+  // somewhere the world contains, and skipping the check for it would cost the
+  // generator a round trip on a genuinely dangling cwd.
+  const usable = report.usableKeys(
+    "/repository/files",
+    Object.keys(repository.files),
   );
+
+  // With nothing readable, there is no answer — only an absence of one.
+  // "Contains no files" would be a claim about a world this cartridge has not
+  // successfully described yet, and a second complaint about the first
+  // mistake.
+  if (usable.length === 0) return;
+
+  const contained = usable.some((path) => path.startsWith(prefix));
   if (!contained) {
     report.addPhrase(
       "/repository/cwd",
@@ -814,13 +846,13 @@ export function loadCartridge(value: unknown): LoadedCartridge {
   // These are appended after the structural issues rather than interleaved at
   // their document position. Deterministic, which is what matters, but not
   // strictly document-ordered; the header above says so.
-  // `checkCwd` reads `cwd` and the file *keys*. A bad file value shares its
-  // key's pointer, so `unusableKeys` is what separates them.
+  // `checkCwd` reads `cwd` and the file *keys*, and works around the
+  // individual keys it cannot read — so the gate only has to cover the two
+  // values it reads wholesale.
   if (
     !issueAt(report, "/repository") &&
     !issueAt(report, "/repository/cwd") &&
-    !issueAt(report, "/repository/files") &&
-    !report.unusableKeys.has("/repository/files")
+    !issueAt(report, "/repository/files")
   ) {
     checkCwd(cartridge.repository, report);
   }

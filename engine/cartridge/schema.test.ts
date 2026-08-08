@@ -138,6 +138,44 @@ describe("the descriptor tree", () => {
     expect(MODEL_ID_PATTERN.source).toContain("a-z0-9");
   });
 
+  it("reaches no raw regular expression through the exported tree", () => {
+    // The per-constant test above missed `TIMESTAMP`, whose pattern was
+    // written inline rather than as an exported constant — reachable as
+    // `CARTRIDGE_SCHEMA.fields.meta.node.fields.startedAt.node.pattern` and
+    // therefore `compile`-able. Walking the tree is what makes this a property
+    // of the schema rather than a list someone has to remember to extend.
+    const raw: string[] = [];
+
+    function walk(node: SchemaNode, path: string): void {
+      const candidates =
+        node.kind === "string"
+          ? [["pattern", node.pattern] as const]
+          : node.kind === "record"
+            ? [["keyPattern", node.keyPattern] as const]
+            : [];
+
+      for (const [name, value] of candidates) {
+        if (
+          value !== undefined &&
+          (value as unknown as { compile?: unknown }).compile !== undefined
+        ) {
+          raw.push(`${path}.${name}`);
+        }
+      }
+
+      if (node.kind === "object") {
+        for (const [key, field] of Object.entries(node.fields)) {
+          walk(field.node, `${path}/${key}`);
+        }
+      }
+      if (node.kind === "array") walk(node.items, `${path}/[]`);
+      if (node.kind === "record") walk(node.values, `${path}/{}`);
+    }
+
+    walk(CARTRIDGE_SCHEMA, "");
+    expect(raw).toEqual([]);
+  });
+
   it("is frozen, since it is the validation authority", () => {
     // `as const` is erased at runtime, so an exported array is an exported
     // *mutable* array: `ARCHETYPES.push("other")` would make `loadCartridge`

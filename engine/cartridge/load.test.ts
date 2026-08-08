@@ -1046,6 +1046,38 @@ describe("rejection", () => {
     ]);
   });
 
+  it("checks cwd against the keys that validated, ignoring one that did not", () => {
+    // One typo among a hundred file paths used to switch off the world's only
+    // filesystem coherence check. It says nothing about whether the session
+    // opens somewhere the world contains.
+    const source = minimal();
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["cwd"] = "/missing";
+    repository["files"] = {
+      "/a/x": { contents: "x\n" },
+      relative: { contents: "y\n" },
+    };
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
+      "/repository/files/relative",
+      "/repository/cwd",
+    ]);
+  });
+
+  it("says nothing about cwd when no file key could be read at all", () => {
+    // The other side of the same rule. With nothing readable there is no
+    // answer, only an absence of one — "contains no files" would be a second
+    // complaint about the first mistake.
+    const source = minimal();
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["cwd"] = "/missing";
+    repository["files"] = { relative: { contents: "y\n" } };
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
+      "/repository/files/relative",
+    ]);
+  });
+
   it("still holds a cross-check back when its own subtree is broken", () => {
     // The reason the gate exists: two models each missing an `id` would
     // collide on the walk's substitute and produce a phantom duplicate on top
