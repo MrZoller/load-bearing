@@ -480,7 +480,13 @@ describe("loadCartridge", () => {
     shallow["story"] = nested(MAX_DEFERRED_DEPTH - 2);
     expect(() => loadCartridge(shallow)).not.toThrow();
 
-    for (const levels of [MAX_DEFERRED_DEPTH + 40, 3000, 20000]) {
+    // Deep enough to be well past the limit, shallow enough that the *test's
+    // own* `JSON.stringify` survives. V8's stringify was recursive through
+    // Node 22 and overflows somewhere above 3000 there, so a 20000-level case
+    // failed in CI while passing on a newer local Node — and it failed while
+    // building the fixture, before the loader was ever called. Nothing is lost:
+    // the guard trips at 64, so every depth past it takes the same path.
+    for (const levels of [MAX_DEFERRED_DEPTH + 40, 1000]) {
       const source = minimal();
       source["story"] = nested(levels);
 

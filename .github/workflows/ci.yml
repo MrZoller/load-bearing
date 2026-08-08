@@ -34,9 +34,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Read from `.nvmrc` rather than pinned here, so CI and a local checkout
+      # cannot drift apart silently. They had: a test that overflowed the stack
+      # inside `JSON.stringify` on Node 22 passed locally on Node 26, because
+      # V8 made stringify non-recursive in between.
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
 
       - run: npm ci

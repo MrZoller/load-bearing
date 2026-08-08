@@ -5,6 +5,9 @@
   "type": "module",
   "description": "A daily interactive comedy wearing the costume of a serious developer tool.",
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
