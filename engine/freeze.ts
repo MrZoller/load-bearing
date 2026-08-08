@@ -18,7 +18,16 @@
  *
  * `getOwnPropertyNames` rather than `Object.keys`, so a non-enumerable property
  * is frozen too — an unfrozen one would be a mutable interior hiding behind a
- * frozen surface, which is worse than an obviously mutable object.
+ * frozen surface, which is worse than an obviously mutable object. Symbol keys
+ * are walked for the same reason and no other: no caller in this repository can
+ * reach one, because `serialize` and the cartridge loader both refuse an own
+ * symbol key before a value gets this far — but this function is exported and
+ * promises *everything* reachable, and a caller holding the symbol would
+ * otherwise hold a mutable interior.
+ *
+ * (`Reflect.ownKeys` is the one-call spelling and is unavailable: the purity
+ * gate bans `Reflect` outright. The concatenation below is what
+ * `engine/serialize/canonical.ts` uses for the same reason.)
  *
  * Functions are left alone: `typeof` sends them down the early return, which is
  * what the cartridge schema wants for its `refine` and `fill` callbacks.
@@ -52,8 +61,12 @@ function freezeReachable<T>(value: T, seen: WeakSet<object>): T {
   if (seen.has(container)) return value;
   seen.add(container);
 
-  for (const key of Object.getOwnPropertyNames(container)) {
-    freezeReachable((container as Record<string, unknown>)[key], seen);
+  const properties = container as Record<string | symbol, unknown>;
+  for (const key of [
+    ...Object.getOwnPropertyNames(container),
+    ...Object.getOwnPropertySymbols(container),
+  ]) {
+    freezeReachable(properties[key], seen);
   }
   return Object.freeze(value);
 }

@@ -34,6 +34,25 @@ describe("deepFreeze", () => {
     expect(Object.isFrozen(hidden)).toBe(true);
   });
 
+  it("freezes a symbol-keyed property too", () => {
+    // Same argument as the non-enumerable case: no caller in the repository
+    // can reach one, because `serialize` and the cartridge loader both refuse
+    // an own symbol key — but this is exported promising *everything*
+    // reachable, and a caller holding the symbol would hold a mutable
+    // interior behind a frozen surface.
+    const key = Symbol("hidden");
+    const inner = { weight: 1 };
+    const value: Record<string | symbol, unknown> = { visible: { n: 1 } };
+    value[key] = inner;
+
+    deepFreeze(value);
+
+    expect(Object.isFrozen(inner)).toBe(true);
+    expect(() => {
+      inner.weight = 99;
+    }).toThrow(TypeError);
+  });
+
   it("leaves functions alone", () => {
     // The cartridge schema holds `refine` and `fill` callbacks, and freezing a
     // shared function object would reach outside the value being frozen.

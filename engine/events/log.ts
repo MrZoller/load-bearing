@@ -23,7 +23,8 @@ import type { EngineEvent } from "./state.js";
 export const EMPTY_EVENT_LOG: readonly EngineEvent[] = Object.freeze([]);
 
 /**
- * Check that a value is a well-formed event envelope.
+ * Check that a value is a well-formed event envelope, and **return the captured
+ * envelope its caller must use from then on**.
  *
  * Envelope only: whether the *payload* makes sense is the owning handler's
  * question, and it cannot be asked without knowing the type. What this rejects
@@ -32,9 +33,34 @@ export const EMPTY_EVENT_LOG: readonly EngineEvent[] = Object.freeze([]);
  * would render one event as several transcript lines and make the recorded
  * artifact unmatchable.
  *
+ * ## Why it returns rather than only asserting
+ *
+ * An event arrives from a caller, and `type` can be a getter. Validating the
+ * value and then letting `appendEvent` and `step` each re-read `event.type` four
+ * more times means the string that was checked and the string that is used need
+ * not be the same one: a getter that changes on its third read gets a newline
+ * into `TranscriptEntry.type` — past `describeUnwritableText`, past the handler
+ * lookup — and `renderTranscript` then emits a forged extra line, breaking its
+ * one-string-per-line contract. The same trick stamps an unregistered type into
+ * a log that `appendEvent` had just refused unregistered types on principle.
+ *
+ * So every field is read exactly once, here, and the frozen result is what the
+ * rest of the fold sees — including `EventContext.event`. Inspecting descriptors
+ * instead would not do: `Object.getOwnPropertyDescriptor` returns `undefined`
+ * for a getter inherited from a prototype, so the check would pass and the
+ * re-reads would still be live.
+ *
+ * `payload` is captured by reference, deliberately: `appendEvent` hands it to
+ * `clonePayload`, where the canonical serializer refuses an accessor outright,
+ * and `step`'s raw path is documented as the caller's to keep still. `version`
+ * is stamped from the registry, never from the envelope.
+ *
  * `where` names the event: `event 3`, or `appended event`.
  */
-export function assertEventEnvelope(event: unknown, where: string): void {
+export function assertEventEnvelope(
+  event: unknown,
+  where: string,
+): EngineEvent {
   if (typeof event !== "object" || event === null || Array.isArray(event)) {
     throw new Error(
       `${where}: an event must be an object with a string "type", got ${describe(event)}`,
@@ -71,6 +97,21 @@ export function assertEventEnvelope(event: unknown, where: string): void {
       `${where}: "version" must be a non-negative integer when present, got ${describe(version)}`,
     );
   }
+
+  // Built from the locals above, each read exactly once. Frozen, and with the
+  // optional fields omitted rather than set to `undefined`, so the captured
+  // envelope serializes and compares like the event it stands for.
+  return Object.freeze({
+    type,
+    // The check above narrows to `object`, which is not an index signature.
+    // Nothing further is asserted here: whether the *contents* are usable is
+    // the owning handler's question, and `clonePayload` is what refuses a
+    // payload that could never be recorded.
+    ...(payload === undefined
+      ? {}
+      : { payload: payload as Readonly<Record<string, unknown>> }),
+    ...(version === undefined ? {} : { version }),
+  });
 }
 
 /**
@@ -92,27 +133,29 @@ export function appendEvent(
   registry: EventRegistry = ENGINE_EVENT_REGISTRY,
 ): readonly EngineEvent[] {
   const where = `appended event ${String(log.length)}`;
-  assertEventEnvelope(event, where);
+  // Captured once. Everything below reads the envelope, never `event` again —
+  // see `assertEventEnvelope` for what re-reading a getter would buy a caller.
+  const envelope = assertEventEnvelope(event, where);
 
-  const handler = registry.handler(event.type);
+  const handler = registry.handler(envelope.type);
   if (handler === undefined) {
     throw new Error(
-      `${where} (${event.type}): no registered module handles this event type. ` +
+      `${where} (${envelope.type}): no registered module handles this event type. ` +
         `Registered namespaces: ${registry.namespaces.join(", ")}.`,
     );
   }
-  if (event.version !== undefined && event.version !== handler.version) {
+  if (envelope.version !== undefined && envelope.version !== handler.version) {
     throw new Error(
-      `${where} (${event.type}): declares payload schema version ${String(event.version)}, ` +
+      `${where} (${envelope.type}): declares payload schema version ${String(envelope.version)}, ` +
         `but this engine implements version ${String(handler.version)}.`,
     );
   }
 
   const stamped: EngineEvent = Object.freeze({
-    type: event.type,
-    ...(event.payload === undefined
+    type: envelope.type,
+    ...(envelope.payload === undefined
       ? {}
-      : { payload: clonePayload(event.payload, where) }),
+      : { payload: clonePayload(envelope.payload, where) }),
     version: handler.version,
   });
 

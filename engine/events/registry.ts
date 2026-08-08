@@ -160,7 +160,34 @@ export function createRegistry(modules: readonly EventModule[]): EventRegistry {
             `${String(handler.version)}`,
         );
       }
-      byType.set(type, handler);
+      // Stored as a frozen copy, not by reference. `EventModule` is a plain
+      // interface, so a hand-built one can supply a mutable `RegisteredHandler`
+      // — and reassigning its `apply` after registration changes how a session
+      // folds while every frozen surface still reports the module as sealed.
+      //
+      // `defineEventModule` already closes that door for modules built through
+      // it, and says so; this is the one door left open, which made the
+      // guarantee true of the front entrance and not the building. Note this is
+      // *not* the same as freezing an `EventHandlerDefinition`, which was
+      // considered and rejected: that would freeze an object the caller owns to
+      // stop a handler mutating its own receiver — a class of divergence a
+      // shallow freeze cannot close anyway, since a closure or a module-level
+      // binding does it just as well. Here the registry builds its own object
+      // and touches nothing of the caller's, and the mutation being stopped is
+      // the dispatched function being swapped out from under it.
+      //
+      // A consequence worth knowing: `registry.modules[i].handlers[t]` is now a
+      // different object from `registry.handler(t)`. Dispatch only ever uses
+      // the latter, and the former stays as the module declared it.
+      byType.set(
+        type,
+        Object.freeze({
+          type,
+          namespace: module.namespace,
+          version: handler.version,
+          apply: handler.apply.bind(handler),
+        }),
+      );
     }
   }
 

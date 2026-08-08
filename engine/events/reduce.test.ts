@@ -342,6 +342,41 @@ describe("snapshots", () => {
     expect(serialize(resumed)).toBe(serialize(uninterrupted));
   });
 
+  it("resumes from mid-session, where the last entry predates the clock", () => {
+    // The opposite edge of the bound from the test above, and the one a real
+    // session sits on: the log ends in a `clock.tick`, and an event is stamped
+    // before it advances the clock — so the last transcript entry is strictly
+    // earlier than `startMs + elapsedMs`.
+    //
+    // That is exactly what the `<=` upper bound in `restoreSnapshot` was
+    // written to allow. Tightening it to `==` would reject every snapshot
+    // taken after any event that took simulated time, breaking resumption
+    // itself, and the `last == now` case above would not notice.
+    const paused: readonly EngineEvent[] = [
+      ...EVENTS,
+      { type: "clock.tick", payload: { ms: 45000 } },
+    ];
+    const resumption: readonly EngineEvent[] = [
+      { type: "probe.int", payload: { stream: "pids", count: 3, max: 4 } },
+      { type: "clock.tick", payload: { ms: 250 } },
+    ];
+
+    const state = fold(paused);
+    const last = state.transcript[state.transcript.length - 1];
+    // The precondition the test exists for. Without it a later change to
+    // `EVENTS` could make this silently re-test the `==` boundary.
+    expect(parseTimestamp(last?.at ?? "")).toBeLessThan(
+      state.clock.startMs + state.clock.elapsedMs,
+    );
+
+    let resumed = restoreSnapshot(snapshot(state));
+    for (const event of resumption) resumed = step(resumed, event);
+
+    expect(serialize(resumed)).toBe(
+      serialize(fold([...paused, ...resumption])),
+    );
+  });
+
   it("validates rather than trusts what it is given", () => {
     const text = snapshot(fold());
     const edited = (
@@ -464,6 +499,91 @@ describe("snapshots", () => {
     // makes the check safe to apply unconditionally.
     const state = fold();
     expect(state.clock.startMs).toBe(parseTimestamp(STARTED_AT));
+  });
+
+  it("refuses a transcript whose instants the clock could not have produced", () => {
+    // The third "one fact recorded twice", after the seed and the start
+    // instant. Every entry is stamped from this clock as it is folded, so
+    // winding `elapsedMs` back lets the *next* event be stamped before entries
+    // already in the transcript — time running backwards inside a session.
+    const text = snapshot(
+      fold([
+        { type: "clock.tick", payload: { ms: 60000 } },
+        { type: "clock.tick", payload: { ms: 60000 } },
+      ]),
+    );
+    const edited = (
+      change: (state: Record<string, unknown>) => void,
+    ): string => {
+      const parsed = deserialize(text) as Record<string, unknown>;
+      change(parsed);
+      return serialize(parsed);
+    };
+    const entriesOf = (state: Record<string, unknown>) =>
+      state["transcript"] as Record<string, unknown>[];
+
+    expect(() =>
+      restoreSnapshot(
+        edited((s) => {
+          (s["clock"] as Record<string, number>)["elapsedMs"] = 0;
+        }),
+      ),
+    ).toThrow(
+      /the last transcript entry is stamped .* but the clock stopped at/,
+    );
+
+    // An `at` that is not an instant at all restores cleanly without the parse.
+    expect(() =>
+      restoreSnapshot(
+        edited((s) => {
+          entriesOf(s)[0]!["at"] = "banana";
+        }),
+      ),
+    ).toThrow(/"transcript\[0\]\.at" is "banana", which is not a UTC instant/);
+
+    // And two entries swapped: each parses, the pair does not run forwards.
+    expect(() =>
+      restoreSnapshot(
+        edited((s) => {
+          const entries = entriesOf(s);
+          const first = entries[0]!["at"];
+          entries[0]!["at"] = entries[1]!["at"];
+          entries[1]!["at"] = first;
+        }),
+      ),
+    ).toThrow(/earlier than the entry before it/);
+
+    // The other end of the window: entries that predate the session.
+    // Nondecreasing, inside the upper bound, and still a transcript this
+    // reducer never wrote.
+    expect(() =>
+      restoreSnapshot(
+        edited((s) => {
+          for (const entry of entriesOf(s)) {
+            entry["at"] = "2026-08-04T09:14:22.000Z";
+          }
+        }),
+      ),
+    ).toThrow(
+      /the first transcript entry is stamped .* before the session began/,
+    );
+
+    // A valid instant spelled in a form the engine never writes. Caught by
+    // re-formatting, so `parseTimestamp` stays lenient for the cartridge
+    // authors who depend on it.
+    expect(() =>
+      restoreSnapshot(
+        edited((s) => {
+          entriesOf(s)[0]!["at"] = "2026-08-05T09:14:22Z";
+        }),
+      ),
+    ).toThrow(/spelled in a form this engine never writes/);
+
+    // The bounds are `<=` and `>=`, not `==`: an event is stamped at the
+    // instant it was issued and only then advances the clock, so the last
+    // entry legitimately sits before where the clock stopped — and an
+    // unedited snapshot restores.
+    expect(() => restoreSnapshot(text)).not.toThrow();
   });
 
   it("refuses transcript text that could not have been recorded", () => {

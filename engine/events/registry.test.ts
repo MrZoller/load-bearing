@@ -244,6 +244,48 @@ describe("createRegistry", () => {
     );
   });
 
+  it("stores a frozen copy of each handler, not the caller's object", () => {
+    // `EventModule` is a plain interface, so a hand-built one can supply a
+    // mutable handler — and swapping its `apply` after registration would
+    // change how a session folds while every frozen surface still reported the
+    // module as sealed. `defineEventModule` closes that door for modules built
+    // through it; this is the one that was left open.
+    const sound = counter("alpha");
+    const real = sound.handlers["alpha.bump"] as RegisteredHandler;
+    const mutable = { ...real };
+    const registry = createRegistry([
+      { ...sound, handlers: { "alpha.bump": mutable } },
+    ]);
+    const fold = () =>
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry,
+        events: [{ type: "alpha.bump" }],
+      }).transcript[0]?.summary;
+
+    const before = fold();
+    mutable.apply = () => ({ summary: "HIJACKED" });
+
+    expect(fold()).toBe(before);
+    expect(registry.handler("alpha.bump")).not.toBe(mutable);
+    expect(Object.isFrozen(registry.handler("alpha.bump"))).toBe(true);
+  });
+
+  it("leaves the module's own handlers record as the module declared it", () => {
+    // The consequence of storing a copy: `registry.modules[i].handlers[t]` and
+    // `registry.handler(t)` are now different objects. Dispatch only ever uses
+    // the second, and the first stays exactly what the module published.
+    const registry = createRegistry([counter("alpha")]);
+    const module = registry.modules[0] as EventModule;
+
+    expect(Object.isFrozen(module.handlers)).toBe(true);
+    expect(module.handlers["alpha.bump"]).not.toBe(
+      registry.handler("alpha.bump"),
+    );
+    expect(module.handlers["alpha.bump"]?.type).toBe("alpha.bump");
+  });
+
   it("rejects a slice validator on a module that holds no slice", () => {
     // It could never run, and its author would believe their snapshot was
     // being checked.

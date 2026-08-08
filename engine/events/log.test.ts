@@ -3,8 +3,11 @@ import { describe, expect, it } from "vitest";
 import { loadCartridge } from "../cartridge/load.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { EMPTY_EVENT_LOG, appendEvent, assertEventEnvelope } from "./log.js";
+import { defineEventModule } from "./module.js";
 import { reduce } from "./reduce.js";
+import { createRegistry } from "./registry.js";
 import type { EngineEvent } from "./state.js";
+import { renderTranscript } from "./transcript.js";
 
 const TICK: EngineEvent = { type: "clock.tick", payload: { ms: 5 } };
 
@@ -231,6 +234,84 @@ describe("the event log", () => {
     expect(() => appendEvent(log, { type: "nope.nope" })).toThrow(
       /appended event 1 \(nope\.nope\)/,
     );
+  });
+});
+
+describe("a type that changes between reads", () => {
+  /** An event whose `type` getter returns `honest` until the Nth read. */
+  function shifty(honest: string, thenceforth: string, after: number) {
+    let reads = 0;
+    return {
+      get type(): string {
+        reads += 1;
+        return reads > after ? thenceforth : honest;
+      },
+      payload: { ms: 1 },
+    };
+  }
+
+  it("cannot slip a forged transcript line past the fold", () => {
+    // The envelope is captured once, so the string that was checked is the
+    // string that gets used. Re-reading would let a newline reach
+    // `TranscriptEntry.type` — past `describeUnwritableText` and past the
+    // handler lookup — and `renderTranscript` would then emit an extra line,
+    // breaking its one-string-per-line contract.
+    const cartridge = loadCartridge(loadCartridgeFixture("minimal"));
+    const seed = "2026-08-05/0/deep-foundation";
+    const event = shifty("clock.tick", "clock.tick\nFORGED", 1);
+    const state = reduce({ cartridge, seed, events: [event] });
+
+    expect(state.transcript[0]?.type).toBe("clock.tick");
+    expect(renderTranscript(state.transcript)).toHaveLength(1);
+  });
+
+  it("cannot stamp an unregistered type into an appended log", () => {
+    // `appendEvent` refuses an unregistered type on principle; re-reading would
+    // let one be stamped into the log after `clock.tick` passed the lookup.
+    const log = appendEvent(
+      EMPTY_EVENT_LOG,
+      shifty("clock.tick", "nosuch.type", 1),
+    );
+
+    expect(log[0]?.type).toBe("clock.tick");
+  });
+
+  it("hands the handler the same envelope the reducer dispatched on", () => {
+    const cartridge = loadCartridge(loadCartridgeFixture("minimal"));
+    const seen: string[] = [];
+    const watcher = defineEventModule({
+      namespace: "watcher",
+      description: "reports the type it was given",
+      events: {
+        "watcher.look": {
+          version: 0,
+          apply: (context) => {
+            seen.push(context.event.type);
+            return {};
+          },
+        },
+      },
+    });
+
+    reduce({
+      cartridge,
+      seed: "2026-08-05/0/deep-foundation",
+      registry: createRegistry([watcher]),
+      events: [shifty("watcher.look", "watcher.other", 1)],
+    });
+
+    expect(seen).toEqual(["watcher.look"]);
+  });
+
+  it("returns the captured envelope, frozen", () => {
+    const captured = assertEventEnvelope(
+      shifty("clock.tick", "other.type", 1),
+      "event 0",
+    );
+
+    expect(Object.isFrozen(captured)).toBe(true);
+    expect(captured.type).toBe("clock.tick");
+    expect(captured.type).toBe("clock.tick");
   });
 });
 

@@ -40,6 +40,7 @@
 import { ENGINE_VERSION } from "../version.js";
 import { loadCartridge } from "../cartridge/load.js";
 import type { LoadedCartridge } from "../cartridge/types.js";
+import { formatTimestamp, parseTimestamp } from "../clock/civil.js";
 import { createClock, restoreClock } from "../clock/clock.js";
 import type { ClockState } from "../clock/clock.js";
 import { hashString } from "../random/seed.js";
@@ -189,18 +190,21 @@ export function step(
   registry: EventRegistry = ENGINE_EVENT_REGISTRY,
 ): SessionState {
   const index = state.eventCount;
-  assertEventEnvelope(event, `event ${String(index)}`);
-  const where = `event ${String(index)} (${event.type})`;
+  // Captured once, and the only thing read from here on. Re-reading
+  // `event.type` would let a getter hand the handler lookup one string and the
+  // transcript another — see `assertEventEnvelope`.
+  const envelope = assertEventEnvelope(event, `event ${String(index)}`);
+  const where = `event ${String(index)} (${envelope.type})`;
 
-  const handler = registry.handler(event.type);
+  const handler = registry.handler(envelope.type);
   if (handler === undefined) {
-    throw new UnknownEventTypeError(event.type, index, registry.namespaces);
+    throw new UnknownEventTypeError(envelope.type, index, registry.namespaces);
   }
-  if (event.version !== undefined && event.version !== handler.version) {
+  if (envelope.version !== undefined && envelope.version !== handler.version) {
     throw new EventVersionError(
       where,
-      event.type,
-      event.version,
+      envelope.type,
+      envelope.version,
       handler.version,
     );
   }
@@ -219,7 +223,9 @@ export function step(
     state,
     cartridge: state.cartridge,
     index,
-    event,
+    // The captured envelope, not the caller's object: a handler reading
+    // `context.event.type` must see the string the reducer dispatched on.
+    event: envelope,
     clock,
     random: random.fork(module.namespace),
     where,
@@ -238,7 +244,7 @@ export function step(
     slices: nextSlices(state, module, outcome, where),
     transcript: Object.freeze([
       ...state.transcript,
-      makeEntry(index, at, event.type, outcome, where),
+      makeEntry(index, at, envelope.type, outcome, where),
     ]),
   });
 }
@@ -379,6 +385,57 @@ export function restoreSnapshot(
         `A session's clock is started from its cartridge, so these disagreeing means one of them ` +
         `was edited and every timestamp after this point belongs to neither.`,
     );
+  }
+
+  // The third instance of "one fact recorded twice", after the seed and the
+  // start instant. Every transcript entry is stamped from this same clock as it
+  // is folded, so the last stamp cannot be later than where the clock stopped.
+  // Edit `elapsedMs` down and the session restores cleanly, then stamps the
+  // *next* event before entries already in the transcript — time running
+  // backwards inside a recorded session.
+  //
+  // `<=`, not `==`: an event is stamped at the instant it was issued and only
+  // then advances the clock, so the final entry sits at or before `now`.
+  //
+  // The sequence is already known to run forwards, so bounding the first and
+  // last entries bounds all of them — into the window the clock actually
+  // occupied, `[startMs, now]`.
+  const now = clock.startMs + clock.elapsedMs;
+  const last = transcript[transcript.length - 1];
+  const first = transcript[0];
+  if (last !== undefined && first !== undefined) {
+    const lastMs = requireInstant(
+      last.at,
+      `transcript[${String(transcript.length - 1)}].at`,
+    );
+    if (lastMs > now) {
+      throw new Error(
+        `snapshot: the last transcript entry is stamped ${JSON.stringify(last.at)}, but the clock ` +
+          `stopped at ${String(now)}. Entries are stamped from that clock as they are folded, so ` +
+          `one later than it means the next event would be recorded before events already in the ` +
+          `transcript.`,
+      );
+    }
+
+    // The other end. Without it a snapshot can claim events that happened
+    // before the session began — nondecreasing, inside the upper bound, and
+    // still a transcript this reducer never wrote.
+    //
+    // `>=`, not `===`, even though `===` is provable today: `BootstrapContext`
+    // carries no clock precisely so that nothing can advance time before the
+    // first event, which makes the first stamp exactly `startMs`. Asserting
+    // that here would couple snapshot restoration to a structural property of
+    // bootstrap, and if a later phase legitimately changed it, every snapshot
+    // recorded until then would stop restoring. The weaker bound closes the
+    // tamper class — events predating the session — without buying that.
+    const firstMs = requireInstant(first.at, "transcript[0].at");
+    if (firstMs < clock.startMs) {
+      throw new Error(
+        `snapshot: the first transcript entry is stamped ${JSON.stringify(first.at)}, before the ` +
+          `session began at ${String(clock.startMs)}. Nothing can be recorded earlier than the ` +
+          `instant the clock started.`,
+      );
+    }
   }
 
   return freezeState({
@@ -548,12 +605,64 @@ function requireLine(value: unknown, what: string): string {
   return line;
 }
 
+/**
+ * A transcript timestamp, as epoch milliseconds.
+ *
+ * `parseTimestamp` is the same function the clock parses `meta.startedAt` with —
+ * pure, UTC, a regex and hand-written calendar arithmetic, no `Date` anywhere.
+ * Without it `at: "banana"` restores cleanly and fails only whenever something
+ * eventually tries to read it.
+ */
+function requireInstant(at: string, what: string): number {
+  let ms: number;
+  try {
+    ms = parseTimestamp(at);
+  } catch (cause) {
+    throw new Error(
+      `snapshot: "${what}" is ${JSON.stringify(at)}, which is not a UTC instant of the form ` +
+        `YYYY-MM-DDTHH:MM:SS.mmmZ`,
+      { cause },
+    );
+  }
+
+  // `parseTimestamp` is the lenient half of the pair: it accepts a missing
+  // fraction and a one- or two-digit one, because a cartridge author writing
+  // `startedAt` by hand should not be caught out by trailing zeros. The engine
+  // never *writes* those forms — `formatTimestamp` always emits three digits —
+  // so a transcript carrying one did not come from this reducer.
+  //
+  // Checked by re-formatting rather than by tightening `parseTimestamp`, which
+  // the cartridge schema also depends on: the leniency is wanted there and
+  // unwanted here, and this is the place that knows the difference.
+  const canonical = formatTimestamp(ms);
+  if (canonical !== at) {
+    throw new Error(
+      `snapshot: "${what}" is ${JSON.stringify(at)}, which is a valid instant spelled in a form ` +
+        `this engine never writes — it would record it as ${JSON.stringify(canonical)}.`,
+    );
+  }
+  return ms;
+}
+
+/**
+ * The transcript from a snapshot, shape-checked and ordered in time.
+ *
+ * Each `at` is parsed rather than merely required to be a string: `"banana"`
+ * would otherwise restore cleanly and only fail whenever something tried to read
+ * it. And the instants have to be nondecreasing, because the clock they came
+ * from cannot run backwards — `advance` rejects a negative — so two entries out
+ * of order, or two swapped, is a transcript this reducer never wrote.
+ *
+ * The bound against the clock itself lives in `restoreSnapshot`, which is where
+ * the clock has been restored; this runs before that.
+ */
 function requireTranscript(value: unknown): readonly TranscriptEntry[] {
   if (!Array.isArray(value)) {
     throw new Error(`snapshot: "transcript" must be an array`);
   }
 
   const entries: readonly unknown[] = value;
+  let previousMs: number | undefined;
   return Object.freeze(
     entries.map((item, position) => {
       const entry = requireObject(item, `transcript[${String(position)}]`);
@@ -579,9 +688,22 @@ function requireTranscript(value: unknown): readonly TranscriptEntry[] {
             `written one per event, in log order`,
         );
       }
+
+      const at = requireLine(entry["at"], `transcript[${String(position)}].at`);
+      const atMs = requireInstant(at, `transcript[${String(position)}].at`);
+      if (previousMs !== undefined && atMs < previousMs) {
+        throw new Error(
+          `snapshot: "transcript[${String(position)}].at" is ${JSON.stringify(at)}, which is ` +
+            `earlier than the entry before it. The clock cannot run backwards — advancing it by ` +
+            `a negative amount is refused — so a transcript out of order was never written by ` +
+            `this reducer.`,
+        );
+      }
+      previousMs = atMs;
+
       return Object.freeze({
         index,
-        at: requireLine(entry["at"], `transcript[${String(position)}].at`),
+        at,
         type: requireLine(
           entry["type"],
           `transcript[${String(position)}].type`,
