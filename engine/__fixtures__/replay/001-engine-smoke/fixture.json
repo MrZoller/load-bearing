@@ -1,26 +1,20 @@
 {
   "name": "001-engine-smoke",
-  "description": "Proves the replay loop end to end: an input triple folds into state and a transcript that are recorded and compared byte for byte. The shared fixture cartridge is written with deliberately unsorted keys, so a regression in canonical key ordering fails here rather than in a subtle way later, and it goes through the loader on the way in, so a world that stops validating fails here too.",
+  "description": "Proves the replay loop end to end: an input triple folds into state and a transcript that are recorded and compared byte for byte. The shared fixture cartridge is written with deliberately unsorted keys, so a regression in canonical key ordering fails here rather than in a subtle way later, and it goes through the loader on the way in, so a world that stops validating fails here too. The events are the smallest thing the reducer can fold: time passing, twice.",
   "seed": "2026-08-05/0/deep-foundation",
   "cartridge": "minimal",
   "events": [
     {
-      "type": "session.start"
-    },
-    {
-      "type": "shell.exec",
+      "type": "clock.tick",
       "payload": {
-        "input": "pwd"
+        "ms": 0
       }
     },
     {
-      "type": "shell.exec",
+      "type": "clock.tick",
       "payload": {
-        "input": "ls -la"
+        "ms": 1500
       }
-    },
-    {
-      "type": "session.end"
     }
   ]
 }

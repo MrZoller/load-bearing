@@ -81,6 +81,49 @@ formatting are written out by hand in UTC, because `Date` reads the host
 timezone and `Intl` reads the host locale — either would make the same session
 render differently on a laptop than in CI.
 
+### Subsystems register events; nothing edits a central switch
+
+`engine/events/` is the reducer core. Every subsystem below — filesystem, git,
+processes, commands, mind state — adds its event types by writing an **event
+module** and appending one line to `ENGINE_EVENT_MODULES`
+(`engine/events/modules.ts`). Nothing edits the reducer, the transcript
+renderer, or a `switch (event.type)`; with ten subsystems, that switch would be
+one file every one of them has to touch and none of them can be tested without.
+
+A module declares one `namespace`, and that single word does four jobs:
+
+- **event-type prefix** — a module owns exactly the types under `vfs.*`, so two
+  subsystems cannot collide on a name
+- **state key** — `SessionState.slices[namespace]` is the only state it can
+  write. It reads any other slice through the read-only `context.state`, and
+  returns only its own, so a filesystem handler cannot reach git's state even
+  by accident
+- **PRNG stream** — the reducer hands it `root/<namespace>`, already forked, so
+  its draws cannot shift another subsystem's sequence
+- the word that appears in errors and in fixture diffs
+
+**Registration order cannot matter**, and that is structural rather than
+promised: namespaces are unique so lookup is by exact type, each slice is built
+from its own module alone, and bootstrap hands out no clock — the two ways
+order could leak in (a shared stream, a shared clock) are unreachable.
+`engine/events/registry.test.ts` shuffles the list and asserts the fold is
+byte-identical.
+
+**An unregistered event type is refused, never ignored.** Treating it as a
+no-op would let a subsystem missing from the module list produce a session that
+looks complete and is missing part of its own history — with the golden fixture
+recording the loss as correct. (This is not invariant 7's confident-
+misunderstanding rule, which governs a *visitor's* input; an unhandled event
+type is a defect in the engine or the log.) Payload schemas version per event
+type, on the handler that owns them, so a recorded event written against older
+rules fails loudly instead of being reinterpreted.
+
+**The transcript is derived state, not a rendering side effect.** Each event
+folds one `TranscriptEntry` into `SessionState.transcript` at the same index,
+and the recorded `transcript.txt` is a pure rendering of those entries. A Phase
+1 terminal view renders the same entries differently without changing what was
+recorded.
+
 ### Simulated machine state
 
 - **VFS:** tree with contents, permissions, owners/groups, mtimes, cwd —

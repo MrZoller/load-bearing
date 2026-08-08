@@ -5,6 +5,7 @@ import type { EngineEvent } from "./session.js";
 import { parseTimestamp } from "./clock/civil.js";
 import { loadCartridge } from "./cartridge/load.js";
 import type { LoadedCartridge } from "./cartridge/types.js";
+import { renderTranscript } from "./events/transcript.js";
 
 const SEED = "2026-08-05/0/deep-foundation";
 const STARTED_AT = "2026-08-05T09:14:22.000Z";
@@ -45,10 +46,9 @@ function replay(cartridge: LoadedCartridge, events: readonly EngineEvent[]) {
 describe("replaySession", () => {
   it("is pure: the same input folds to the same output", () => {
     const events: readonly EngineEvent[] = [
-      { type: "session.start" },
       { type: "clock.tick", payload: { ms: 1500 } },
       {
-        type: "random.draw",
+        type: "probe.random",
         payload: { stream: "spinner.verbs", count: 4, form: "uint32" },
       },
     ];
@@ -60,7 +60,7 @@ describe("replaySession", () => {
     const output = replay(CARTRIDGE, [
       { type: "clock.tick", payload: { ms: 2500 } },
       {
-        type: "random.draw",
+        type: "probe.random",
         payload: { stream: "pids", count: 2, form: "uint32" },
       },
     ]);
@@ -69,15 +69,23 @@ describe("replaySession", () => {
       startMs: parseTimestamp(STARTED_AT),
       elapsedMs: 2500,
     });
-    expect(Object.keys(output.state.random.cursors)).toEqual(["root/pids"]);
+    expect(Object.keys(output.state.random.cursors)).toEqual([
+      "root/probe/pids",
+    ]);
   });
 
-  it("stamps each event with the instant it was issued, not the one it ended at", () => {
+  it("renders the transcript the reducer folded, rather than a second one", () => {
+    // The transcript is state. This function is a view of it, so the two can
+    // never disagree — which is what makes `transcript.txt` and `state.json`
+    // one contract recorded twice rather than two contracts that might drift.
     const output = replay(CARTRIDGE, [
       { type: "clock.tick", payload: { ms: 60000 } },
-      { type: "session.end" },
+      { type: "clock.tick", payload: { ms: 0 } },
     ]);
 
+    expect(output.transcript).toEqual(
+      renderTranscript(output.state.transcript),
+    );
     expect(output.transcript[0]).toContain(STARTED_AT);
     expect(output.transcript[1]).toContain("2026-08-05T09:15:22.000Z");
   });
@@ -103,133 +111,5 @@ describe("the cartridge's declared start", () => {
       group: "root",
       mtime: STARTED_AT,
     });
-  });
-});
-
-describe("probe events", () => {
-  const cartridge = CARTRIDGE;
-
-  it("names the resolved stream path, so a fixture says which stream moved", () => {
-    const output = replay(cartridge, [
-      {
-        type: "random.draw",
-        payload: { stream: "spinner/verbs", count: 1, form: "uint32" },
-      },
-      { type: "random.draw", payload: { stream: "", count: 1, form: "float" } },
-    ]);
-
-    expect(output.transcript[0]).toContain("stream=root/spinner/verbs");
-    expect(output.transcript[3]).toContain("stream=root ");
-  });
-
-  it("tallies a weighted distribution, zero-weight entries included", () => {
-    const output = replay(cartridge, [
-      {
-        type: "random.weighted",
-        payload: {
-          stream: "rare-events",
-          count: 100,
-          entries: [
-            { value: "off", weight: 0 },
-            { value: "on", weight: 1 },
-          ],
-        },
-      },
-    ]);
-
-    expect(output.transcript[1]).toMatch(/off\s+weight=\s+0\s+picks=\s+0/);
-    expect(output.transcript[2]).toMatch(/on\s+weight=\s+1\s+picks=\s+100/);
-  });
-
-  it("records a snapshot whose picks sum to the count", () => {
-    // The property the duplicate-value rejection exists to keep true: rows are
-    // labelled by value, so a snapshot whose column does not sum to `count` is
-    // reporting one arm's draws against two labels.
-    const count = 4000;
-    const output = replay(cartridge, [
-      {
-        type: "random.weighted",
-        payload: {
-          stream: "rare-events",
-          count,
-          entries: [
-            { value: "off", weight: 0 },
-            { value: "rare", weight: 1 },
-            { value: "common", weight: 9 },
-          ],
-        },
-      },
-    ]);
-
-    const picks = output.transcript
-      .slice(1, 4)
-      .map((line) => Number(/picks=\s*(\d+)/.exec(line)?.[1]));
-
-    expect(picks[0]).toBe(0);
-    expect(picks.reduce((sum, hits) => sum + hits, 0)).toBe(count);
-  });
-
-  it("ignores event types it does not know, rather than failing on them", () => {
-    const output = replay(cartridge, [
-      { type: "shell.exec", payload: { input: "ls -la" } },
-    ]);
-    expect(output.transcript).toEqual([`0000  ${STARTED_AT}  shell.exec`]);
-  });
-
-  it("rejects a probe payload it cannot trust", () => {
-    const cases: readonly (readonly [EngineEvent, RegExp])[] = [
-      [{ type: "clock.tick" }, /requires a payload/],
-      [{ type: "clock.tick", payload: { ms: -1 } }, /ms must be an integer/],
-      [
-        { type: "random.draw", payload: { stream: "a", count: 1 } },
-        /form must be a string/,
-      ],
-      [
-        {
-          type: "random.draw",
-          payload: { stream: "a", count: 1, form: "double" },
-        },
-        /form must be "uint32" or "float"/,
-      ],
-      [
-        { type: "random.int", payload: { stream: "a", count: 1, max: 0 } },
-        /max must be an integer/,
-      ],
-      [
-        { type: "random.weighted", payload: { stream: "a", count: 1 } },
-        /entries must be an array/,
-      ],
-      [
-        {
-          type: "random.weighted",
-          payload: { stream: "a", count: 1, entries: [{ weight: 1 }] },
-        },
-        /value must be a string/,
-      ],
-      [
-        {
-          type: "random.weighted",
-          payload: {
-            stream: "a",
-            count: 1,
-            entries: [
-              { value: "same", weight: 0 },
-              { value: "same", weight: 1 },
-            ],
-          },
-        },
-        /already appears in this snapshot/,
-      ],
-    ];
-
-    for (const [event, expected] of cases) {
-      expect(() => replay(cartridge, [event])).toThrow(expected);
-    }
-  });
-
-  it("names the offending event, since a fixture has many", () => {
-    expect(() =>
-      replay(cartridge, [{ type: "session.start" }, { type: "clock.tick" }]),
-    ).toThrow(/event 1 \(clock\.tick\)/);
   });
 });

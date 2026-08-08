@@ -80,14 +80,30 @@ against the replay contract.
 | `001-engine-smoke`   | the loop itself: an input triple folds, records, and compares. The shared cartridge is written with unsorted keys, so a key-ordering regression fails here  |
 | `002-random-clock`   | the seed hash, the mulberry32 constants, `fork`'s path derivation, `int`'s rejection window, `weightedPick`'s distribution, and the UTC calendar arithmetic |
 | `003-cartridge-load` | load to initial state with an empty event log — normalization alone, isolated from the fold                                                                 |
+| `004-reducer-core`   | the reducer's machinery at readable size: a stamped payload schema version, dispatch across two modules, a slice accumulating, transcript index and stamps  |
 
 `002` records 1000 raw draws eight to a line with their index, so a divergence
 names the draw it started at rather than reporting that a file changed.
 
 `003` exists so two contracts can fail apart. A change to the reducer moves
-`001` and `002` and leaves `003` alone; a diff in `003` means normalization
-changed — a default filled differently, a section defaulting to something other
-than empty, or key ordering moving.
+`001`, `002` and `004` and leaves `003` alone; a diff in `003` means
+normalization changed — a default filled differently, a section defaulting to
+something other than empty, or key ordering moving.
+
+### Why the transcript appears in both artifacts
+
+The transcript is _state_: the reducer folds a `TranscriptEntry` per event into
+`SessionState.transcript`, because `state = reduce(cartridge, seed, eventLog)`
+has to be the whole session and a transcript accumulated on the side would not
+be reproducible from a snapshot. So `state.json` holds the structured entries
+and `transcript.txt` holds the rendering of them
+(`engine/events/transcript.ts`).
+
+That is one contract recorded twice, not two contracts. The duplication is the
+price of being able to say that a divergence is in the _entry_ — a summary, a
+detail line, an event's stamped instant — rather than in a formatter, and
+`engine/session.test.ts` asserts the rendering is a function of the entries so
+the two can never drift apart.
 
 ### Cartridge fixtures
 

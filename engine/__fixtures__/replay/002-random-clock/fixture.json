@@ -1,14 +1,11 @@
 {
   "name": "002-random-clock",
-  "description": "Locks the two sources of nondeterminism the engine is allowed to have. The transcript records 1000 raw draws, the float derivation, an int() histogram, and a weightedPick distribution snapshot; state.json records where every stream and the clock stopped. A change to the seed hash, the mulberry32 constants, the fork derivation, int()'s rejection window, or the UTC calendar arithmetic fails here \u2014 and fails visibly, at the draw that first diverged. It shares the fixture cartridge with 001, so the clock starts where that world says it does.",
+  "description": "Locks the two sources of nondeterminism the engine is allowed to have. The transcript records 1000 raw draws, the float derivation, an int() histogram, and a weightedPick distribution snapshot; state.json records where every stream and the clock stopped. A change to the seed hash, the mulberry32 constants, the fork derivation, int()'s rejection window, or the UTC calendar arithmetic fails here — and fails visibly, at the draw that first diverged. Streams are addressed relative to the probe module's own stream, so the recorded paths also pin the per-module fork the reducer performs. It shares the fixture cartridge with 001, so the clock starts where that world says it does.",
   "seed": "2026-08-05/0/deep-foundation",
   "cartridge": "minimal",
   "events": [
     {
-      "type": "session.start"
-    },
-    {
-      "type": "random.draw",
+      "type": "probe.random",
       "payload": {
         "stream": "spinner.verbs",
         "count": 1000,
@@ -22,7 +19,7 @@
       }
     },
     {
-      "type": "random.draw",
+      "type": "probe.random",
       "payload": {
         "stream": "spinner.verbs",
         "count": 8,
@@ -30,7 +27,7 @@
       }
     },
     {
-      "type": "random.draw",
+      "type": "probe.random",
       "payload": {
         "stream": "",
         "count": 8,
@@ -38,7 +35,7 @@
       }
     },
     {
-      "type": "random.draw",
+      "type": "probe.random",
       "payload": {
         "stream": "spinner/verbs",
         "count": 8,
@@ -52,7 +49,7 @@
       }
     },
     {
-      "type": "random.int",
+      "type": "probe.int",
       "payload": {
         "stream": "pids",
         "count": 5000,
@@ -60,7 +57,7 @@
       }
     },
     {
-      "type": "random.weighted",
+      "type": "probe.weighted",
       "payload": {
         "stream": "rare-events",
         "count": 10000,
@@ -89,9 +86,6 @@
       "payload": {
         "ms": 53738000
       }
-    },
-    {
-      "type": "session.end"
     }
   ]
 }

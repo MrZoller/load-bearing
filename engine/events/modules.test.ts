@@ -1,0 +1,232 @@
+import { describe, expect, it } from "vitest";
+
+import { loadCartridge } from "../cartridge/load.js";
+import type { LoadedCartridge } from "../cartridge/types.js";
+import { parseTimestamp } from "../clock/civil.js";
+import { loadCartridgeFixture } from "../testing/fixtures.js";
+import { MAX_TICK_MS } from "./core.js";
+import { ENGINE_EVENT_MODULES, ENGINE_EVENT_REGISTRY } from "./modules.js";
+import { reduce } from "./reduce.js";
+import type { EngineEvent, SessionState } from "./state.js";
+import { renderTranscript } from "./transcript.js";
+
+const SEED = "2026-08-05/0/deep-foundation";
+const STARTED_AT = "2026-08-05T09:14:22.000Z";
+const CARTRIDGE: LoadedCartridge = loadCartridge(
+  loadCartridgeFixture("minimal"),
+);
+
+function fold(events: readonly EngineEvent[]): SessionState {
+  return reduce({ cartridge: CARTRIDGE, seed: SEED, events });
+}
+
+function lines(events: readonly EngineEvent[]): string[] {
+  return renderTranscript(fold(events).transcript);
+}
+
+describe("the engine's module list", () => {
+  it("registers every module it declares, with no collisions", () => {
+    expect(ENGINE_EVENT_REGISTRY.namespaces).toEqual(
+      [...ENGINE_EVENT_MODULES].map((module) => module.namespace).sort(),
+    );
+    expect(ENGINE_EVENT_REGISTRY.types).toEqual([
+      "clock.tick",
+      "probe.int",
+      "probe.random",
+      "probe.weighted",
+    ]);
+  });
+
+  it("is frozen, so nothing can register an event type at runtime", () => {
+    expect(Object.isFrozen(ENGINE_EVENT_MODULES)).toBe(true);
+  });
+});
+
+describe("clock.tick", () => {
+  it("advances simulated time and records how far", () => {
+    const state = fold([
+      { type: "clock.tick", payload: { ms: 1500 } },
+      { type: "clock.tick", payload: { ms: 500 } },
+    ]);
+
+    expect(state.clock).toEqual({
+      startMs: parseTimestamp(STARTED_AT),
+      elapsedMs: 2000,
+    });
+    expect(lines([{ type: "clock.tick", payload: { ms: 1500 } }])).toEqual([
+      `0000  ${STARTED_AT}  clock.tick ms=1500`,
+    ]);
+  });
+
+  it("accepts a zero tick, since plenty of events take no time", () => {
+    expect(
+      fold([{ type: "clock.tick", payload: { ms: 0 } }]).clock.elapsedMs,
+    ).toBe(0);
+  });
+
+  it("refuses a tick it cannot trust", () => {
+    const cases: readonly (readonly [EngineEvent, RegExp])[] = [
+      [{ type: "clock.tick" }, /requires a payload/],
+      [{ type: "clock.tick", payload: {} }, /ms must be an integer/],
+      [{ type: "clock.tick", payload: { ms: -1 } }, /ms must be an integer/],
+      [{ type: "clock.tick", payload: { ms: 1.5 } }, /ms must be an integer/],
+      [
+        { type: "clock.tick", payload: { ms: MAX_TICK_MS + 1 } },
+        /ms must be an integer in \[0, 86400000\]/,
+      ],
+    ];
+
+    for (const [event, expected] of cases) {
+      expect(() => fold([event])).toThrow(expected);
+    }
+  });
+});
+
+describe("the probe events", () => {
+  it("names the resolved stream path, so a fixture says which stream moved", () => {
+    // Paths are relative to the module's own stream: every module draws under
+    // `root/<namespace>`, which is what keeps one subsystem's draws out of
+    // another's sequence.
+    const rendered = lines([
+      {
+        type: "probe.random",
+        payload: { stream: "spinner/verbs", count: 1, form: "uint32" },
+      },
+      {
+        type: "probe.random",
+        payload: { stream: "", count: 1, form: "float" },
+      },
+    ]);
+
+    expect(rendered[0]).toContain("stream=root/probe/spinner/verbs");
+    expect(rendered[3]).toContain("stream=root/probe ");
+  });
+
+  it("tallies a weighted distribution, zero-weight entries included", () => {
+    const rendered = lines([
+      {
+        type: "probe.weighted",
+        payload: {
+          stream: "rare-events",
+          count: 100,
+          entries: [
+            { value: "off", weight: 0 },
+            { value: "on", weight: 1 },
+          ],
+        },
+      },
+    ]);
+
+    expect(rendered[1]).toMatch(/off\s+weight=\s+0\s+picks=\s+0/);
+    expect(rendered[2]).toMatch(/on\s+weight=\s+1\s+picks=\s+100/);
+  });
+
+  it("records a snapshot whose picks sum to the count", () => {
+    // The property the duplicate-value rejection exists to keep true: rows are
+    // labelled by value, so a snapshot whose column does not sum to `count` is
+    // reporting one arm's draws against two labels.
+    const count = 4000;
+    const rendered = lines([
+      {
+        type: "probe.weighted",
+        payload: {
+          stream: "rare-events",
+          count,
+          entries: [
+            { value: "off", weight: 0 },
+            { value: "rare", weight: 1 },
+            { value: "common", weight: 9 },
+          ],
+        },
+      },
+    ]);
+
+    const picks = rendered
+      .slice(1, 4)
+      .map((line) => Number(/picks=\s*(\d+)/.exec(line)?.[1]));
+
+    expect(picks[0]).toBe(0);
+    expect(picks.reduce((sum, hits) => sum + hits, 0)).toBe(count);
+  });
+
+  it("accumulates its slice across events, which is how a subsystem holds state", () => {
+    expect(
+      fold([
+        {
+          type: "probe.random",
+          payload: { stream: "a", count: 3, form: "float" },
+        },
+        { type: "probe.int", payload: { stream: "a", count: 2, max: 4 } },
+      ]).slices,
+    ).toEqual({ probe: { events: 2, values: 5 } });
+  });
+
+  it("rejects a payload it cannot trust", () => {
+    const cases: readonly (readonly [EngineEvent, RegExp])[] = [
+      [
+        { type: "probe.random", payload: { stream: "a", count: 1 } },
+        /form must be a string/,
+      ],
+      [
+        {
+          type: "probe.random",
+          payload: { stream: "a", count: 1, form: "double" },
+        },
+        /form must be "uint32" or "float"/,
+      ],
+      [
+        { type: "probe.random", payload: { count: 1, form: "float" } },
+        /stream must be a string/,
+      ],
+      [
+        { type: "probe.int", payload: { stream: "a", count: 1, max: 0 } },
+        /max must be an integer/,
+      ],
+      [
+        { type: "probe.weighted", payload: { stream: "a", count: 1 } },
+        /entries must be an array/,
+      ],
+      [
+        {
+          type: "probe.weighted",
+          payload: { stream: "a", count: 1, entries: [null] },
+        },
+        /entry 0: must be an object/,
+      ],
+      [
+        {
+          type: "probe.weighted",
+          payload: { stream: "a", count: 1, entries: [{ weight: 1 }] },
+        },
+        /value must be a string/,
+      ],
+      [
+        {
+          type: "probe.weighted",
+          payload: {
+            stream: "a",
+            count: 1,
+            entries: [
+              { value: "same", weight: 0 },
+              { value: "same", weight: 1 },
+            ],
+          },
+        },
+        /already appears in this snapshot/,
+      ],
+    ];
+
+    for (const [event, expected] of cases) {
+      expect(() => fold([event])).toThrow(expected);
+    }
+  });
+
+  it("names the offending event, since a fixture has many", () => {
+    expect(() =>
+      fold([
+        { type: "clock.tick", payload: { ms: 0 } },
+        { type: "probe.int", payload: { stream: "a", count: 1 } },
+      ]),
+    ).toThrow(/event 1 \(probe\.int\)/);
+  });
+});

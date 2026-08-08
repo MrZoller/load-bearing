@@ -76,21 +76,24 @@
     "story": {}
   },
   "clock": {
-    "elapsedMs": 1500,
+    "elapsedMs": 86460000,
     "startMs": 1785921262000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 2,
+  "eventCount": 6,
   "eventSchemaVersion": 0,
   "random": {
-    "cursors": {},
+    "cursors": {
+      "root/probe/reducer": 2567488557,
+      "root/probe/reducer/rare": 137372562
+    },
     "seed": 1023437636
   },
   "seed": "2026-08-05/0/deep-foundation",
   "slices": {
     "probe": {
-      "events": 0,
-      "values": 0
+      "events": 3,
+      "values": 12
     }
   },
   "transcript": [
@@ -98,14 +101,54 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "index": 0,
+      "summary": "ms=60000",
+      "type": "clock.tick"
+    },
+    {
+      "at": "2026-08-05T09:15:22.000Z",
+      "detail": [
+        "0000  fb6ee486 39968348 6aaae50d",
+        "cursor=e45adc59"
+      ],
+      "index": 1,
+      "summary": "stream=root/probe/reducer count=3 form=uint32",
+      "type": "probe.random"
+    },
+    {
+      "at": "2026-08-05T09:15:22.000Z",
+      "detail": [],
+      "index": 2,
       "summary": "ms=0",
       "type": "clock.tick"
     },
     {
-      "at": "2026-08-05T09:14:22.000Z",
+      "at": "2026-08-05T09:15:22.000Z",
+      "detail": [
+        "   0       3",
+        "   1       0",
+        "   2       1",
+        "cursor=9908c42d"
+      ],
+      "index": 3,
+      "summary": "stream=root/probe/reducer count=4 max=3",
+      "type": "probe.int"
+    },
+    {
+      "at": "2026-08-05T09:15:22.000Z",
+      "detail": [
+        "held      weight=     3  picks=      5",
+        "gave-way  weight=     1  picks=      0",
+        "cursor=08302392"
+      ],
+      "index": 4,
+      "summary": "stream=root/probe/reducer/rare count=5",
+      "type": "probe.weighted"
+    },
+    {
+      "at": "2026-08-05T09:15:22.000Z",
       "detail": [],
-      "index": 1,
-      "summary": "ms=1500",
+      "index": 5,
+      "summary": "ms=86400000",
       "type": "clock.tick"
     }
   ]

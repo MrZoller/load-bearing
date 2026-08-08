@@ -1,0 +1,61 @@
+{
+  "name": "004-reducer-core",
+  "description": "The reducer's own machinery, at a size a human can read. Pins four things 001 and 002 leave implicit: an event carrying an explicit payload schema version, which the engine must accept only while it still implements that version; dispatch alternating between two registered modules; a module slice accumulating across events, which is how issues #5 through #13 will hold their state; and the transcript's index and timestamp discipline, where an event is stamped at the instant it was issued rather than the one it finished at — the last clock.tick advances a full day and is still recorded at the moment before it.",
+  "seed": "2026-08-05/0/deep-foundation",
+  "cartridge": "minimal",
+  "events": [
+    {
+      "type": "clock.tick",
+      "version": 0,
+      "payload": {
+        "ms": 60000
+      }
+    },
+    {
+      "type": "probe.random",
+      "payload": {
+        "stream": "reducer",
+        "count": 3,
+        "form": "uint32"
+      }
+    },
+    {
+      "type": "clock.tick",
+      "payload": {
+        "ms": 0
+      }
+    },
+    {
+      "type": "probe.int",
+      "payload": {
+        "stream": "reducer",
+        "count": 4,
+        "max": 3
+      }
+    },
+    {
+      "type": "probe.weighted",
+      "version": 0,
+      "payload": {
+        "stream": "reducer/rare",
+        "count": 5,
+        "entries": [
+          {
+            "value": "held",
+            "weight": 3
+          },
+          {
+            "value": "gave-way",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "type": "clock.tick",
+      "payload": {
+        "ms": 86400000
+      }
+    }
+  ]
+}

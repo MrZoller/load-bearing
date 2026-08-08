@@ -1,0 +1,15 @@
+0000  2026-08-05T09:14:22.000Z  clock.tick ms=60000
+0001  2026-08-05T09:15:22.000Z  probe.random stream=root/probe/reducer count=3 form=uint32
+      0000  fb6ee486 39968348 6aaae50d
+      cursor=e45adc59
+0002  2026-08-05T09:15:22.000Z  clock.tick ms=0
+0003  2026-08-05T09:15:22.000Z  probe.int stream=root/probe/reducer count=4 max=3
+         0       3
+         1       0
+         2       1
+      cursor=9908c42d
+0004  2026-08-05T09:15:22.000Z  probe.weighted stream=root/probe/reducer/rare count=5
+      held      weight=     3  picks=      5
+      gave-way  weight=     1  picks=      0
+      cursor=08302392
+0005  2026-08-05T09:15:22.000Z  clock.tick ms=86400000

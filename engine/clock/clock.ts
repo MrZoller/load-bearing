@@ -11,8 +11,10 @@
  * The clock therefore has exactly two pieces of state: where the session
  * started, and how far it has advanced. Which events advance it, and by how
  * much, is decided per subsystem — a `git log` is instantaneous, a simulated
- * test run is not — and belongs with those subsystems (issues #4 through #12),
- * not here.
+ * test run is not — and belongs with those subsystems, not here. The reducer
+ * hands each event handler a live clock (`engine/events/module.ts` →
+ * `EventContext`) and takes its position back afterwards; `clock.tick` is the
+ * event for time passing on its own.
  */
 
 import type { CivilTime } from "./civil.js";
