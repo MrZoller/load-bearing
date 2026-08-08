@@ -42,13 +42,19 @@ const FLOAT_PER_LINE = 4;
  * `readInteger` declared legal was then refused by `captureOutcome` — one
  * engine, two ceilings, and a shipped event type failing between them.
  *
- * Float is the worst case at four values per line, so the budget divided by
- * that is the largest count any form can ask for. One line of the budget is
- * reserved for the trailing `cursor=` line every probe writes. The other forms
- * come out well inside it: the same count in uint32 form is 2049 lines,
- * `probe.int` renders `max` rows and is bounded separately at
- * `MAX_PROBE_INT_BOUND`, and `probe.weighted` renders one row per arm, which
- * the transcript bound limits directly.
+ * Float is the worst case among the count-driven forms at four values per
+ * line, so the budget divided by that is the largest count any of them can ask
+ * for. One line of the budget is reserved for the trailing `cursor=` line every
+ * probe writes. The same count in uint32 form is 2049 lines, and `probe.int`
+ * renders `max` rows, bounded separately at `MAX_PROBE_INT_BOUND`.
+ *
+ * `probe.weighted` is not count-driven and this ceiling does not constrain it:
+ * it renders one row per arm and `readWeightedEntries` caps nothing, so a
+ * payload with more distinct arms than the line budget passes its own validator
+ * and is then refused by `captureOutcome`. That is the design working rather
+ * than a second contradiction — there is one number, the refusal is loud and
+ * names the event, and `./transcript.ts` explains why the bound lives on the
+ * output instead of being reinvented per module.
  */
 const MAX_PROBE_COUNT = (MAX_TRANSCRIPT_DETAIL_LINES - 1) * FLOAT_PER_LINE;
 

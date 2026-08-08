@@ -894,17 +894,24 @@ function freezeSlice(
   return canonicalizeSlice(slice, previous, where, "", new Set<object>());
 }
 
+/** An array index as a property key: `0 … 2**32 - 2`, no leading zeros. */
+const ARRAY_INDEX = /^(?:0|[1-9]\d*)$/;
+
 /**
  * One node of the canonicalizing walk.
  *
  * `previous` is the corresponding node of the last canonical slice, or
  * `undefined` where there is none. Identity with it is the whole optimization:
- * that subtree was canonicalized and frozen on an earlier event and cannot have
- * changed since, because everything this function returns is frozen.
+ * a plain object or array this walk returned was rebuilt and frozen on an
+ * earlier event, so it cannot have changed since.
+ *
+ * Both that argument and the cycle refusal below are about the plain data this
+ * walk rebuilds, and nothing wider. A value `canFreezeInPlace` refuses — a
+ * nested `Map`, a `Date` — is returned untouched and therefore unfrozen, so it
+ * can change under a shortcut, and a cycle routed through one is not refused
+ * here either. Both are the serializer's at record time, per the residuals note
+ * on `freezeSlice`.
  */
-/** An array index as a property key: `0 … 2**32 - 2`, no leading zeros. */
-const ARRAY_INDEX = /^(?:0|[1-9]\d*)$/;
-
 function canonicalizeSlice(
   next: unknown,
   previous: unknown,
@@ -1015,7 +1022,24 @@ function canonicalizeSlice(
       typeof previous === "object" && previous !== null
         ? (previous as Record<string, unknown>)
         : undefined;
-    const rebuilt: Record<string, unknown> = {};
+    // Collected and defined, never assigned by key. Assignment is unsafe the
+    // moment a key comes from data: one key inherited from Object.prototype is
+    // an accessor, so `rebuilt[key] = value` calls that setter instead of
+    // creating an own property — the key vanishes, and with an object value the
+    // rebuilt slice walks away wearing a prototype the handler chose. With a
+    // primitive it is worse: the setter is a no-op, nothing throws anywhere,
+    // and two different slices produce one recording.
+    //
+    // Reachable from ordinary text, not just from a hand-built object:
+    // `deserialize` is `JSON.parse`, which does create that key as own data, so
+    // `requireSlices` reaches here with it for any stateful module that
+    // declares no `validateSlice` — and the hook is optional.
+    //
+    // The cartridge loader fixed exactly this in `objectFromEntries`, and
+    // `load.test.ts` pins the key surviving as own data. This walk cited
+    // `cloneJson` for its cycle-versus-DAG reasoning and did not take its
+    // construction with it.
+    const entries: [string, unknown][] = [];
     for (const key of Object.keys(descriptors).sort()) {
       const descriptor = descriptors[key];
       if (descriptor === undefined) continue;
@@ -1024,15 +1048,19 @@ function canonicalizeSlice(
       // absent from the recorded form, so keeping it here is the difference
       // `Object.hasOwn` reports before and after a round trip.
       if (value === undefined) continue;
-      rebuilt[key] = canonicalizeSlice(
-        value,
-        before?.[key],
-        where,
-        `${path}.${key}`,
-        active,
-      );
+      // `hasOwn` before the read, for the same reason: a bare `before[key]`
+      // would answer from Object.prototype for that one key rather than
+      // reporting it absent, and hand the walk a prototype as a previous value.
+      const wasThere =
+        before !== undefined && Object.hasOwn(before, key)
+          ? before[key]
+          : undefined;
+      entries.push([
+        key,
+        canonicalizeSlice(value, wasThere, where, `${path}.${key}`, active),
+      ]);
     }
-    return Object.freeze(rebuilt);
+    return Object.freeze(Object.fromEntries(entries));
   } finally {
     active.delete(next);
   }
@@ -1184,9 +1212,9 @@ function requireTranscript(
         );
       }
       const lines: readonly unknown[] = detail;
-      // The same ceiling `captureOutcome` applies on the way in. `requireLine`
-      // eighty lines below states the rule: a check belongs on both doors into
-      // the transcript, not only the one the reducer writes through. Without it
+      // The same ceiling `captureOutcome` applies on the way in, and the rule
+      // `requireLine` states further up this file: a check belongs on both doors
+      // into the transcript, not only the one the reducer writes through. Without it
       // the exported constants bound what `step` produces and not what a
       // `SessionState` may hold, which is not what a reader of them — or
       // #5–#13 — would take them to mean.

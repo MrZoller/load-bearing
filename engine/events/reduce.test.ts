@@ -593,6 +593,94 @@ describe("snapshots", () => {
         return held;
       }),
     ).toThrow(/non-enumerable property/);
+
+    // The member of this family that is *preserved* rather than refused, and
+    // the one the repository had already been bitten by: `rebuilt[key] = value`
+    // invokes the inherited setter for the prototype key instead of creating an
+    // own property, so the key vanishes and — for an object value — the slice
+    // walks away wearing a prototype the handler chose. For a primitive nothing
+    // throws at all and two states record as one. `load.ts`'s
+    // `objectFromEntries` fixed exactly this for cartridges;
+    // `load.test.ts` pins the same survival.
+    //
+    // `JSON.parse` rather than a literal, because a literal is the setter
+    // syntax and does not create an own property. This is also the reachable
+    // route: `deserialize` is `JSON.parse`, so a snapshot carries it here.
+    const poisoned = () =>
+      JSON.parse('{"__proto__": {"polluted": true}, "keep": 1}') as unknown;
+    const state = fold(poisoned);
+    const slice = state.slices["shape"] as Record<string, unknown>;
+
+    expect(Object.keys(slice).sort()).toEqual(["__proto__", "keep"]);
+    expect(Object.hasOwn(slice, "__proto__")).toBe(true);
+    expect(Object.getPrototypeOf(slice)).toBe(Object.prototype);
+    expect((slice as { polluted?: unknown }).polluted).toBeUndefined();
+
+    // And through a restore, which is the path a snapshot actually takes.
+    const registry = createRegistry([holding(poisoned)]);
+    const restored = restoreSnapshot(
+      snapshot(
+        reduce({
+          cartridge: CARTRIDGE,
+          seed: SEED,
+          registry,
+          events: [{ type: "shape.go" }],
+        }),
+      ),
+      registry,
+    );
+    const back = restored.slices["shape"] as Record<string, unknown>;
+
+    expect(Object.hasOwn(back, "__proto__")).toBe(true);
+    expect(Object.getPrototypeOf(back)).toBe(Object.prototype);
+    expect(serialize(back)).toBe(serialize(slice));
+  });
+
+  it("looks the previous value up by own key, not through the prototype", () => {
+    // The read side of the same inherited accessor. Looking the previous
+    // canonical value up as `before[key]` answers from `Object.prototype` for
+    // the prototype key rather than reporting it absent, so the walk is handed
+    // a prototype object as a "previous canonical value" — and if the new value
+    // happens to be that same object, the identity shortcut fires and stores
+    // the live `Object.prototype` into the frozen slice.
+    //
+    // **Unreachable today, and pinned so a refactor cannot quietly drop it.**
+    // It needs a handler to build an own prototype-named key holding
+    // `Object.prototype` itself, which nothing does and which the walk refuses
+    // by another route the moment the shortcut does not fire. This asserts the
+    // refusal, not a live defect.
+    const returning = (build: (index: number) => unknown): EventModule =>
+      defineEventModule<unknown>({
+        namespace: "readside",
+        description: "hands over a prototype-named key on its second event",
+        initialSlice: () => ({ keep: 1 }),
+        events: {
+          "readside.go": {
+            version: 0,
+            apply: (context) => ({ slice: build(context.index) }),
+          },
+        },
+      });
+
+    expect(() =>
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry: createRegistry([
+          returning((index) =>
+            index === 0
+              ? { keep: 1 }
+              : Object.defineProperty({ keep: 1 }, "__proto__", {
+                  value: Object.prototype,
+                  enumerable: true,
+                  writable: true,
+                  configurable: true,
+                }),
+          ),
+        ]),
+        events: [{ type: "readside.go" }, { type: "readside.go" }],
+      }),
+    ).toThrow(/non-enumerable property/);
   });
 
   it("keeps the shared structure a handler hands it, and refuses a cycle", () => {
