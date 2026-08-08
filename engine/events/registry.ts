@@ -12,6 +12,12 @@
  * PRNG's named streams exist to avoid. Here the list is explicit
  * (`./modules.ts`), a test can build a different one, and two lists in
  * different orders produce registries that answer identically.
+ *
+ * Everything this function returns is a frozen copy rather than the caller's
+ * object, because `EventModule` is an interface a caller can satisfy by hand
+ * and this function spends its whole length validating one. `./module.ts` →
+ * "What this layer enforces, and what it cannot" is the full account of that
+ * boundary; the comments below give the per-check reasoning.
  */
 
 import type { EventModule, RegisteredHandler } from "./module.js";
@@ -72,10 +78,24 @@ export function createRegistry(modules: readonly EventModule[]): EventRegistry {
   const byNamespace = new Map<string, EventModule>();
   const byType = new Map<string, RegisteredHandler>();
 
-  for (const module of sorted) {
-    if (!NAMESPACE_SHAPE.test(module.namespace)) {
+  const registered: EventModule[] = [];
+
+  for (const declared of sorted) {
+    // Every field read exactly once, into a local, before anything is validated
+    // against it. A hand-built `EventModule` can define these as getters, and
+    // validating one value while storing another is the same hazard
+    // `assertEventEnvelope` closes for the event envelope.
+    const namespace = declared.namespace;
+    const description = declared.description;
+    const stateful = declared.stateful;
+    const types = Object.freeze([...declared.types]);
+    const handlers = declared.handlers;
+    const validateSlice = declared.validateSlice;
+    const initialSlice = declared.initialSlice;
+
+    if (!NAMESPACE_SHAPE.test(namespace)) {
       throw new EventRegistryError(
-        `namespace ${JSON.stringify(module.namespace)} must match ${String(NAMESPACE_SHAPE)}. ` +
+        `namespace ${JSON.stringify(namespace)} must match ${String(NAMESPACE_SHAPE)}. ` +
           `It is also a PRNG stream label and a key in serialized state, so anything ` +
           `needing escaping in either is a namespace that should be spelled differently.`,
       );
@@ -83,16 +103,50 @@ export function createRegistry(modules: readonly EventModule[]): EventRegistry {
     // Uniqueness of namespaces is what makes uniqueness of *types* free: every
     // type is prefixed with its module's namespace, so two modules can only
     // collide on a type if they collide on a namespace first.
-    if (byNamespace.has(module.namespace)) {
+    if (byNamespace.has(namespace)) {
       throw new EventRegistryError(
-        `two modules claim the namespace ${JSON.stringify(module.namespace)}. A namespace ` +
+        `two modules claim the namespace ${JSON.stringify(namespace)}. A namespace ` +
           `owns an event-type prefix, a slice of session state, and a PRNG stream; ` +
           `sharing one would mean two subsystems overwriting each other's state.`,
       );
     }
-    byNamespace.set(module.namespace, module);
+    // Required by the interface, but the interface is one a caller can satisfy
+    // by hand — and binding a missing one below would throw a bare TypeError
+    // out of registry construction instead of saying what is wrong.
+    if (typeof initialSlice !== "function") {
+      throw new EventRegistryError(
+        `module ${JSON.stringify(namespace)} has no initialSlice function. A module with no ` +
+          `state returns undefined from it; omitting it entirely leaves nothing to call.`,
+      );
+    }
 
-    if (module.types.length === 0) {
+    // Stored as a frozen copy, exactly as handlers are below, and for the same
+    // reason: `createRegistry` spends this whole function validating a
+    // hand-built module, and holding the caller's object afterwards would let
+    // every one of those checks be undone after it passed. Swapping
+    // `initialSlice` post-registration rewrote a bootstrap slice; swapping
+    // `namespace` re-forked the PRNG stream; setting `stateful` false made
+    // `step` throw.
+    //
+    // So `registry.modules[i]` is a copy, like `registry.handler(t)`. Its
+    // `handlers` record is deliberately the module's own: dispatch never reads
+    // it — that goes through `byType` — and copying it would only obscure what
+    // the module published.
+    const module: EventModule = Object.freeze({
+      namespace,
+      description,
+      stateful,
+      initialSlice: initialSlice.bind(declared),
+      ...(validateSlice === undefined
+        ? {}
+        : { validateSlice: validateSlice.bind(declared) }),
+      types,
+      handlers,
+    });
+    byNamespace.set(namespace, module);
+    registered.push(module);
+
+    if (types.length === 0) {
       throw new EventRegistryError(
         `module ${JSON.stringify(module.namespace)} registers no event types. An empty ` +
           `module is either an unfinished subsystem or a stale entry in the module list.`,
@@ -192,7 +246,8 @@ export function createRegistry(modules: readonly EventModule[]): EventRegistry {
   }
 
   return Object.freeze({
-    modules: Object.freeze(sorted),
+    // The frozen copies, not the caller's objects — see the comment above them.
+    modules: Object.freeze(registered),
     namespaces: Object.freeze([...byNamespace.keys()]),
     types: Object.freeze([...byType.keys()].sort()),
     handler: (type: string): RegisteredHandler | undefined => byType.get(type),

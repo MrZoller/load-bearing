@@ -272,6 +272,53 @@ describe("createRegistry", () => {
     expect(Object.isFrozen(registry.handler("alpha.bump"))).toBe(true);
   });
 
+  it("stores a frozen copy of each module, not the caller's object", () => {
+    // Same argument as the handler copy above, one level out: this function
+    // spends its whole length validating a hand-built module, and holding the
+    // caller's object afterwards lets every one of those checks be undone
+    // after it passed.
+    const sound = counter("gamma");
+    const hand: EventModule = { ...sound };
+    const registry = createRegistry([hand]);
+    const bootstrapped = () =>
+      reduce({ cartridge: CARTRIDGE, seed: SEED, registry, events: [] }).slices[
+        "gamma"
+      ];
+
+    const before = bootstrapped();
+    expect(before).toBe(0);
+
+    // Each of the three mutations Codex demonstrated, all no-ops now.
+    hand.initialSlice = () => 999;
+    (hand as { namespace: string }).namespace = "delta";
+    (hand as { stateful: boolean }).stateful = false;
+
+    expect(bootstrapped()).toBe(before);
+    expect(registry.modules[0]).not.toBe(hand);
+    expect(Object.isFrozen(registry.modules[0])).toBe(true);
+    expect(registry.module("gamma")?.namespace).toBe("gamma");
+    expect(
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry,
+        events: [{ type: "gamma.bump" }],
+      }).slices["gamma"],
+    ).toBe(1);
+  });
+
+  it("rejects a module with no initialSlice function", () => {
+    // Required by the interface, but the interface is one a caller satisfies
+    // by hand — and binding a missing one would throw a bare TypeError out of
+    // registry construction instead of saying what is wrong.
+    const sound = counter("gamma");
+    const { initialSlice: _dropped, ...without } = sound;
+
+    expect(() => createRegistry([without as EventModule])).toThrow(
+      /has no initialSlice function/,
+    );
+  });
+
   it("leaves the module's own handlers record as the module declared it", () => {
     // The consequence of storing a copy: `registry.modules[i].handlers[t]` and
     // `registry.handler(t)` are now different objects. Dispatch only ever uses

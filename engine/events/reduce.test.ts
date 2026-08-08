@@ -617,6 +617,74 @@ describe("snapshots", () => {
     ).toThrow(/"transcript\[0\]\.detail\[1\]" contains a control character/);
   });
 
+  it("refuses a transcript entry whose type nothing registers", () => {
+    // The missing member of the family: transcript text, transcript instants,
+    // seed against PRNG root, clock against `startedAt` — and now the type.
+    // Every entry the reducer writes took its type from a successful handler
+    // lookup in `step`, so one that resolves to nothing was written elsewhere.
+    // `requireSlices` cannot stand in for this: `CLOCK_MODULE` is stateless,
+    // so a registry missing it still passes the slice-set check.
+    const text = snapshot(fold());
+    const withType = (type: string): string => {
+      const parsed = deserialize(text) as Record<string, unknown>;
+      const entries = parsed["transcript"] as Record<string, unknown>[];
+      entries[0]!["type"] = type;
+      return serialize(parsed);
+    };
+
+    expect(() => restoreSnapshot(withType("vfs.write"))).toThrow(
+      /"transcript\[0\]\.type" is "vfs\.write", which no module in this registry registers/,
+    );
+    expect(() => restoreSnapshot(withType("not even a type shape"))).toThrow(
+      /which no module in this registry registers/,
+    );
+    expect(() => restoreSnapshot(text)).not.toThrow();
+  });
+
+  it("also refuses a legitimate snapshot after its module was renamed", () => {
+    // Documenting a known consequence, not locking in a bug. The check above
+    // is right for a snapshot restored under the registry it was produced
+    // under, which is what `restoreSnapshot` requires — but
+    // `EVENT_SCHEMA_VERSION` is one global envelope version and deliberately
+    // does not move when a subsystem changes, so a snapshot recorded before a
+    // module was renamed lands here too.
+    //
+    // The stateless case is the sharp one: `requireSlices` catches a renamed
+    // *stateful* module by its slice key, so this is the only check that sees
+    // a renamed stateless one. Hence the message names drift alongside
+    // tampering rather than accusing.
+    const before = defineEventModule({
+      namespace: "oldname",
+      description: "stateless, so requireSlices will not notice it leaving",
+      events: { "oldname.ping": { version: 0, apply: () => ({}) } },
+    });
+    const after = defineEventModule({
+      namespace: "newname",
+      description: "the same module, renamed",
+      events: { "newname.ping": { version: 0, apply: () => ({}) } },
+    });
+
+    const recorded = snapshot(
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry: createRegistry([before]),
+        events: [{ type: "oldname.ping" }],
+      }),
+    );
+
+    // Restored under the registry it was produced under: fine.
+    expect(() =>
+      restoreSnapshot(recorded, createRegistry([before])),
+    ).not.toThrow();
+
+    // Restored after the rename: refused, and the message says why it might
+    // not be tampering.
+    expect(() => restoreSnapshot(recorded, createRegistry([after]))).toThrow(
+      /recorded under a registry that has since changed/,
+    );
+  });
+
   it("routes each slice to the module that knows its shape", () => {
     // The reducer can check that the *set* of slices matches the registry and
     // nothing more. Without the module's own validator this restores happily

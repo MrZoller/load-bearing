@@ -324,7 +324,7 @@ export function restoreSnapshot(
   }
 
   const eventCount = requireInteger(parsed["eventCount"], "eventCount");
-  const transcript = requireTranscript(parsed["transcript"]);
+  const transcript = requireTranscript(parsed["transcript"], registry);
   // One entry per event is the property that makes a transcript index usable as
   // an event index; a snapshot that breaks it was not produced by this reducer.
   if (transcript.length !== eventCount) {
@@ -653,10 +653,37 @@ function requireInstant(at: string, what: string): number {
  * from cannot run backwards — `advance` rejects a negative — so two entries out
  * of order, or two swapped, is a transcript this reducer never wrote.
  *
+ * Each `type` must also be one the registry knows. Every entry this reducer
+ * writes took its type from a successful `registry.handler(...)` lookup in
+ * `step`, so the invariant holds by construction *for a snapshot restored under
+ * the registry it was produced under* — which is what `restoreSnapshot` already
+ * requires of its caller. Without the check, editing an entry's type to
+ * `vfs.write`, or to something that is not a type at all, restores cleanly and
+ * renders. It is the missing member of the family this module already checks
+ * four times over (transcript text, transcript instants, seed against PRNG
+ * root, clock against `startedAt`), and `requireSlices` cannot stand in for it:
+ * a stateless module like `CLOCK_MODULE` occupies no slice, so a registry
+ * missing it still passes the slice-set check.
+ *
+ * That precondition has a cost worth naming, because `EVENT_SCHEMA_VERSION` is
+ * one global envelope version and is deliberately *not* bumped per subsystem
+ * change (see `./state.ts`). A snapshot recorded legitimately, before a module
+ * was renamed or removed, will fail here. That is registry drift, not tampering
+ * — and the stateless case is the sharp one, since `requireSlices` also catches
+ * a renamed *stateful* module and this is the only check that sees a renamed
+ * stateless one. (Not "catches it first": this check runs before
+ * `requireSlices`, so for a stateful module carrying transcript entries it is
+ * still this one that reports.) The message below names both causes rather than
+ * accusing, so a maintainer debugging an ordinary rename is not sent looking
+ * for an attacker.
+ *
  * The bound against the clock itself lives in `restoreSnapshot`, which is where
  * the clock has been restored; this runs before that.
  */
-function requireTranscript(value: unknown): readonly TranscriptEntry[] {
+function requireTranscript(
+  value: unknown,
+  registry: EventRegistry,
+): readonly TranscriptEntry[] {
   if (!Array.isArray(value)) {
     throw new Error(`snapshot: "transcript" must be an array`);
   }
@@ -701,13 +728,24 @@ function requireTranscript(value: unknown): readonly TranscriptEntry[] {
       }
       previousMs = atMs;
 
+      const type = requireLine(
+        entry["type"],
+        `transcript[${String(position)}].type`,
+      );
+      if (registry.handler(type) === undefined) {
+        throw new Error(
+          `snapshot: "transcript[${String(position)}].type" is ${JSON.stringify(type)}, which no ` +
+            `module in this registry registers. Either the transcript was edited, or the ` +
+            `snapshot was recorded under a registry that has since changed — a module renamed ` +
+            `or removed will land here, and the envelope version does not move for that. ` +
+            `Registered namespaces: ${registry.namespaces.join(", ")}.`,
+        );
+      }
+
       return Object.freeze({
         index,
         at,
-        type: requireLine(
-          entry["type"],
-          `transcript[${String(position)}].type`,
-        ),
+        type,
         summary: requireLine(
           entry["summary"],
           `transcript[${String(position)}].summary`,

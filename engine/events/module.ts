@@ -39,6 +39,52 @@
  *
  * `./registry.test.ts` shuffles the module list and asserts the fold is
  * byte-identical.
+ *
+ * ## What this layer enforces, and what it cannot
+ *
+ * `EventModule`, `RegisteredHandler` and `EventHandlerDefinition` are plain
+ * interfaces, so a caller can bypass `defineEventModule` and hand-build one.
+ * Answering that object by object — freeze the module, then the handler, then
+ * the receiver, then the log entry — is a losing shape: the list has no natural
+ * end, and each freeze buys a guarantee narrower than it appears. This is the
+ * standing answer for the whole class, so it does not get relitigated per
+ * object.
+ *
+ * **Frozen and copied, therefore safe.** These the engine owns outright, and a
+ * caller mutating its own copy afterwards changes nothing:
+ *
+ * - the registry's handler for a type (`registry.handler(t)`) — a frozen copy
+ *   with `apply` bound at registration
+ * - the registry's module (`registry.module(ns)`, `registry.modules[i]`) — a
+ *   frozen copy, with `initialSlice` and `validateSlice` bound, built from
+ *   fields each read exactly once
+ * - everything `defineEventModule` returns
+ * - every `SessionState` the reducer produces, its clock, its PRNG state, its
+ *   transcript entries, its slices record and each slice one level deep
+ * - an event appended through `appendEvent`, and its payload
+ *
+ * Two of those are copies rather than the caller's objects, which means
+ * `registry.modules[i].handlers[t]` is *not* `registry.handler(t)`. Dispatch
+ * only ever reads the latter.
+ *
+ * **Validated at construction only.** `createRegistry` checks namespace shape
+ * and uniqueness, type prefixes and spelling, handler ownership, version
+ * shape, and that a slice validator accompanies a slice. Those run once. They
+ * are what the copies above then preserve — validating a hand-built module and
+ * then holding it by reference would let every check be undone after it passed.
+ *
+ * **Not enforceable here, at all.** A handler that is not a pure function of
+ * `(context, slice)` breaks determinism, and no freeze reaches the ways it can
+ * happen: state on `this`, a captured closure variable, a module-level `let`,
+ * or any object the caller held before it ever reached the engine. `Object.freeze`
+ * is shallow, and two of those routes never touch a freezable object. This is a
+ * contract, stated on `EventHandlerDefinition.apply` and implied by invariant 2
+ * — the golden replay suite is what actually catches a violation, by folding
+ * every fixture twice and comparing bytes.
+ *
+ * The dividing line is ownership, not danger: the engine hardens what it
+ * produces, validates what it is handed at the boundary, and relies on a stated
+ * contract for what remains the caller's.
  */
 
 import type { LoadedCartridge } from "../cartridge/types.js";

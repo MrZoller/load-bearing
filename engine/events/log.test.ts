@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { loadCartridge } from "../cartridge/load.js";
+import { deserialize, serialize } from "../serialize/canonical.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { EMPTY_EVENT_LOG, appendEvent, assertEventEnvelope } from "./log.js";
 import { defineEventModule } from "./module.js";
@@ -81,6 +82,77 @@ describe("the event log", () => {
     expect(() => {
       stored[0]!.weight = 2;
     }).toThrow(TypeError);
+  });
+
+  it("stores the payload in canonical form, not as it was handed over", () => {
+    // A structural copy preserves everything the canonical form flattens, and
+    // all three of these are reachable from JSON.parse-able input alone — no
+    // getter, no hand-built object. A handler reading `Object.keys` would then
+    // see one order live and another when the same log is replayed from its
+    // permalink, because the permalink went through the serializer on the way
+    // out and the live payload never did. One log, two states.
+    const shared = { n: 1 };
+    const log = appendEvent(EMPTY_EVENT_LOG, {
+      type: "clock.tick",
+      payload: {
+        ...(JSON.parse('{"b":1,"a":2}') as Record<string, unknown>),
+        neg: -0,
+        x: shared,
+        y: shared,
+      },
+    });
+    const stored = log[0]?.payload as Record<string, unknown>;
+
+    expect(Object.keys(stored)).toEqual(["a", "b", "neg", "x", "y"]);
+    expect(Object.is(stored["neg"], -0)).toBe(false);
+    expect(stored["x"]).not.toBe(stored["y"]);
+
+    // The property all three serve: the stored log already *is* what it will
+    // be after a round trip, so folding it live and folding its permalink
+    // cannot diverge.
+    expect(serialize(deserialize(serialize(log)))).toBe(serialize(log));
+  });
+
+  it("folds identically live and after a serialize round trip", () => {
+    // The end-to-end form of the same bug: a handler that reads key order,
+    // run against an appended log and against that log's own permalink.
+    const cartridge = loadCartridge(loadCartridgeFixture("minimal"));
+    const seed = "2026-08-05/0/deep-foundation";
+    const reporter = defineEventModule({
+      namespace: "alpha",
+      description: "reports what it sees in its payload",
+      events: {
+        "alpha.probe": {
+          version: 0,
+          apply: (context) => {
+            const payload = context.event.payload ?? {};
+            return {
+              summary: `order=${Object.keys(payload).join(",")} negzero=${String(
+                Object.is(payload["n"], -0),
+              )}`,
+            };
+          },
+        },
+      },
+    });
+    const registry = createRegistry([reporter]);
+
+    const log = appendEvent(
+      EMPTY_EVENT_LOG,
+      {
+        type: "alpha.probe",
+        payload: {
+          ...(JSON.parse('{"b":1,"a":2}') as Record<string, unknown>),
+          n: -0,
+        },
+      },
+      registry,
+    );
+    const replayed = deserialize(serialize(log)) as readonly EngineEvent[];
+
+    expect(
+      serialize(reduce({ cartridge, seed, registry, events: replayed })),
+    ).toBe(serialize(reduce({ cartridge, seed, registry, events: log })));
   });
 
   it("refuses a payload holding something JSON cannot carry", () => {

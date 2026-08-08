@@ -10,10 +10,31 @@
  * `appendEvent` returns a new frozen log; there is no `remove` and no `replace`
  * because a session that can rewrite its own history has no replay contract at
  * all — a permalink would decode to a log the original session never ran.
+ *
+ * ## What `appendEvent` owns, and what it does not
+ *
+ * The event being appended is the one thing this module takes ownership of: it
+ * is validated, canonicalized, detached and frozen, because the call is the
+ * moment it stops being the caller's and starts being history.
+ *
+ * **Prior entries stay the caller's.** `appendEvent` copies the array, not the
+ * entries in it, so a caller holding an entry it passed in earlier can still
+ * mutate it. That is not a capability this function grants — those objects were
+ * the caller's before the call, and mutating them a moment earlier has exactly
+ * the same effect — which is what distinguishes it from the newly appended
+ * event, where this genuinely is the ownership-transfer point. Deep-cloning the
+ * history on every append would be quadratic, and a shallow per-entry freeze
+ * would be O(n) per append, would freeze objects the caller owns, and would
+ * still leave nested payloads open.
+ *
+ * The invariant that does hold, and the one to rely on: **a log grown entirely
+ * from `EMPTY_EVENT_LOG` through `appendEvent` has every entry frozen and every
+ * payload canonicalized, detached and frozen.** Mix in an entry from anywhere
+ * else and that is the caller's to maintain.
  */
 
 import { deepFreeze } from "../freeze.js";
-import { serialize } from "../serialize/canonical.js";
+import { deserialize, serialize } from "../serialize/canonical.js";
 import { describeUnwritableText } from "../text.js";
 import { ENGINE_EVENT_REGISTRY } from "./modules.js";
 import type { EventRegistry } from "./registry.js";
@@ -180,16 +201,17 @@ export function appendEvent(
  *    to a fixture and read back. It rejects `Date`, `Map`, `Set`, `RegExp` and
  *    typed arrays, plus cycles, `NaN`, sparse arrays, symbol keys, accessors
  *    and non-enumerable properties, and it names the offending path.
- * 2. **`structuredClone` detaches.** It copies by internal slot, so it cannot be
- *    fooled by a re-pointed prototype the way a prototype-reading copy would be.
- *    It is the engine's one allowlisted host global (`engine/globals.d.ts`).
+ * 2. **`deserialize` detaches**, by reading that output back. `JSON.parse`
+ *    builds every object fresh, so nothing of the caller's graph survives —
+ *    and what it builds is the *canonical* form rather than a faithful copy,
+ *    which is the point of the section below.
  * 3. **`deepFreeze` hardens** what is by then known to be finite, acyclic plain
  *    data — which is what makes its recursion safe here regardless of what
  *    arrived.
  *
- * **Judging the original rather than the copy is load-bearing.** Cloning first
- * hides exactly the properties the serializer exists to refuse: structured
- * clone silently drops a non-enumerable property and a symbol-keyed one, and it
+ * **Judging the original rather than a copy is load-bearing.** Copying first
+ * hides exactly the properties the serializer exists to refuse: a structural
+ * copy silently drops a non-enumerable property and a symbol-keyed one, and it
  * *invokes* an enumerable getter and stores the result. So the copy looks like
  * clean data and the original never gets examined — a payload whose author
  * believes a field is in effect appends without it, and an accessor runs during
@@ -204,28 +226,48 @@ export function appendEvent(
  * takes the same authority one level further down, where it needs no
  * extraction.
  *
- * One guarded block, not two. With the serializer running first there is no
- * shape left for `structuredClone` to refuse — everything it rejects
- * (functions, symbols, host objects) the serializer has already rejected, and
- * everything the serializer accepts clones. A separate catch around the clone
- * would be a branch that cannot fire, with a comment claiming it does. If the
- * clone ever fails anyway it will be for a host reason rather than a shape one,
- * and `cause` carries it.
+ * ## Why the stored payload is the serializer's own output
  *
- * This hardens **the append path only.** `reduce` and `step` take a raw
- * `readonly EngineEvent[]`, which is how a fixture and a decoded replay
- * permalink arrive, and those never pass through here. That is deliberate: the
- * fold must stay defined over a plain array of plain events. What it means is
- * that a caller who builds a log by hand still owns not mutating it, and the
- * golden replay suite is what checks that the engine does not.
+ * `serialize` does not only judge — it *normalizes*, and the difference is a
+ * determinism bug rather than a nicety. A structural copy faithfully preserves
+ * everything the canonical form flattens: `JSON.parse('{"b":1,"a":2}')` keeps
+ * insertion order `b, a`, `-0` stays distinguishable from `0`, and two
+ * properties pointing at one object stay aliased. All three are reachable from
+ * `JSON.parse`-able input alone — no getter, no hand-built object.
+ *
+ * So a handler reading `Object.keys(payload)` sees `b, a` in the live session
+ * and `a, b` when the same log is replayed from its permalink, because the
+ * permalink went through the serializer on the way out and the live payload
+ * never did. Two sessions, one log, different states: exactly what invariant 2
+ * forbids. Round-tripping through `deserialize(serialize(payload))` stores the
+ * form the log will have *after* it has been written down, so the live session
+ * and its replay start from the same bytes.
+ *
+ * It also detaches, for free and completely: `JSON.parse` builds every object
+ * fresh, so there is nothing left of the caller's graph to retain.
+ *
+ * ## Scope: the append path only
+ *
+ * `reduce` and `step` take a raw `readonly EngineEvent[]`, which is how a
+ * decoded replay permalink and a hand-authored fixture arrive, and neither
+ * passes through here. Those payloads are folded with whatever key order the
+ * file carries — `engine/__fixtures__/replay/002-random-clock/fixture.json`
+ * declares `stream, count, form`, which is not sorted, and is folded that way.
+ * That path is deterministic because the file is fixed, not because anything
+ * normalized it; the fold must stay defined over a plain array of plain events.
+ * A caller who builds a log by hand therefore still owns not mutating it, and
+ * the golden replay suite is what checks that the engine does not.
  */
 function clonePayload(
   payload: Readonly<Record<string, unknown>>,
   where: string,
 ): Readonly<Record<string, unknown>> {
   try {
-    serialize(payload);
-    return deepFreeze(structuredClone(payload) as Record<string, unknown>);
+    // One expression, three jobs: `serialize` judges the original and
+    // normalizes it, `deserialize` detaches, `deepFreeze` hardens.
+    return deepFreeze(
+      deserialize(serialize(payload)) as Record<string, unknown>,
+    );
   } catch (cause) {
     throw new Error(
       `${where}: "payload" is not plain data. It has to survive being written to a fixture ` +
