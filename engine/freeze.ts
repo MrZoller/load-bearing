@@ -14,7 +14,28 @@
  */
 
 /**
- * Freeze `value` and everything reachable from it, returning the same value.
+ * Freeze plain JSON-shaped data and everything reachable from it, returning the
+ * same value.
+ *
+ * **Plain JSON-shaped, not everything.** Only objects whose prototype is
+ * `Object.prototype`, `Array.prototype`, or null are walked; anything else is
+ * refused. `Object.freeze` is defined in terms of properties, and a branded
+ * built-in keeps its contents in internal slots — so `deepFreeze(new Map(…))`
+ * returns an object reporting `isFrozen: true` whose `set`, `clear` and entries
+ * all still work, which is a worse outcome than refusing it.
+ *
+ * A prototype test rather than a list of brands, and that is the whole reason
+ * this is a single check: Map and Set are two members of an open set. `Date`
+ * stays mutable through `setTime`, `RegExp` through `lastIndex`, a class
+ * instance through its private fields — and a typed array does not survive
+ * `Object.freeze` at all, throwing a bare `TypeError` out of an exported
+ * function. A brand list closes the two that were noticed; the prototype test
+ * closes every one of them at once and has a natural end.
+ *
+ * The three callers all pass values already known to be plain JSON — the
+ * cartridge schema, a validated cartridge, and a payload that has been through
+ * `deserialize(serialize(…))` — so this narrows what the function promises
+ * rather than what it accepts today.
  *
  * `getOwnPropertyNames` rather than `Object.keys`, so a non-enumerable property
  * is frozen too — an unfrozen one would be a mutable interior hiding behind a
@@ -55,6 +76,23 @@ function freezeReachable<T>(value: T, seen: WeakSet<object>): T {
   if (typeof value !== "object" || value === null) return value;
 
   const container = value as object;
+
+  // One predicate, every brand at once. See the header: freezing a branded
+  // built-in reports success and protects nothing, because its contents live in
+  // internal slots rather than properties.
+  const prototype: unknown = Object.getPrototypeOf(container);
+  if (
+    prototype !== Object.prototype &&
+    prototype !== Array.prototype &&
+    prototype !== null
+  ) {
+    throw new Error(
+      "deepFreeze: only plain objects, arrays and null-prototype objects can be frozen all " +
+        "the way down. This value keeps its contents in internal slots, where freezing its " +
+        "properties would report success and protect nothing.",
+    );
+  }
+
   // Already visited on this walk: either a cycle, or a subobject reachable by
   // two paths. Both are done, and re-walking the second is how a wide DAG turns
   // an O(n) freeze into an exponential one.

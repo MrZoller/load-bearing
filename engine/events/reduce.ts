@@ -143,17 +143,29 @@ export function bootstrap(input: BootstrapInput): SessionState {
   const slices: [string, unknown][] = [];
   for (const module of registry.modules) {
     if (!module.stateful) continue;
-    slices.push([
-      module.namespace,
-      freezeSlice(
-        module.initialSlice({
-          cartridge: input.cartridge,
-          seed: input.seed,
-          startedAtMs,
-          random: random.fork(module.namespace),
-        }),
-      ),
-    ]);
+    const slice = module.initialSlice({
+      cartridge: input.cartridge,
+      seed: input.seed,
+      startedAtMs,
+      random: random.fork(module.namespace),
+    });
+    // Statefulness follows from *declaring* `initialSlice`, not from what it
+    // returns on the day — that is the contract `./module.ts` states, and this
+    // enforces it rather than changing it. A module that returns `undefined`
+    // conditionally ("holds state only when the cartridge declares X") is an
+    // ordinary-looking pattern that typechecks, snapshots, and then fails its
+    // own restore with `requireSlices` complaining about a slice set the author
+    // never chose. Caught here, at the module that did it.
+    if (slice === undefined) {
+      throw new Error(
+        `module ${JSON.stringify(module.namespace)} declares initialSlice but returned undefined. ` +
+          `A module either holds state — in which case its initial slice is a value — or omits ` +
+          `initialSlice entirely and occupies no key at all. Deciding per session is not a ` +
+          `third option: the slices record is part of the snapshot contract, and one recorded ` +
+          `without this module's key cannot be restored against a registry that has it.`,
+      );
+    }
+    slices.push([module.namespace, freezeSlice(slice)]);
   }
 
   return freezeState({
@@ -464,6 +476,19 @@ export function restoreSnapshot(
           `instant the clock started.`,
       );
     }
+  } else if (clock.elapsedMs !== 0) {
+    // Zero events, and the clock has moved. The bounds above are the only
+    // thing tying the clock to anything, and with no entries there is nothing
+    // for them to bound — so a bootstrap snapshot with `elapsedMs` edited
+    // restores cleanly and stamps its first event a day after the cartridge's
+    // declared start. Nothing can advance the clock before the first event:
+    // `BootstrapContext` carries no clock, which is the same proof the
+    // first-entry bound above rests on, applied where there is no first entry.
+    throw new Error(
+      `snapshot: the clock has advanced ${String(clock.elapsedMs)}ms but the transcript is ` +
+        `empty. Time moves only when an event advances it, so a session that has folded ` +
+        `nothing is still at the instant its cartridge declares.`,
+    );
   }
 
   return freezeState({
@@ -529,14 +554,44 @@ function makeEntry(
   if (summaryProblem !== undefined) {
     throw new Error(`${where}: transcript summary contains ${summaryProblem}`);
   }
-  detail.forEach((line, offset) => {
+  // An index loop, not `forEach`, and a `typeof` check before the text check.
+  // Both halves are load-bearing. `forEach` skips a hole, so `new Array(1)` —
+  // validly typed as `string[]`, no cast — passed straight through, the spread
+  // below materialized the hole as `undefined`, and the state that came back
+  // could not be snapshotted at all: the canonical serializer refuses an
+  // undefined array element, so `reduce` succeeded and produced something
+  // unrecordable. And `describeUnwritableText` takes a `string` but tests with
+  // a regex, which coerces — so an *explicit* `undefined` element passed the
+  // text check as the string "undefined". Checking holes alone would close half
+  // of one axis and invite the other half back.
+  //
+  // `Array.isArray` first, because the index loop is more permissive than the
+  // `forEach` it replaced: a non-array `detail` used to crash on `.forEach`,
+  // and a bare string would otherwise iterate per character and record its
+  // letters as lines. Cast-only either way, but a loud refusal beats quietly
+  // recording something nobody wrote.
+  if (!Array.isArray(detail)) {
+    throw new Error(
+      `${where}: transcript detail must be an array of lines, got ${typeof detail}`,
+    );
+  }
+  for (let offset = 0; offset < detail.length; offset += 1) {
+    const line = detail[offset];
+    if (typeof line !== "string") {
+      throw new Error(
+        `${where}: transcript detail line ${String(offset)} is ${
+          offset in detail ? typeof line : "a hole in a sparse array"
+        }; every line must be a string, because state that cannot be serialized ` +
+          `cannot be recorded or replayed`,
+      );
+    }
     const problem = describeUnwritableText(line);
     if (problem !== undefined) {
       throw new Error(
         `${where}: transcript detail line ${String(offset)} contains ${problem}`,
       );
     }
-  });
+  }
 
   return Object.freeze({
     index,

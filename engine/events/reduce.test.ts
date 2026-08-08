@@ -617,6 +617,24 @@ describe("snapshots", () => {
     ).toThrow(/"transcript\[0\]\.detail\[1\]" contains a control character/);
   });
 
+  it("refuses an empty transcript whose clock has nonetheless moved", () => {
+    // The bounds that tie the clock to the transcript need a transcript. With
+    // zero events there is nothing for them to bound, so a bootstrap snapshot
+    // with `elapsedMs` edited restored cleanly and stamped its first event a
+    // day after the cartridge's declared start. Nothing can advance the clock
+    // before the first event — `BootstrapContext` carries no clock — which is
+    // the same proof the first-entry bound rests on, applied where there is no
+    // first entry.
+    const text = snapshot(bootstrap({ cartridge: CARTRIDGE, seed: SEED }));
+    const parsed = deserialize(text) as Record<string, unknown>;
+    (parsed["clock"] as Record<string, number>)["elapsedMs"] = MS_PER_DAY;
+
+    expect(() => restoreSnapshot(serialize(parsed))).toThrow(
+      /the clock has advanced 86400000ms but the transcript is empty/,
+    );
+    expect(() => restoreSnapshot(text)).not.toThrow();
+  });
+
   it("refuses a PRNG cursor belonging to no registered module", () => {
     // No divergence is possible from an extra cursor — `fork` derives a stream
     // from the seed and the path, never from another stream's position — so
@@ -818,6 +836,56 @@ describe("a module's own state", () => {
     expect(state.slices).toEqual({ counter: 1, observer: [] });
   });
 
+  it("must be a value, not a per-session decision", () => {
+    // Statefulness follows from *declaring* `initialSlice`, which is what the
+    // contract says — so a module that returns `undefined` conditionally
+    // ("holds state only when the cartridge declares X") is outside it. This
+    // typechecks with no cast, snapshots fine, and then fails its own restore
+    // with `requireSlices` complaining about a slice set nobody chose.
+    const conditional = defineEventModule<{ n: number } | undefined>({
+      namespace: "cond",
+      description: "holds state only sometimes, which is not an option",
+      initialSlice: (context) =>
+        context.cartridge.meta.number > 0 ? { n: 0 } : undefined,
+      events: {
+        "cond.go": { version: 0, apply: (_context, slice) => ({ slice }) },
+      },
+    });
+
+    expect(() =>
+      bootstrap({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry: createRegistry([conditional]),
+      }),
+    ).toThrow(/declares initialSlice but returned undefined/);
+  });
+
+  it("catches a hand-built truthy `stateful` by the same check", () => {
+    // The route a field-shape guard on `stateful` would have covered. A
+    // non-boolean truthy value takes the stateful path, so its undefined slice
+    // is refused by the check above rather than needing one of its own —
+    // verified here rather than assumed.
+    const sound = defineEventModule({
+      namespace: "hand",
+      description: "declares no slice",
+      events: { "hand.go": { version: 0, apply: () => ({}) } },
+    });
+    const handBuilt = {
+      ...sound,
+      stateful: "yes",
+    } as unknown as EventModule;
+
+    expect(sound.stateful).toBe(false);
+    expect(() =>
+      bootstrap({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry: createRegistry([handBuilt]),
+      }),
+    ).toThrow(/declares initialSlice but returned undefined/);
+  });
+
   it("is frozen, so a handler cannot edit the state it was handed", () => {
     // The likely accident, and the one that reaches backwards: `slice.n += 1`
     // on the slice a handler received would change a state that has already
@@ -960,6 +1028,39 @@ describe("transcript text a handler produces", () => {
     expect(() => say(noisy("", ["fine", "not\rfine"]))).toThrow(
       /transcript detail line 1 contains a control character/,
     );
+  });
+
+  it("is refused when a detail line is not a string at all", () => {
+    // Two routes to the same unrecordable state, and each closes half. A hole
+    // — `new Array(1)`, validly typed and uncast — is skipped by `forEach`,
+    // materialized by the spread, and then refused by the canonical serializer
+    // at snapshot time: `reduce` succeeds and hands back state that cannot be
+    // recorded. And an explicit `undefined` passes a text check that takes a
+    // `string` but tests with a regex, which coerces it to "undefined".
+    const emitting = (detail: readonly string[]): EventModule =>
+      defineEventModule({
+        namespace: "noisy",
+        description: "emits a detail array that is not all strings",
+        events: { "noisy.say": { version: 0, apply: () => ({ detail }) } },
+      });
+    const say = (module: EventModule) =>
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry: createRegistry([module]),
+        events: [{ type: "noisy.say" }],
+      });
+
+    expect(() => say(emitting(new Array<string>(1)))).toThrow(
+      /detail line 0 is a hole in a sparse array/,
+    );
+    expect(() =>
+      say(emitting(["fine", undefined as unknown as string])),
+    ).toThrow(/detail line 1 is undefined/);
+
+    // And the state that does come back is snapshottable, which is the
+    // property both halves exist to keep.
+    expect(() => snapshot(say(emitting(["fine"])))).not.toThrow();
   });
 
   it("is refused when no recording of it could ever match", () => {

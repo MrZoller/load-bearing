@@ -89,6 +89,42 @@ describe("deepFreeze", () => {
     expect(Object.isFrozen(shared)).toBe(true);
   });
 
+  it("refuses a branded built-in rather than pretending to freeze it", () => {
+    // `Object.freeze` is defined over properties, and these keep their contents
+    // in internal slots — so freezing one reports success and protects nothing.
+    // A prototype test rather than a brand list, because Map and Set are two
+    // members of an open set: `Date` stays mutable through `setTime`, `RegExp`
+    // through `lastIndex`, and a typed array does not survive `Object.freeze`
+    // at all.
+    const branded: readonly (readonly [string, unknown])[] = [
+      ["Map", new Map([["a", 1]])],
+      ["Set", new Set([1])],
+      ["Date", new Date(0)],
+      ["RegExp", /x/],
+      ["typed array", new Uint8Array([1, 2, 3])],
+      ["class instance", new (class Holder {})()],
+    ];
+
+    for (const [what, value] of branded) {
+      expect(() => deepFreeze(value), what).toThrow(
+        /only plain objects, arrays and null-prototype objects/,
+      );
+      expect(() => deepFreeze({ nested: value }), what).toThrow(
+        /internal slots/,
+      );
+    }
+  });
+
+  it("accepts the three shapes plain JSON is made of", () => {
+    const nullProto = Object.create(null) as Record<string, unknown>;
+    nullProto["n"] = 1;
+
+    expect(() =>
+      deepFreeze({ a: [1, { b: "c" }], c: nullProto }),
+    ).not.toThrow();
+    expect(Object.isFrozen(nullProto)).toBe(true);
+  });
+
   it("returns the value it was given, so it reads as an annotation", () => {
     const value = { n: 1 };
     expect(deepFreeze(value)).toBe(value);

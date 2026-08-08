@@ -87,6 +87,42 @@
  * The dividing line is ownership, not danger: the engine hardens what it
  * produces, validates what it is handed at the boundary, and relies on a stated
  * contract for what remains the caller's.
+ *
+ * ## Where the validating stops, and why
+ *
+ * The sentence above about freezing — *the list has no natural end, and each
+ * freeze buys a guarantee narrower than it appears* — was written about
+ * freezing, and it is now equally true of validating. Two things are
+ * deliberately left unchecked, named here so they read as a boundary rather
+ * than as omissions:
+ *
+ * - **Unknown top-level fields in a snapshot** are dropped rather than
+ *   rejected, even though `requireSlices` rejects unknown slice keys and the
+ *   cursor check rejects unknown stream namespaces. The inconsistency is real
+ *   and accepted: `ENGINE_VERSION` is the designated defence against a snapshot
+ *   from a different engine, so what remains is a hand-typed key, and the only
+ *   harm is that `snapshot(restoreSnapshot(text))` may not equal `text` — a
+ *   round trip nothing claims.
+ * - **Exhaustive field-shape validation of a hand-built module.** Every field
+ *   the engine *dereferences* is guarded, so no malformed module produces a
+ *   bare `TypeError` (see `./registry.ts`). Fields it merely reads — a
+ *   `description` that is not a string, a `stateful` flag that is not a boolean
+ *   — are not, because they cannot throw. One route does change a fold, and is
+ *   named here rather than glossed: spreading a stateful module with
+ *   `{...module, stateful: false}` type-checks, and its handler then receives
+ *   `undefined` for a slice. It is deterministic and it round-trips, so it is
+ *   a type lie rather than a determinism break, and it takes deliberately
+ *   overriding a flag the engine derived — but it is the one type-clean route
+ *   this boundary does not close.
+ *   Guarding the flag's *shape* would not close it either: it would close the
+ *   cast-only route while leaving that one open, which is the wrong half of
+ *   the problem. The type-clean route that mattered — a declared
+ *   `initialSlice` returning `undefined` — is what `bootstrap` refusing it
+ *   actually closes.
+ *
+ * What covers the rest is not another guard. It is `ENGINE_VERSION` for the
+ * cross-engine case, and the golden replay suite for everything behavioural —
+ * every fixture folded twice from frozen inputs and compared byte for byte.
  */
 
 import type { LoadedCartridge } from "../cartridge/types.js";
