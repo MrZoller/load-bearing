@@ -22,6 +22,14 @@ function fold(events: readonly EngineEvent[]): SessionState {
   return reduce({ cartridge: CARTRIDGE, seed: SEED, events });
 }
 
+/** `[{…}, <hole>, {…}]` — built here because a literal cannot express one. */
+function sparseEntries(): unknown[] {
+  const entries: unknown[] = [{ value: "a", weight: 1 }];
+  entries.length = 2;
+  entries.push({ value: "b", weight: 1 });
+  return entries;
+}
+
 function lines(events: readonly EngineEvent[]): string[] {
   return renderTranscript(fold(events).transcript);
 }
@@ -296,6 +304,17 @@ describe("the probe events", () => {
           payload: { stream: "a", count: 1, entries: [null] },
         },
         /entry 0: must be an object/,
+      ],
+      // A hole, not a null. `map` skips it, so it passed validation untouched
+      // and reached the handler as a bare TypeError on `entry.value`, naming no
+      // event and no module — the lesson `weightedPick` and `captureOutcome`
+      // both already carry, in the validator sitting between them.
+      [
+        {
+          type: "probe.weighted",
+          payload: { stream: "a", count: 1, entries: sparseEntries() },
+        },
+        /entry 1: is a hole in a sparse array/,
       ],
       [
         {

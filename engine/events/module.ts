@@ -416,19 +416,36 @@ export function defineEventModule<S>(
     );
   }
 
+  // Bound to the definition, exactly as `apply` is above and as
+  // `createRegistry` already binds all three. TypeScript accepts method
+  // shorthand on every callback here and contextually types `this` as the
+  // definition object, so `initialSlice() { return { n: this.start }; }` is
+  // type-clean code — and calling it unbound threw
+  // `Cannot read properties of undefined` out of `bootstrap`, naming no module,
+  // while the hand-built path through `createRegistry` worked. The two
+  // construction paths disagreed and the front door was the broken one.
+  //
+  // Receivers are therefore supported uniformly across all three callbacks.
+  // That widens the surface, and the answer to it is unchanged and stated
+  // rather than implied: purity is a contract this layer cannot enforce — see
+  // `EventHandlerDefinition.apply`, whose paragraph covers `this`, a closure,
+  // and a module-level binding alike, for all three.
+  const boundInitialSlice = initialSlice?.bind(definition);
+  const boundValidateSlice = validateSlice?.bind(definition);
+
   return Object.freeze({
     namespace: definition.namespace,
     description: definition.description,
-    stateful: initialSlice !== undefined,
+    stateful: boundInitialSlice !== undefined,
     initialSlice: (context: BootstrapContext): unknown =>
-      initialSlice === undefined ? undefined : initialSlice(context),
+      boundInitialSlice === undefined ? undefined : boundInitialSlice(context),
     // Same late-binding argument as `apply`, and the same fix: captured now,
     // so what `restoreSnapshot` runs is what the module declared.
-    ...(validateSlice === undefined
+    ...(boundValidateSlice === undefined
       ? {}
       : {
           validateSlice: (slice: unknown, where: string): unknown =>
-            validateSlice(slice, where),
+            boundValidateSlice(slice, where),
         }),
     types: Object.freeze(Object.keys(guardedEvents).sort()),
     handlers: Object.freeze(handlers),

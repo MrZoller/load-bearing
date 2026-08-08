@@ -285,6 +285,29 @@ export function step(
   });
 }
 
+/**
+ * Ceilings on one transcript entry, in the two dimensions an entry has.
+ *
+ * The `MAX_PROBE_*` constants in `engine/events/probe.ts` each gesture at the
+ * same invariant — "so a fixture stays a readable artifact" — one input at a
+ * time, and there are more inputs than constants: a probe's entry count, the
+ * length of a `weightedPick` arm's label amplified by `padEnd`, and the depth
+ * of a stream path all reach the transcript, and only the first was bounded.
+ * Bounding the *output* covers all of them, and covers whatever #5–#13 write
+ * without each module having to invent its own ceiling.
+ *
+ * Generous on purpose: the largest committed fixture entry is around 125 detail
+ * lines of roughly 80 characters, so nothing legitimate is near these.
+ *
+ * The residual, which matters: this bounds the artifact, not the work. A stream
+ * path of fifty thousand segments costs most of a second on an event whose
+ * transcript entry is one line, and no output ceiling sees that. A per-event
+ * work budget is Phase 3's problem, alongside the rest of hostile-permalink
+ * handling; it is not addressed here.
+ */
+export const MAX_TRANSCRIPT_DETAIL_LINES = 4096;
+export const MAX_TRANSCRIPT_LINE_LENGTH = 4096;
+
 /** An `EventOutcome` after every field has been read exactly once. */
 interface CapturedOutcome {
   /** Whether the handler returned a slice. A boolean, never a re-read. */
@@ -358,6 +381,12 @@ function captureOutcome(raw: unknown, where: string): CapturedOutcome {
       `${where}: transcript summary must be a string, got ${typeof summary}`,
     );
   }
+  if (summary !== undefined && summary.length > MAX_TRANSCRIPT_LINE_LENGTH) {
+    throw new Error(
+      `${where}: transcript summary is ${String(summary.length)} characters, over the ` +
+        `${String(MAX_TRANSCRIPT_LINE_LENGTH)} a single line may hold.`,
+    );
+  }
 
   let lines: readonly string[] = [];
   if (detail !== undefined) {
@@ -367,6 +396,13 @@ function captureOutcome(raw: unknown, where: string): CapturedOutcome {
       );
     }
     const source: readonly unknown[] = detail;
+    if (source.length > MAX_TRANSCRIPT_DETAIL_LINES) {
+      throw new Error(
+        `${where}: this event would write ${String(source.length)} transcript lines, over the ` +
+          `${String(MAX_TRANSCRIPT_DETAIL_LINES)} one entry may hold. A transcript is an ` +
+          `artifact a person reads and a fixture records.`,
+      );
+    }
     const copied: string[] = [];
     // Element by element, with the copy validated and the copy stored. A hole —
     // `new Array(1)`, validly typed and uncast — is skipped by `forEach` and
@@ -382,6 +418,12 @@ function captureOutcome(raw: unknown, where: string): CapturedOutcome {
             offset in source ? typeof line : "a hole in a sparse array"
           }; every line must be a string, because state that cannot be ` +
             `serialized cannot be recorded or replayed`,
+        );
+      }
+      if (line.length > MAX_TRANSCRIPT_LINE_LENGTH) {
+        throw new Error(
+          `${where}: transcript detail line ${String(offset)} is ${String(line.length)} ` +
+            `characters, over the ${String(MAX_TRANSCRIPT_LINE_LENGTH)} a single line may hold.`,
         );
       }
       copied.push(line);
@@ -729,7 +771,13 @@ function nextSlices(
   }
   return Object.freeze({
     ...state.slices,
-    [module.namespace]: freezeSlice(outcome.slice, where),
+    // The previous canonical slice, so the walk can stop wherever the handler
+    // shared structure with it rather than rebuilding the whole tree.
+    [module.namespace]: freezeSlice(
+      outcome.slice,
+      where,
+      state.slices[module.namespace],
+    ),
   });
 }
 
@@ -795,32 +843,62 @@ function freezeState(state: SessionState): SessionState {
 }
 
 /**
- * Freeze a slice on its way into state.
+ * Canonicalize and freeze a slice on its way into state.
  *
- * One level, not a deep freeze. The accident this closes is the likely one — a
- * handler writing `slice.count += 1` on the slice it was handed, which would
- * reach back into the *previous* state and make an already-folded session
- * change under a caller holding it. Deep-freezing instead would walk a whole
- * simulated filesystem on every keystroke to catch a mistake one level further
- * down, and would freeze structures a module has every right to build fresh and
- * hand over.
+ * ## Why canonicalize, and what it does not fix
  *
- * What the one-level promise requires, and did not have, is that
- * `Object.freeze` can actually keep it at that level. On a `Map` it cannot:
- * `map.set(…)` after freezing is `slice.count += 1` in another spelling — the
- * same accident, through a value whose surface reports frozen. `Date` and `Set`
- * are the same shape, and a typed array throws a bare `TypeError` out of
- * `bootstrap`. So the prototype question `canFreezeInPlace` asks — shared with
- * `deepFreeze` rather than reimplemented — is asked here too, about the slice
- * itself.
+ * A slice is stored as the handler built it, and a snapshot stores the
+ * serializer's canonical rendering of the same thing. Those differ on four
+ * axes: key order, `-0` against `0`, two properties aliasing one object, and an
+ * own key whose value is `undefined` — which the serializer drops, so
+ * `Object.hasOwn` answers differently before and after a round trip. A handler
+ * reading `Object.keys(slice.files)` to render a directory listing is the
+ * obvious `ls`, it is pure, and it printed one order live and another after a
+ * refresh.
  *
- * That is a hardening check, not a serializability one, and the distinction is
- * the reason it stops at one level. A nested `Map` still passes here; the
- * canonical serializer refuses it at record time with a JSON pointer to the
- * exact path, which is a better error than this function could produce and
- * costs nothing per event. A cycle passes here too, for the same reason.
+ * Note what that is and is not. `reduce(cartridge, seed, log)` was never at
+ * risk: two live folds agree with each other and two replays agree with each
+ * other. What was false is the narrower promise at `restoreSnapshot` — that
+ * restoring and continuing is the same as never having stopped. Real, and
+ * strictly weaker than the payload bug this resembles.
+ *
+ * ## The cost, which the previous version of this comment priced wrongly
+ *
+ * That comment argued against deep-freezing a slice because it would walk a
+ * whole simulated filesystem on every keystroke. The argument was never tested
+ * against an *incremental* walk, and it is wrong for one. Handlers build slices
+ * by structural sharing — `{...slice, files: {...slice.files, [path]: file}}` —
+ * so passing the previous canonical slice lets the walk stop at every subtree
+ * the previous one already holds. Measured on a synthetic VFS slice of 300
+ * files (~478 KiB): a full deep freeze costs 0.21 ms per event, and this costs
+ * 0.03 ms on a typical write. At 1200 files it is 1.08 ms against 0.20 ms. The
+ * incremental walk is cheaper than the deep freeze that comment refused.
+ *
+ * Rebuilding through `deserialize(serialize(slice))` would also canonicalize,
+ * and costs 11.7 ms and 47.3 ms on those two shapes — some forty times the
+ * price already rejected — besides refusing the nested `Map` that this is
+ * required to pass through.
+ *
+ * ## Residuals, named
+ *
+ * Depth stays the serializer's question. A value that is not
+ * `canFreezeInPlace` — a nested `Map`, a `Date` — is left exactly as it is,
+ * neither rebuilt nor frozen, and the canonical serializer refuses it at record
+ * time with a JSON pointer to the path. That is a better error than this could
+ * give, and it is why the top-level check below throws while the walk does not.
+ *
+ * A cycle is refused here rather than at record time, because a rebuild cannot
+ * represent one. `active` tracks the path from the root, not every object seen,
+ * so two properties referencing one object — a DAG, which structural sharing
+ * produces constantly — is copied out twice rather than rejected;
+ * `cloneJson` in the cartridge loader makes the same distinction for the same
+ * reason.
  */
-function freezeSlice(slice: unknown, where: string): unknown {
+function freezeSlice(
+  slice: unknown,
+  where: string,
+  previous?: unknown,
+): unknown {
   if (typeof slice === "object" && slice !== null && !canFreezeInPlace(slice)) {
     throw new Error(
       `${where}: a module slice must be a plain object or array at its top level. This value ` +
@@ -829,9 +907,102 @@ function freezeSlice(slice: unknown, where: string): unknown {
         `spelling.`,
     );
   }
-  return typeof slice === "object" && slice !== null
-    ? Object.freeze(slice)
-    : slice;
+  return canonicalizeSlice(slice, previous, where, "", new Set<object>());
+}
+
+/**
+ * One node of the canonicalizing walk.
+ *
+ * `previous` is the corresponding node of the last canonical slice, or
+ * `undefined` where there is none. Identity with it is the whole optimization:
+ * that subtree was canonicalized and frozen on an earlier event and cannot have
+ * changed since, because everything this function returns is frozen.
+ */
+function canonicalizeSlice(
+  next: unknown,
+  previous: unknown,
+  where: string,
+  path: string,
+  active: Set<object>,
+): unknown {
+  if (next === previous) return next;
+  // `-0` and `0` are the same JSON document and different JavaScript values;
+  // the serializer normalizes, so this does too.
+  if (Object.is(next, -0)) return 0;
+  if (typeof next !== "object" || next === null) return next;
+
+  // Left alone deliberately — see the residuals note above.
+  if (!canFreezeInPlace(next)) return next;
+
+  if (active.has(next)) {
+    throw new Error(
+      `${where}: slice${path} contains itself. A canonical form cannot be built for a cycle, ` +
+        `and a value that contains itself cannot be recorded either.`,
+    );
+  }
+  active.add(next);
+  try {
+    if (Array.isArray(next)) {
+      const before = Array.isArray(previous) ? previous : undefined;
+      const source: readonly unknown[] = next;
+      const rebuilt: unknown[] = [];
+      for (let index = 0; index < source.length; index += 1) {
+        rebuilt.push(
+          canonicalizeSlice(
+            source[index],
+            before?.[index],
+            where,
+            `${path}[${String(index)}]`,
+            active,
+          ),
+        );
+      }
+      return Object.freeze(rebuilt);
+    }
+
+    // Symbol keys are refused rather than dropped. `Object.keys` omits them, so
+    // rebuilding without this would lose them silently — and the serializer,
+    // which refuses them loudly, would never see them to complain.
+    if (Object.getOwnPropertySymbols(next).length > 0) {
+      throw new Error(
+        `${where}: slice${path} has a symbol-keyed property, which cannot be recorded and ` +
+          `would be dropped without trace by the canonical form.`,
+      );
+    }
+
+    const before =
+      typeof previous === "object" && previous !== null
+        ? (previous as Record<string, unknown>)
+        : undefined;
+    const rebuilt: Record<string, unknown> = {};
+    for (const key of Object.keys(next).sort()) {
+      // Descriptors, not reads: a getter here is handler code running inside
+      // the fold, and it could return a different value to this walk than to
+      // the next reader. `deepFreeze` refuses accessors for the same reason.
+      const descriptor = Object.getOwnPropertyDescriptor(next, key);
+      if (descriptor === undefined) continue;
+      if (descriptor.get !== undefined || descriptor.set !== undefined) {
+        throw new Error(
+          `${where}: slice${path}.${key} is an accessor. A slice is inert data; reading it would ` +
+            `run code during the fold, and freezing could not make it inert.`,
+        );
+      }
+      // Dropped, matching the serializer: an own key holding `undefined` is
+      // absent from the recorded form, so keeping it here is the difference
+      // `Object.hasOwn` reports before and after a round trip.
+      if (descriptor.value === undefined) continue;
+      rebuilt[key] = canonicalizeSlice(
+        descriptor.value,
+        before?.[key],
+        where,
+        `${path}.${key}`,
+        active,
+      );
+    }
+    return Object.freeze(rebuilt);
+  } finally {
+    active.delete(next);
+  }
 }
 
 function requireObject(
@@ -1077,6 +1248,22 @@ function requireSlices(
           module.validateSlice === undefined
             ? raw
             : module.validateSlice(raw, `snapshot: slices.${module.namespace}`);
+        // The third and last door into `slices`, and the one that was open.
+        // `bootstrap` refuses an `initialSlice` returning `undefined` and
+        // `captureOutcome`'s `hasSlice` refuses a handler doing it; a validator
+        // could still hand one back — `(s, w) => cond ? {n: 0} : undefined`
+        // typechecks with inferred `S`. The result was an own key holding
+        // `undefined`, so `Object.hasOwn` answered true, the module was given
+        // `undefined` from then on and behaved as if every event were its
+        // first, `snapshot()` succeeded, and the *next* restore blamed registry
+        // drift.
+        if (validated === undefined) {
+          throw new Error(
+            `snapshot: slices.${module.namespace}: validateSlice returned undefined. A validator ` +
+              `either accepts the slice, returning it, or refuses it by throwing — returning ` +
+              `nothing leaves the module holding an absent slice under a key that exists.`,
+          );
+        }
         return [
           module.namespace,
           freezeSlice(validated, `snapshot: slices.${module.namespace}`),

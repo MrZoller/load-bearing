@@ -486,6 +486,52 @@ describe("createRegistry", () => {
     ).toThrow(/handler "gamma\.bump" has no apply function/);
   });
 
+  it("binds every callback to the definition, as createRegistry already did", () => {
+    // TypeScript accepts method shorthand on all three callbacks and
+    // contextually types `this` as the definition object, so this is type-clean
+    // code — and calling `initialSlice` or `validateSlice` unbound threw
+    // `Cannot read properties of undefined` out of `bootstrap`, naming no
+    // module, while the hand-built path through `createRegistry` worked. The
+    // two construction paths disagreed and the front door was the broken one.
+    // No cast: every callback below reads a field the definition declares, and
+    // this compiles with zero errors under the repo's own settings.
+    const module = defineEventModule<{ from: string }>({
+      namespace: "receiver",
+      description: "reads its own definition through `this`",
+      initialSlice() {
+        return { from: this.description };
+      },
+      validateSlice(slice) {
+        return { from: (slice as { from: string }).from };
+      },
+      events: {
+        "receiver.go": {
+          version: 0,
+          apply() {
+            return { summary: `v${String(this.version)}` };
+          },
+        },
+      },
+    });
+    const registry = createRegistry([module]);
+
+    const state = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      registry,
+      events: [{ type: "receiver.go" }],
+    });
+
+    expect(state.slices["receiver"]).toEqual({
+      from: "reads its own definition through `this`",
+    });
+    expect(state.transcript[0]?.summary).toBe("v0");
+    // And the validator keeps the same receiver on the way back in.
+    expect(module.validateSlice?.({ from: "kept" }, "where")).toEqual({
+      from: "kept",
+    });
+  });
+
   it("rejects a non-function initialSlice or validateSlice before wrapping it", () => {
     // The wrappers `defineEventModule` builds are functions whatever they close
     // over, so wrapping first would launder a bad value straight past

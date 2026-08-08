@@ -12,6 +12,8 @@ import type { EventModule } from "./module.js";
 import { ENGINE_EVENT_REGISTRY } from "./modules.js";
 import {
   EventVersionError,
+  MAX_TRANSCRIPT_DETAIL_LINES,
+  MAX_TRANSCRIPT_LINE_LENGTH,
   UnknownEventTypeError,
   bootstrap,
   reduce,
@@ -417,6 +419,129 @@ describe("snapshots", () => {
     ]);
 
     expect(serialize(resumed)).toBe(serialize(uninterrupted));
+  });
+
+  it("stores a slice a handler observes identically before and after a restore", () => {
+    // The property "restoring and continuing is the same as never having
+    // stopped" is about what a *handler* sees, and the resumption tests below
+    // compare `serialize(...)` — through the very normalizer whose absence from
+    // the fold path caused the divergence. So they are named for this and
+    // cannot see it. These assertions read the slice the way a handler does.
+    //
+    // Note the scope: two live folds always agreed with each other, and two
+    // replays always agreed with each other. `reduce(cartridge, seed, log)` was
+    // never at risk. What was false is the narrower restore promise.
+    const shared = { host: "eu-west" };
+    const hazards = defineEventModule<Record<string, unknown>>({
+      namespace: "hazards",
+      description: "builds a slice that diverges from its own recorded form",
+      initialSlice: () => ({}),
+      events: {
+        "hazards.write": {
+          version: 0,
+          apply: () => ({
+            slice: {
+              // Insertion order is not sorted order.
+              zulu: 1,
+              alpha: 2,
+              // `-0` is a different value from `0` and the same JSON.
+              drift: -0,
+              // An own key the serializer drops, so `Object.hasOwn` flips.
+              absent: undefined,
+              // Two properties, one object: distinct after a round trip.
+              left: shared,
+              right: shared,
+            },
+          }),
+        },
+      },
+    });
+    const registry = createRegistry([hazards]);
+    const state = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      registry,
+      events: [{ type: "hazards.write" }],
+    });
+    const restored = restoreSnapshot(snapshot(state), registry);
+
+    const live = state.slices["hazards"] as Record<string, unknown>;
+    const back = restored.slices["hazards"] as Record<string, unknown>;
+
+    // The four axes, each read as a handler would read it. `Object.keys` order
+    // is the `ls` case from issue #5: a pure handler printing a directory
+    // listing showed one order live and another after a refresh.
+    expect(Object.keys(live)).toEqual(Object.keys(back));
+    expect(Object.keys(live)).toEqual([
+      "alpha",
+      "drift",
+      "left",
+      "right",
+      "zulu",
+    ]);
+    expect(Object.is(live["drift"], -0)).toBe(false);
+    expect(Object.hasOwn(live, "absent")).toBe(Object.hasOwn(back, "absent"));
+    expect(Object.hasOwn(live, "absent")).toBe(false);
+    expect(live["left"] === live["right"]).toBe(back["left"] === back["right"]);
+  });
+
+  it("keeps the shared structure a handler hands it, and refuses a cycle", () => {
+    // The walk is incremental: it stops wherever the new slice shares structure
+    // with the previous canonical one, which is what makes canonicalizing per
+    // event cheaper than the deep freeze this function's comment refused.
+    const files = defineEventModule<{ files: Record<string, unknown> }>({
+      namespace: "files",
+      description: "adds one file per event, sharing the rest",
+      initialSlice: () => ({ files: { "/a": { size: 1 } } }),
+      events: {
+        "files.add": {
+          version: 0,
+          apply: (context, slice) => ({
+            slice: {
+              files: {
+                ...slice.files,
+                [`/f${String(context.index)}`]: { size: 2 },
+              },
+            },
+          }),
+        },
+        "files.cycle": {
+          version: 0,
+          apply: () => {
+            const loop: Record<string, unknown> = {};
+            loop["self"] = loop;
+            return { slice: { files: loop } };
+          },
+        },
+      },
+    });
+    const registry = createRegistry([files]);
+    const fold = (events: readonly EngineEvent[]) =>
+      reduce({ cartridge: CARTRIDGE, seed: SEED, registry, events });
+
+    // Stepped within one session, since sharing is what one fold carries
+    // forward — two separate `reduce` calls necessarily build separate objects.
+    const start = bootstrap({ cartridge: CARTRIDGE, seed: SEED, registry });
+    const once = step(start, { type: "files.add" }, registry);
+    const twice = step(once, { type: "files.add" }, registry);
+    const untouched = (state: SessionState) =>
+      (state.slices["files"] as { files: Record<string, unknown> }).files["/a"];
+
+    // An untouched subtree is the same frozen object across events, not a copy:
+    // the walk stops the moment it recognises what the previous slice held.
+    expect(untouched(once)).toBe(untouched(start));
+    expect(untouched(twice)).toBe(untouched(start));
+    expect(Object.isFrozen(untouched(twice))).toBe(true);
+    // And the event's own write did land.
+    expect(
+      Object.keys(
+        (twice.slices["files"] as { files: Record<string, unknown> }).files,
+      ),
+    ).toEqual(["/a", "/f0", "/f1"]);
+
+    // A cycle cannot be rebuilt, so it is refused here rather than becoming a
+    // bare RangeError from unbounded recursion.
+    expect(() => fold([{ type: "files.cycle" }])).toThrow(/contains itself/);
   });
 
   it("resumes from mid-session, where the last entry predates the clock", () => {
@@ -892,6 +1017,37 @@ describe("snapshots", () => {
     // not be tampering.
     expect(() => restoreSnapshot(recorded, createRegistry([after]))).toThrow(
       /recorded under a registry that has since changed/,
+    );
+  });
+
+  it("refuses a validator that returns undefined instead of throwing", () => {
+    // The third and last door into `slices`, and the one that was open.
+    // `bootstrap` refuses an `initialSlice` returning `undefined` and
+    // `captureOutcome`'s `hasSlice` refuses a handler doing it; a validator
+    // could still hand one back, and `(s, w) => cond ? {n: 0} : undefined`
+    // typechecks with inferred `S`. The result was an own key holding
+    // `undefined` — `Object.hasOwn` true, the module given `undefined` from
+    // then on, `snapshot()` succeeding, and the *next* restore blaming
+    // registry drift.
+    const lax = defineEventModule<{ n: number } | undefined>({
+      namespace: "lax",
+      description: "a validator that declines by returning nothing",
+      initialSlice: () => ({ n: 0 }),
+      validateSlice: () => undefined,
+      events: { "lax.go": { version: 0, apply: () => ({}) } },
+    });
+    const registry = createRegistry([lax]);
+    const text = snapshot(
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry,
+        events: [{ type: "lax.go" }],
+      }),
+    );
+
+    expect(() => restoreSnapshot(text, registry)).toThrow(
+      /validateSlice returned undefined/,
     );
   });
 
@@ -1371,6 +1527,52 @@ describe("transcript text a handler produces", () => {
       },
     };
     expect(fold(shiftySummary).transcript[0]?.summary).toBe("original");
+  });
+
+  it("is bounded in both dimensions a transcript entry has", () => {
+    // The `MAX_PROBE_*` constants each bound one *input* — and there are more
+    // inputs than constants: a `weightedPick` arm's label amplified by
+    // `padEnd`, and a stream path's depth, both reach the transcript unbounded.
+    // Bounding the output covers all of them, and covers #5–#13 without each
+    // module inventing its own ceiling.
+    //
+    // The residual, stated because the bound does not close it: this bounds the
+    // artifact, not the work. A fifty-thousand-segment stream path costs most
+    // of a second while producing one line, and no output ceiling sees that.
+    const emitting = (outcome: unknown): EventModule =>
+      defineEventModule({
+        namespace: "loud",
+        description: "writes more transcript than an artifact can hold",
+        events: { "loud.say": { version: 0, apply: () => outcome as never } },
+      });
+    const say = (outcome: unknown) =>
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry: createRegistry([emitting(outcome)]),
+        events: [{ type: "loud.say" }],
+      });
+
+    expect(() =>
+      say({
+        detail: new Array<string>(MAX_TRANSCRIPT_DETAIL_LINES + 1).fill("x"),
+      }),
+    ).toThrow(/would write 4097 transcript lines/);
+    expect(() =>
+      say({ detail: ["ok", "y".repeat(MAX_TRANSCRIPT_LINE_LENGTH + 1)] }),
+    ).toThrow(/detail line 1 is 4097 characters/);
+    expect(() =>
+      say({ summary: "z".repeat(MAX_TRANSCRIPT_LINE_LENGTH + 1) }),
+    ).toThrow(/transcript summary is 4097 characters/);
+
+    // Comfortably inside, which is where every committed fixture sits: the
+    // largest is 126 detail lines of at most 99 characters.
+    expect(() =>
+      say({
+        detail: new Array<string>(MAX_TRANSCRIPT_DETAIL_LINES).fill("x"),
+        summary: "z".repeat(MAX_TRANSCRIPT_LINE_LENGTH),
+      }),
+    ).not.toThrow();
   });
 
   it("is refused when it is not an object, or its summary is not a string", () => {

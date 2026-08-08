@@ -152,8 +152,20 @@ function readWeightedEntries(
 
   const items: readonly unknown[] = raw;
   const seen = new Set<string>();
-  return items.map((item, index) => {
+  const entries: WeightedEntry<string>[] = [];
+  // An index loop, because `map` skips holes. A sparse `entries` array — from a
+  // hand-built log or a decoded permalink — passed validation untouched and
+  // reached `weightedPick`'s own hole check as a bare `TypeError` on
+  // `entry.value`, naming no event and no module. `weightedPick` carries an
+  // explicit named check for exactly this and `captureOutcome` carries a
+  // paragraph about `forEach` skipping holes; the validator sitting between
+  // them did neither.
+  for (let index = 0; index < items.length; index += 1) {
     const scope = `${where} entry ${String(index)}`;
+    const item = items[index];
+    if (!(index in items)) {
+      throw new Error(`${scope}: is a hole in a sparse array`);
+    }
     if (typeof item !== "object" || item === null || Array.isArray(item)) {
       throw new Error(`${scope}: must be an object`);
     }
@@ -173,11 +185,12 @@ function readWeightedEntries(
     }
     seen.add(value);
 
-    return {
+    entries.push({
       value,
       weight: readInteger(entry, "weight", 0, MAX_PROBE_WEIGHT, scope),
-    };
-  });
+    });
+  }
+  return entries;
 }
 
 /**
