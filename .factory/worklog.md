@@ -6,3 +6,5 @@ what happened, decisions and why, verification commands run, follow-ups.
 Newest at the bottom.
 
 ---
+
+- 2026-08-19 03:00 UTC - Imported the open `phase-0` GitHub backlog as T1–T10, with explicit issue dependencies and T11 as the rolling parked-review-minors batch. Verified external prerequisites #1–#4 are closed as completed, recorded the issue tracker as the approved external spec, and reset the materially new plan to the plan approval gate. No implementation or test commands run; bookkeeping only.
