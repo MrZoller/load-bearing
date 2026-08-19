@@ -147,3 +147,4 @@ vite.config.ts.timestamp-*
 .env
 .env.*
 .claude/settings.local.json
+.factory/logs/
