@@ -29,6 +29,18 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 1
+      # The checkout above puts PR-CONTROLLED files in the workspace; the step
+      # below receives a long-lived subscription OAuth token. Claude Code loads
+      # project hooks from .claude/settings.json and MCP servers from .mcp.json,
+      # and BOTH execute shell outside `--allowedTools` — so a PR editing either
+      # one could exfiltrate the token before any tool policy applies. The
+      # same-repo condition above does not cover this: the factory's own
+      # agent-authored branches are same-repo by construction, and this repo
+      # commits a .claude/settings.json that already carries a command hook.
+      # The review needs neither file — its prompt and tool permissions come
+      # from this workflow — so remove them before the secret-bearing step.
+      - name: Drop PR-controlled agent configuration
+        run: rm -rf .claude .mcp.json
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
