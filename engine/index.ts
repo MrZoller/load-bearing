@@ -12,12 +12,65 @@
 
 export { ENGINE_VERSION } from "./version.js";
 export { replaySession } from "./session.js";
+export type { ReplayInput, ReplayOutput } from "./session.js";
+
+export { EVENT_SCHEMA_VERSION, readSlice } from "./events/state.js";
 export type {
   EngineEvent,
-  ReplayInput,
-  ReplayOutput,
   SessionState,
-} from "./session.js";
+  TranscriptEntry,
+} from "./events/state.js";
+export { defineEventModule } from "./events/module.js";
+export type {
+  BootstrapContext,
+  EventContext,
+  EventHandlerDefinition,
+  EventModule,
+  EventModuleDefinition,
+  EventOutcome,
+  RegisteredHandler,
+} from "./events/module.js";
+export { EventRegistryError, createRegistry } from "./events/registry.js";
+export type { EventRegistry } from "./events/registry.js";
+export {
+  ENGINE_EVENT_MODULES,
+  ENGINE_EVENT_REGISTRY,
+} from "./events/modules.js";
+export {
+  EMPTY_EVENT_LOG,
+  appendEvent,
+  assertEventEnvelope,
+} from "./events/log.js";
+export {
+  EventVersionError,
+  UnknownEventTypeError,
+  bootstrap,
+  reduce,
+  restoreSnapshot,
+  snapshot,
+  step,
+} from "./events/reduce.js";
+export type { BootstrapInput, ReduceInput } from "./events/reduce.js";
+export {
+  DETAIL_INDENT,
+  MAX_TRANSCRIPT_DETAIL_LINES,
+  MAX_TRANSCRIPT_LINE_LENGTH,
+  renderEntry,
+  renderTranscript,
+} from "./events/transcript.js";
+export { readInteger, readString, requirePayload } from "./events/payload.js";
+export type { EventPayload } from "./events/payload.js";
+export { CLOCK_MODULE, MAX_TICK_MS } from "./events/core.js";
+export { PROBE_MODULE } from "./events/probe.js";
+export type { ProbeSlice } from "./events/probe.js";
+
+export { deepFreeze } from "./freeze.js";
+export {
+  CONTROL_CHARACTER,
+  LONE_SURROGATE,
+  describeUnwritableText,
+} from "./text.js";
+
 export {
   CanonicalSerializeError,
   deserialize,

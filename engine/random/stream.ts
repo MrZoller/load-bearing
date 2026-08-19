@@ -219,10 +219,11 @@ function makeStream(registry: Registry, path: string): RandomStream {
     },
 
     pick<T>(values: readonly T[]): T {
-      if (values.length === 0) {
+      const count = values.length;
+      if (count === 0) {
         throw new Error(`random: ${path}: pick() from an empty array`);
       }
-      const index = stream.int(values.length);
+      const index = stream.int(count);
       if (!(index in values)) {
         throw new Error(
           `random: ${path}: pick() landed on hole ${String(index)} of a sparse array`,
@@ -238,23 +239,33 @@ function makeStream(registry: Registry, path: string): RandomStream {
      * roll maps to a different entry if the list is reordered.
      */
     weightedPick<T>(entries: readonly WeightedEntry<T>[]): T {
-      if (entries.length === 0) {
+      const count = entries.length;
+      if (count === 0) {
         throw new Error(`random: ${path}: weightedPick() from an empty list`);
       }
 
+      // Each arm's weight captured in the validating pass and reused in the
+      // selection walk below. `entries` is caller-owned, and reading a weight
+      // to check it and again to accumulate it let a getter pass validation
+      // with one number and steer selection with another — overshooting
+      // `cumulative`, picking an arm the roll did not land on, or falling
+      // through to the "unreachable" error at the bottom.
+      const arms: WeightedEntry<T>[] = [];
       let total = 0;
-      for (let index = 0; index < entries.length; index += 1) {
+      for (let index = 0; index < count; index += 1) {
         if (!(index in entries)) {
           throw new Error(
             `random: ${path}: weightedPick() entry ${String(index)} is a hole in a sparse array`,
           );
         }
-        const weight = (entries[index] as WeightedEntry<T>).weight;
+        const entry = entries[index] as WeightedEntry<T>;
+        const weight = entry.weight;
         if (!Number.isSafeInteger(weight) || weight < 0) {
           throw new Error(
             `random: ${path}: weightedPick() weight ${String(index)} must be a non-negative integer, got ${String(weight)}`,
           );
         }
+        arms.push({ value: entry.value, weight });
         total += weight;
       }
 
@@ -266,8 +277,7 @@ function makeStream(registry: Registry, path: string): RandomStream {
 
       const roll = stream.int(total);
       let cumulative = 0;
-      for (let index = 0; index < entries.length; index += 1) {
-        const entry = entries[index] as WeightedEntry<T>;
+      for (const entry of arms) {
         cumulative += entry.weight;
         if (roll < cumulative) return entry.value;
       }
@@ -320,18 +330,25 @@ export function restoreRandom(state: RandomState): RandomStream {
   // Checked before the walk, so `{"seed": 5}` reports what is wrong with it
   // rather than throwing a TypeError out of `Object.keys`. Arrays are objects
   // and would otherwise walk their indices as stream paths.
+  // Captured before it is validated, and every read below is of the capture.
+  // `state` is caller-owned at an exported entry, and `cursors` was read for
+  // the guard, again for `Object.keys`, and once more per path — so a getter
+  // could show a well-formed record to the check and hand the walk something
+  // else, seating cursors that were never validated.
+  const declared: unknown = state.cursors;
   if (
-    typeof state.cursors !== "object" ||
-    state.cursors === null ||
-    Array.isArray(state.cursors)
+    typeof declared !== "object" ||
+    declared === null ||
+    Array.isArray(declared)
   ) {
     throw new Error(
-      `random: cursors must be an object of stream path to position, got ${JSON.stringify(state.cursors)}`,
+      `random: cursors must be an object of stream path to position, got ${JSON.stringify(declared)}`,
     );
   }
+  const declaredCursors = declared as Readonly<Record<string, unknown>>;
 
   const cursors = new Map<string, number>();
-  for (const path of Object.keys(state.cursors)) {
+  for (const path of Object.keys(declaredCursors)) {
     const segments = path.split(PATH_SEPARATOR);
     if (segments.length === 0 || segments[0] !== ROOT_LABEL) {
       throw new Error(
@@ -343,7 +360,7 @@ export function restoreRandom(state: RandomState): RandomStream {
     }
     cursors.set(
       path,
-      assertUint32(state.cursors[path] as number, `cursor for ${path}`),
+      assertUint32(declaredCursors[path] as number, `cursor for ${path}`),
     );
   }
 

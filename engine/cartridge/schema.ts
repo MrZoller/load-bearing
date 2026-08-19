@@ -44,6 +44,7 @@
  */
 
 import { parseTimestamp } from "../clock/civil.js";
+import { deepFreeze } from "../freeze.js";
 import { pattern } from "../pattern.js";
 import type { Pattern } from "../pattern.js";
 import { INCIDENT_DATE_PATTERN, MODEL_ID_PATTERN } from "../random/seed.js";
@@ -58,22 +59,13 @@ import { INCIDENT_DATE_PATTERN, MODEL_ID_PATTERN } from "../random/seed.js";
 export const CARTRIDGE_SCHEMA_VERSION = 0;
 
 /**
- * Freeze a value and everything reachable from it.
- *
- * `as const` is a compile-time assertion and nothing more: the arrays and
- * objects below are exported, and a JavaScript consumer — or a TypeScript one
- * with a cast — can push to them. That matters here more than it usually does,
- * because this tree *is* the validation authority: `ARCHETYPES.push("other")`
+ * This tree *is* the validation authority, so it is frozen all the way down
+ * (`engine/freeze.ts`). `as const` is a compile-time assertion and nothing
+ * more: the arrays and objects below are exported, and a JavaScript consumer —
+ * or a TypeScript one with a cast — can push to them. `ARCHETYPES.push("other")`
  * would make `loadCartridge` accept an archetype the exported `Archetype` type
  * still says does not exist, and the next schema emission would publish it.
  */
-function deepFreeze<T>(value: T): T {
-  if (typeof value !== "object" || value === null) return value;
-  for (const key of Object.getOwnPropertyNames(value)) {
-    deepFreeze((value as Record<string, unknown>)[key]);
-  }
-  return Object.freeze(value);
-}
 
 /** The four behavioural archetypes. See docs/DESIGN.md. */
 export const ARCHETYPES = Object.freeze([

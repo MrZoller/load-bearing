@@ -19,7 +19,7 @@ import { loadCartridge } from "../cartridge/load.js";
 import type { LoadedCartridge } from "../cartridge/types.js";
 import { serialize } from "../serialize/canonical.js";
 import { formatTextDiff } from "./diff.js";
-import { describeUnwritableText } from "./text.js";
+import { describeUnwritableText } from "../text.js";
 
 /** The committed input half of a fixture: `fixture.json`. */
 export interface ReplayFixture {

@@ -117,3 +117,58 @@ describe("hashString", () => {
     expect(hashString("", 12345)).toBe(12345);
   });
 });
+
+describe("caller-supplied seed material", () => {
+  it("joins the values it validated, so two materials cannot share a seed", () => {
+    // Each field was read once to validate and again to join, so a getter could
+    // answer the check with a legal value and the join with one carrying a
+    // separator. Two different materials then render one seed string — and
+    // therefore one PRNG root, which is the injectivity the field rules exist
+    // to guarantee.
+    let reads = 0;
+    const smuggling = formatSeed({
+      incidentDate: "2026-08-05",
+      get dailySeed(): number {
+        reads += 1;
+        // `> 1`, like the two getters below. At `> 2` the second read — the
+        // only other one this site can make — returned the legal value, so a
+        // reverted capture diverged nowhere and the counter below was the
+        // whole test.
+        return reads > 1 ? ("1/x" as unknown as number) : 1;
+      },
+      model: "y",
+    });
+
+    expect(reads).toBe(1);
+    expect(smuggling).toBe("2026-08-05/1/y");
+
+    // Its actual twin: a `model` getter smuggling the separator from the other
+    // side. Before the capture both rendered "2026-08-05/1/x/y" and hashed to
+    // one root — two different materials, one generator.
+    let modelReads = 0;
+    expect(
+      formatSeed({
+        incidentDate: "2026-08-05",
+        dailySeed: 1,
+        get model(): string {
+          modelReads += 1;
+          return modelReads > 1 ? "x/y" : "x";
+        },
+      }),
+    ).toBe("2026-08-05/1/x");
+
+    // And the third field, so no capture is left pinned by its neighbours.
+    let dateReads = 0;
+    expect(
+      formatSeed({
+        get incidentDate(): string {
+          dateReads += 1;
+          return dateReads > 1 ? "2026-08-05/1" : "2026-08-05";
+        },
+        dailySeed: 1,
+        model: "x",
+      }),
+    ).toBe("2026-08-05/1/x");
+    expect(dateReads).toBe(1);
+  });
+});

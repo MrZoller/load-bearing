@@ -6,6 +6,12 @@
  * generate them into a transcript entry. Checking only the input half would
  * leave the generated half free to produce an artifact that no re-record could
  * ever match.
+ *
+ * It sits at the root of `engine/` rather than under `engine/testing/` because
+ * both directions are now real: `engine/events/reduce.ts` checks every
+ * transcript entry a handler produces, and the harness checks what a fixture
+ * declares. A shared rule imported by simulation code from a directory named
+ * "testing" would read as an accident.
  */
 
 /**

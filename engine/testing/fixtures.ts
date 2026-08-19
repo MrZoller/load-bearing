@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 
 import type { EngineEvent } from "../session.js";
 import type { ReplayFixture, ReplayRecording } from "./replay.js";
-import { describeUnwritableText } from "./text.js";
+import { describeUnwritableText } from "../text.js";
 
 /** Absolute path to `engine/__fixtures__/replay/`. */
 export const REPLAY_FIXTURE_ROOT = fileURLToPath(
@@ -309,6 +309,19 @@ export function parseReplayFixture(
     ) {
       throw new Error(
         `${at} has a "payload" that is ${describe(payload)}; it must be an object when present`,
+      );
+    }
+    // `version` pins the payload schema the event was written against. A
+    // fixture usually omits it — "current" is the only thing it can mean for a
+    // log authored by hand — but one that declares it is asserting a contract,
+    // and a string or a fraction there would be silently ignored otherwise.
+    const version = (event as { version?: unknown }).version;
+    if (
+      version !== undefined &&
+      (typeof version !== "number" || !Number.isInteger(version) || version < 0)
+    ) {
+      throw new Error(
+        `${at} has a "version" that is ${describe(version)}; it must be a non-negative integer when present`,
       );
     }
   });

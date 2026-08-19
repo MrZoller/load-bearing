@@ -241,3 +241,152 @@ describe("name tables", () => {
     expect(WEEKDAY_NAMES[civil.weekday]).toBe("Wed");
   });
 });
+
+describe("caller-supplied civil time", () => {
+  it("uses the day it bounds-checked, not a later read of it", () => {
+    // `day` was validated against the range and against `daysInMonth`, then
+    // read again for `dayOfYear`. A getter could satisfy both checks and shift
+    // the arithmetic — and this function is what confines the year to
+    // 1970–9999, which the 24-character instant and the transcript's
+    // rendered-line bound both rest on.
+    let reads = 0;
+    const shifty = {
+      year: 2026,
+      month: 2,
+      get day(): number {
+        reads += 1;
+        // `> 1`, like every sibling getter here. The site has exactly two
+        // possible reads, so a `> 2` threshold never diverges: the test then
+        // passes under a reverted capture and is held up by its read counter
+        // alone. The same off-by-one was found in `registry.test.ts`.
+        return reads > 1 ? 99 : 28;
+      },
+    };
+
+    expect(epochMsFromCivil(shifty)).toBe(
+      epochMsFromCivil({ year: 2026, month: 2, day: 28 }),
+    );
+    expect(reads).toBe(1);
+  });
+
+  it("uses the year and month it bounds-checked, not later reads", () => {
+    // Each of the three is a separate capture; pinning `day` alone left the
+    // other two revertible in silence.
+    const expected = epochMsFromCivil({ year: 2026, month: 2, day: 28 });
+
+    let yearReads = 0;
+    expect(
+      epochMsFromCivil({
+        get year(): number {
+          yearReads += 1;
+          return yearReads > 1 ? 2027 : 2026;
+        },
+        month: 2,
+        day: 28,
+      }),
+    ).toBe(expected);
+    expect(yearReads).toBe(1);
+
+    let monthReads = 0;
+    expect(
+      epochMsFromCivil({
+        year: 2026,
+        get month(): number {
+          monthReads += 1;
+          return monthReads > 1 ? 11 : 2;
+        },
+        day: 28,
+      }),
+    ).toBe(expected);
+    expect(monthReads).toBe(1);
+  });
+
+  it("uses the time-of-day fields it bounds-checked, not later reads", () => {
+    // The four the comment above the captures calls "already captured". Each
+    // is read once through `?? 0`, bounds-checked as that capture, and then
+    // used only in the closing sum — so a second read there satisfies every
+    // check and still moves the instant, silently. `parseTimestamp` composes
+    // through here, so this is what every cartridge `startedAt` and every
+    // restored transcript stamp is built on.
+    const expected = epochMsFromCivil({
+      year: 2026,
+      month: 8,
+      day: 5,
+      hour: 9,
+      minute: 14,
+      second: 22,
+      millisecond: 500,
+    });
+
+    // Each second read is itself in range, which is the point: nothing
+    // downstream re-validates, so the divergence is a wrong instant rather
+    // than a refusal.
+    let hourReads = 0;
+    expect(
+      epochMsFromCivil({
+        year: 2026,
+        month: 8,
+        day: 5,
+        get hour(): number {
+          hourReads += 1;
+          return hourReads > 1 ? 23 : 9;
+        },
+        minute: 14,
+        second: 22,
+        millisecond: 500,
+      }),
+    ).toBe(expected);
+    expect(hourReads).toBe(1);
+
+    let minuteReads = 0;
+    expect(
+      epochMsFromCivil({
+        year: 2026,
+        month: 8,
+        day: 5,
+        hour: 9,
+        get minute(): number {
+          minuteReads += 1;
+          return minuteReads > 1 ? 59 : 14;
+        },
+        second: 22,
+        millisecond: 500,
+      }),
+    ).toBe(expected);
+    expect(minuteReads).toBe(1);
+
+    let secondReads = 0;
+    expect(
+      epochMsFromCivil({
+        year: 2026,
+        month: 8,
+        day: 5,
+        hour: 9,
+        minute: 14,
+        get second(): number {
+          secondReads += 1;
+          return secondReads > 1 ? 59 : 22;
+        },
+        millisecond: 500,
+      }),
+    ).toBe(expected);
+    expect(secondReads).toBe(1);
+
+    let millisecondReads = 0;
+    expect(
+      epochMsFromCivil({
+        year: 2026,
+        month: 8,
+        day: 5,
+        hour: 9,
+        minute: 14,
+        second: 22,
+        get millisecond(): number {
+          millisecondReads += 1;
+          return millisecondReads > 1 ? 999 : 500;
+        },
+      }),
+    ).toBe(expected);
+    expect(millisecondReads).toBe(1);
+  });
+});
