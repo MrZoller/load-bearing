@@ -159,8 +159,15 @@ them re-rolls or invalidates every committed fixture, on purpose.
    non-plain-data values are **rejected loudly** (never coerced like
    `JSON.stringify` does). Brand detection reads internal slots via
    `structuredClone` (the one ambient in `globals.d.ts`), not the prototype
-   chain. A hostile `Proxy` gets one `getOwnPropertyDescriptors` snapshot and
-   nothing more.
+   chain. A hostile `Proxy` is contained by *ordering*, not by a single touch:
+   `plainEntries` rejects anything whose `getPrototypeOf` does not report
+   `Object.prototype`/`null`, takes the `getOwnPropertyDescriptors` snapshot
+   before any brand probing, and only then calls `detectBrand` — whose
+   `Object.prototype.toString` and internal-slot probes are further trap
+   opportunities. So traps can fire more than once, and the real defense is
+   the purity gate's outright ban on `Proxy` inside `engine/`; the ordering
+   only ensures a trap cannot answer a question before the check that would
+   have rejected it.
 
 Supporting: `engine/pattern.ts` (validators can't be mutated), the purity gate
 (`scripts/gate-purity.mjs`, [see below](#the-purity-gate)).
