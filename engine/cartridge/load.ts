@@ -985,7 +985,15 @@ function checkGitHistory(
         );
     });
     for (const path of Object.keys(commit.files).sort()) {
-      if (!Object.hasOwn(repository.files, path))
+      const repositoryPrefix =
+        repository.cwd === "/" ? "/" : `${repository.cwd}/`;
+      if (path !== repository.cwd && !path.startsWith(repositoryPrefix))
+        report.addPhrase(
+          `${gitCommitPointer(index)}/files/${pointerToken(path)}`,
+          "a file beneath repository.cwd",
+          `${JSON.stringify(path)}, which is outside ${JSON.stringify(repository.cwd)}`,
+        );
+      else if (!Object.hasOwn(repository.files, path))
         report.addPhrase(
           `${gitCommitPointer(index)}/files/${pointerToken(path)}`,
           "a file declared by repository.files",

@@ -919,6 +919,27 @@ describe("deferred sections", () => {
 });
 
 describe("Git history coherence", () => {
+  it("rejects tracked files outside the repository cwd", () => {
+    const source = loadCartridgeFixture("git") as Record<string, unknown>;
+    const repository = source["repository"] as Record<string, unknown>;
+    const history = repository["gitHistory"] as Record<string, unknown>;
+    const commits = history["commits"] as Record<string, unknown>[];
+    const files = (commits[0] as Record<string, unknown>)["files"] as Record<
+      string,
+      unknown
+    >;
+    files["/etc/motd"] = {
+      contents: "Load-bearing greeting.\n",
+      blame: ["initial"],
+    };
+
+    expect(issuesOf(source)).toContainEqual({
+      pointer: "/repository/gitHistory/commits/0/files/~1etc~1motd",
+      expected: "a file beneath repository.cwd",
+      found: '"/etc/motd", which is outside "/production/service"',
+    });
+  });
+
   it("rejects an ancestry cycle before constructing content-derived hashes", () => {
     const source = loadCartridgeFixture("git") as Record<string, unknown>;
     const repository = source["repository"] as Record<string, unknown>;
