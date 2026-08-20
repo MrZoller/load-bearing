@@ -83,7 +83,10 @@ function result(
         "shell: command output exceeds the deterministic transcript limit",
       ],
       exitCode: exitCode === 2 ? 2 : 1,
-      events,
+      // A shell failure must not fold a successful mutation before its
+      // result event. Keeping events here would report an error while
+      // committing or restoring state the transcript cannot represent.
+      events: EMPTY_EVENTS,
     };
   return { stdout, stderr, exitCode, events };
 }

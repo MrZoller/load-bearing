@@ -1143,6 +1143,9 @@ export function replaceVfsFiles(
   let written = 0;
   for (const path of [...new Set(tracked)].sort()) {
     if (Object.hasOwn(target, path)) continue;
+    // A staged deletion may already be absent from the working tree. It is
+    // already at the requested target, so restoring it is an idempotent no-op.
+    if (next.entries[path] === undefined) continue;
     const mutation = deleteVfs(next, path, now);
     if (!mutation.result.ok) return unchanged(slice, mutation.result);
     next = mutation.slice;

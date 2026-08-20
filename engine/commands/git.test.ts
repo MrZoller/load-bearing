@@ -189,6 +189,22 @@ describe("Git commands", () => {
     });
   });
 
+  it("does not fold a commit when its rendered output cannot be recorded", () => {
+    let state = execute(initial(), "touch recorded.txt");
+    state = execute(state, "git add recorded.txt");
+    const input = "git commit -m 'before\rafter'";
+
+    expect(run(state, input)).toEqual({
+      stdout: [],
+      stderr: [
+        "shell: command output exceeds the deterministic transcript limit",
+      ],
+      exitCode: 1,
+    });
+    expect(commandEvents(state, input)).toEqual([]);
+    expect(readGitSlice(execute(state, input))).toEqual(readGitSlice(state));
+  });
+
   it("stages, unstages, commits, updates a branch, and keeps log and blame coherent", () => {
     let state = execute(initial(), "touch load.txt");
     state = execute(state, "git add load.txt");
@@ -256,6 +272,26 @@ describe("Git commands", () => {
       expect(
         readVfsSlice(state).entries["/production/service/src/index.ts"],
       ).toBeUndefined();
+    },
+  );
+
+  it.each(["git restore src/index.ts", "git checkout -- src/index.ts"])(
+    "%s leaves an already-staged deletion unchanged",
+    (command) => {
+      let state = execute(initial(), "rm src/index.ts");
+      state = execute(state, "git add src/index.ts");
+
+      expect(run(state, command)).toEqual({
+        stdout: [],
+        stderr: [],
+        exitCode: 0,
+      });
+      expect(readGitSlice(execute(state, command))).toEqual(
+        readGitSlice(state),
+      );
+      expect(readVfsSlice(execute(state, command))).toEqual(
+        readVfsSlice(state),
+      );
     },
   );
 
