@@ -72,6 +72,7 @@ Expansion order must be deterministic and documented, and each expanded event
 folds one TranscriptEntry at the same index, per ARCHITECTURE.md:121.
 
 Sub-questions, both yes:
+
 - Cartridge commands are static `{stdout, stderr, exitCode}` records under
   `repository.commands`. Data, not behavior — keeps incident logic out of the
   interpreter per invariant 1.
