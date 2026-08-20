@@ -9,6 +9,7 @@
   "repository": {
     "cwd": "relative/path",
     "identity": { "user": "root", "group": "root", "home": "/root" },
+    "gitIdentity": { "name": "Visitor", "email": "visitor@example.test" },
     "files": {
       "/srv/app/main.ts": {
         "contents": "export const load = 1;\n"

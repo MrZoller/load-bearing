@@ -8,6 +8,7 @@ import { deepFreeze } from "../freeze.js";
 import { hashString } from "../random/seed.js";
 import { serializeInline } from "../serialize/canonical.js";
 import { replaceVfsFiles } from "../vfs/vfs.js";
+import { isDescendant } from "../vfs/path.js";
 import type { VfsFileEntry, VfsSlice } from "../vfs/types.js";
 import type {
   GitBlameLine,
@@ -18,12 +19,17 @@ import type {
   GitDiffFile,
   GitDiffLine,
   GitFailure,
+  GitFileSnapshot,
   GitHead,
   GitMutation,
+  GitRestoreMutation,
   GitResult,
   GitSlice,
   GitStatusEntry,
+  GitShowValue,
 } from "./types.js";
+import { GIT_BRANCH_PATTERN } from "../cartridge/schema.js";
+import { parseTimestamp } from "../clock/civil.js";
 
 function success<T>(value: T): GitResult<T> {
   return deepFreeze({ ok: true, value } as const);
@@ -52,6 +58,18 @@ function contentHash(material: string): string {
   return out;
 }
 
+function commitHash(
+  parents: readonly string[],
+  author: GitCommit["author"],
+  message: string,
+  committedAt: string,
+  files: Readonly<Record<string, string>>,
+): string {
+  return contentHash(
+    serializeInline({ parents, author, message, committedAt, files }),
+  );
+}
+
 function hashCommit(
   commit: CartridgeGitCommit,
   byId: ReadonlyMap<string, CartridgeGitCommit>,
@@ -68,14 +86,12 @@ function hashCommit(
       .sort(([left], [right]) => compareText(left, right))
       .map(([path, file]) => [path, file.contents]),
   );
-  const hash = contentHash(
-    serializeInline({
-      parents,
-      author: commit.author,
-      message: authoredMessage,
-      committedAt: commit.committedAt,
-      files,
-    }),
+  const hash = commitHash(
+    parents,
+    commit.author,
+    authoredMessage,
+    commit.committedAt,
+    files,
   );
   hashes.set(commit.id, hash);
   return hash;
@@ -160,11 +176,49 @@ export function createGitSlice(cartridge: LoadedCartridge): GitSlice {
   );
   return deepFreeze({
     root: cartridge.repository.cwd,
+    identity: { ...cartridge.repository.gitIdentity },
     commits,
     branches,
     head,
     index,
   });
+}
+
+export function currentGitHash(slice: GitSlice): string | undefined {
+  return headHash(slice);
+}
+
+export function resolveGitRef(slice: GitSlice, ref: string): GitResult<string> {
+  const branch = slice.branches[ref];
+  if (branch !== undefined) return success(branch);
+  if (slice.commits[ref] !== undefined) return success(ref);
+  if (/^[0-9a-f]{4,39}$/.test(ref)) {
+    const matches = Object.keys(slice.commits).filter((hash) =>
+      hash.startsWith(ref),
+    );
+    if (matches.length === 1) return success(matches[0] as string);
+    if (matches.length > 1)
+      return failure(
+        "INVALID",
+        `short object ID ${JSON.stringify(ref)} is ambiguous`,
+      );
+  }
+  return failure("NOT_FOUND", `unknown revision ${JSON.stringify(ref)}`);
+}
+
+export function abbreviateGitHash(slice: GitSlice, hash: string): string {
+  let length = 7;
+  const hashes = Object.keys(slice.commits);
+  while (
+    length < hash.length &&
+    hashes.some(
+      (candidate) =>
+        candidate !== hash &&
+        candidate.slice(0, length) === hash.slice(0, length),
+    )
+  )
+    length += 1;
+  return hash.slice(0, length);
 }
 
 function reachable(slice: GitSlice, start: string): ReadonlySet<string> {
@@ -366,6 +420,36 @@ export function diffGit(
   );
 }
 
+export function showGit(
+  slice: GitSlice,
+  ref = headHash(slice),
+): GitResult<GitShowValue> {
+  if (ref === undefined)
+    return failure("NOT_FOUND", "HEAD does not name a commit");
+  const resolved = resolveGitRef(slice, ref);
+  if (!resolved.ok) return resolved;
+  const commit = slice.commits[resolved.value] as GitCommit;
+  const parentHash = commit.parents[0];
+  const before =
+    parentHash === undefined
+      ? {}
+      : headTree({ ...slice, head: { kind: "detached", target: parentHash } });
+  const after = Object.fromEntries(
+    Object.entries(commit.files).map(([path, file]) => [path, file.contents]),
+  );
+  const paths = new Set([...Object.keys(before), ...Object.keys(after)]);
+  const files = [...paths]
+    .sort()
+    .filter((path) => before[path] !== after[path])
+    .map((path) => ({
+      path,
+      oldContents: before[path] ?? null,
+      newContents: after[path] ?? null,
+      lines: lineDiff(before[path] ?? "", after[path] ?? ""),
+    }));
+  return success({ commit, files });
+}
+
 export function stageGit(
   slice: GitSlice,
   vfs: VfsSlice,
@@ -393,6 +477,207 @@ export function stageGit(
   });
 }
 
+/** Exact changed paths at or below cwd; path segments, never string prefixes. */
+export function gitAddCwdPaths(
+  slice: GitSlice,
+  vfs: VfsSlice,
+  cwd: string,
+): readonly string[] {
+  return deepFreeze(
+    statusGit(slice, vfs)
+      .map((entry) => entry.path)
+      .filter((path) => path === cwd || isDescendant(path, cwd)),
+  );
+}
+
+export function branchGit(
+  slice: GitSlice,
+  name: string,
+): GitMutation<{ readonly name: string; readonly hash: string }> {
+  if (!GIT_BRANCH_PATTERN.test(name))
+    return {
+      slice,
+      result: failure("INVALID", `invalid branch name ${JSON.stringify(name)}`),
+    };
+  if (slice.branches[name] !== undefined)
+    return {
+      slice,
+      result: failure(
+        "INVALID",
+        `branch ${JSON.stringify(name)} already exists`,
+      ),
+    };
+  const hash = headHash(slice);
+  if (hash === undefined)
+    return {
+      slice,
+      result: failure("INVALID", "cannot create a branch without a commit"),
+    };
+  return deepFreeze({
+    slice: { ...slice, branches: { ...slice.branches, [name]: hash } },
+    result: success({ name, hash }),
+  });
+}
+
+function inheritedLineSources(
+  parent: GitFileSnapshot | undefined,
+  contents: string,
+  createdBy: string,
+): readonly string[] {
+  const before = logicalLines(parent?.contents ?? "");
+  const after = logicalLines(contents);
+  const rows = before.length + 1;
+  const columns = after.length + 1;
+  const lengths = Array.from({ length: rows }, () =>
+    Array.from({ length: columns }, () => 0),
+  );
+  for (let left = before.length - 1; left >= 0; left -= 1)
+    for (let right = after.length - 1; right >= 0; right -= 1)
+      lengths[left]![right] =
+        before[left] === after[right]
+          ? 1 + (lengths[left + 1]?.[right + 1] ?? 0)
+          : Math.max(
+              lengths[left + 1]?.[right] ?? 0,
+              lengths[left]?.[right + 1] ?? 0,
+            );
+  const sources = after.map(() => createdBy);
+  let left = 0;
+  let right = 0;
+  while (left < before.length && right < after.length) {
+    if (before[left] === after[right]) {
+      sources[right] = parent?.blame[left] ?? createdBy;
+      left += 1;
+      right += 1;
+    } else if (
+      (lengths[left + 1]?.[right] ?? 0) >= (lengths[left]?.[right + 1] ?? 0)
+    )
+      left += 1;
+    else right += 1;
+  }
+  return sources;
+}
+
+export function commitGit(
+  slice: GitSlice,
+  message: string,
+  committedAt: string,
+): GitMutation<GitCommit> {
+  if (message.trim() === "")
+    return { slice, result: failure("INVALID", "empty commit message") };
+  try {
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(committedAt))
+      throw new Error("noncanonical timestamp");
+    parseTimestamp(committedAt);
+  } catch {
+    return { slice, result: failure("INVALID", "invalid commit timestamp") };
+  }
+  const parentHash = headHash(slice);
+  const parent =
+    parentHash === undefined ? undefined : slice.commits[parentHash];
+  const parentTree = Object.fromEntries(
+    Object.entries(parent?.files ?? {}).map(([path, file]) => [
+      path,
+      file.contents,
+    ]),
+  );
+  if (serializeInline(parentTree) === serializeInline(slice.index))
+    return {
+      slice,
+      result: failure("INVALID", "nothing to commit, working tree clean"),
+    };
+  const parents = parentHash === undefined ? [] : [parentHash];
+  const hash = commitHash(
+    parents,
+    slice.identity,
+    message,
+    committedAt,
+    slice.index,
+  );
+  const files = Object.fromEntries(
+    Object.entries(slice.index)
+      .sort(([left], [right]) => compareText(left, right))
+      .map(([path, contents]) => [
+        path,
+        {
+          contents,
+          blame: inheritedLineSources(parent?.files[path], contents, hash),
+        },
+      ]),
+  );
+  const commit: GitCommit = {
+    id: hash,
+    hash,
+    parents,
+    author: { ...slice.identity },
+    message,
+    committedAt,
+    files,
+  };
+  const head: GitHead =
+    slice.head.kind === "branch"
+      ? slice.head
+      : { kind: "detached", target: hash };
+  const branches =
+    slice.head.kind === "branch"
+      ? { ...slice.branches, [slice.head.target]: hash }
+      : slice.branches;
+  return deepFreeze({
+    slice: {
+      ...slice,
+      commits: { ...slice.commits, [hash]: commit },
+      branches,
+      head,
+    },
+    result: success(commit),
+  });
+}
+
+export function restoreGit(
+  slice: GitSlice,
+  path: string,
+  staged: boolean,
+): GitRestoreMutation {
+  const head = headTree(slice);
+  if (staged) {
+    if (!Object.hasOwn(head, path) && !Object.hasOwn(slice.index, path))
+      return {
+        slice,
+        plan: null,
+        result: failure(
+          "NOT_FOUND",
+          `${JSON.stringify(path)} did not match any file known to git`,
+        ),
+      };
+    const index = { ...slice.index } as Record<string, string>;
+    const contents = head[path];
+    if (contents === undefined) delete index[path];
+    else index[path] = contents;
+    return deepFreeze({
+      slice: { ...slice, index },
+      plan: null,
+      result: success({ path }),
+    });
+  }
+  if (!Object.hasOwn(slice.index, path) && !Object.hasOwn(head, path))
+    return {
+      slice,
+      plan: null,
+      result: failure(
+        "NOT_FOUND",
+        `${JSON.stringify(path)} did not match any file known to git`,
+      ),
+    };
+  const indexed = slice.index[path];
+  return deepFreeze({
+    slice,
+    plan: {
+      tracked: [path],
+      target: indexed === undefined ? {} : { [path]: indexed },
+    },
+    result: success({ path }),
+  });
+}
+
 /**
  * Checkout refuses any staged, modified, deleted, or untracked repository file.
  * This intentionally strict policy makes "dirty" one deterministic predicate;
@@ -415,17 +700,14 @@ export function checkoutGit(
       ),
     });
   const branchHash = slice.branches[target];
-  const hash =
-    branchHash ?? (slice.commits[target] === undefined ? undefined : target);
-  if (hash === undefined)
+  const resolved = resolveGitRef(slice, target);
+  if (!resolved.ok)
     return Object.freeze({
       git: slice,
       vfs,
-      result: failure(
-        "NOT_FOUND",
-        `checkout target ${JSON.stringify(target)} does not exist`,
-      ),
+      result: resolved,
     });
+  const hash = resolved.value;
   const commit = slice.commits[hash] as GitCommit;
   const replacement = replaceVfsFiles(
     vfs,

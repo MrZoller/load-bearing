@@ -14,6 +14,7 @@
       "group": "root",
       "home": "/root"
     },
+    "gitIdentity": { "name": "Visitor", "email": "visitor@example.test" },
     "files": {
       "/production/service/src/index.ts": {
         "contents": "export const load = 1;\n",

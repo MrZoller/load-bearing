@@ -68,6 +68,10 @@
           "target": ""
         }
       },
+      "gitIdentity": {
+        "email": "visitor@example.test",
+        "name": "Visitor"
+      },
       "identity": {
         "group": "root",
         "home": "/root",
@@ -119,6 +123,10 @@
       "head": {
         "kind": "detached",
         "target": ""
+      },
+      "identity": {
+        "email": "visitor@example.test",
+        "name": "Visitor"
       },
       "index": {},
       "root": "/production/service"

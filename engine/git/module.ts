@@ -3,6 +3,8 @@
 import {
   ABSOLUTE_PATH_PATTERN,
   GIT_BRANCH_PATTERN,
+  GIT_EMAIL_PATTERN,
+  SINGLE_LINE_PATTERN,
 } from "../cartridge/schema.js";
 import { defineEventModule } from "../events/module.js";
 import type { EventContext } from "../events/module.js";
@@ -14,10 +16,14 @@ import { serializeInline } from "../serialize/canonical.js";
 import { readVfsSlice } from "../vfs/module.js";
 import {
   blameGit,
+  branchGit,
   checkoutGit,
+  commitGit,
   createGitSlice,
   diffGit,
   logGit,
+  restoreGit,
+  showGit,
   stageGit,
   statusGit,
 } from "./git.js";
@@ -87,7 +93,7 @@ const HASH_PATTERN = /^[0-9a-f]{40}$/;
 /** Validate snapshots without normalization; malformed Git state never resumes. */
 export function validateGitSlice(slice: unknown, where: string): GitSlice {
   const root = record(slice, where);
-  const allowed = ["root", "commits", "branches", "head", "index"];
+  const allowed = ["root", "identity", "commits", "branches", "head", "index"];
   const unknown = Object.keys(root).filter((key) => !allowed.includes(key));
   if (unknown.length > 0)
     throw new Error(
@@ -96,6 +102,16 @@ export function validateGitSlice(slice: unknown, where: string): GitSlice {
   const repositoryRoot = stringField(root, "root", where);
   if (!ABSOLUTE_PATH_PATTERN.test(repositoryRoot))
     throw new Error(`${where}.root: must be an absolute POSIX path`);
+  const identity = record(root["identity"], `${where}.identity`);
+  fields(identity, ["name", "email"], `${where}.identity`);
+  const identityName = stringField(identity, "name", `${where}.identity`);
+  const identityEmail = stringField(identity, "email", `${where}.identity`);
+  if (identityName === "" || !SINGLE_LINE_PATTERN.test(identityName))
+    throw new Error(
+      `${where}.identity.name: must be a non-empty single-line string`,
+    );
+  if (!GIT_EMAIL_PATTERN.test(identityEmail))
+    throw new Error(`${where}.identity.email: must be an email address`);
   const commits = record(root["commits"], `${where}.commits`);
   for (const hash of Object.keys(commits).sort()) {
     if (!HASH_PATTERN.test(hash))
@@ -273,6 +289,29 @@ export const GIT_MODULE = defineEventModule<GitSlice>({
         };
       },
     },
+    "git.branches": {
+      version: 0,
+      apply(context, slice) {
+        payload(context, []);
+        return {
+          summary: `branches=${String(Object.keys(slice.branches).length)}`,
+          detail: Object.keys(slice.branches).sort(),
+        };
+      },
+    },
+    "git.show": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["ref"]);
+        const ref = readString(data, "ref", context.where);
+        const shown = showGit(slice, ref === "HEAD" ? undefined : ref);
+        return shown.ok
+          ? {
+              summary: `hash=${shown.value.commit.hash} files=${String(shown.value.files.length)}`,
+            }
+          : { summary: `failed code=${shown.code}` };
+      },
+    },
     "git.blame": {
       version: 0,
       apply(context, slice) {
@@ -301,6 +340,68 @@ export const GIT_MODULE = defineEventModule<GitSlice>({
               summary: `paths=${String(mutation.result.value.paths.length)}`,
             }
           : { summary: `failed code=${mutation.result.code}` };
+      },
+    },
+    "git.branch": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["name"]);
+        const name = readString(data, "name", context.where);
+        if (!GIT_BRANCH_PATTERN.test(name))
+          throw new Error(`${context.where}: invalid branch name`);
+        const mutation = branchGit(slice, name);
+        return mutation.result.ok
+          ? {
+              slice: mutation.slice,
+              summary: `created=${name} hash=${mutation.result.value.hash}`,
+            }
+          : { summary: `failed code=${mutation.result.code}` };
+      },
+    },
+    "git.commit": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["text"]);
+        const mutation = commitGit(
+          slice,
+          readString(data, "text", context.where),
+          context.clock.timestamp(),
+        );
+        return mutation.result.ok
+          ? {
+              slice: mutation.slice,
+              summary: `hash=${mutation.result.value.hash}`,
+            }
+          : { summary: `failed code=${mutation.result.code}` };
+      },
+    },
+    "git.restore": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["path", "staged"]);
+        const path = readString(data, "path", context.where);
+        if (typeof data["staged"] !== "boolean")
+          throw new Error(`${context.where}: staged must be a boolean`);
+        const mutation = restoreGit(slice, path, data["staged"]);
+        if (!mutation.result.ok)
+          return { summary: `failed code=${mutation.result.code}` };
+        return {
+          slice: mutation.slice,
+          summary: `path=${JSON.stringify(path)} staged=${String(data["staged"])}`,
+          ...(mutation.plan === null
+            ? {}
+            : {
+                effects: [
+                  {
+                    type: "vfs.replace-files",
+                    payload: {
+                      tracked: mutation.plan.tracked,
+                      target: mutation.plan.target,
+                    },
+                  },
+                ],
+              }),
+        };
       },
     },
     "git.checkout": {

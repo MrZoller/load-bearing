@@ -134,13 +134,13 @@
     "startMs": 1785921262000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 9,
+  "eventCount": 8,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {},
-    "seed": 3987123762
+    "seed": 2489588989
   },
-  "seed": "2026-08-05/6/deep-foundation",
+  "seed": "2026-08-05/10/deep-foundation",
   "slices": {
     "git": {
       "branches": {
@@ -203,7 +203,7 @@
       },
       "head": {
         "kind": "branch",
-        "target": "before-load"
+        "target": "main"
       },
       "identity": {
         "email": "visitor@example.test",
@@ -211,7 +211,7 @@
       },
       "index": {
         "/production/service/README.md": "# service\n",
-        "/production/service/src/index.ts": "export const load = 0;\n"
+        "/production/service/src/index.ts": "export const load = 1;\n"
       },
       "root": "/production/service"
     },
@@ -274,12 +274,12 @@
           "owner": "root"
         },
         "/production/service/src/index.ts": {
-          "contents": "export const load = 0;\n",
-          "group": "departed",
+          "contents": "export const load = 1;\n",
+          "group": "root",
           "kind": "file",
           "mode": "0644",
           "mtime": "2026-08-05T09:14:22.000Z",
-          "owner": "greg"
+          "owner": "root"
         }
       },
       "identity": {
@@ -304,47 +304,56 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "index": 0,
-      "summary": "path=\"/production/service/src/index.ts\" created=false",
-      "type": "vfs.write"
+      "summary": "path=\"/production/service/src/index.ts\" removed=1",
+      "type": "vfs.delete"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 1,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [
-        "{\"path\":\"/production/service/src/index.ts\",\"staged\":null,\"untracked\":false,\"working\":\"modified\"}"
+        "{\"path\":\"/production/service/src/index.ts\",\"staged\":null,\"untracked\":false,\"working\":\"deleted\"}"
       ],
-      "index": 1,
+      "index": 2,
       "summary": "paths=1",
       "type": "git.status"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
-      "detail": [
-        "{\"lines\":[{\"kind\":\"deletion\",\"text\":\"export const load = 1;\"},{\"kind\":\"addition\",\"text\":\"export const load = 2;\"}],\"newContents\":\"export const load = 2;\\n\",\"oldContents\":\"export const load = 1;\\n\",\"path\":\"/production/service/src/index.ts\"}"
-      ],
-      "index": 2,
-      "summary": "comparison=working-index files=1",
-      "type": "git.diff"
-    },
-    {
-      "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
+      "exitCode": 0,
       "index": 3,
-      "summary": "failed code=DIRTY",
-      "type": "git.checkout"
+      "output": [
+        {
+          "stream": "stdout",
+          "text": " D src/index.ts"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "index": 4,
-      "summary": "path=\"/production/service/src/index.ts\" created=false",
-      "type": "vfs.write"
+      "summary": "path=\"/production/service/src/index.ts\" staged=false",
+      "type": "git.restore"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
+      "exitCode": 0,
       "index": 5,
-      "summary": "head=branch:before-load hash=1371060ac7908e038722ae38887e2d71004f7aae",
-      "type": "git.checkout"
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
@@ -355,21 +364,12 @@
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
-      "detail": [
-        "{\"author\":{\"email\":\"greg@example.test\",\"name\":\"Greg Formerly\"},\"committedAt\":\"2026-07-30T10:00:00.000Z\",\"hash\":\"1371060ac7908e038722ae38887e2d71004f7aae\",\"line\":1,\"text\":\"export const load = 0;\"}"
-      ],
+      "detail": [],
+      "exitCode": 0,
       "index": 7,
-      "summary": "lines=1",
-      "type": "git.blame"
-    },
-    {
-      "at": "2026-08-05T09:14:22.000Z",
-      "detail": [
-        "1371060ac7908e038722ae38887e2d71004f7aae"
-      ],
-      "index": 8,
-      "summary": "commits=1",
-      "type": "git.log"
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
     }
   ]
 }

@@ -27,6 +27,7 @@ export interface GitHead {
 
 export interface GitSlice {
   readonly root: string;
+  readonly identity: GitAuthor;
   readonly commits: Readonly<Record<string, GitCommit>>;
   readonly branches: Readonly<Record<string, string>>;
   readonly head: GitHead;
@@ -94,4 +95,20 @@ export interface GitCheckoutMutation {
     readonly head: GitHead;
     readonly hash: string;
   }>;
+}
+
+export interface GitVfsPlan {
+  readonly tracked: readonly string[];
+  readonly target: Readonly<Record<string, string>>;
+}
+
+export interface GitRestoreMutation {
+  readonly slice: GitSlice;
+  readonly plan: GitVfsPlan | null;
+  readonly result: GitResult<{ readonly path: string }>;
+}
+
+export interface GitShowValue {
+  readonly commit: GitCommit;
+  readonly files: readonly GitDiffFile[];
 }

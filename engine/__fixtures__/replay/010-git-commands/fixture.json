@@ -1,0 +1,28 @@
+{
+  "name": "010-git-commands",
+  "description": "A tracked deletion appears in Git status, then path checkout restores the committed bytes and returns the repository to clean state.",
+  "seed": "2026-08-05/10/deep-foundation",
+  "cartridge": "git",
+  "events": [
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm src/index.ts" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git status --short" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git checkout -- src/index.ts" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git status --short" },
+      "version": 0
+    }
+  ]
+}

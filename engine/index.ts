@@ -107,10 +107,18 @@ export type {
 export { GIT_MODULE, readGitSlice, validateGitSlice } from "./git/module.js";
 export {
   blameGit,
+  abbreviateGitHash,
+  branchGit,
   checkoutGit,
+  commitGit,
   createGitSlice,
+  currentGitHash,
   diffGit,
+  gitAddCwdPaths,
   logGit,
+  resolveGitRef,
+  restoreGit,
+  showGit,
   stageGit,
   statusGit,
 } from "./git/git.js";
@@ -129,10 +137,13 @@ export type {
   GitFileSnapshot,
   GitHead,
   GitMutation,
+  GitRestoreMutation,
   GitResult,
+  GitShowValue,
   GitSlice,
   GitStatusEntry,
   GitSuccess,
+  GitVfsPlan,
 } from "./git/types.js";
 
 export {
@@ -187,6 +198,7 @@ export {
   BUILTIN_COMMANDS,
   BUILTIN_COMMAND_REGISTRY,
 } from "./commands/builtins.js";
+export { GIT_COMMANDS } from "./commands/git.js";
 export {
   createShellExecuteEvent,
   executeShell,
@@ -270,6 +282,7 @@ export {
   COMMAND_NAME_PATTERN,
   GIT_BRANCH_PATTERN,
   GIT_COMMIT_ID_PATTERN,
+  GIT_EMAIL_PATTERN,
   WORLD_ID_PATTERN,
 } from "./cartridge/schema.js";
 export { CARTRIDGE_SCHEMA_ID, emitJsonSchema } from "./cartridge/jsonSchema.js";

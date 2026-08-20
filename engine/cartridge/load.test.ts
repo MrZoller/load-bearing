@@ -74,6 +74,10 @@ describe("loadCartridge", () => {
       home: "/root",
       umask: "0022",
     });
+    expect(cartridge.repository.gitIdentity).toEqual({
+      name: "Visitor",
+      email: "visitor@example.test",
+    });
   });
 
   it("validates static cartridge command records", () => {
@@ -240,6 +244,22 @@ describe("loadCartridge", () => {
       owner: "deploy",
       group: "operators",
     });
+  });
+
+  it("requires and validates commit identity independently of POSIX identity", () => {
+    const missing = minimal();
+    delete (missing["repository"] as Record<string, unknown>)["gitIdentity"];
+    expect(issuesOf(missing)[0]?.pointer).toBe("/repository/gitIdentity");
+
+    const invalid = minimal();
+    (invalid["repository"] as Record<string, unknown>)["gitIdentity"] = {
+      name: "Visitor\nElsewhere",
+      email: "not-an-email",
+    };
+    expect(issuesOf(invalid).map((issue) => issue.pointer)).toEqual([
+      "/repository/gitIdentity/name",
+      "/repository/gitIdentity/email",
+    ]);
   });
 
   it("rejects paths that collide with files or place a child below one", () => {

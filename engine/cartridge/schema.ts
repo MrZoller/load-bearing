@@ -147,6 +147,9 @@ export const WORLD_ID_PATTERN = pattern(
 /** Stable cartridge-local commit name, used before content hashes are derived. */
 export const GIT_COMMIT_ID_PATTERN = pattern(/^[a-z][a-z0-9-]*$/);
 
+/** Authored commit email; displayed locally and never contacted. */
+export const GIT_EMAIL_PATTERN = pattern(/^[^\s<>@]+@[^\s<>@]+$/);
+
 /** Git ref component spelling; slashes separate non-empty components. */
 export const GIT_BRANCH_PATTERN = pattern(
   /^(?!\/|.*(?:\/\/|\.\.|@\{|\\|\s|[~^:?*\[]))[A-Za-z0-9._/-]+(?<![/.])$/,
@@ -476,7 +479,7 @@ const GIT_AUTHOR = {
     email: required({
       kind: "string",
       description: "Author email, displayed as authored rather than contacted.",
-      pattern: pattern(/^[^\s<>@]+@[^\s<>@]+$/),
+      pattern: GIT_EMAIL_PATTERN,
       patternLabel: "a single-line email address",
       maxLength: 254,
     }),
@@ -850,6 +853,11 @@ const REPOSITORY = {
       patternLabel: "an absolute POSIX path",
     }),
     identity: required(IDENTITY),
+    gitIdentity: required({
+      ...GIT_AUTHOR,
+      description:
+        "Authorship for commits created during the session. This is world content, not derived from the POSIX identity.",
+    }),
     files: required({
       kind: "record",
       description: "The simulated filesystem, keyed by absolute path.",

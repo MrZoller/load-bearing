@@ -14,6 +14,7 @@
       "group": "visitors",
       "home": "/home/visitor"
     },
+    "gitIdentity": { "name": "Visitor", "email": "visitor@example.test" },
     "files": {
       "/production/service/README.md": { "contents": "# service\n" },
       "/production/service/src/index.ts": {

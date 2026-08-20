@@ -1,0 +1,10 @@
+0000  2026-08-05T09:14:22.000Z  vfs.delete path="/production/service/src/index.ts" removed=1
+0001  2026-08-05T09:14:22.000Z  shell.result exit=0
+0002  2026-08-05T09:14:22.000Z  git.status paths=1
+      {"path":"/production/service/src/index.ts","staged":null,"untracked":false,"working":"deleted"}
+0003  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout>  D src/index.ts
+0004  2026-08-05T09:14:22.000Z  git.restore path="/production/service/src/index.ts" staged=false
+0005  2026-08-05T09:14:22.000Z  shell.result exit=0
+0006  2026-08-05T09:14:22.000Z  git.status paths=0
+0007  2026-08-05T09:14:22.000Z  shell.result exit=0

@@ -10,6 +10,7 @@
   "repository": {
     "cwd": "/repo",
     "identity": { "user": "root", "group": "root", "home": "/root" },
+    "gitIdentity": { "name": "Visitor", "email": "visitor@example.test" },
     "files": { "/repo/a": { "contents": "a\n" } },
     "gitHistory": {
       "commits": [

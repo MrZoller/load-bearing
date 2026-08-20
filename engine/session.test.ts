@@ -27,6 +27,7 @@ const CARTRIDGE: LoadedCartridge = loadCartridge({
   repository: {
     cwd: "/srv/app",
     identity: { user: "root", group: "root", home: "/root" },
+    gitIdentity: { name: "Visitor", email: "visitor@example.test" },
     files: { "/srv/app/main.ts": { contents: "export const load = 1;\n" } },
   },
   models: [

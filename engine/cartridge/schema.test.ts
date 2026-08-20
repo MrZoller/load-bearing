@@ -326,6 +326,9 @@ describe("descriptor and type lockstep", () => {
     agrees<CartridgeIdentity["group"]>(identity.fields.group.node);
     agrees<CartridgeIdentity["home"]>(identity.fields.home.node);
     agrees<CartridgeIdentity["umask"]>(identity.fields.umask.node);
+    const gitIdentity = repository.fields.gitIdentity.node;
+    agrees<CartridgeGitAuthor["name"]>(gitIdentity.fields.name.node);
+    agrees<CartridgeGitAuthor["email"]>(gitIdentity.fields.email.node);
     agrees<CartridgeRepository["env"][string]>(
       repository.fields.env.node.values,
     );

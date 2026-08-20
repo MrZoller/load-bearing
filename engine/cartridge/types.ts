@@ -165,6 +165,8 @@ export interface CartridgeRepository {
   readonly cwd: string;
   /** The user whose shell and filesystem permissions the session uses. */
   readonly identity: CartridgeIdentity;
+  /** Authorship used by visitor-created commits. */
+  readonly gitIdentity: CartridgeGitAuthor;
   /** The simulated filesystem, keyed by absolute path. */
   readonly files: Readonly<Record<string, CartridgeFile>>;
   /** Explicit directory metadata. Missing ancestors are synthesized by the VFS. */

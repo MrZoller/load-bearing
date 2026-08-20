@@ -8,11 +8,18 @@ import { createVfsSlice, deleteVfs, writeVfs } from "../vfs/vfs.js";
 import { readVfsSlice } from "../vfs/module.js";
 import { readGitSlice } from "./module.js";
 import {
+  abbreviateGitHash,
   blameGit,
+  branchGit,
   checkoutGit,
+  commitGit,
   createGitSlice,
   diffGit,
+  gitAddCwdPaths,
   logGit,
+  resolveGitRef,
+  restoreGit,
+  showGit,
   stageGit,
   statusGit,
 } from "./git.js";
@@ -190,6 +197,110 @@ describe("the Git model", () => {
     expect(statusGit(stagedAddition.slice, untracked)).toEqual([
       { path: notes, staged: "added", working: null, untracked: false },
     ]);
+  });
+
+  it("selects add-dot paths beneath cwd with path-segment-safe containment", () => {
+    const { git, vfs } = world();
+    let changed = writeVfs(vfs, "root.txt", "root\n", NOW).slice;
+    changed = writeVfs(changed, "src/nested.txt", "nested\n", NOW).slice;
+    changed = writeVfs(changed, "src-sibling.txt", "sibling\n", NOW).slice;
+
+    expect(gitAddCwdPaths(git, changed, git.root)).toEqual([
+      "/production/service/root.txt",
+      "/production/service/src-sibling.txt",
+      "/production/service/src/nested.txt",
+    ]);
+    expect(gitAddCwdPaths(git, changed, `${git.root}/src`)).toEqual([
+      "/production/service/src/nested.txt",
+    ]);
+  });
+
+  it("creates branches and resolves full, abbreviated, and ambiguous refs", () => {
+    const { git } = world();
+    const created = branchGit(git, "investigation/load");
+    expect(created.result).toMatchObject({ ok: true });
+    expect(created.slice.branches["investigation/load"]).toBe(
+      git.branches["main"],
+    );
+    expect(branchGit(created.slice, "investigation/load").result).toMatchObject(
+      {
+        ok: false,
+        code: "INVALID",
+      },
+    );
+    const hash = git.branches["main"] as string;
+    expect(resolveGitRef(git, hash.slice(0, 7))).toEqual({
+      ok: true,
+      value: hash,
+    });
+
+    const collision = `${hash.slice(0, 7)}f${"0".repeat(32)}`;
+    const colliding = {
+      ...git,
+      commits: {
+        ...git.commits,
+        [collision]: { ...git.commits[hash]!, hash: collision },
+      },
+    };
+    expect(abbreviateGitHash(colliding, hash)).toBe(hash.slice(0, 8));
+    expect(resolveGitRef(colliding, hash.slice(0, 7))).toMatchObject({
+      ok: false,
+      code: "INVALID",
+    });
+  });
+
+  it("commits the index with cartridge identity and first-parent blame", () => {
+    const { git, vfs } = world();
+    const edited = writeVfs(vfs, FILE, "export const load = 2;\n", NOW).slice;
+    const staged = stageGit(git, edited, [FILE]);
+    const committed = commitGit(staged.slice, "visitor repair", NOW);
+    expect(committed.result.ok).toBe(true);
+    if (!committed.result.ok) expect.unreachable("commit succeeds");
+    expect(committed.result.value.author).toEqual({
+      name: "Visitor",
+      email: "visitor@example.test",
+    });
+    expect(committed.result.value.parents).toEqual([git.branches["main"]]);
+    expect(committed.result.value.files[FILE]?.blame).toEqual([
+      committed.result.value.hash,
+    ]);
+    expect(committed.slice.branches["main"]).toBe(committed.result.value.hash);
+    const shown = showGit(committed.slice);
+    expect(shown.ok).toBe(true);
+    if (!shown.ok) expect.unreachable("new commit can be shown");
+    expect(shown.value).toMatchObject({
+      commit: { hash: committed.result.value.hash },
+      files: [{ path: FILE }],
+    });
+  });
+
+  it("restores the index or returns a VFS-owned working-tree plan", () => {
+    const { git, vfs } = world();
+    const edited = writeVfs(vfs, FILE, "dirty\n", NOW).slice;
+    const staged = stageGit(git, edited, [FILE]);
+    const unstaged = restoreGit(staged.slice, FILE, true);
+    expect(unstaged.result).toEqual({ ok: true, value: { path: FILE } });
+    expect(unstaged.slice.index[FILE]).toBe(git.index[FILE]);
+    expect(unstaged.plan).toBeNull();
+
+    const working = restoreGit(staged.slice, FILE, false);
+    expect(working.slice).toBe(staged.slice);
+    expect(working.plan).toEqual({
+      tracked: [FILE],
+      target: { [FILE]: "dirty\n" },
+    });
+
+    const stagedDeletion = stageGit(git, deleteVfs(vfs, FILE, NOW).slice, [
+      FILE,
+    ]);
+    expect(restoreGit(stagedDeletion.slice, FILE, false)).toMatchObject({
+      result: { ok: true, value: { path: FILE } },
+      plan: { tracked: [FILE], target: {} },
+    });
+    expect(
+      restoreGit(stagedDeletion.slice, "/production/service/untracked", false)
+        .result,
+    ).toMatchObject({ ok: false, code: "NOT_FOUND" });
   });
 
   it("checks out branches and detached hashes through the VFS", () => {

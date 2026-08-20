@@ -1,0 +1,282 @@
+import { describe, expect, it } from "vitest";
+
+import { loadCartridge } from "../cartridge/load.js";
+import { bootstrap, step } from "../events/reduce.js";
+import type { SessionState } from "../events/state.js";
+import { readGitSlice } from "../git/module.js";
+import { loadCartridgeFixture } from "../testing/fixtures.js";
+import { readVfsSlice } from "../vfs/module.js";
+import { executeShell } from "./shell.js";
+
+interface Result {
+  readonly stdout: readonly string[];
+  readonly stderr: readonly string[];
+  readonly exitCode: number;
+}
+
+function initial(): SessionState {
+  return bootstrap({
+    cartridge: loadCartridge(loadCartridgeFixture("git")),
+    seed: "git-commands",
+  });
+}
+
+function run(state: SessionState, input: string): Result {
+  const output = executeShell(state, input).at(-1);
+  expect(output?.type).toBe("shell.result");
+  return output?.payload as unknown as Result;
+}
+
+function execute(state: SessionState, input: string): SessionState {
+  let next = state;
+  for (const event of executeShell(state, input)) next = step(next, event);
+  return next;
+}
+
+describe("Git commands", () => {
+  it.each([
+    ["git status", ["On branch main", "nothing to commit, working tree clean"]],
+    ["git status --short", []],
+    [
+      "git log --oneline",
+      ["ec84115 increase structural load", "1371060 establish the service"],
+    ],
+    ["git diff", []],
+    [
+      "git blame src/index.ts",
+      [
+        "ec84115 (Greg Formerly 2026-07-31 02:11:09 +0000    1) export const load = 1;",
+      ],
+    ],
+    ["git branch", ["  before-load", "* main"]],
+    ["git add .", []],
+    ["git restore README.md", []],
+  ])("renders exact deterministic output for %s", (input, stdout) => {
+    expect(run(initial(), input)).toEqual({ stdout, stderr: [], exitCode: 0 });
+  });
+
+  it("renders default log and show with UTC C-locale dates and unified diffs", () => {
+    expect(run(initial(), "git log")).toEqual({
+      stdout: [
+        "commit ec8411560e51cbb72c92dc14430df6b52a836e92",
+        "Author: Greg Formerly <greg@example.test>",
+        "Date:   Fri Jul 31 02:11:09 2026 +0000",
+        "",
+        "    increase structural load",
+        "",
+        "commit 1371060ac7908e038722ae38887e2d71004f7aae",
+        "Author: Greg Formerly <greg@example.test>",
+        "Date:   Thu Jul 30 10:00:00 2026 +0000",
+        "",
+        "    establish the service",
+      ],
+      stderr: [],
+      exitCode: 0,
+    });
+    expect(run(initial(), "git show ec84115")).toEqual({
+      stdout: [
+        "commit ec8411560e51cbb72c92dc14430df6b52a836e92",
+        "Author: Greg Formerly <greg@example.test>",
+        "Date:   Fri Jul 31 02:11:09 2026 +0000",
+        "",
+        "    increase structural load",
+        "",
+        "diff --git a/src/index.ts b/src/index.ts",
+        "--- a/src/index.ts",
+        "+++ b/src/index.ts",
+        "@@ -1 +1 @@",
+        "-export const load = 0;",
+        "+export const load = 1;",
+      ],
+      stderr: [],
+      exitCode: 0,
+    });
+  });
+
+  it.each([
+    [
+      "git checkout missing",
+      ['error: pathspec "missing" did not match any branch or commit'],
+      1,
+    ],
+    [
+      "git checkout -- missing",
+      ['error: pathspec "missing" did not match any file(s) known to git'],
+      1,
+    ],
+    [
+      "git restore missing",
+      ['error: pathspec "missing" did not match any file(s) known to git'],
+      1,
+    ],
+    [
+      "git blame missing",
+      [
+        'fatal: "/production/service/missing" is not tracked at ec8411560e51cbb72c92dc14430df6b52a836e92',
+      ],
+      128,
+    ],
+    ["git show missing", ["fatal: bad object missing"], 128],
+    ["git branch 'bad name'", ['fatal: invalid branch name "bad name"'], 1],
+    ["git commit -m unchanged", ["nothing to commit, working tree clean"], 1],
+  ])("returns exact errors for %s", (input, stderr, exitCode) => {
+    expect(run(initial(), input)).toEqual({ stdout: [], stderr, exitCode });
+  });
+
+  it("replays tracked deletion, status, and path checkout restoration byte-identically", () => {
+    let state = execute(initial(), "rm src/index.ts");
+    expect(run(state, "git status --short")).toEqual({
+      stdout: [" D src/index.ts"],
+      stderr: [],
+      exitCode: 0,
+    });
+    expect(run(state, "git status")).toEqual({
+      stdout: [
+        "On branch main",
+        "Changes not staged for commit:",
+        "  deleted: src/index.ts",
+      ],
+      stderr: [],
+      exitCode: 0,
+    });
+    expect(run(state, "git diff")).toEqual({
+      stdout: [
+        "diff --git a/src/index.ts b/src/index.ts",
+        "deleted file mode 100644",
+        "--- a/src/index.ts",
+        "+++ /dev/null",
+        "@@ -1 +0,0 @@",
+        "-export const load = 1;",
+      ],
+      stderr: [],
+      exitCode: 0,
+    });
+    const staged = execute(state, "git add src/index.ts");
+    expect(run(staged, "git diff --staged").stdout).toEqual(
+      run(state, "git diff").stdout,
+    );
+    state = execute(state, "git status --short");
+    state = execute(state, "git checkout -- src/index.ts");
+    expect(
+      readVfsSlice(state).entries["/production/service/src/index.ts"],
+    ).toMatchObject({
+      contents: "export const load = 1;\n",
+    });
+    expect(run(state, "git status --short")).toEqual({
+      stdout: [],
+      stderr: [],
+      exitCode: 0,
+    });
+  });
+
+  it("stages, unstages, commits, updates a branch, and keeps log and blame coherent", () => {
+    let state = execute(initial(), "touch load.txt");
+    state = execute(state, "git add load.txt");
+    expect(run(state, "git status --short").stdout).toEqual(["A  load.txt"]);
+    state = execute(state, "git restore --staged load.txt");
+    expect(run(state, "git status --short").stdout).toEqual(["?? load.txt"]);
+    state = execute(state, "git add .");
+    expect(run(state, "git commit -m 'record load'")).toEqual({
+      stdout: ["[main 0a39687] record load"],
+      stderr: [],
+      exitCode: 0,
+    });
+    state = execute(state, "git commit -m 'record load'");
+    const git = readGitSlice(state);
+    const hash = git.branches["main"] as string;
+    expect(hash).toBe("0a39687e86f9652f2ed2a75c87b17d4d86067d7a");
+    expect(run(state, "git log --oneline").stdout[0]).toBe(
+      "0a39687 record load",
+    );
+    state = execute(state, "git branch investigation");
+    expect(readGitSlice(state).branches["investigation"]).toBe(hash);
+  });
+
+  it("scopes git add dot to repository-root or nested cwd without prefix bleed", () => {
+    let root = execute(initial(), "touch root.txt");
+    root = execute(root, "touch src/nested.txt");
+    root = execute(root, "touch src-sibling.txt");
+    const all = execute(root, "git add .");
+    expect(Object.keys(readGitSlice(all).index).sort()).toEqual([
+      "/production/service/README.md",
+      "/production/service/root.txt",
+      "/production/service/src-sibling.txt",
+      "/production/service/src/index.ts",
+      "/production/service/src/nested.txt",
+    ]);
+
+    let nested = execute(root, "cd src");
+    nested = execute(nested, "git add .");
+    const index = readGitSlice(nested).index;
+    expect(index["/production/service/src/nested.txt"]).toBe("");
+    expect(index["/production/service/root.txt"]).toBeUndefined();
+    expect(index["/production/service/src-sibling.txt"]).toBeUndefined();
+    expect(run(nested, "git status --short").stdout).toEqual([
+      "?? root.txt",
+      "?? src-sibling.txt",
+      "A  src/nested.txt",
+    ]);
+  });
+
+  it.each(["git restore src/index.ts", "git checkout -- src/index.ts"])(
+    "%s deletes a working file when its staged index entry is deleted",
+    (command) => {
+      let state = execute(initial(), "rm src/index.ts");
+      state = execute(state, "git add src/index.ts");
+      state = execute(state, "touch src/index.ts");
+      expect(
+        readVfsSlice(state).entries["/production/service/src/index.ts"],
+      ).toBeDefined();
+      expect(run(state, command)).toEqual({
+        stdout: [],
+        stderr: [],
+        exitCode: 0,
+      });
+      state = execute(state, command);
+      expect(
+        readVfsSlice(state).entries["/production/service/src/index.ts"],
+      ).toBeUndefined();
+    },
+  );
+
+  it.each(["git restore scratch.txt", "git checkout -- scratch.txt"])(
+    "%s still rejects a genuinely untracked path",
+    (command) => {
+      const state = execute(initial(), "touch scratch.txt");
+      expect(run(state, command)).toEqual({
+        stdout: [],
+        stderr: [
+          'error: pathspec "scratch.txt" did not match any file(s) known to git',
+        ],
+        exitCode: 1,
+      });
+    },
+  );
+
+  it("checks out branches and unique abbreviated hashes while refusing dirty switches", () => {
+    expect(run(initial(), "git checkout before-load")).toEqual({
+      stdout: ["Switched to branch 'before-load'"],
+      stderr: [],
+      exitCode: 0,
+    });
+    let state = execute(initial(), "git checkout before-load");
+    expect(readGitSlice(state).head).toEqual({
+      kind: "branch",
+      target: "before-load",
+    });
+    expect(
+      readVfsSlice(state).entries["/production/service/src/index.ts"],
+    ).toMatchObject({ contents: "export const load = 0;\n" });
+    state = execute(state, "git checkout ec84115");
+    expect(readGitSlice(state).head).toEqual({
+      kind: "detached",
+      target: "ec8411560e51cbb72c92dc14430df6b52a836e92",
+    });
+    state = execute(state, "touch dirty.txt");
+    expect(run(state, "git checkout main")).toEqual({
+      stdout: [],
+      stderr: ["error: Your local changes would be overwritten by checkout"],
+      exitCode: 1,
+    });
+  });
+});

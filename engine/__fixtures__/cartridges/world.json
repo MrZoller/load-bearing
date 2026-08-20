@@ -10,6 +10,7 @@
   "repository": {
     "cwd": "/production/service",
     "identity": { "user": "root", "group": "root", "home": "/root" },
+    "gitIdentity": { "name": "Visitor", "email": "visitor@example.test" },
     "files": {
       "/production/service/app": { "contents": "binary" },
       "/var/log/api.log": { "contents": "booted\n" }

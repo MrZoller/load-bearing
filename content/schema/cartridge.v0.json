@@ -440,6 +440,30 @@
           },
           "type": "object"
         },
+        "gitIdentity": {
+          "additionalProperties": false,
+          "description": "Authorship for commits created during the session. This is world content, not derived from the POSIX identity.",
+          "properties": {
+            "email": {
+              "description": "Author email, displayed as authored rather than contacted.",
+              "maxLength": 254,
+              "pattern": "^[^\\s<>@]+@[^\\s<>@]+$",
+              "type": "string"
+            },
+            "name": {
+              "description": "Author display name.",
+              "maxLength": 120,
+              "minLength": 1,
+              "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "email"
+          ],
+          "type": "object"
+        },
         "identity": {
           "additionalProperties": false,
           "description": "The acting POSIX identity. Root bypasses permission checks; all other operations use these user and group names.",
@@ -748,6 +772,7 @@
       "required": [
         "cwd",
         "identity",
+        "gitIdentity",
         "files"
       ],
       "type": "object"
