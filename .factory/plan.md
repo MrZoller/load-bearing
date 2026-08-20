@@ -21,7 +21,7 @@ remains blocked until review findings are deliberately batched into it.
 - [ ] T3 (standard) — Processes, services, logs, env, man pages, history, tickets (Fixes #7)
   - acceptance: engine world-state modules hydrate and canonically serialize every declared surface; deterministic PID/port assignment and listing order are documented and tested; env, logs, services, and history mutate only through replayable events; pure lookups and load-time collision/dangling-reference errors are covered; purity passes
   - deps: T1
-- [ ] T4 (standard) — Command interpreter core: tokenizer, registry, dispatch (Fixes #8)
+- [~] T4 (standard) — Command interpreter core: tokenizer, registry, dispatch (Fixes #8)
   - acceptance: `engine/commands/` provides tested POSIX-ish tokenization and option parsing, duplicate-safe registration, validated cartridge overrides, exit-127 unknown-command behavior, and a pure shell execution API whose ordered stdout/stderr/exit results enter the replay transcript; `pwd`, `echo`, and `true` prove the path end to end; purity passes
 - [ ] T5 (standard) — Filesystem commands (Fixes #9)
   - acceptance: filesystem command modules implement the issue's command and flag set over the VFS with exact deterministic output and exit codes; per-command golden tests cover success, missing-target, and permission-denied paths; `ls -la` preserves declared metadata; a replay proves multi-command mutation and persistent deletion across timezones
