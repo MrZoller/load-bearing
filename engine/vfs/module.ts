@@ -347,7 +347,7 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
         return mutationOutcome(
           mutation,
           (value) =>
-            `from=${JSON.stringify(value.from)} to=${JSON.stringify(value.to)}`,
+            `from=${summaryPath(value.from)} to=${summaryPath(value.to)}`,
         );
       },
     },
@@ -373,7 +373,7 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
         return mutationOutcome(
           mutation,
           (value) =>
-            `from=${JSON.stringify(value.from)} to=${JSON.stringify(value.to)} copied=${String(value.copied)}`,
+            `from=${summaryPath(value.from)} to=${summaryPath(value.to)} copied=${String(value.copied)}`,
         );
       },
     },
