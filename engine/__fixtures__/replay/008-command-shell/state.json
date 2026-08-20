@@ -1,0 +1,213 @@
+{
+  "cartridge": {
+    "meta": {
+      "assignment": "Exercise the shell without involving a real one.",
+      "date": "2026-08-05",
+      "number": 8,
+      "schemaVersion": 0,
+      "startedAt": "2026-08-05T09:14:22.000Z",
+      "title": "Command Fixture World"
+    },
+    "models": [
+      {
+        "archetype": "paranoid",
+        "costMultiplier": 1,
+        "description": "Thorough.",
+        "id": "deep-foundation",
+        "name": "Deep Foundation",
+        "quirks": []
+      }
+    ],
+    "presentation": {},
+    "repository": {
+      "commands": {
+        "pwd": {
+          "exitCode": 7,
+          "stderr": [
+            "pwd: structural survey attached"
+          ],
+          "stdout": [
+            "/authored/override"
+          ]
+        }
+      },
+      "cwd": "/production/service",
+      "directories": {},
+      "env": {},
+      "files": {
+        "/production/service/README.md": {
+          "contents": "# service\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        }
+      },
+      "gitHistory": {
+        "branches": {},
+        "commits": [],
+        "head": {
+          "kind": "detached",
+          "target": ""
+        }
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      },
+      "logs": [],
+      "manPages": [],
+      "processes": [],
+      "services": [],
+      "shellHistory": [],
+      "tests": [],
+      "tickets": []
+    },
+    "story": {}
+  },
+  "clock": {
+    "elapsedMs": 0,
+    "startMs": 1785921262000
+  },
+  "engineVersion": "0.0.0",
+  "eventCount": 5,
+  "eventSchemaVersion": 0,
+  "random": {
+    "cursors": {},
+    "seed": 2381330892
+  },
+  "seed": "2026-08-05/8/deep-foundation",
+  "slices": {
+    "git": {
+      "branches": {},
+      "commits": {},
+      "head": {
+        "kind": "detached",
+        "target": ""
+      },
+      "index": {},
+      "root": "/production/service"
+    },
+    "probe": {
+      "events": 0,
+      "values": 0
+    },
+    "vfs": {
+      "cwd": "/production/service",
+      "entries": {
+        "/": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/README.md": {
+          "contents": "# service\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        }
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      }
+    },
+    "world": {
+      "env": {},
+      "logs": [],
+      "manPages": [],
+      "processes": [],
+      "services": [],
+      "shellHistory": [],
+      "tickets": []
+    }
+  },
+  "transcript": [
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 0,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "one two three"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 7,
+      "index": 1,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "/authored/override"
+        },
+        {
+          "stream": "stderr",
+          "text": "pwd: structural survey attached"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 127,
+      "index": 2,
+      "output": [
+        {
+          "stream": "stderr",
+          "text": "missing: command not found"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 3,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 4,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    }
+  ]
+}

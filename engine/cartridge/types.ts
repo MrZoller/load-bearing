@@ -65,6 +65,13 @@ export interface CartridgeIdentity {
   readonly umask: string;
 }
 
+/** Static command output supplied as cartridge data, never executable behavior. */
+export interface CartridgeCommand {
+  readonly stdout: readonly string[];
+  readonly stderr: readonly string[];
+  readonly exitCode: number;
+}
+
 export interface CartridgeModel {
   readonly id: string;
   readonly name: string;
@@ -165,6 +172,8 @@ export interface CartridgeRepository {
   readonly env: Readonly<Record<string, string>>;
   readonly manPages: readonly CartridgeManPage[];
   readonly shellHistory: readonly string[];
+  /** Static hidden commands and explicit overrides of runtime builtins. */
+  readonly commands: Readonly<Record<string, CartridgeCommand>>;
   readonly gitHistory: CartridgeGitHistory;
   readonly processes: readonly CartridgeProcess[];
   readonly services: readonly CartridgeService[];

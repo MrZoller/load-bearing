@@ -133,6 +133,12 @@ export const ENV_NAME_PATTERN = pattern(/^[A-Za-z_][A-Za-z0-9_]*$/);
 /** A man page name, e.g. `systemd.service` or `ls`. */
 export const MAN_PAGE_PATTERN = pattern(/^[a-z0-9][a-z0-9._-]*$/);
 
+/** Runtime and cartridge command names share this lookup spelling. */
+export const COMMAND_NAME_PATTERN = pattern(/^[A-Za-z0-9][A-Za-z0-9._+-]*$/);
+
+/** Half the per-entry transcript line budget, once for each shell stream. */
+export const MAX_COMMAND_STREAM_LINES = 2048;
+
 /** A stable cartridge-local identifier that cannot disturb line-oriented output. */
 export const WORLD_ID_PATTERN = pattern(
   /^[^\u0000-\u001F\u007F-\u009F\u2028\u2029]+$/,
@@ -185,6 +191,7 @@ export interface ArrayNode {
   readonly description: string;
   readonly items: SchemaNode;
   readonly minItems?: number;
+  readonly maxItems?: number;
 }
 
 /** An object whose keys are data rather than schema — `files`, `env`. */
@@ -752,6 +759,36 @@ const TICKET = {
   },
 } satisfies ObjectNode;
 
+const COMMAND_OUTPUT = {
+  kind: "array",
+  description:
+    "Static output lines. Lines are emitted in authored order without embedded line breaks.",
+  items: {
+    kind: "string",
+    description: "One output line.",
+    pattern: SINGLE_LINE_PATTERN,
+    patternLabel: "a single-line string",
+    maxLength: 4096,
+  },
+  maxItems: MAX_COMMAND_STREAM_LINES,
+} satisfies ArrayNode;
+
+const COMMAND = {
+  kind: "object",
+  description:
+    "One static cartridge command. This is output data, not executable behavior; a matching name explicitly overrides a runtime builtin.",
+  fields: {
+    stdout: required(COMMAND_OUTPUT),
+    stderr: required(COMMAND_OUTPUT),
+    exitCode: required({
+      kind: "integer",
+      description: "POSIX-style command exit status.",
+      minimum: 0,
+      maximum: 255,
+    }),
+  },
+} satisfies ObjectNode;
+
 const MODEL = {
   kind: "object",
   description: "One selectable model persona.",
@@ -867,6 +904,17 @@ const REPOSITORY = {
         items: { kind: "string", description: "One command line." },
       },
       [],
+    ),
+    commands: optional(
+      {
+        kind: "record",
+        description:
+          "Static hidden commands and explicit overrides. Cartridge records take precedence over runtime builtins with the same name; stdout lines are emitted before stderr lines.",
+        keyPattern: COMMAND_NAME_PATTERN,
+        keyLabel: "a shell command name",
+        values: COMMAND,
+      },
+      {},
     ),
     gitHistory: optional(GIT_HISTORY, {
       commits: [],

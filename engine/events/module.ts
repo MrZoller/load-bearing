@@ -134,7 +134,7 @@ import type { RandomStream } from "../random/stream.js";
 // dependency runs one way at runtime and there is no cycle. One error type for
 // "this module is malformed" is worth more than keeping the edge type-only.
 import { EventRegistryError } from "./registry.js";
-import type { EngineEvent, SessionState } from "./state.js";
+import type { EngineEvent, SessionState, TranscriptOutput } from "./state.js";
 
 /**
  * What a module may read while building its initial slice.
@@ -188,7 +188,8 @@ export interface EventContext {
  * Every field is optional, and an empty outcome is meaningful: an event that
  * changes nothing and says nothing still advances the log and still produces a
  * transcript entry, because the transcript's index has to keep matching the
- * event's.
+ * logged event's. Expansion envelopes are the sole exception and return only
+ * `expansion`.
  */
 export interface EventOutcome<S> {
   /** The module's new slice. Omitted means unchanged. */
@@ -197,6 +198,10 @@ export interface EventOutcome<S> {
   readonly summary?: string;
   /** Further transcript lines belonging to this entry. */
   readonly detail?: readonly string[];
+  /** Structured shell output. Must be paired with `exitCode`. */
+  readonly output?: readonly TranscriptOutput[];
+  /** Shell exit status. Must be paired with `output`. */
+  readonly exitCode?: number;
   /**
    * Additional module-owned transitions committed with this event.
    *
@@ -207,6 +212,15 @@ export interface EventOutcome<S> {
    * refused so hidden events cannot become an unbounded second event log.
    */
   readonly effects?: readonly EngineEvent[];
+  /**
+   * Logged events produced by an unlogged visitor-action envelope.
+   *
+   * Expansion is deliberately separate from effects: every child is folded as
+   * an ordinary event with its own transcript entry, clock and PRNG position.
+   * An expander may return nothing else, may not move time or randomness, and
+   * expansion children may not expand again.
+   */
+  readonly expansion?: readonly EngineEvent[];
 }
 
 /** One event type's implementation. */

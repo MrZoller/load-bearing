@@ -405,7 +405,9 @@ describe("an unregistered event type", () => {
     expect(attempt).toThrow(/no registered module handles this event type/);
     // The message has to be actionable: which event, and what does exist.
     expect(attempt).toThrow(/event 0 \(shell\.exec\)/);
-    expect(attempt).toThrow(/Registered namespaces: clock, git, probe, vfs/);
+    expect(attempt).toThrow(
+      /Registered namespaces: clock, git, probe, shell, vfs, world/,
+    );
   });
 
   it("names the offending event, since a log has many", () => {
@@ -1080,6 +1082,36 @@ describe("snapshots", () => {
         withEntry((entry) => (entry["detail"] = ["fine", "not\rfine"])),
       ),
     ).toThrow(/"transcript\[0\]\.detail\[1\]" contains a control character/);
+  });
+
+  it("requires structured output and exitCode together on both transcript doors", () => {
+    const module = defineEventModule<never>({
+      namespace: "result",
+      description: "emits malformed result combinations",
+      events: {
+        "result.output-only": {
+          version: 0,
+          apply: () => ({ output: [{ stream: "stdout", text: "x" }] }),
+        },
+      },
+    });
+    const registry = createRegistry([module]);
+    expect(() =>
+      reduce({
+        cartridge: CARTRIDGE,
+        seed: SEED,
+        registry,
+        events: [{ type: "result.output-only" }],
+      }),
+    ).toThrow(/output and exitCode must either both be present/);
+
+    const text = snapshot(fold([{ type: "clock.tick", payload: { ms: 1 } }]));
+    const parsed = deserialize(text) as Record<string, unknown>;
+    const entries = parsed["transcript"] as Record<string, unknown>[];
+    entries[0]!["exitCode"] = 0;
+    expect(() => restoreSnapshot(serialize(parsed))).toThrow(
+      /must carry output and exitCode together/,
+    );
   });
 
   it("requires a zero-event state to be exactly what bootstrap produces", () => {

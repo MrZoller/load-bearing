@@ -162,8 +162,24 @@ export function appendEvent(
   const where = `appended event ${String(previous.length)}`;
   // Captured once. Everything below reads the envelope, never `event` again —
   // see `assertEventEnvelope` for what re-reading a getter would buy a caller.
-  const envelope = assertEventEnvelope(event, where);
+  const stamped = stampEvent(event, where, registry);
 
+  return Object.freeze([...previous, stamped]);
+}
+
+/**
+ * Capture an event as a versioned, serializable log entry without appending it.
+ *
+ * Command expanders use this at their boundary: their children are produced
+ * before the reducer folds them, but are still ordinary recorded events and
+ * must retain the schema version that produced them.
+ */
+export function stampEvent(
+  event: EngineEvent,
+  where: string,
+  registry: EventRegistry = ENGINE_EVENT_REGISTRY,
+): EngineEvent {
+  const envelope = assertEventEnvelope(event, where);
   const handler = registry.handler(envelope.type);
   if (handler === undefined) {
     throw new Error(
@@ -184,16 +200,13 @@ export function appendEvent(
         `but this engine implements version ${String(implemented)}.`,
     );
   }
-
-  const stamped: EngineEvent = Object.freeze({
+  return Object.freeze({
     type: envelope.type,
     ...(envelope.payload === undefined
       ? {}
       : { payload: clonePayload(envelope.payload, where) }),
     version: implemented,
   });
-
-  return Object.freeze([...previous, stamped]);
 }
 
 /**

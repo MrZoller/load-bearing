@@ -40,6 +40,24 @@ describe("renderEntry", () => {
       `${DETAIL_INDENT}b`,
     ]);
   });
+
+  it("renders structured output with stream tags and an exit status", () => {
+    expect(
+      renderEntry(
+        entry({
+          output: [
+            { stream: "stdout", text: "out" },
+            { stream: "stderr", text: "err" },
+          ],
+          exitCode: 3,
+        }),
+      ),
+    ).toEqual([
+      "0000  2026-08-05T09:14:22.000Z  clock.tick exit=3",
+      "      stdout> out",
+      "      stderr> err",
+    ]);
+  });
 });
 
 describe("a caller-owned transcript entry", () => {

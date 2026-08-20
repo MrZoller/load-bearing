@@ -63,7 +63,12 @@ import type { EventContext, EventModule, EventOutcome } from "./module.js";
 import { ENGINE_EVENT_REGISTRY } from "./modules.js";
 import type { EventRegistry } from "./registry.js";
 import { EVENT_SCHEMA_VERSION, readSlice } from "./state.js";
-import type { EngineEvent, SessionState, TranscriptEntry } from "./state.js";
+import type {
+  EngineEvent,
+  SessionState,
+  TranscriptEntry,
+  TranscriptOutput,
+} from "./state.js";
 
 /** Thrown when the log names an event type nothing registers. */
 export class UnknownEventTypeError extends Error {
@@ -245,6 +250,15 @@ export function step(
   event: EngineEvent,
   registry: EventRegistry = ENGINE_EVENT_REGISTRY,
 ): SessionState {
+  return foldEvent(state, event, registry, true);
+}
+
+function foldEvent(
+  state: SessionState,
+  event: EngineEvent,
+  registry: EventRegistry,
+  expansionAllowed: boolean,
+): SessionState {
   // Every field of `state` read exactly once, here, and the returned state
   // built from these locals rather than from `{...state}`. `state` is a
   // caller-owned object at this exported entry, and it was read twice over —
@@ -332,7 +346,47 @@ export function step(
   // Materialized once, immediately. An `EventOutcome` is a caller-owned object
   // like the event envelope, and everything downstream now reads the capture
   // rather than the handler's object — see `captureOutcome`.
+  const clockBefore = clock.toState();
+  const randomBefore = random.toState();
   const outcome = captureOutcome(handler.apply(context, slice), where);
+  if (outcome.hasExpansion) {
+    if (!expansionAllowed) {
+      throw new Error(
+        `${where}: nested event expansion is not allowed; expansion children are ordinary logged events`,
+      );
+    }
+    if (outcome.expansion.length === 0) {
+      throw new Error(
+        `${where}: event expansion must contain at least one logged child event`,
+      );
+    }
+    if (
+      outcome.hasSlice ||
+      outcome.summary !== "" ||
+      outcome.detail.length > 0 ||
+      outcome.output !== undefined ||
+      outcome.exitCode !== undefined ||
+      outcome.effects.length > 0
+    ) {
+      throw new Error(
+        `${where}: an expanding event may return only expansion children; it is an unlogged envelope, not a state transition or transcript entry`,
+      );
+    }
+    if (
+      serialize(clock.toState()) !== serialize(clockBefore) ||
+      serialize(random.toState()) !== serialize(randomBefore)
+    ) {
+      throw new Error(
+        `${where}: an event expander may not move the clock or PRNG; only its logged child events may do so`,
+      );
+    }
+
+    let expanded = before;
+    for (const child of outcome.expansion) {
+      expanded = foldEvent(expanded, child, registry, false);
+    }
+    return expanded;
+  }
   const slices = applyEffects(
     before,
     previousSlices,
@@ -368,7 +422,11 @@ interface CapturedOutcome {
   readonly slice: unknown;
   readonly summary: string;
   readonly detail: readonly string[];
+  readonly output: readonly TranscriptOutput[] | undefined;
+  readonly exitCode: number | undefined;
   readonly effects: readonly EngineEvent[];
+  readonly hasExpansion: boolean;
+  readonly expansion: readonly EngineEvent[];
 }
 
 /**
@@ -431,7 +489,10 @@ function captureOutcome(raw: unknown, where: string): CapturedOutcome {
   const slice: unknown = outcome.slice;
   const summary: unknown = outcome.summary;
   const detail: unknown = outcome.detail;
+  const output: unknown = outcome.output;
+  const exitCode: unknown = outcome.exitCode;
   const effects: unknown = outcome.effects;
+  const expansion: unknown = outcome.expansion;
 
   if (summary !== undefined && typeof summary !== "string") {
     throw new Error(
@@ -496,6 +557,72 @@ function captureOutcome(raw: unknown, where: string): CapturedOutcome {
     lines = copied;
   }
 
+  let capturedOutput: readonly TranscriptOutput[] | undefined;
+  if ((output === undefined) !== (exitCode === undefined)) {
+    throw new Error(
+      `${where}: structured transcript output and exitCode must either both be present or both be absent`,
+    );
+  }
+  if (exitCode !== undefined) {
+    if (
+      typeof exitCode !== "number" ||
+      !Number.isInteger(exitCode) ||
+      exitCode < 0 ||
+      exitCode > 255
+    ) {
+      throw new Error(
+        `${where}: transcript exitCode must be an integer in [0, 255], got ${String(exitCode)}`,
+      );
+    }
+    if (!Array.isArray(output)) {
+      throw new Error(
+        `${where}: structured transcript output must be an array, got ${typeof output}`,
+      );
+    }
+    if (lines.length + output.length > MAX_TRANSCRIPT_DETAIL_LINES) {
+      throw new Error(
+        `${where}: this event would write ${String(lines.length + output.length)} transcript lines, over the ` +
+          `${String(MAX_TRANSCRIPT_DETAIL_LINES)} one entry may hold.`,
+      );
+    }
+    const copied: TranscriptOutput[] = [];
+    const count = output.length;
+    for (let offset = 0; offset < count; offset += 1) {
+      if (!(offset in output)) {
+        throw new Error(
+          `${where}: structured transcript output[${String(offset)}] is a hole in a sparse array`,
+        );
+      }
+      const raw: unknown = output[offset];
+      if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+        throw new Error(
+          `${where}: structured transcript output[${String(offset)}] must be an object`,
+        );
+      }
+      const item = raw as TranscriptOutput;
+      const stream: unknown = item.stream;
+      const text: unknown = item.text;
+      if (stream !== "stdout" && stream !== "stderr") {
+        throw new Error(
+          `${where}: structured transcript output[${String(offset)}].stream must be "stdout" or "stderr"`,
+        );
+      }
+      if (typeof text !== "string") {
+        throw new Error(
+          `${where}: structured transcript output[${String(offset)}].text must be a string`,
+        );
+      }
+      if (text.length > MAX_TRANSCRIPT_LINE_LENGTH) {
+        throw new Error(
+          `${where}: structured transcript output[${String(offset)}].text is ${String(text.length)} characters, over the ` +
+            `${String(MAX_TRANSCRIPT_LINE_LENGTH)} a single line may hold.`,
+        );
+      }
+      copied.push(Object.freeze({ stream, text }));
+    }
+    capturedOutput = Object.freeze(copied);
+  }
+
   const dispatched: EngineEvent[] = [];
   if (effects !== undefined) {
     if (!Array.isArray(effects))
@@ -520,12 +647,40 @@ function captureOutcome(raw: unknown, where: string): CapturedOutcome {
     }
   }
 
+  const expanded: EngineEvent[] = [];
+  if (expansion !== undefined) {
+    if (!Array.isArray(expansion)) {
+      throw new Error(
+        `${where}: expansion must be an array, got ${typeof expansion}`,
+      );
+    }
+    const count = expansion.length;
+    for (let offset = 0; offset < count; offset += 1) {
+      if (!(offset in expansion)) {
+        throw new Error(
+          `${where}: expansion[${String(offset)}] is a hole in a sparse array`,
+        );
+      }
+      const child: unknown = expansion[offset];
+      if (typeof child !== "object" || child === null || Array.isArray(child)) {
+        throw new Error(
+          `${where}: expansion[${String(offset)}] must be an event object`,
+        );
+      }
+      expanded.push(child as EngineEvent);
+    }
+  }
+
   return {
     hasSlice: slice !== undefined,
     slice,
     summary: summary ?? "",
     detail: lines,
+    output: capturedOutput,
+    exitCode: exitCode as number | undefined,
     effects: dispatched,
+    hasExpansion: expansion !== undefined,
+    expansion: expanded,
   };
 }
 
@@ -592,6 +747,9 @@ function applyEffects(
     if (
       outcome.summary !== "" ||
       outcome.detail.length > 0 ||
+      outcome.output !== undefined ||
+      outcome.exitCode !== undefined ||
+      outcome.hasExpansion ||
       outcome.effects.length > 0
     )
       throw new Error(
@@ -1015,6 +1173,14 @@ function makeEntry(
       );
     }
   });
+  outcome.output?.forEach((line, offset) => {
+    const problem = describeUnwritableText(line.text);
+    if (problem !== undefined) {
+      throw new Error(
+        `${where}: structured transcript output line ${String(offset)} contains ${problem}`,
+      );
+    }
+  });
 
   return Object.freeze({
     index,
@@ -1022,6 +1188,9 @@ function makeEntry(
     type,
     summary: outcome.summary,
     detail: Object.freeze([...outcome.detail]),
+    ...(outcome.output === undefined
+      ? {}
+      : { output: outcome.output, exitCode: outcome.exitCode }),
   });
 }
 
@@ -1430,15 +1599,71 @@ function requireTranscript(
         );
       }
       const lines: readonly unknown[] = detail;
+      const hasOutput = Object.hasOwn(entry, "output");
+      const hasExitCode = Object.hasOwn(entry, "exitCode");
+      if (hasOutput !== hasExitCode) {
+        throw new Error(
+          `snapshot: "transcript[${String(position)}]" must carry output and exitCode together or neither`,
+        );
+      }
+      let output: readonly TranscriptOutput[] | undefined;
+      let exitCode: number | undefined;
+      if (hasOutput && hasExitCode) {
+        const rawOutput: unknown = entry["output"];
+        if (!Array.isArray(rawOutput)) {
+          throw new Error(
+            `snapshot: "transcript[${String(position)}].output" must be an array`,
+          );
+        }
+        exitCode = requireInteger(
+          entry["exitCode"],
+          `transcript[${String(position)}].exitCode`,
+        );
+        if (exitCode > 255) {
+          throw new Error(
+            `snapshot: "transcript[${String(position)}].exitCode" must be at most 255, got ${String(exitCode)}`,
+          );
+        }
+        const outputLines: TranscriptOutput[] = [];
+        const outputCount = rawOutput.length;
+        for (let offset = 0; offset < outputCount; offset += 1) {
+          if (!(offset in rawOutput)) {
+            throw new Error(
+              `snapshot: "transcript[${String(position)}].output[${String(offset)}]" is a hole in a sparse array`,
+            );
+          }
+          const raw: unknown = rawOutput[offset];
+          const item = requireObject(
+            raw,
+            `transcript[${String(position)}].output[${String(offset)}]`,
+          );
+          const stream: unknown = item["stream"];
+          if (stream !== "stdout" && stream !== "stderr") {
+            throw new Error(
+              `snapshot: "transcript[${String(position)}].output[${String(offset)}].stream" must be "stdout" or "stderr"`,
+            );
+          }
+          outputLines.push(
+            Object.freeze({
+              stream,
+              text: requireLine(
+                item["text"],
+                `transcript[${String(position)}].output[${String(offset)}].text`,
+              ),
+            }),
+          );
+        }
+        output = Object.freeze(outputLines);
+      }
       // The same ceiling `captureOutcome` applies on the way in, and the rule
       // `requireLine` states further up this file: a check belongs on both doors
       // into the transcript, not only the one the reducer writes through. Without it
       // the exported constants bound what `step` produces and not what a
       // `SessionState` may hold, which is not what a reader of them — or
       // #5–#13 — would take them to mean.
-      if (lines.length > MAX_TRANSCRIPT_DETAIL_LINES) {
+      if (lines.length + (output?.length ?? 0) > MAX_TRANSCRIPT_DETAIL_LINES) {
         throw new Error(
-          `snapshot: "transcript[${String(position)}].detail" holds ${String(lines.length)} ` +
+          `snapshot: "transcript[${String(position)}]" holds ${String(lines.length + (output?.length ?? 0))} ` +
             `lines, over the ${String(MAX_TRANSCRIPT_DETAIL_LINES)} one entry may hold.`,
         );
       }
@@ -1500,6 +1725,7 @@ function requireTranscript(
             ),
           ),
         ),
+        ...(output === undefined ? {} : { output, exitCode }),
       });
     }),
   );

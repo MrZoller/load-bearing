@@ -129,6 +129,55 @@
       "additionalProperties": false,
       "description": "The world: a filesystem and everything queryable from a shell.",
       "properties": {
+        "commands": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "description": "One static cartridge command. This is output data, not executable behavior; a matching name explicitly overrides a runtime builtin.",
+            "properties": {
+              "exitCode": {
+                "description": "POSIX-style command exit status.",
+                "maximum": 255,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "stderr": {
+                "description": "Static output lines. Lines are emitted in authored order without embedded line breaks.",
+                "items": {
+                  "description": "One output line.",
+                  "maxLength": 4096,
+                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                  "type": "string"
+                },
+                "maxItems": 2048,
+                "type": "array"
+              },
+              "stdout": {
+                "description": "Static output lines. Lines are emitted in authored order without embedded line breaks.",
+                "items": {
+                  "description": "One output line.",
+                  "maxLength": 4096,
+                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                  "type": "string"
+                },
+                "maxItems": 2048,
+                "type": "array"
+              }
+            },
+            "required": [
+              "stdout",
+              "stderr",
+              "exitCode"
+            ],
+            "type": "object"
+          },
+          "default": {},
+          "description": "Static hidden commands and explicit overrides. Cartridge records take precedence over runtime builtins with the same name; stdout lines are emitted before stderr lines.",
+          "propertyNames": {
+            "description": "Each key is a shell command name.",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]*$"
+          },
+          "type": "object"
+        },
         "cwd": {
           "description": "Where the session opens. Must be a directory some declared file lives under.",
           "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$",

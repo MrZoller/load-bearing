@@ -20,6 +20,7 @@ import type {
 } from "./schema.js";
 import type {
   CartridgeFile,
+  CartridgeCommand,
   CartridgeGitAuthor,
   CartridgeGitCommit,
   CartridgeGitFile,
@@ -335,6 +336,14 @@ describe("descriptor and type lockstep", () => {
     agrees<CartridgeRepository["shellHistory"][number]>(
       repository.fields.shellHistory.node.items,
     );
+    const command = repository.fields.commands.node.values;
+    agrees<CartridgeCommand["stdout"][number]>(
+      command.fields.stdout.node.items,
+    );
+    agrees<CartridgeCommand["stderr"][number]>(
+      command.fields.stderr.node.items,
+    );
+    agrees<CartridgeCommand["exitCode"]>(command.fields.exitCode.node);
 
     const proc = repository.fields.processes.node.items;
     agrees<CartridgeProcess["id"]>(proc.fields.id.node);

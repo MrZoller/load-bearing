@@ -67,12 +67,94 @@ describe("loadCartridge", () => {
     expect(cartridge.repository.services).toEqual([]);
     expect(cartridge.repository.logs).toEqual([]);
     expect(cartridge.repository.tickets).toEqual([]);
+    expect(cartridge.repository.commands).toEqual({});
     expect(cartridge.repository.identity).toEqual({
       user: "root",
       group: "root",
       home: "/root",
       umask: "0022",
     });
+  });
+
+  it("validates static cartridge command records", () => {
+    const source = minimal();
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["commands"] = {
+      pwd: { stdout: ["override"], stderr: ["warning"], exitCode: 7 },
+    };
+    expect(loadCartridge(source).repository.commands["pwd"]).toEqual({
+      stdout: ["override"],
+      stderr: ["warning"],
+      exitCode: 7,
+    });
+
+    (repository["commands"] as Record<string, unknown>)["bad/name"] = {
+      stdout: ["x"],
+      stderr: [],
+      exitCode: 0,
+    };
+    expect(issuesOf(source).map((issue) => issue.pointer)).toContain(
+      "/repository/commands/bad~1name",
+    );
+  });
+
+  it.each([
+    [
+      "missing stdout",
+      { stderr: [], exitCode: 0 },
+      "/repository/commands/sample/stdout",
+    ],
+    [
+      "missing stderr",
+      { stdout: [], exitCode: 0 },
+      "/repository/commands/sample/stderr",
+    ],
+    [
+      "missing exitCode",
+      { stdout: [], stderr: [] },
+      "/repository/commands/sample/exitCode",
+    ],
+    [
+      "a non-array output stream",
+      { stdout: "line", stderr: [], exitCode: 0 },
+      "/repository/commands/sample/stdout",
+    ],
+    [
+      "a non-integer exit code",
+      { stdout: [], stderr: [], exitCode: "0" },
+      "/repository/commands/sample/exitCode",
+    ],
+    [
+      "an out-of-range exit code",
+      { stdout: [], stderr: [], exitCode: 256 },
+      "/repository/commands/sample/exitCode",
+    ],
+    [
+      "a control character in output",
+      { stdout: ["two\nlines"], stderr: [], exitCode: 0 },
+      "/repository/commands/sample/stdout/0",
+    ],
+    [
+      "an overlong output line",
+      { stdout: ["x".repeat(4097)], stderr: [], exitCode: 0 },
+      "/repository/commands/sample/stdout/0",
+    ],
+    [
+      "too many output lines",
+      {
+        stdout: Array.from({ length: 2049 }, () => "line"),
+        stderr: [],
+        exitCode: 0,
+      },
+      "/repository/commands/sample/stdout",
+    ],
+  ])("rejects a command record with %s", (_case, command, pointer) => {
+    const source = minimal();
+    (source["repository"] as Record<string, unknown>)["commands"] = {
+      sample: command,
+    };
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toContain(pointer);
   });
 
   it("validates world collisions and references at the cartridge boundary", () => {

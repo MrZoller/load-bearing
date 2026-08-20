@@ -67,9 +67,19 @@ export function renderEntry(entry: TranscriptEntry): string[] {
   // differ — a dropped summary, or a trailing space where the branch said there
   // was none.
   const summary = entry.summary;
+  const exitCode = entry.exitCode;
+  const result =
+    exitCode === undefined
+      ? summary
+      : summary === ""
+        ? `exit=${String(exitCode)}`
+        : `${summary} exit=${String(exitCode)}`;
   return [
-    summary === "" ? header : `${header} ${summary}`,
+    result === "" ? header : `${header} ${result}`,
     ...entry.detail.map((line) => `${DETAIL_INDENT}${line}`),
+    ...(entry.output ?? []).map(
+      (line) => `${DETAIL_INDENT}${line.stream}> ${line.text}`,
+    ),
   ];
 }
 

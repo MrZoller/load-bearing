@@ -129,6 +129,7 @@ function emitNode(node: SchemaNode): Record<string, unknown> {
         description: node.description,
         items: emitNode(node.items),
         ...(node.minItems !== undefined ? { minItems: node.minItems } : {}),
+        ...(node.maxItems !== undefined ? { maxItems: node.maxItems } : {}),
       };
 
     case "record":
