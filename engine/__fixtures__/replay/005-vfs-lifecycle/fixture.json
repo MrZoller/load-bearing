@@ -1,0 +1,28 @@
+{
+  "name": "005-vfs-lifecycle",
+  "description": "The filesystem event registry creates, updates, changes permissions, and deletes a file; a later unrelated event proves deletion remains part of the replayed state rather than a transient command result.",
+  "seed": "2026-08-05/0/deep-foundation",
+  "cartridge": "minimal",
+  "events": [
+    {
+      "type": "vfs.write",
+      "payload": { "path": "replay-file", "contents": "created\n" }
+    },
+    {
+      "type": "vfs.write",
+      "payload": { "path": "replay-file", "contents": "updated\n" }
+    },
+    {
+      "type": "vfs.chmod",
+      "payload": { "path": "replay-file", "mode": "0600" }
+    },
+    {
+      "type": "vfs.delete",
+      "payload": { "path": "replay-file" }
+    },
+    {
+      "type": "clock.tick",
+      "payload": { "ms": 1 }
+    }
+  ]
+}

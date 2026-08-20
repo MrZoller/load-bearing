@@ -59,6 +59,62 @@ describe("loadCartridge", () => {
     expect(cartridge.repository.gitHistory).toEqual([]);
     expect(cartridge.story).toEqual({});
     expect(cartridge.presentation).toEqual({});
+    expect(cartridge.repository.identity).toEqual({
+      user: "root",
+      group: "root",
+      home: "/root",
+      umask: "0022",
+    });
+  });
+
+  it("requires an identity and derives directory metadata from declared ancestors", () => {
+    const missingIdentity = minimal();
+    delete (missingIdentity["repository"] as Record<string, unknown>)[
+      "identity"
+    ];
+    expect(issuesOf(missingIdentity)[0]?.pointer).toBe("/repository/identity");
+
+    const source = minimal();
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["directories"] = {
+      "/production": { owner: "deploy", group: "operators" },
+      "/production/service": { mode: "0700" },
+    };
+    const directories = loadCartridge(source).repository.directories;
+    expect(directories["/production"]).toMatchObject({
+      mode: "0755",
+      owner: "deploy",
+      group: "operators",
+    });
+    expect(directories["/production/service"]).toMatchObject({
+      mode: "0700",
+      owner: "deploy",
+      group: "operators",
+    });
+  });
+
+  it("rejects paths that collide with files or place a child below one", () => {
+    const collision = minimal();
+    (collision["repository"] as Record<string, unknown>)["directories"] = {
+      "/etc/motd": {},
+    };
+    expect(issuesOf(collision)[0]?.expected).toBe(
+      "a path not also declared as a regular file",
+    );
+
+    const ancestor = minimal();
+    const ancestorRepository = ancestor["repository"] as Record<
+      string,
+      unknown
+    >;
+    ancestorRepository["cwd"] = "/srv";
+    ancestorRepository["files"] = {
+      "/srv/file": { contents: "x" },
+      "/srv/file/child": { contents: "y" },
+    };
+    expect(issuesOf(ancestor)[0]?.expected).toBe(
+      "a path whose ancestors are directories",
+    );
   });
 
   it("keeps a declared value over the default it would have filled", () => {
@@ -1217,6 +1273,11 @@ describe("rejection", () => {
         expected:
           "a directory, not a path the cartridge also declares as a file",
         found: '"/srv/app", which is declared as a file',
+      },
+      {
+        pointer: "/repository/files/~1srv~1app~1main.ts",
+        expected: "a path whose ancestors are directories",
+        found: '"/srv/app/main.ts", below regular file "/srv/app"',
       },
     ]);
   });

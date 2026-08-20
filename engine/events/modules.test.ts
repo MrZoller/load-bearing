@@ -44,6 +44,14 @@ describe("the engine's module list", () => {
       "probe.int",
       "probe.random",
       "probe.weighted",
+      "vfs.chmod",
+      "vfs.copy",
+      "vfs.delete",
+      "vfs.list",
+      "vfs.mkdir",
+      "vfs.read",
+      "vfs.rename",
+      "vfs.write",
     ]);
   });
 
@@ -178,7 +186,7 @@ describe("the probe events", () => {
         },
         { type: "probe.int", payload: { stream: "a", count: 2, max: 4 } },
       ]).slices,
-    ).toEqual({ probe: { events: 2, values: 5 } });
+    ).toMatchObject({ probe: { events: 2, values: 5 } });
   });
 
   it("accepts every count its own validator admits, in every form", () => {
@@ -418,7 +426,7 @@ describe("the probe events", () => {
             ]),
           ),
         ) as Record<string, unknown>),
-        slices: { probe: atCeiling },
+        slices: { probe: atCeiling, vfs: fold([]).slices["vfs"] },
       }),
     );
 

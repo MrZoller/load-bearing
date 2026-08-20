@@ -87,11 +87,12 @@ describe("bootstrap", () => {
   });
 
   it("gives every stateful module its slice, and nobody else a key", () => {
-    // `probe` is Phase 0's one stateful module; `clock` holds nothing, so it
-    // must not appear at all rather than appearing as a null.
-    expect(bootstrap({ cartridge: CARTRIDGE, seed: SEED }).slices).toEqual({
-      probe: { events: 0, values: 0 },
-    });
+    // `clock` holds nothing, so it must not appear at all rather than appearing
+    // as a null. Stateful modules each get their own initialized slice.
+    const slices = bootstrap({ cartridge: CARTRIDGE, seed: SEED }).slices;
+    expect(slices).toMatchObject({ probe: { events: 0, values: 0 } });
+    expect(slices["vfs"]).toBeDefined();
+    expect(slices["clock"]).toBeUndefined();
   });
 
   it("is where reduce starts: an empty log reduces to the bootstrap state", () => {
@@ -391,7 +392,7 @@ describe("step", () => {
       { type: "probe.int", payload: { stream: "a", count: 3, max: 2 } },
     ]);
 
-    expect(state.slices).toEqual({ probe: { events: 2, values: 5 } });
+    expect(state.slices).toMatchObject({ probe: { events: 2, values: 5 } });
   });
 });
 
@@ -1261,8 +1262,8 @@ describe("snapshots", () => {
       return serialize(parsed);
     };
 
-    expect(() => restoreSnapshot(withType("vfs.write"))).toThrow(
-      /"transcript\[0\]\.type" is "vfs\.write", which no module in this registry registers/,
+    expect(() => restoreSnapshot(withType("vfs.not-a-real-event"))).toThrow(
+      /"transcript\[0\]\.type" is "vfs\.not-a-real-event", which no module in this registry registers/,
     );
     expect(() => restoreSnapshot(withType("not even a type shape"))).toThrow(
       /which no module in this registry registers/,

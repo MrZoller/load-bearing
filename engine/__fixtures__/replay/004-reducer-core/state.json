@@ -31,6 +31,7 @@
     "presentation": {},
     "repository": {
       "cwd": "/production/service",
+      "directories": {},
       "env": {
         "PATH": "/usr/local/bin:/usr/bin:/bin",
         "SERVICE_TIER": "critical"
@@ -59,6 +60,12 @@
         }
       },
       "gitHistory": [],
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      },
       "logs": [],
       "manPages": {
         "service": "SERVICE(8)\n\nNAME\n     service - the service\n"
@@ -94,6 +101,76 @@
     "probe": {
       "events": 3,
       "values": 12
+    },
+    "vfs": {
+      "cwd": "/production/service",
+      "entries": {
+        "/": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/etc": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/etc/motd": {
+          "contents": "This system is load-bearing.\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0444",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/README.md": {
+          "contents": "# service\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src/index.ts": {
+          "contents": "export const load = 1;\n",
+          "group": "departed",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-07-31T02:11:09.000Z",
+          "owner": "greg"
+        }
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      }
     }
   },
   "transcript": [
