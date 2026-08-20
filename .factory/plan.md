@@ -16,7 +16,7 @@ remains blocked until review findings are deliberately batched into it.
 - [x] T1 (standard) — Virtual filesystem model (Fixes #5)
   - acceptance: `engine/vfs/` and its event registration hydrate cartridge files into a deterministic tree; path resolution, permissions, recursive mutation, ownership/mode round-trips, and simulated-clock mtimes have unit coverage; replay fixtures prove create → write → chmod → delete and that deleted files stay absent; purity and canonical serialization gates pass
   - pr: 23
-- [ ] T2 (standard) — Git model: commit DAG, branches, index, blame, diff (Fixes #6)
+- [~] T2 (standard) — Git model: commit DAG, branches, index, blame, diff (Fixes #6)
   - acceptance: `engine/git/` and cartridge git-history validation provide deterministic content-derived commits, branches/HEAD, index/working-tree status, blame, diff, and defined dirty-checkout semantics over the VFS; coherence failures produce useful load errors; tests prove log/blame agreement and full git-model semantics, with a byte-stable VFS+git replay fixture
   - deps: T1
 - [ ] T3 (standard) — Processes, services, logs, env, man pages, history, tickets (Fixes #7)
