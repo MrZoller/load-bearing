@@ -562,10 +562,15 @@ const commit: Subcommand = (context) => {
   const commitText = options.options["commitText"]?.at(-1);
   if (typeof commitText !== "string" || options.operands.length !== 0)
     return usage("git commit", "usage: git commit -m <message>");
-  // The full message becomes observable later through log, show, and blame;
-  // validating only the one-line commit acknowledgement would admit text that
-  // those renderers cannot record and permanently poison the simulated history.
-  if (describeUnwritableText(commitText) !== undefined)
+  // Log and show render messages as individual lines. Keep that same boundary
+  // here: LF separates representable lines, while unwritable text in any line
+  // must never enter history and poison later renderers.
+  if (
+    commitText
+      .replace(/\n+$/, "")
+      .split("\n")
+      .some((line) => describeUnwritableText(line) !== undefined)
+  )
     return result([commitText], EMPTY, 0);
   const git = readGitSlice(context.state);
   const mutation = commitGit(git, commitText, now(context));

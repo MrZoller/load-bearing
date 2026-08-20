@@ -221,6 +221,23 @@ describe("Git commands", () => {
     expect(readGitSlice(execute(state, input))).toEqual(readGitSlice(state));
   });
 
+  it("records a multiline commit when each rendered line is writable", () => {
+    let state = execute(initial(), "touch recorded.txt");
+    state = execute(state, "git add recorded.txt");
+    const input = "git commit -m 'subject\nbody'";
+
+    expect(run(state, input)).toMatchObject({
+      stdout: [expect.stringContaining("subject")],
+      exitCode: 0,
+    });
+    expect(commandEvents(state, input)).toEqual([
+      expect.objectContaining({ type: "git.commit" }),
+    ]);
+    expect(run(execute(state, input), "git log").stdout).toEqual(
+      expect.arrayContaining(["    subject", "    body"]),
+    );
+  });
+
   it("stages, unstages, commits, updates a branch, and keeps log and blame coherent", () => {
     let state = execute(initial(), "touch load.txt");
     state = execute(state, "git add load.txt");
