@@ -270,6 +270,22 @@ describe("filesystem commands", () => {
     }
   });
 
+  it("keeps long paths with supplementary Unicode characters writable", () => {
+    // The resolved cwd prefix plus these ASCII characters place the emoji at
+    // the old UTF-16 excerpt boundary. A code-unit slice would retain only
+    // its high surrogate, which transcript validation rejects.
+    const path = `${"a".repeat(1994)}😀${"b".repeat(100)}`;
+    const replayed = reduce({
+      cartridge: loadCartridge(loadCartridgeFixture("minimal")),
+      seed: "filesystem-unicode-path",
+      events: [
+        { type: "shell.execute", payload: { input: `touch '${path}'` } },
+      ],
+    });
+    expect(replayed.transcript[0]?.summary).toContain("…");
+    expect(replayed.transcript.at(-1)?.exitCode).toBe(0);
+  });
+
   it("prints wc totals for multiple operands when only one can be read", () => {
     expect(run("wc README.md missing")).toEqual({
       stdout: [

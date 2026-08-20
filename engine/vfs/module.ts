@@ -65,7 +65,16 @@ function summaryPath(path: string): string {
   // transcript reducer throw merely because JSON escaping expands it. The
   // excerpt is a diagnostic view, not a round-trippable path representation.
   if (rendered.length <= MAX_TRANSCRIPT_LINE_LENGTH / 2) return rendered;
-  return `${rendered.slice(0, MAX_TRANSCRIPT_LINE_LENGTH / 2 - 32)}… (${String(path.length)} chars)`;
+  const budget = MAX_TRANSCRIPT_LINE_LENGTH / 2 - 32;
+  let end = 0;
+  // A UTF-16 slice can separate a surrogate pair, which transcript validation
+  // correctly rejects as unwritable text. Iterating code points keeps the
+  // diagnostic excerpt valid while retaining the same bounded budget.
+  for (const character of rendered) {
+    if (end + character.length > budget) break;
+    end += character.length;
+  }
+  return `${rendered.slice(0, end)}… (${String(path.length)} chars)`;
 }
 
 function summarize(result: VfsResult<unknown>, success: string): string {
