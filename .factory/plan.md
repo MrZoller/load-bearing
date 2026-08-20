@@ -1,6 +1,7 @@
 # Plan: Phase 0 issue-tracker backlog
 
 ## Approach
+
 Deliver the open `phase-0` issues in their explicit dependency order, beginning
 with the virtual filesystem and command-dispatch skeleton and then thickening
 the simulated machine through git, world state, commands, reactions, and agent
@@ -13,6 +14,7 @@ rather than absorbing newly discovered features. The rolling parked-minors task
 remains blocked until review findings are deliberately batched into it.
 
 ## Tasks
+
 - [~] T1 (standard) — Virtual filesystem model (Fixes #5)
   - acceptance: `engine/vfs/` and its event registration hydrate cartridge files into a deterministic tree; path resolution, permissions, recursive mutation, ownership/mode round-trips, and simulated-clock mtimes have unit coverage; replay fixtures prove create → write → chmod → delete and that deleted files stay absent; purity and canonical serialization gates pass
 - [ ] T2 (standard) — Git model: commit DAG, branches, index, blame, diff (Fixes #6)
@@ -43,6 +45,7 @@ remains blocked until review findings are deliberately batched into it.
   - deps: T1, T2, T3, T4, T5, T6, T7, T8, T9
 
 ## Risks
+
 - T1 must define implicit-directory metadata and permission identity from the
   cartridge model; if the existing schema cannot support a coherent policy,
   stop and ask rather than invent incident-specific defaults.
@@ -59,5 +62,6 @@ remains blocked until review findings are deliberately batched into it.
   coverage for semantic coverage or absorb feature gaps from earlier tasks.
 
 ## Ad-hoc
+
 - [!] T11 (trivial) — parked review minors (batch)
   - acceptance: confirmed non-blocking review findings parked during Phase 0 delivery are collected, fixed as one focused batch, and verified by the affected test and repository gates

@@ -8,6 +8,7 @@ forwarded answer `consumed` in the same bookkeeping commit.
 ---
 
 ## Q1 (task T1, consumed) — What identity and implicit-directory policy should the VFS use?
+
 Context: The cartridge declares file owners/groups but no acting user, groups,
 home directory, umask, or directory metadata. T1 requires permission denials,
 `~` resolution, and recursive mutations, so inventing defaults would define a
@@ -23,11 +24,13 @@ whether successful child mutations update parent-directory mtimes.
 **A:** Option A, with directory metadata optional.
 
 Schema changes:
+
 - `repository.identity` (REQUIRED): `user`, `group`, `home`, `umask` (default `0022`). This is the acting identity; without it permission denial and `~` have no subject.
 - `repository.directories` (OPTIONAL): map keyed by absolute path, same shape as a file entry minus `contents` (`owner`, `group`, `mode`, `mtime`). Cartridges declare only the directories that carry authored meaning.
 - Undeclared ancestor directories: inherit `owner`/`group` from the nearest declared ancestor directory, else `root:root`; default mode `0755`; default `mtime` = `meta.startedAt`, matching the existing file rule.
 
 Sub-questions — take standard POSIX behavior for all of these:
+
 - Root bypass: user `root` bypasses permission checks.
 - Creation: new files and directories take the acting identity from `repository.identity`; mode `0666 & ~umask` for files, `0777 & ~umask` for directories.
 - Tilde: bare `~` and `~/path` only. `~user` is unsupported and stays a literal path segment — there is no user database to resolve it against.
@@ -38,6 +41,7 @@ Sub-questions — take standard POSIX behavior for all of these:
 This is public cartridge policy, not incident-specific: document it in the cartridge schema descriptions and record the decision in `docs/DESIGN.md` as part of this task.
 
 ## Q2 (task T4, open) — How should shell execution coordinate cross-slice mutations?
+
 Context: An event module may return only its own namespace slice, but T5–T7
 commands must atomically mutate VFS, git, process, service, and environment
 slices while recording one ordered shell result. The approved plan names this
