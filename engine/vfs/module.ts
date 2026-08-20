@@ -11,12 +11,14 @@ import { defineEventModule } from "../events/module.js";
 import type { EventContext } from "../events/module.js";
 import { readSlice } from "../events/state.js";
 import type { SessionState } from "../events/state.js";
+import { MAX_TRANSCRIPT_LINE_LENGTH } from "../events/transcript.js";
 import { readString, requirePayload } from "../events/payload.js";
 import type { EventPayload } from "../events/payload.js";
 import { resolveVfsPath } from "./path.js";
 import type { VfsMutation, VfsResult, VfsSlice } from "./types.js";
 import {
   chmodVfs,
+  chdirVfs,
   copyVfs,
   createVfsSlice,
   deleteVfs,
@@ -25,6 +27,8 @@ import {
   readVfs,
   replaceVfsFiles,
   renameVfs,
+  statVfs,
+  touchVfs,
   writeVfs,
 } from "./vfs.js";
 
@@ -55,10 +59,28 @@ function readBoolean(
   return value;
 }
 
+function summaryPath(path: string): string {
+  const rendered = JSON.stringify(path);
+  // Event payloads are source data, so a valid long path must not make the
+  // transcript reducer throw merely because JSON escaping expands it. The
+  // excerpt is a diagnostic view, not a round-trippable path representation.
+  if (rendered.length <= MAX_TRANSCRIPT_LINE_LENGTH / 2) return rendered;
+  const budget = MAX_TRANSCRIPT_LINE_LENGTH / 2 - 32;
+  let end = 0;
+  // A UTF-16 slice can separate a surrogate pair, which transcript validation
+  // correctly rejects as unwritable text. Iterating code points keeps the
+  // diagnostic excerpt valid while retaining the same bounded budget.
+  for (const character of rendered) {
+    if (end + character.length > budget) break;
+    end += character.length;
+  }
+  return `${rendered.slice(0, end)}… (${String(path.length)} chars)`;
+}
+
 function summarize(result: VfsResult<unknown>, success: string): string {
   return result.ok
     ? success
-    : `failed code=${result.code} path=${JSON.stringify(result.path)}`;
+    : `failed code=${result.code} path=${summaryPath(result.path)}`;
 }
 
 function mutationOutcome<T>(
@@ -242,7 +264,7 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
           summary: summarize(
             result,
             result.ok
-              ? `path=${JSON.stringify(result.value.path)} length=${String(result.value.contents.length)}`
+              ? `path=${summaryPath(result.value.path)} length=${String(result.value.contents.length)}`
               : "",
           ),
         };
@@ -263,7 +285,22 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
           summary: summarize(
             result,
             result.ok
-              ? `path=${JSON.stringify(path)} entries=${String(result.value.length)}`
+              ? `path=${summaryPath(path)} entries=${String(result.value.length)}`
+              : "",
+          ),
+        };
+      },
+    },
+    "vfs.stat": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["path"]);
+        const result = statVfs(slice, readString(data, "path", context.where));
+        return {
+          summary: summarize(
+            result,
+            result.ok
+              ? `path=${summaryPath(result.value.path)} kind=${result.value.entry.kind}`
               : "",
           ),
         };
@@ -282,7 +319,7 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
         const outcome = mutationOutcome(
           mutation,
           (value) =>
-            `path=${JSON.stringify(value.path)} created=${String(value.created)}`,
+            `path=${summaryPath(value.path)} created=${String(value.created)}`,
         );
         const transcript = readBoolean(data, "transcript", true, context.where);
         return transcript ? outcome : { slice: outcome.slice };
@@ -291,17 +328,18 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
     "vfs.delete": {
       version: 0,
       apply(context, slice) {
-        const data = payload(context, ["path", "recursive"]);
+        const data = payload(context, ["path", "recursive", "fileOnly"]);
         const mutation = deleteVfs(
           slice,
           readString(data, "path", context.where),
           context.clock.timestamp(),
           readBoolean(data, "recursive", false, context.where),
+          readBoolean(data, "fileOnly", false, context.where),
         );
         return mutationOutcome(
           mutation,
           (value) =>
-            `path=${JSON.stringify(value.path)} removed=${String(value.removed)}`,
+            `path=${summaryPath(value.path)} removed=${String(value.removed)}`,
         );
       },
     },
@@ -318,7 +356,7 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
         return mutationOutcome(
           mutation,
           (value) =>
-            `from=${JSON.stringify(value.from)} to=${JSON.stringify(value.to)}`,
+            `from=${summaryPath(value.from)} to=${summaryPath(value.to)}`,
         );
       },
     },
@@ -344,7 +382,7 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
         return mutationOutcome(
           mutation,
           (value) =>
-            `from=${JSON.stringify(value.from)} to=${JSON.stringify(value.to)} copied=${String(value.copied)}`,
+            `from=${summaryPath(value.from)} to=${summaryPath(value.to)} copied=${String(value.copied)}`,
         );
       },
     },
@@ -362,7 +400,7 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
         );
         return mutationOutcome(
           mutation,
-          (value) => `path=${JSON.stringify(value.path)} mode=${value.mode}`,
+          (value) => `path=${summaryPath(value.path)} mode=${value.mode}`,
         );
       },
     },
@@ -379,7 +417,37 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
         return mutationOutcome(
           mutation,
           (value) =>
-            `created=${String(value.paths.length)} path=${JSON.stringify(value.paths.at(-1) ?? "")}`,
+            `created=${String(value.paths.length)} path=${summaryPath(value.paths.at(-1) ?? "")}`,
+        );
+      },
+    },
+    "vfs.touch": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["path"]);
+        const mutation = touchVfs(
+          slice,
+          readString(data, "path", context.where),
+          context.clock.timestamp(),
+        );
+        return mutationOutcome(
+          mutation,
+          (value) =>
+            `path=${summaryPath(value.path)} created=${String(value.created)}`,
+        );
+      },
+    },
+    "vfs.chdir": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["path"]);
+        const mutation = chdirVfs(
+          slice,
+          readString(data, "path", context.where),
+        );
+        return mutationOutcome(
+          mutation,
+          (value) => `path=${summaryPath(value.path)}`,
         );
       },
     },

@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 0,
+    "date": "2026-08-05",
+    "title": "Filesystem fixture",
+    "assignment": "Exercise command permissions.",
+    "startedAt": "2026-08-05T09:14:22.000Z"
+  },
+  "repository": {
+    "cwd": "/production/service",
+    "identity": {
+      "user": "visitor",
+      "group": "visitors",
+      "home": "/home/visitor"
+    },
+    "files": {
+      "/production/service/README.md": { "contents": "# service\n" },
+      "/production/service/src/index.ts": {
+        "contents": "export const load = 1;"
+      },
+      "/production/service/private.txt": {
+        "contents": "secret\n",
+        "mode": "0000",
+        "owner": "root",
+        "group": "root"
+      },
+      "/production/service/sealed/hidden": { "contents": "classified\n" }
+    },
+    "directories": {
+      "/production/service": {
+        "mode": "0755",
+        "owner": "visitor",
+        "group": "visitors"
+      },
+      "/production/service/locked": {
+        "mode": "0555",
+        "owner": "root",
+        "group": "root"
+      },
+      "/production/service/sealed": {
+        "mode": "0700",
+        "owner": "root",
+        "group": "root"
+      }
+    }
+  },
+  "models": [
+    {
+      "id": "deep-foundation",
+      "name": "Deep Foundation",
+      "archetype": "paranoid",
+      "description": "Fixture model.",
+      "costMultiplier": 1
+    }
+  ]
+}

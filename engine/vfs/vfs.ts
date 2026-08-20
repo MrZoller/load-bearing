@@ -26,6 +26,7 @@ import type {
   VfsReadValue,
   VfsResult,
   VfsSlice,
+  VfsStatValue,
 } from "./types.js";
 
 type Permission = 1 | 2 | 4;
@@ -308,6 +309,27 @@ export function readVfs(
   return frozenSuccess({ path: resolved.path, contents: entry.contents });
 }
 
+/** Look up metadata after enforcing search permission on every ancestor. */
+export function statVfs(
+  slice: VfsSlice,
+  input: string,
+): VfsResult<VfsStatValue> {
+  const resolved = resolveVfsPath(input, slice.cwd, slice.identity.home);
+  const denied = traversalFailure(slice, resolved.path, "stat");
+  if (denied !== undefined) return denied;
+  const entry = slice.entries[resolved.path];
+  if (entry === undefined)
+    return frozenFailure("stat", resolved.path, "ENOENT", "no such path");
+  if (resolved.trailingSlash && entry.kind !== "directory")
+    return frozenFailure(
+      "stat",
+      resolved.path,
+      "ENOTDIR",
+      "a trailing slash requires a directory",
+    );
+  return frozenSuccess({ path: resolved.path, entry: { ...entry } });
+}
+
 export function listVfs(
   slice: VfsSlice,
   input: string,
@@ -418,6 +440,98 @@ export function writeVfs(
     now,
   );
   return changed(slice, entries, { path: resolved.path, created: true });
+}
+
+/** Create an empty file or update an existing entry's mtime. */
+export function touchVfs(
+  slice: VfsSlice,
+  input: string,
+  now: string,
+): VfsMutation<{ readonly path: string; readonly created: boolean }> {
+  const resolved = resolveVfsPath(input, slice.cwd, slice.identity.home);
+  const existing = slice.entries[resolved.path];
+  if (existing === undefined) return writeVfs(slice, input, "", now);
+  const invalid = invalidMutationPathFailure(resolved.path, "touch");
+  if (invalid !== undefined) return unchanged(slice, invalid);
+  const invalidNow = invalidNowFailure(now, "touch", resolved.path);
+  if (invalidNow !== undefined) return unchanged(slice, invalidNow);
+  const denied = traversalFailure(slice, resolved.path, "touch");
+  if (denied !== undefined) return unchanged(slice, denied);
+  if (resolved.trailingSlash && existing.kind !== "directory")
+    return unchanged(
+      slice,
+      frozenFailure(
+        "touch",
+        resolved.path,
+        "ENOTDIR",
+        "a trailing slash requires a directory",
+      ),
+    );
+  if (
+    slice.identity.user !== "root" &&
+    slice.identity.user !== existing.owner &&
+    !permits(slice, existing, 2)
+  )
+    return unchanged(
+      slice,
+      frozenFailure(
+        "touch",
+        resolved.path,
+        "EACCES",
+        "write permission is denied",
+      ),
+    );
+  return changed(
+    slice,
+    { ...slice.entries, [resolved.path]: { ...existing, mtime: now } },
+    { path: resolved.path, created: false },
+  );
+}
+
+/** Change the persisted working directory after enforcing search permission. */
+export function chdirVfs(
+  slice: VfsSlice,
+  input: string,
+): VfsMutation<{ readonly path: string }> {
+  const resolved = resolveVfsPath(input, slice.cwd, slice.identity.home);
+  const denied = traversalFailure(slice, resolved.path, "chdir");
+  if (denied !== undefined) return unchanged(slice, denied);
+  const entry = slice.entries[resolved.path];
+  if (entry === undefined)
+    return unchanged(
+      slice,
+      frozenFailure("chdir", resolved.path, "ENOENT", "no such directory"),
+    );
+  if (entry.kind !== "directory")
+    return unchanged(
+      slice,
+      frozenFailure("chdir", resolved.path, "ENOTDIR", "not a directory"),
+    );
+  if (!permits(slice, entry, 1))
+    return unchanged(
+      slice,
+      frozenFailure(
+        "chdir",
+        resolved.path,
+        "EACCES",
+        "search permission is denied",
+      ),
+    );
+  if (resolved.path === slice.cwd)
+    return unchanged(slice, frozenSuccess({ path: resolved.path }));
+  return deepFreeze({
+    slice: {
+      cwd: resolved.path,
+      identity: { ...slice.identity },
+      entries: Object.fromEntries(
+        Object.entries(slice.entries).map(([path, current]) => [
+          path,
+          { ...current },
+        ]),
+      ),
+    },
+    result: { ok: true, value: { path: resolved.path } },
+  });
 }
 
 export function mkdirVfs(
@@ -550,6 +664,7 @@ export function deleteVfs(
   input: string,
   now: string,
   recursive = false,
+  refuseDirectory = false,
 ): VfsMutation<{ readonly path: string; readonly removed: number }> {
   const resolved = resolveVfsPath(input, slice.cwd, slice.identity.home);
   const invalid = invalidMutationPathFailure(resolved.path, "delete");
@@ -590,6 +705,16 @@ export function deleteVfs(
         resolved.path,
         "ENOTDIR",
         "a trailing slash requires a directory",
+      ),
+    );
+  if (entry.kind === "directory" && refuseDirectory)
+    return unchanged(
+      slice,
+      frozenFailure(
+        "delete",
+        resolved.path,
+        "EISDIR",
+        "directory removal is disabled for this operation",
       ),
     );
   const denied = writableParentFailure(slice, resolved.path, "delete");

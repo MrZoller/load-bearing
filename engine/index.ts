@@ -74,6 +74,7 @@ export {
 } from "./vfs/path.js";
 export {
   chmodVfs,
+  chdirVfs,
   copyVfs,
   createVfsSlice,
   deleteVfs,
@@ -82,6 +83,8 @@ export {
   readVfs,
   renameVfs,
   replaceVfsFiles,
+  statVfs,
+  touchVfs,
   writeVfs,
 } from "./vfs/vfs.js";
 export type {
@@ -98,6 +101,7 @@ export type {
   VfsResult,
   VfsSlice,
   VfsSuccess,
+  VfsStatValue,
 } from "./vfs/types.js";
 
 export { GIT_MODULE, readGitSlice, validateGitSlice } from "./git/module.js";

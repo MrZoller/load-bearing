@@ -75,16 +75,17 @@ against the replay contract.
 
 ### The fixtures so far
 
-| fixture              | what it pins                                                                                                                                                |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `001-engine-smoke`   | the loop itself: an input triple folds, records, and compares. The shared cartridge is written with unsorted keys, so a key-ordering regression fails here  |
-| `002-random-clock`   | the seed hash, the mulberry32 constants, `fork`'s path derivation, `int`'s rejection window, `weightedPick`'s distribution, and the UTC calendar arithmetic |
-| `003-cartridge-load` | load to initial state with an empty event log — normalization alone, isolated from the fold                                                                 |
-| `004-reducer-core`   | the reducer's machinery at readable size: a stamped payload schema version, dispatch across two modules, a slice accumulating, transcript index and stamps  |
-| `005-vfs-lifecycle`  | VFS create, overwrite, chmod, delete, and persistence of deletion across a later event                                                                      |
-| `006-vfs-git`        | VFS edits reflected in Git status/diff, dirty checkout refusal, and atomic clean checkout across Git and VFS slices                                         |
-| `007-world-state`    | environmental hydration plus replayable process, service, log, environment, and history transitions                                                         |
-| `008-command-shell`  | unlogged shell expansion plus stable stream-tagged builtin, override, unknown, and blank command results                                                    |
+| fixture                   | what it pins                                                                                                                                                |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `001-engine-smoke`        | the loop itself: an input triple folds, records, and compares. The shared cartridge is written with unsorted keys, so a key-ordering regression fails here  |
+| `002-random-clock`        | the seed hash, the mulberry32 constants, `fork`'s path derivation, `int`'s rejection window, `weightedPick`'s distribution, and the UTC calendar arithmetic |
+| `003-cartridge-load`      | load to initial state with an empty event log — normalization alone, isolated from the fold                                                                 |
+| `004-reducer-core`        | the reducer's machinery at readable size: a stamped payload schema version, dispatch across two modules, a slice accumulating, transcript index and stamps  |
+| `005-vfs-lifecycle`       | VFS create, overwrite, chmod, delete, and persistence of deletion across a later event                                                                      |
+| `006-vfs-git`             | VFS edits reflected in Git status/diff, dirty checkout refusal, and atomic clean checkout across Git and VFS slices                                         |
+| `007-world-state`         | environmental hydration plus replayable process, service, log, environment, and history transitions                                                         |
+| `008-command-shell`       | unlogged shell expansion plus stable stream-tagged builtin, override, unknown, and blank command results                                                    |
+| `009-filesystem-commands` | shell-driven VFS creation, cwd persistence, deletion observed by later commands, and permission-denied output                                               |
 
 `002` records 1000 raw draws eight to a line with their index, so a divergence
 names the draw it started at rather than reporting that a file changed.

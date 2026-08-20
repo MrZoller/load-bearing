@@ -8,6 +8,7 @@ import { compareVfsNames, resolveVfsPath } from "./path.js";
 import type { VfsEntry, VfsSlice } from "./types.js";
 import {
   chmodVfs,
+  chdirVfs,
   copyVfs,
   createVfsSlice,
   deleteVfs,
@@ -15,6 +16,8 @@ import {
   mkdirVfs,
   readVfs,
   renameVfs,
+  statVfs,
+  touchVfs,
   writeVfs,
 } from "./vfs.js";
 
@@ -226,6 +229,49 @@ describe("VFS permissions and mutations", () => {
     expect(originalParent).not.toBe(NOW);
   });
 
+  it("stats through searchable ancestors and persists a validated chdir", () => {
+    const slice = fresh();
+    expect(statVfs(slice, "README.md")).toMatchObject({
+      ok: true,
+      value: { path: "/production/service/README.md", entry: { kind: "file" } },
+    });
+    const moved = successful(chdirVfs(slice, "src"));
+    expect(moved.cwd).toBe("/production/service/src");
+    expect(readVfs(moved, "index.ts")).toMatchObject({ ok: true });
+
+    const closed = successful(chmodVfs(slice, "/production", "0700"));
+    const blocked = {
+      ...closed,
+      identity: { ...closed.identity, user: "nobody", group: "nobody" },
+    };
+    expect(statVfs(blocked, "README.md")).toMatchObject({
+      ok: false,
+      code: "EACCES",
+    });
+    expect(chdirVfs(blocked, "src").result).toMatchObject({
+      ok: false,
+      code: "EACCES",
+    });
+  });
+
+  it("touches existing files without changing contents and creates with umask", () => {
+    let slice = fresh();
+    const existing = slice.entries["/production/service/README.md"];
+    const originalContents = existing?.kind === "file" ? existing.contents : "";
+    slice = successful(touchVfs(slice, "created", NOW));
+    expect(slice.entries["/production/service/created"]).toMatchObject({
+      kind: "file",
+      contents: "",
+      mode: "0644",
+      mtime: NOW,
+    });
+    slice = successful(touchVfs(slice, "README.md", LATER));
+    expect(slice.entries["/production/service/README.md"]).toMatchObject({
+      contents: originalContents,
+      mtime: LATER,
+    });
+  });
+
   it("makes mkdir atomic, supports -p, and updates parent mtimes", () => {
     const slice = fresh();
     expect(mkdirVfs(slice, "README.md", NOW).result).toMatchObject({
@@ -272,6 +318,11 @@ describe("VFS permissions and mutations", () => {
   it("deletes recursively only when asked and protects cwd coherence", () => {
     let slice = successful(mkdirVfs(fresh(), "tree/leaf", NOW, true));
     slice = successful(writeVfs(slice, "tree/leaf/file", "x", NOW));
+    const empty = successful(mkdirVfs(slice, "empty", NOW));
+    expect(deleteVfs(empty, "empty", LATER, false, true).result).toMatchObject({
+      ok: false,
+      code: "EISDIR",
+    });
     expect(deleteVfs(slice, "tree", LATER).result).toMatchObject({
       ok: false,
       code: "ENOTEMPTY",
@@ -365,6 +416,24 @@ describe("VFS permissions and mutations", () => {
 });
 
 describe("VFS event module", () => {
+  it("owns persisted chdir and touch transitions", () => {
+    const state = reduce({
+      cartridge,
+      seed: "vfs-command-apis",
+      events: [
+        { type: "vfs.chdir", payload: { path: "src" } },
+        { type: "vfs.touch", payload: { path: "created.ts" } },
+      ],
+    });
+    const slice = state.slices["vfs"] as VfsSlice;
+    expect(slice.cwd).toBe("/production/service/src");
+    expect(slice.entries["/production/service/src/created.ts"]).toMatchObject({
+      kind: "file",
+      contents: "",
+      mtime: cartridge.meta.startedAt,
+    });
+  });
+
   it("replays create, write, chmod, delete, and leaves deletion absent after later events", () => {
     const state = reduce({
       cartridge,

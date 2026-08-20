@@ -1,0 +1,40 @@
+{
+  "name": "009-filesystem-commands",
+  "description": "Filesystem shell mutations persist through replay: nested creation, cwd transition, deletion observed by later ls and cat, plus a permission denial.",
+  "seed": "2026-08-05/9/deep-foundation",
+  "cartridge": "filesystem",
+  "events": [
+    {
+      "type": "shell.execute",
+      "payload": { "input": "mkdir -p work/cache" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "touch work/cache/keep" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cd work/cache" },
+      "version": 0
+    },
+    { "type": "shell.execute", "payload": { "input": "pwd" }, "version": 0 },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm keep" },
+      "version": 0
+    },
+    { "type": "shell.execute", "payload": { "input": "ls" }, "version": 0 },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cat keep" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cat /production/service/private.txt" },
+      "version": 0
+    }
+  ]
+}
