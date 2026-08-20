@@ -182,6 +182,8 @@ function hasUnsafeRegexShape(pattern: string): boolean {
   const groups: RegexGroup[] = [];
   let escaped = false;
   let inClass = false;
+  let classStart = 0;
+  let classEscaped = false;
   // At the top level, adjacent repetitions of the same atom have the same
   // ambiguity as a quantified group: `a+a+$` and `a+aa+$` can split the input
   // between the two `a+` terms in quadratically many ways. Track the atoms
@@ -214,11 +216,26 @@ function hasUnsafeRegexShape(pattern: string): boolean {
       continue;
     }
     if (inClass) {
-      if (character === "]") inClass = false;
+      if (classEscaped) {
+        classEscaped = false;
+        continue;
+      }
+      if (character === "\\") {
+        classEscaped = true;
+        continue;
+      }
+      if (character === "]") {
+        inClass = false;
+        // A character class is one repeatable atom just like a literal. Keep
+        // its spelling so repeated character classes cannot evade the
+        // ambiguous-repetition guard by hiding their contents here.
+        recordAtom(pattern.slice(classStart, index + 1));
+      }
       continue;
     }
     if (character === "[") {
       inClass = true;
+      classStart = index;
       continue;
     }
     if (character === "(") {
