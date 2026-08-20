@@ -42,6 +42,29 @@ Spec = the issue tracker for MrZoller/load-bearing; imported 2026-08-19; filter:
    linked issue before its task is completed.
 4. A changed backlog cannot run until the imported plan is explicitly approved.
 
+## Standing decisions (Phase 0)
+
+Recorded 2026-08-20 after Q1-Q4 all resolved to the same answer. These exist
+so a task does not stop the line to re-ask a question already settled.
+
+1. **World facts are cartridge content.** When a task finds the schema lacks a
+   field its issue requires - acting identity, directory metadata, git
+   authorship, machine metadata, endpoints - ADD the field to
+   `content/schema/` with a documented default and explain the choice in the
+   PR. Do not park the task, and do not hardcode the fact in the engine. This
+   is invariant 1 applied; Q1, Q2, Q3, and Q4 each resolved this way.
+2. **Bounded CLI surface.** Implement exactly the commands and flags the issue
+   names, with real-tool semantics and no surface beyond it. Conventions -
+   output formats, locales, timezone, hash abbreviation width, argument arity -
+   are not design questions. Take the real tool's behavior.
+3. **Deliberate deviations from the real tool are permitted, but must be
+   recorded** in `docs/DESIGN.md` in the same PR, with the reason. Two already
+   stand: committed-tree blame (T6) and `history` not listing itself (T7).
+4. **Still stop and ask** when a choice would weaken an invariant, change a
+   merged contract other tasks depend on, or commit the product to a
+   user-visible behavior its issue does not imply. The bar is a decision that
+   is genuinely the human's, not an absent schema field.
+
 ## Risks & constraints
 
 - The engine remains deterministic, headless, runtime/content separated, and
