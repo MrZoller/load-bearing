@@ -207,6 +207,40 @@ describe("filesystem commands", () => {
     });
   });
 
+  it("renders tabs and CRLF file contents as deterministic transcript lines", () => {
+    const raw = JSON.parse(JSON.stringify(loadCartridgeFixture("minimal"))) as {
+      repository: { files: Record<string, { contents: string }> };
+    };
+    raw.repository.files["/production/service/whitespace.txt"] = {
+      contents: "first\tcolumn\r\nsecond\tcolumn\r\n",
+    };
+    const initial = bootstrap({
+      cartridge: loadCartridge(raw),
+      seed: "filesystem-whitespace",
+    });
+
+    for (const command of [
+      "cat whitespace.txt",
+      "head whitespace.txt",
+      "tail whitespace.txt",
+      "grep column whitespace.txt",
+    ]) {
+      expect(run(command, initial)).toEqual({
+        stdout: ["first    column", "second    column"],
+        stderr: [],
+        exitCode: 0,
+      });
+    }
+  });
+
+  it("rejects regex shapes that can monopolize deterministic replay", () => {
+    expect(run('grep "(a+)+$" README.md')).toEqual({
+      stdout: [],
+      stderr: ["grep: unsupported regular expression: unsafe repeated pattern"],
+      exitCode: 2,
+    });
+  });
+
   it("prints wc totals for multiple operands when only one can be read", () => {
     expect(run("wc README.md missing")).toEqual({
       stdout: [

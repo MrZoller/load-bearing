@@ -144,9 +144,92 @@ function now(state: CommandContext["state"]): string {
 
 function splitLines(contents: string): string[] {
   if (contents === "") return [];
-  const lines = contents.split("\n");
+  // Cartridges may contain Windows text. A transcript entry is one physical
+  // line, so CRLF is normalized at the rendering boundary rather than making
+  // otherwise-readable file contents fail the transcript guard.
+  const lines = contents.replaceAll("\r\n", "\n").split("\n");
   if (lines.at(-1) === "") lines.pop();
   return lines;
+}
+
+function renderFileLine(line: string): string {
+  // Tabs are text, not binary data, but they cannot occur in a one-line
+  // transcript entry. Four spaces are a deterministic terminal rendering.
+  return line.replaceAll("\t", "    ");
+}
+
+interface RegexGroup {
+  hasQuantifier: boolean;
+  hasAlternation: boolean;
+}
+
+function isQuantifierStart(pattern: string, index: number): boolean {
+  const character = pattern[index];
+  if (character === "*" || character === "+" || character === "?") return true;
+  if (character !== "{") return false;
+  const closing = pattern.indexOf("}", index + 1);
+  return (
+    closing !== -1 && /^\d+(,\d*)?$/.test(pattern.slice(index + 1, closing))
+  );
+}
+
+/**
+ * Native regular-expression evaluation has no timeout. Reject the constructs
+ * that create ambiguous repeated work rather than allowing one shell event to
+ * monopolize a browser's main thread.
+ */
+function hasUnsafeRegexShape(pattern: string): boolean {
+  const groups: RegexGroup[] = [];
+  let escaped = false;
+  let inClass = false;
+  for (let index = 0; index < pattern.length; index += 1) {
+    const character = pattern[index] ?? "";
+    if (escaped) {
+      if (/\d/.test(character)) return true;
+      escaped = false;
+      continue;
+    }
+    if (character === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (inClass) {
+      if (character === "]") inClass = false;
+      continue;
+    }
+    if (character === "[") {
+      inClass = true;
+      continue;
+    }
+    if (character === "(") {
+      if (pattern[index + 1] === "?") return true;
+      groups.push({ hasQuantifier: false, hasAlternation: false });
+      continue;
+    }
+    if (character === "|") {
+      const group = groups.at(-1);
+      if (group !== undefined) group.hasAlternation = true;
+      continue;
+    }
+    if (character === ")") {
+      const group = groups.pop();
+      if (group === undefined) continue;
+      if (isQuantifierStart(pattern, index + 1)) {
+        if (group.hasQuantifier || group.hasAlternation) return true;
+        const parent = groups.at(-1);
+        if (parent !== undefined) parent.hasQuantifier = true;
+      } else if (group.hasQuantifier) {
+        const parent = groups.at(-1);
+        if (parent !== undefined) parent.hasQuantifier = true;
+      }
+      continue;
+    }
+    if (isQuantifierStart(pattern, index)) {
+      const group = groups.at(-1);
+      if (group !== undefined) group.hasQuantifier = true;
+    }
+  }
+  return false;
 }
 
 function utf8Bytes(text: string): number {
@@ -321,7 +404,8 @@ function readFiles(
   for (const path of operands) {
     const result = readVfs(slice, path);
     events.push(event("vfs.read", { path }));
-    if (result.ok) stdout.push(...render(result.value.contents, path));
+    if (result.ok)
+      stdout.push(...render(result.value.contents, path).map(renderFileLine));
     else stderr.push(genericFailure(name, path, result));
   }
   return execution(stdout, stderr, stderr.length === 0 ? 0 : ioExit, events);
@@ -532,6 +616,13 @@ const GREP: CommandDefinition = Object.freeze({
     const authoredRoots = parsed.operands.slice(1);
     if (pattern === undefined || authoredRoots.length === 0)
       return usage("grep", "usage: grep [-inr] PATTERN FILE...");
+    if (hasUnsafeRegexShape(pattern))
+      return execution(
+        EMPTY,
+        ["grep: unsupported regular expression: unsafe repeated pattern"],
+        2,
+        EMPTY_EVENTS,
+      );
     let matcher: { test(value: string): boolean };
     try {
       matcher = new RegExp(pattern, hasOption(parsed, "ignoreCase") ? "i" : "");
@@ -575,7 +666,7 @@ const GREP: CommandDefinition = Object.freeze({
       splitLines(read.value.contents).forEach((line, index) => {
         if (!matcher.test(line)) return;
         const prefix = `${prefixFile ? `${file.label}:` : ""}${hasOption(parsed, "lineNumber") ? `${String(index + 1)}:` : ""}`;
-        stdout.push(prefix + line);
+        stdout.push(renderFileLine(prefix + line));
       });
     }
     return execution(
