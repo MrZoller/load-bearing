@@ -1,11 +1,11 @@
 {
   "project": "Load Bearing",
-  "phase": "idle",
+  "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": null,
-  "branch": null,
+  "current_task": "T6",
+  "branch": "factory/t6-git-commands",
   "pr": null,
   "hold": false,
-  "updated": "2026-08-20T10:33:07Z"
+  "updated": "2026-08-20T11:40:52Z"
 }

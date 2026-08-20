@@ -80,7 +80,7 @@ Sub-questions, both yes:
   the result shape part of the replay contract, and without stream tags Phase 1
   cannot render stderr distinctly or fixtures assert on it.
 
-## Q3 (task T6, open) — What bounded Git CLI and commit-identity policy should the simulator expose?
+## Q3 (task T6, consumed) — What bounded Git CLI and commit-identity policy should the simulator expose?
 
 Context: Issue #10 names ten commands and requires full semantics, but the Git
 model has no author identity for new commits and the issue does not define the
@@ -105,7 +105,7 @@ Confirmed as asked: fixed seven-character hash abbreviations with deterministic 
 
 DELIBERATE DEVIATION to record in `docs/DESIGN.md` in this task's PR: committed-tree blame differs from real `git blame`, which annotates the working tree and attributes uncommitted lines to "Not Committed Yet" with a zero hash. We accept the deviation because issue #6 requires log and blame to agree, and the real behavior forces a pseudo-commit into every fixture. Document it as a chosen simplification so it is not later read as a bug.
 
-## Q4 (task T7, open) — What cartridge contracts should back curl, machine identity, uptime, and shell history?
+## Q4 (task T7, consumed) — What cartridge contracts should back curl, machine identity, uptime, and shell history?
 
 Context: Issue #11 requires simulated endpoints, `uname`, machine uptime, and
 session-accumulated history, but the cartridge has no endpoint, machine, or boot
