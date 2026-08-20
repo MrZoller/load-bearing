@@ -13,7 +13,7 @@ rather than absorbing newly discovered features. The rolling parked-minors task
 remains blocked until review findings are deliberately batched into it.
 
 ## Tasks
-- [R] T1 (standard) — Virtual filesystem model (Fixes #5)
+- [x] T1 (standard) — Virtual filesystem model (Fixes #5)
   - acceptance: `engine/vfs/` and its event registration hydrate cartridge files into a deterministic tree; path resolution, permissions, recursive mutation, ownership/mode round-trips, and simulated-clock mtimes have unit coverage; replay fixtures prove create → write → chmod → delete and that deleted files stay absent; purity and canonical serialization gates pass
   - pr: 23
 - [ ] T2 (standard) — Git model: commit DAG, branches, index, blame, diff (Fixes #6)
@@ -62,3 +62,6 @@ remains blocked until review findings are deliberately batched into it.
 ## Ad-hoc
 - [!] T11 (trivial) — parked review minors (batch)
   - acceptance: confirmed non-blocking review findings parked during Phase 0 delivery are collected, fixed as one focused batch, and verified by the affected test and repository gates
+  - PR #23: preserve `..` traversal semantics across a regular-file component until the shell/VFS contract is deliberately defined
+  - PR #23: reject noncanonical fixed-width VFS snapshot mtime spellings
+  - PR #23: ignore unusable directory keys while checking whether the cartridge cwd exists
