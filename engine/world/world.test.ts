@@ -14,6 +14,9 @@ import {
   listServices,
   listTickets,
   lookupManPage,
+  lookupEnv,
+  lookupProcessByPid,
+  lookupTicket,
   readShellHistory,
   readWorldLog,
 } from "./world.js";
@@ -152,6 +155,58 @@ describe("world state", () => {
       ok: true,
       entries: ["seeded"],
     });
+    const process = world.processes[0];
+    if (process === undefined)
+      throw new Error("fixture must provide a process");
+    expect(lookupProcessByPid(world, process.pid)).toBe(process);
+    expect(lookupProcessByPid(world, 99999)).toBeUndefined();
+    expect(lookupTicket(world, "T-1")?.title).toBe("First");
+    expect(lookupTicket(world, "T-404")).toBeUndefined();
+    expect(lookupEnv(world, "PATH")).toBe("/usr/local/bin:/usr/bin:/bin");
+    expect(lookupEnv(world, "MISSING")).toBeUndefined();
+  });
+
+  it("reports unavailable world logs without hiding VFS failures", () => {
+    const state = reduce({ cartridge: cartridge(), seed: SEED, events: [] });
+    const world = readWorldSlice(state);
+    expect(readWorldLog(world, readVfsSlice(state), "missing")).toEqual({
+      ok: false,
+      reason: "missing-log",
+    });
+
+    const deleted = reduce({
+      cartridge: cartridge(),
+      seed: SEED,
+      events: [{ type: "vfs.delete", payload: { path: "/var/log/api.log" } }],
+    });
+    expect(
+      readWorldLog(readWorldSlice(deleted), readVfsSlice(deleted), "api-file"),
+    ).toEqual({ ok: false, reason: "missing-file" });
+
+    const unreadableSource = source();
+    const repository = unreadableSource["repository"] as Record<
+      string,
+      unknown
+    >;
+    const files = repository["files"] as Record<string, unknown>;
+    repository["identity"] = {
+      user: "deploy",
+      group: "deploy",
+      home: "/home/deploy",
+    };
+    files["/var/log/api.log"] = { contents: "booted\n", mode: "0000" };
+    const unreadable = reduce({
+      cartridge: loadCartridge(unreadableSource),
+      seed: SEED,
+      events: [],
+    });
+    expect(
+      readWorldLog(
+        readWorldSlice(unreadable),
+        readVfsSlice(unreadable),
+        "api-file",
+      ),
+    ).toEqual({ ok: false, reason: "vfs-error", code: "EACCES" });
   });
 
   it("folds every required mutation and keeps file logs only in VFS", () => {
@@ -206,6 +261,34 @@ describe("world state", () => {
     });
   });
 
+  it("rejects world events for unknown targets and deleted file logs", () => {
+    for (const event of [
+      { type: "world.log-append", payload: { id: "missing", entry: "x" } },
+      { type: "world.service-start", payload: { id: "missing" } },
+      {
+        type: "world.process-transition",
+        payload: { id: "missing", state: "running" },
+      },
+    ] as const) {
+      expect(() =>
+        reduce({ cartridge: cartridge(), seed: SEED, events: [event] }),
+      ).toThrow(/unknown (log|service|process)/);
+    }
+    expect(() =>
+      reduce({
+        cartridge: cartridge(),
+        seed: SEED,
+        events: [
+          { type: "vfs.delete", payload: { path: "/var/log/api.log" } },
+          {
+            type: "world.log-append",
+            payload: { id: "api-file", entry: "after deletion" },
+          },
+        ],
+      }),
+    ).toThrow(/cannot read file log "api-file": ENOENT/);
+  });
+
   it("closes payloads and validates snapshots deeply", () => {
     expect(() =>
       reduce({
@@ -257,5 +340,59 @@ describe("world state", () => {
       events: [{ type: "world.history-append", payload: { command: "pwd" } }],
     });
     expect(restoreSnapshot(snapshot(state))).toEqual(state);
+  });
+
+  it("rejects broken world cross-references at the direct snapshot boundary", () => {
+    const world = readWorldSlice(
+      reduce({ cartridge: cartridge(), seed: SEED, events: [] }),
+    );
+    const firstProcess = world.processes[0];
+    const secondProcess = world.processes[1];
+    const firstService = world.services[0];
+    const fileLog = world.logs.find((entry) => entry.kind === "file");
+    if (
+      firstProcess === undefined ||
+      secondProcess === undefined ||
+      firstService === undefined ||
+      fileLog === undefined
+    )
+      throw new Error("fixture must provide world entries for validation");
+
+    expect(() =>
+      validateWorldSlice(
+        {
+          ...world,
+          processes: [
+            firstProcess,
+            { ...secondProcess, pid: firstProcess.pid },
+            ...world.processes.slice(2),
+          ],
+        },
+        "snapshot: slices.world",
+      ),
+    ).toThrow(/pid: must be a unique integer/);
+    expect(() =>
+      validateWorldSlice(
+        {
+          ...world,
+          services: [
+            { ...firstService, dependencies: ["missing"] },
+            ...world.services.slice(1),
+          ],
+        },
+        "snapshot: slices.world",
+      ),
+    ).toThrow(/dependencies\[0\]: must name a service/);
+    expect(() =>
+      validateWorldSlice(
+        {
+          ...world,
+          logs: world.logs.map((entry) =>
+            entry.id === fileLog.id ? { ...entry, entries: ["seeded"] } : entry,
+          ),
+        },
+        "snapshot: slices.world",
+      ),
+    ).toThrow(/file logs require an absolute path and no entries/);
   });
 });
