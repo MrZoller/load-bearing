@@ -39,7 +39,7 @@
 0015  2026-08-05T09:14:22.000Z  shell.result exit=0
       stdout>  D src/index.ts
 0016  2026-08-05T09:14:22.000Z  git.diff comparison=working-index files=1
-      {"lines":[{"kind":"deletion","text":"export const load = 1;"}],"newContents":null,"oldContents":"export const load = 1;\n","path":"/production/service/src/index.ts"}
+      {"lines":1,"newLength":null,"oldLength":23,"path":"/production/service/src/index.ts"}
 0017  2026-08-05T09:14:22.000Z  shell.result exit=0
       stdout> diff --git a/src/index.ts b/src/index.ts
       stdout> deleted file mode 100644
@@ -54,7 +54,7 @@
 0022  2026-08-05T09:14:22.000Z  git.stage paths=1
 0023  2026-08-05T09:14:22.000Z  shell.result exit=0
 0024  2026-08-05T09:14:22.000Z  git.diff comparison=index-head files=1
-      {"lines":[{"kind":"deletion","text":"export const load = 1;"}],"newContents":null,"oldContents":"export const load = 1;\n","path":"/production/service/src/index.ts"}
+      {"lines":1,"newLength":null,"oldLength":23,"path":"/production/service/src/index.ts"}
 0025  2026-08-05T09:14:22.000Z  shell.result exit=0
       stdout> diff --git a/src/index.ts b/src/index.ts
       stdout> deleted file mode 100644

@@ -303,7 +303,16 @@ export const GIT_MODULE = defineEventModule<GitSlice>({
         const files = diffGit(slice, readVfsSlice(context.state), selected);
         return {
           summary: `comparison=${selected} files=${String(files.length)}`,
-          detail: files.map((file) => serializeInline(file)),
+          // Diff contents belong to the shell output. Transcript detail is only
+          // diagnostic metadata, and must stay representable for valid files.
+          detail: files.map((file) =>
+            serializeInline({
+              path: summaryPath(file.path),
+              oldLength: file.oldContents?.length ?? null,
+              newLength: file.newContents?.length ?? null,
+              lines: file.lines.length,
+            }),
+          ),
         };
       },
     },
@@ -416,7 +425,7 @@ export const GIT_MODULE = defineEventModule<GitSlice>({
           return { summary: `failed code=${mutation.result.code}` };
         return {
           slice: mutation.slice,
-          summary: `path=${JSON.stringify(path)} staged=${String(data["staged"])}`,
+          summary: `path=${JSON.stringify(summaryPath(path))} staged=${String(data["staged"])}`,
           ...(mutation.plan === null
             ? {}
             : {

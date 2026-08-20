@@ -550,7 +550,7 @@
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [
-        "{\"lines\":[{\"kind\":\"deletion\",\"text\":\"export const load = 1;\"}],\"newContents\":null,\"oldContents\":\"export const load = 1;\\n\",\"path\":\"/production/service/src/index.ts\"}"
+        "{\"lines\":1,\"newLength\":null,\"oldLength\":23,\"path\":\"/production/service/src/index.ts\"}"
       ],
       "index": 16,
       "summary": "comparison=working-index files=1",
@@ -641,7 +641,7 @@
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [
-        "{\"lines\":[{\"kind\":\"deletion\",\"text\":\"export const load = 1;\"}],\"newContents\":null,\"oldContents\":\"export const load = 1;\\n\",\"path\":\"/production/service/src/index.ts\"}"
+        "{\"lines\":1,\"newLength\":null,\"oldLength\":23,\"path\":\"/production/service/src/index.ts\"}"
       ],
       "index": 24,
       "summary": "comparison=index-head files=1",

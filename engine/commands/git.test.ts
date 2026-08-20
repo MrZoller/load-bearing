@@ -309,6 +309,80 @@ describe("Git commands", () => {
       stdout: [" M src/index.ts"],
       exitCode: 0,
     });
+    expect(() => execute(state, "git restore src/index.ts")).not.toThrow();
+  });
+
+  it("records large diffs without overflowing diagnostic transcript detail", () => {
+    const source = loadCartridgeFixture("git") as Record<string, unknown>;
+    const repository = source["repository"] as Record<string, unknown>;
+    const files = repository["files"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    files["/production/service/src/index.ts"] = {
+      ...files["/production/service/src/index.ts"],
+      contents: Array.from(
+        { length: 200 },
+        (_, index) => `changed ${String(index)}`,
+      ).join("\n"),
+    };
+    const state = bootstrap({
+      cartridge: loadCartridge(source),
+      seed: "git-commands",
+    });
+
+    expect(() => execute(state, "git diff")).not.toThrow();
+    expect(run(state, "git diff")).toMatchObject({ exitCode: 0 });
+  });
+
+  it("places no-newline markers beside their respective diff rows", () => {
+    const source = loadCartridgeFixture("git") as Record<string, unknown>;
+    const repository = source["repository"] as Record<string, unknown>;
+    const history = repository["gitHistory"] as Record<string, unknown>;
+    const commit = (
+      history["commits"] as Record<string, unknown>[]
+    )[1] as Record<string, unknown>;
+    const commits = history["commits"] as Record<string, unknown>[];
+    const initialFiles = commits[0]?.["files"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    initialFiles["/production/service/README.md"] = {
+      ...initialFiles["/production/service/README.md"],
+      contents: "ancestor",
+    };
+    const committedFiles = commit["files"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    committedFiles["/production/service/README.md"] = {
+      ...committedFiles["/production/service/README.md"],
+      contents: "old",
+      blame: ["current"],
+    };
+    const files = repository["files"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    files["/production/service/README.md"] = {
+      ...files["/production/service/README.md"],
+      contents: "new",
+    };
+    const state = bootstrap({
+      cartridge: loadCartridge(source),
+      seed: "git-commands",
+    });
+
+    expect(run(state, "git diff").stdout).toEqual([
+      "diff --git a/README.md b/README.md",
+      "--- a/README.md",
+      "+++ b/README.md",
+      "@@ -1 +1 @@",
+      "-old",
+      "\\ No newline at end of file",
+      "+new",
+      "\\ No newline at end of file",
+    ]);
   });
 
   it.each(["git restore src/index.ts", "git checkout -- src/index.ts"])(

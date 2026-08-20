@@ -180,7 +180,38 @@ function renderDiff(slice: GitSlice, file: GitDiffFile): string[] {
   const path = relative(slice, file.path);
   const oldLines = logicalLines(file.oldContents);
   const newLines = logicalLines(file.newContents);
-  const lines = [
+  const rows = file.lines.map(
+    (line) =>
+      `${line.kind === "addition" ? "+" : line.kind === "deletion" ? "-" : " "}${line.text}`,
+  );
+  const oldMarker =
+    file.oldContents !== null &&
+    file.oldContents !== "" &&
+    !file.oldContents.endsWith("\n");
+  const newMarker =
+    file.newContents !== null &&
+    file.newContents !== "" &&
+    !file.newContents.endsWith("\n");
+  const oldMarkerAt = oldMarker
+    ? rows.reduce(
+        (last, _row, index) =>
+          file.lines[index]?.kind === "addition" ? last : index,
+        -1,
+      )
+    : -1;
+  const newMarkerAt = newMarker
+    ? rows.reduce(
+        (last, _row, index) =>
+          file.lines[index]?.kind === "deletion" ? last : index,
+        -1,
+      )
+    : -1;
+  const markedRows = rows.flatMap((row, index) => [
+    row,
+    ...(index === oldMarkerAt ? ["\\ No newline at end of file"] : []),
+    ...(index === newMarkerAt ? ["\\ No newline at end of file"] : []),
+  ]);
+  return [
     `diff --git a/${path} b/${path}`,
     file.oldContents === null
       ? "new file mode 100644"
@@ -190,24 +221,8 @@ function renderDiff(slice: GitSlice, file: GitDiffFile): string[] {
     file.oldContents === null ? "--- /dev/null" : `--- a/${path}`,
     file.newContents === null ? "+++ /dev/null" : `+++ b/${path}`,
     `@@ ${range("-", oldLines.length)} ${range("+", newLines.length)} @@`,
-    ...file.lines.map(
-      (line) =>
-        `${line.kind === "addition" ? "+" : line.kind === "deletion" ? "-" : " "}${line.text}`,
-    ),
+    ...markedRows,
   ].filter((line) => line !== "");
-  if (
-    file.oldContents !== null &&
-    file.oldContents !== "" &&
-    !file.oldContents.endsWith("\n")
-  )
-    lines.push("\\ No newline at end of file");
-  if (
-    file.newContents !== null &&
-    file.newContents !== "" &&
-    !file.newContents.endsWith("\n")
-  )
-    lines.push("\\ No newline at end of file");
-  return lines;
 }
 
 function renderDiffs(slice: GitSlice, files: readonly GitDiffFile[]): string[] {
