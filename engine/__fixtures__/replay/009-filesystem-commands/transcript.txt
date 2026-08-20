@@ -1,0 +1,19 @@
+0000  2026-08-05T09:14:22.000Z  vfs.mkdir created=2 path="/production/service/work/cache"
+0001  2026-08-05T09:14:22.000Z  shell.result exit=0
+0002  2026-08-05T09:14:22.000Z  vfs.touch path="/production/service/work/cache/keep" created=true
+0003  2026-08-05T09:14:22.000Z  shell.result exit=0
+0004  2026-08-05T09:14:22.000Z  vfs.chdir path="/production/service/work/cache"
+0005  2026-08-05T09:14:22.000Z  shell.result exit=0
+0006  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> /production/service/work/cache
+0007  2026-08-05T09:14:22.000Z  vfs.delete path="/production/service/work/cache/keep" removed=1
+0008  2026-08-05T09:14:22.000Z  shell.result exit=0
+0009  2026-08-05T09:14:22.000Z  vfs.stat path="/production/service/work/cache" kind=directory
+0010  2026-08-05T09:14:22.000Z  vfs.list path="/production/service/work/cache" entries=0
+0011  2026-08-05T09:14:22.000Z  shell.result exit=0
+0012  2026-08-05T09:14:22.000Z  vfs.read failed code=ENOENT path="/production/service/work/cache/keep"
+0013  2026-08-05T09:14:22.000Z  shell.result exit=1
+      stderr> cat: keep: No such file or directory
+0014  2026-08-05T09:14:22.000Z  vfs.read failed code=EACCES path="/production/service/private.txt"
+0015  2026-08-05T09:14:22.000Z  shell.result exit=1
+      stderr> cat: /production/service/private.txt: Permission denied

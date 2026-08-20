@@ -1,0 +1,381 @@
+{
+  "cartridge": {
+    "meta": {
+      "assignment": "Exercise command permissions.",
+      "date": "2026-08-05",
+      "number": 0,
+      "schemaVersion": 0,
+      "startedAt": "2026-08-05T09:14:22.000Z",
+      "title": "Filesystem fixture"
+    },
+    "models": [
+      {
+        "archetype": "paranoid",
+        "costMultiplier": 1,
+        "description": "Fixture model.",
+        "id": "deep-foundation",
+        "name": "Deep Foundation",
+        "quirks": []
+      }
+    ],
+    "presentation": {},
+    "repository": {
+      "commands": {},
+      "cwd": "/production/service",
+      "directories": {
+        "/production/service": {
+          "group": "visitors",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "visitor"
+        },
+        "/production/service/locked": {
+          "group": "root",
+          "mode": "0555",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/sealed": {
+          "group": "root",
+          "mode": "0700",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        }
+      },
+      "env": {},
+      "files": {
+        "/production/service/README.md": {
+          "contents": "# service\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/private.txt": {
+          "contents": "secret\n",
+          "group": "root",
+          "mode": "0000",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/sealed/hidden": {
+          "contents": "classified\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src/index.ts": {
+          "contents": "export const load = 1;",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        }
+      },
+      "gitHistory": {
+        "branches": {},
+        "commits": [],
+        "head": {
+          "kind": "detached",
+          "target": ""
+        }
+      },
+      "identity": {
+        "group": "visitors",
+        "home": "/home/visitor",
+        "umask": "0022",
+        "user": "visitor"
+      },
+      "logs": [],
+      "manPages": [],
+      "processes": [],
+      "services": [],
+      "shellHistory": [],
+      "tests": [],
+      "tickets": []
+    },
+    "story": {}
+  },
+  "clock": {
+    "elapsedMs": 0,
+    "startMs": 1785921262000
+  },
+  "engineVersion": "0.0.0",
+  "eventCount": 16,
+  "eventSchemaVersion": 0,
+  "random": {
+    "cursors": {},
+    "seed": 3697313525
+  },
+  "seed": "2026-08-05/9/deep-foundation",
+  "slices": {
+    "git": {
+      "branches": {},
+      "commits": {},
+      "head": {
+        "kind": "detached",
+        "target": ""
+      },
+      "index": {},
+      "root": "/production/service"
+    },
+    "probe": {
+      "events": 0,
+      "values": 0
+    },
+    "vfs": {
+      "cwd": "/production/service/work/cache",
+      "entries": {
+        "/": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service": {
+          "group": "visitors",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "visitor"
+        },
+        "/production/service/README.md": {
+          "contents": "# service\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/locked": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0555",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/private.txt": {
+          "contents": "secret\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0000",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/sealed": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0700",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/sealed/hidden": {
+          "contents": "classified\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src": {
+          "group": "visitors",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "visitor"
+        },
+        "/production/service/src/index.ts": {
+          "contents": "export const load = 1;",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/work": {
+          "group": "visitors",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "visitor"
+        },
+        "/production/service/work/cache": {
+          "group": "visitors",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "visitor"
+        }
+      },
+      "identity": {
+        "group": "visitors",
+        "home": "/home/visitor",
+        "umask": "0022",
+        "user": "visitor"
+      }
+    },
+    "world": {
+      "env": {},
+      "logs": [],
+      "manPages": [],
+      "processes": [],
+      "services": [],
+      "shellHistory": [],
+      "tickets": []
+    }
+  },
+  "transcript": [
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 0,
+      "summary": "created=2 path=\"/production/service/work/cache\"",
+      "type": "vfs.mkdir"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 1,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 2,
+      "summary": "path=\"/production/service/work/cache/keep\" created=true",
+      "type": "vfs.touch"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 3,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 4,
+      "summary": "path=\"/production/service/work/cache\"",
+      "type": "vfs.chdir"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 5,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 6,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "/production/service/work/cache"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 7,
+      "summary": "path=\"/production/service/work/cache/keep\" removed=1",
+      "type": "vfs.delete"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 8,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 9,
+      "summary": "path=\"/production/service/work/cache\" kind=directory",
+      "type": "vfs.stat"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 10,
+      "summary": "path=\"/production/service/work/cache\" entries=0",
+      "type": "vfs.list"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 11,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 12,
+      "summary": "failed code=ENOENT path=\"/production/service/work/cache/keep\"",
+      "type": "vfs.read"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 1,
+      "index": 13,
+      "output": [
+        {
+          "stream": "stderr",
+          "text": "cat: keep: No such file or directory"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 14,
+      "summary": "failed code=EACCES path=\"/production/service/private.txt\"",
+      "type": "vfs.read"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 1,
+      "index": 15,
+      "output": [
+        {
+          "stream": "stderr",
+          "text": "cat: /production/service/private.txt: Permission denied"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    }
+  ]
+}
