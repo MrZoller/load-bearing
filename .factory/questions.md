@@ -97,7 +97,13 @@ every command invocation, which is deterministic but unlike the requested Git
 register. Please also confirm fixed seven-character hash abbreviations with
 deterministic extension on collisions, UTC/C-locale dates, and committed-tree
 blame (working edits remain visible through diff/status, not blame).
-**A:**
+**A:** Option A — required `repository.gitIdentity` (name/email) and the bounded Git-compatible contract as listed.
+
+Rationale: this follows the standing decision recorded in `.factory/spec.md` — world facts are cartridge content. Commit authorship is a comedy surface exactly like `ls -la` ownership (a commit by a departed engineer is authored content, not an engine default). Option B derives identity from the VFS user and invents an email policy, which is precisely what Q1 rejected; option C breaks the shell's straight register.
+
+Confirmed as asked: fixed seven-character hash abbreviations with deterministic extension on collision; UTC and C-locale dates (the schema already states the simulated machine has no other timezone); committed-tree blame.
+
+DELIBERATE DEVIATION to record in `docs/DESIGN.md` in this task's PR: committed-tree blame differs from real `git blame`, which annotates the working tree and attributes uncommitted lines to "Not Committed Yet" with a zero hash. We accept the deviation because issue #6 requires log and blame to agree, and the real behavior forces a pseudo-commit into every fixture. Document it as a chosen simplification so it is not later read as a bug.
 
 ## Q4 (task T7, open) — What cartridge contracts should back curl, machine identity, uptime, and shell history?
 
@@ -119,4 +125,10 @@ issue #11. For bounded CLI behavior, please also confirm no options except
 `uname -a`; `export NAME=value`; `man [section] name`; `systemctl
 status|start|stop|restart service`; one PID for `kill`; and UTC/C-locale
 formats for `date` and `uptime`.
-**A:**
+**A:** Option A — add `repository.system` (`hostname`, `operatingSystem`, `kernelRelease`, `architecture`, `bootedAt`) and exact-URL `repository.endpoints` records linked to a service, with declared running and unavailable `{stdout, stderr, exitCode}` responses; append every nonblank raw shell input before its command-owned events.
+
+Rationale: same standing decision — world facts are cartridge content. Option B hardcodes one machine into the engine and derives uptime from session elapsed time, which means every episode shares a host that has been up for four minutes. The premise is a different incident every day; the machine has to be authorable. A box up for 400 days on a kernel nobody dares patch is content.
+
+Confirmed as asked, all as bounded POSIX-shaped behavior with no surface beyond what issue #11 requires: no options except `uname -a`; `export NAME=value`; `man [section] name`; `systemctl status|start|stop|restart <service>`; one PID for `kill`; UTC and C-locale formats for `date` and `uptime`.
+
+DELIBERATE DEVIATION to record in `docs/DESIGN.md` in this task's PR: `history` displays only prior entries and does not list itself. Real bash appends a command to history before executing it, so `history` shows itself as the final line. We accept the deviation because command output is computed before event expansion. Document it as a chosen simplification — history is a surface a curious visitor will poke.
