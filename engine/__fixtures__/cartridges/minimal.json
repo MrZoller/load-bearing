@@ -36,9 +36,13 @@
       "PATH": "/usr/local/bin:/usr/bin:/bin",
       "SERVICE_TIER": "critical"
     },
-    "manPages": {
-      "service": "SERVICE(8)\n\nNAME\n     service - the service\n"
-    },
+    "manPages": [
+      {
+        "name": "service",
+        "section": "8",
+        "contents": "SERVICE(8)\n\nNAME\n     service - the service\n"
+      }
+    ],
     "shellHistory": ["cd /production/service", "git status", "npm test"]
   },
   "models": [

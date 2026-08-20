@@ -31,10 +31,9 @@
  *
  * - `story` and `presentation` carry Phase 2 content and are hardened in
  *   Phase 4. v0 requires them to be objects and looks no further.
- * - the interiors of `processes`, `services`, `tests`, `logs` and `tickets`
- *   belong to the subsystems that model them (issues #7 and #12). v0 requires
- *   each to be an array of objects. Tightening them there is the plan, not an
- *   oversight here. `gitHistory` is concrete as of issue #6.
+ * - the interior of `tests` belongs to issue #12. v0 requires each test to be
+ *   an object. The other machine surfaces are concrete as of issue #7, and
+ *   `gitHistory` is concrete as of issue #6.
  *
  * Broader semantic coherence — endings reachable and callbacks sourced — is
  * Phase 4's `cartridge validate`. v0 already checks repository paths and Git
@@ -133,6 +132,11 @@ export const ENV_NAME_PATTERN = pattern(/^[A-Za-z_][A-Za-z0-9_]*$/);
 
 /** A man page name, e.g. `systemd.service` or `ls`. */
 export const MAN_PAGE_PATTERN = pattern(/^[a-z0-9][a-z0-9._-]*$/);
+
+/** A stable cartridge-local identifier that cannot disturb line-oriented output. */
+export const WORLD_ID_PATTERN = pattern(
+  /^[^\u0000-\u001F\u007F-\u009F\u2028\u2029]+$/,
+);
 
 /** Stable cartridge-local commit name, used before content hashes are derived. */
 export const GIT_COMMIT_ID_PATTERN = pattern(/^[a-z][a-z0-9-]*$/);
@@ -585,6 +589,169 @@ const GIT_HISTORY = {
   },
 } satisfies ObjectNode;
 
+const WORLD_ID = {
+  kind: "string",
+  description: "A stable, non-empty single-line cartridge-local identifier.",
+  pattern: WORLD_ID_PATTERN,
+  patternLabel: "a non-empty single-line identifier",
+} satisfies StringNode;
+
+const PROCESS = {
+  kind: "object",
+  description: "One row in the simulated process table.",
+  fields: {
+    id: required(WORLD_ID),
+    pid: required({
+      kind: "integer",
+      description: "PID; zero requests deterministic assignment.",
+      minimum: 0,
+      maximum: 32767,
+    }),
+    user: required({
+      kind: "string",
+      description: "User shown by process listings.",
+      pattern: ACCOUNT_NAME_PATTERN,
+      patternLabel: "a POSIX user name",
+    }),
+    command: required({
+      kind: "object",
+      description: "The executable and exact argument vector.",
+      fields: {
+        binary: required({
+          kind: "string",
+          description: "Absolute executable path naming a repository file.",
+          pattern: FILE_PATH_PATTERN,
+          patternLabel: "an absolute POSIX file path",
+        }),
+        args: optional(
+          {
+            kind: "array",
+            description: "Arguments after argv[0].",
+            items: { kind: "string", description: "One argument." },
+          },
+          [],
+        ),
+      },
+    }),
+    startedAt: required(TIMESTAMP),
+    state: required({
+      kind: "enum",
+      description: "Current process state.",
+      values: ["running", "stopped"],
+    }),
+  },
+} satisfies ObjectNode;
+
+const SERVICE = {
+  kind: "object",
+  description: "One simulated service unit.",
+  fields: {
+    id: required(WORLD_ID),
+    state: required({
+      kind: "enum",
+      description: "Current service state.",
+      values: ["running", "stopped"],
+    }),
+    health: required({
+      kind: "enum",
+      description: "Cartridge- and reaction-owned health.",
+      values: ["healthy", "degraded", "unhealthy", "unknown"],
+    }),
+    ports: optional(
+      {
+        kind: "array",
+        description: "Listening ports; zero requests deterministic assignment.",
+        items: {
+          kind: "integer",
+          description: "A TCP/UDP port number.",
+          minimum: 0,
+          maximum: 65535,
+        },
+      },
+      [],
+    ),
+    dependencies: optional(
+      {
+        kind: "array",
+        description: "Service ids this unit depends on.",
+        items: WORLD_ID,
+      },
+      [],
+    ),
+  },
+} satisfies ObjectNode;
+
+const LOG = {
+  kind: "object",
+  description: "A file-backed or in-memory stream log.",
+  fields: {
+    id: required(WORLD_ID),
+    kind: required({
+      kind: "enum",
+      description: "Where log contents live.",
+      values: ["file", "stream"],
+    }),
+    path: optional(
+      {
+        kind: "string",
+        description: "Canonical VFS path for file logs; empty for streams.",
+      },
+      "",
+    ),
+    entries: optional(
+      {
+        kind: "array",
+        description:
+          "Seeded stream entries; file logs keep contents only in VFS.",
+        items: { kind: "string", description: "One log entry." },
+      },
+      [],
+    ),
+  },
+} satisfies ObjectNode;
+
+const MAN_PAGE = {
+  kind: "object",
+  description: "One manual page, identified by exact name and section.",
+  fields: {
+    name: required({
+      kind: "string",
+      description: "Manual page name.",
+      pattern: MAN_PAGE_PATTERN,
+      patternLabel: "a man page name",
+    }),
+    section: required(WORLD_ID),
+    contents: required({
+      kind: "string",
+      description: "The page's full text.",
+    }),
+  },
+} satisfies ObjectNode;
+
+const TICKET = {
+  kind: "object",
+  description: "One archived in-world ticket.",
+  fields: {
+    id: required(WORLD_ID),
+    status: required(WORLD_ID),
+    title: required({
+      kind: "string",
+      description: "Single-line ticket title.",
+      pattern: SINGLE_LINE_PATTERN,
+      patternLabel: "a single-line string",
+      minLength: 1,
+    }),
+    body: required({ kind: "string", description: "Ticket body." }),
+    service: optional(
+      {
+        kind: "string",
+        description: "Referenced service id, or empty when unrelated.",
+      },
+      "",
+    ),
+  },
+} satisfies ObjectNode;
+
 const MODEL = {
   kind: "object",
   description: "One selectable model persona.",
@@ -686,13 +853,11 @@ const REPOSITORY = {
     ),
     manPages: optional(
       {
-        kind: "record",
-        description: "`man` page bodies, keyed by page name.",
-        keyPattern: MAN_PAGE_PATTERN,
-        keyLabel: "a man page name",
-        values: { kind: "string", description: "The page's full text." },
+        kind: "array",
+        description: "Manual pages with explicit sections.",
+        items: MAN_PAGE,
       },
-      {},
+      [],
     ),
     shellHistory: optional(
       {
@@ -708,16 +873,38 @@ const REPOSITORY = {
       branches: {},
       head: { kind: "detached", target: "" },
     }),
-    processes: deferredList(
-      "Process table rows, as `ps` would show them.",
-      "issue #7",
+    processes: optional(
+      {
+        kind: "array",
+        description: "Process table rows, as `ps` would show them.",
+        items: PROCESS,
+      },
+      [],
     ),
-    services: deferredList(
-      "Service units, with states, health and ports.",
-      "issue #7",
+    services: optional(
+      {
+        kind: "array",
+        description: "Service units, with states, health and ports.",
+        items: SERVICE,
+      },
+      [],
     ),
-    logs: deferredList("Log entries queryable from the shell.", "issue #7"),
-    tickets: deferredList("The in-world ticket archive.", "issue #7"),
+    logs: optional(
+      {
+        kind: "array",
+        description: "File-backed and stream logs queryable from the shell.",
+        items: LOG,
+      },
+      [],
+    ),
+    tickets: optional(
+      {
+        kind: "array",
+        description: "The in-world ticket archive.",
+        items: TICKET,
+      },
+      [],
+    ),
     tests: deferredList(
       "Simulated test-runner cases and their reactions.",
       "issue #12",

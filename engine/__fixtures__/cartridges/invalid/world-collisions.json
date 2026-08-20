@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 7,
+    "date": "2026-08-05",
+    "title": "Invalid World",
+    "assignment": "Reject collisions.",
+    "startedAt": "2026-08-05T09:14:22.000Z"
+  },
+  "repository": {
+    "cwd": "/srv",
+    "identity": { "user": "root", "group": "root", "home": "/root" },
+    "files": { "/srv/app": { "contents": "binary" } },
+    "services": [
+      {
+        "id": "api",
+        "state": "running",
+        "health": "healthy",
+        "ports": [8080],
+        "dependencies": ["missing"]
+      },
+      {
+        "id": "worker",
+        "state": "stopped",
+        "health": "unknown",
+        "ports": [8080],
+        "dependencies": []
+      }
+    ]
+  },
+  "models": [
+    {
+      "id": "fixture-model",
+      "name": "Fixture Model",
+      "archetype": "paranoid",
+      "description": "Only here to reach world validation.",
+      "costMultiplier": 1
+    }
+  ]
+}

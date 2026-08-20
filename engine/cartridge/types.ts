@@ -109,6 +109,50 @@ export interface CartridgeGitHistory {
   readonly head: CartridgeGitHead;
 }
 
+export type WorldUnitState = "running" | "stopped";
+export type ServiceHealth = "healthy" | "degraded" | "unhealthy" | "unknown";
+
+export interface CartridgeProcess {
+  readonly id: string;
+  readonly pid: number;
+  readonly user: string;
+  readonly command: {
+    readonly binary: string;
+    readonly args: readonly string[];
+  };
+  readonly startedAt: string;
+  readonly state: WorldUnitState;
+}
+
+export interface CartridgeService {
+  readonly id: string;
+  readonly state: WorldUnitState;
+  readonly health: ServiceHealth;
+  readonly ports: readonly number[];
+  readonly dependencies: readonly string[];
+}
+
+export interface CartridgeLog {
+  readonly id: string;
+  readonly kind: "file" | "stream";
+  readonly path: string;
+  readonly entries: readonly string[];
+}
+
+export interface CartridgeManPage {
+  readonly name: string;
+  readonly section: string;
+  readonly contents: string;
+}
+
+export interface CartridgeTicket {
+  readonly id: string;
+  readonly status: string;
+  readonly title: string;
+  readonly body: string;
+  readonly service: string;
+}
+
 export interface CartridgeRepository {
   /** Absolute path the session opens in. */
   readonly cwd: string;
@@ -119,13 +163,13 @@ export interface CartridgeRepository {
   /** Explicit directory metadata. Missing ancestors are synthesized by the VFS. */
   readonly directories: Readonly<Record<string, CartridgeDirectory>>;
   readonly env: Readonly<Record<string, string>>;
-  readonly manPages: Readonly<Record<string, string>>;
+  readonly manPages: readonly CartridgeManPage[];
   readonly shellHistory: readonly string[];
   readonly gitHistory: CartridgeGitHistory;
-  readonly processes: readonly DeferredObject[];
-  readonly services: readonly DeferredObject[];
-  readonly logs: readonly DeferredObject[];
-  readonly tickets: readonly DeferredObject[];
+  readonly processes: readonly CartridgeProcess[];
+  readonly services: readonly CartridgeService[];
+  readonly logs: readonly CartridgeLog[];
+  readonly tickets: readonly CartridgeTicket[];
   readonly tests: readonly DeferredObject[];
 }
 
