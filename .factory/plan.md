@@ -13,7 +13,7 @@ rather than absorbing newly discovered features. The rolling parked-minors task
 remains blocked until review findings are deliberately batched into it.
 
 ## Tasks
-- [ ] T1 (standard) — Virtual filesystem model (Fixes #5)
+- [~] T1 (standard) — Virtual filesystem model (Fixes #5)
   - acceptance: `engine/vfs/` and its event registration hydrate cartridge files into a deterministic tree; path resolution, permissions, recursive mutation, ownership/mode round-trips, and simulated-clock mtimes have unit coverage; replay fixtures prove create → write → chmod → delete and that deleted files stay absent; purity and canonical serialization gates pass
 - [ ] T2 (standard) — Git model: commit DAG, branches, index, blame, diff (Fixes #6)
   - acceptance: `engine/git/` and cartridge git-history validation provide deterministic content-derived commits, branches/HEAD, index/working-tree status, blame, diff, and defined dirty-checkout semantics over the VFS; coherence failures produce useful load errors; tests prove log/blame agreement and full git-model semantics, with a byte-stable VFS+git replay fixture

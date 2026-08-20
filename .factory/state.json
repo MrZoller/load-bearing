@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": null,
-  "branch": null,
+  "current_task": "T1",
+  "branch": "factory/t1-virtual-filesystem",
   "pr": null,
   "hold": false,
-  "updated": "2026-08-20T02:41:29Z"
+  "updated": "2026-08-20T02:43:27Z"
 }
