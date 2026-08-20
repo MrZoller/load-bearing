@@ -450,7 +450,7 @@ export function mkdirVfs(
           frozenFailure(
             "mkdir",
             resolved.path,
-            existing.kind === "directory" ? "EEXIST" : "ENOTDIR",
+            "EEXIST",
             "the path already exists",
           ),
         );
@@ -592,6 +592,8 @@ export function deleteVfs(
         "a trailing slash requires a directory",
       ),
     );
+  const denied = writableParentFailure(slice, resolved.path, "delete");
+  if (denied !== undefined) return unchanged(slice, denied);
   const children = Object.keys(slice.entries).filter((path) =>
     isDescendant(path, resolved.path),
   );
@@ -605,8 +607,6 @@ export function deleteVfs(
         "the directory is not empty",
       ),
     );
-  const denied = writableParentFailure(slice, resolved.path, "delete");
-  if (denied !== undefined) return unchanged(slice, denied);
   if (recursive && entry.kind === "directory") {
     const nestedDenied = recursivePermissionFailure(
       slice,
@@ -708,19 +708,29 @@ export function renameVfs(
     source.path,
     authoredDestination.path,
   );
-  if (
-    authoredDestination.trailingSlash &&
-    slice.entries[authoredDestination.path]?.kind !== "directory"
-  )
-    return unchanged(
-      slice,
-      frozenFailure(
-        "rename",
-        authoredDestination.path,
-        "ENOENT",
-        "a trailing-slash destination must be an existing directory",
-      ),
-    );
+  if (authoredDestination.trailingSlash) {
+    const destinationEntry = slice.entries[authoredDestination.path];
+    if (destinationEntry === undefined)
+      return unchanged(
+        slice,
+        frozenFailure(
+          "rename",
+          authoredDestination.path,
+          "ENOENT",
+          "a trailing-slash destination must be an existing directory",
+        ),
+      );
+    if (destinationEntry.kind !== "directory")
+      return unchanged(
+        slice,
+        frozenFailure(
+          "rename",
+          authoredDestination.path,
+          "ENOTDIR",
+          "a trailing-slash destination must be a directory",
+        ),
+      );
+  }
   if (destination === source.path)
     return unchanged(
       slice,
@@ -854,19 +864,29 @@ export function copyVfs(
         "copying a directory requires recursive mode",
       ),
     );
-  if (
-    authoredDestination.trailingSlash &&
-    slice.entries[authoredDestination.path]?.kind !== "directory"
-  )
-    return unchanged(
-      slice,
-      frozenFailure(
-        "copy",
-        authoredDestination.path,
-        "ENOENT",
-        "a trailing-slash destination must be an existing directory",
-      ),
-    );
+  if (authoredDestination.trailingSlash) {
+    const destinationEntry = slice.entries[authoredDestination.path];
+    if (destinationEntry === undefined)
+      return unchanged(
+        slice,
+        frozenFailure(
+          "copy",
+          authoredDestination.path,
+          "ENOENT",
+          "a trailing-slash destination must be an existing directory",
+        ),
+      );
+    if (destinationEntry.kind !== "directory")
+      return unchanged(
+        slice,
+        frozenFailure(
+          "copy",
+          authoredDestination.path,
+          "ENOTDIR",
+          "a trailing-slash destination must be a directory",
+        ),
+      );
+  }
   const destination = destinationPath(
     slice,
     source.path,

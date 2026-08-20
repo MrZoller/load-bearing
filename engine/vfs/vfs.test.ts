@@ -228,6 +228,10 @@ describe("VFS permissions and mutations", () => {
 
   it("makes mkdir atomic, supports -p, and updates parent mtimes", () => {
     const slice = fresh();
+    expect(mkdirVfs(slice, "README.md", NOW).result).toMatchObject({
+      ok: false,
+      code: "EEXIST",
+    });
     const failed = mkdirVfs(slice, "missing/a", NOW);
     expect(failed.result).toMatchObject({ ok: false, code: "ENOENT" });
     expect(failed.slice).toBe(slice);
@@ -285,6 +289,22 @@ describe("VFS permissions and mutations", () => {
       ok: false,
       code: "EBUSY",
     });
+
+    const deniedParent = {
+      ...slice,
+      identity: { ...slice.identity, user: "nobody", group: "nobody" },
+      entries: {
+        ...slice.entries,
+        "/production/service": {
+          ...slice.entries["/production/service"]!,
+          mode: "0555",
+        },
+      },
+    };
+    expect(deleteVfs(deniedParent, "tree", LATER).result).toMatchObject({
+      ok: false,
+      code: "EACCES",
+    });
   });
 
   it("renames and copies trees, retaining or replacing metadata as requested", () => {
@@ -297,6 +317,24 @@ describe("VFS permissions and mutations", () => {
     expect(
       renameVfs(fresh(), "/production", "/elsewhere", NOW).result,
     ).toMatchObject({ ok: false, code: "EBUSY" });
+    expect(
+      renameVfs(fresh(), "README.md", "src/index.ts", NOW).result,
+    ).toMatchObject({
+      ok: false,
+      code: "EEXIST",
+    });
+    expect(
+      renameVfs(fresh(), "README.md", "src/index.ts/", NOW).result,
+    ).toMatchObject({
+      ok: false,
+      code: "ENOTDIR",
+    });
+    expect(
+      copyVfs(fresh(), "README.md", "src/index.ts/", NOW).result,
+    ).toMatchObject({
+      ok: false,
+      code: "ENOTDIR",
+    });
     const copied = successful(
       copyVfs(slice, "moved", "copied", LATER, { recursive: true }),
     );
@@ -367,5 +405,145 @@ describe("VFS event module", () => {
         "snapshot",
       ),
     ).toThrow(/canonical absolute/);
+  });
+
+  it("reports compact, actionable VFS snapshot validation failures", () => {
+    type Mutable = Record<string, unknown>;
+    const entry = (slice: Mutable, path: string): Mutable =>
+      (slice["entries"] as Mutable)[path] as Mutable;
+    const cases: readonly [string, (slice: Mutable) => void, RegExp][] = [
+      [
+        "nonplain root",
+        (slice) => Object.setPrototypeOf(slice, { inherited: true }),
+        /must be a plain JSON object/,
+      ],
+      [
+        "symbol key",
+        (slice) => Object.defineProperty(slice, Symbol("extra"), { value: 1 }),
+        /symbol-keyed/,
+      ],
+      [
+        "accessor entry",
+        (slice) =>
+          Object.defineProperty(slice["entries"] as Mutable, "/etc/motd", {
+            enumerable: true,
+            get: () => entry(slice, "/etc/motd"),
+          }),
+        /accessors are not inert/,
+      ],
+      [
+        "bad kind",
+        (slice) => (entry(slice, "/etc/motd")["kind"] = "link"),
+        /file or directory/,
+      ],
+      [
+        "missing contents",
+        (slice) => delete entry(slice, "/etc/motd")["contents"],
+        /contents: must be a string/,
+      ],
+      [
+        "bad mode",
+        (slice) => (entry(slice, "/etc/motd")["mode"] = "bad"),
+        /mode: must be four octal/,
+      ],
+      [
+        "bad owner",
+        (slice) => (entry(slice, "/etc/motd")["owner"] = "Bad"),
+        /owner: must be a POSIX/,
+      ],
+      [
+        "bad group",
+        (slice) => (entry(slice, "/etc/motd")["group"] = "Bad"),
+        /group: must be a POSIX/,
+      ],
+      [
+        "bad mtime",
+        (slice) => (entry(slice, "/etc/motd")["mtime"] = "noon"),
+        /mtime: must be a real/,
+      ],
+      [
+        "broken parent",
+        (slice) =>
+          ((slice["entries"] as Mutable)["/orphan/file"] = {
+            ...entry(slice, "/etc/motd"),
+          }),
+        /parent "\/orphan" must exist/,
+      ],
+      [
+        "missing root",
+        (slice) => {
+          slice["cwd"] = "/";
+          slice["entries"] = {};
+        },
+        /must contain the root directory/,
+      ],
+      [
+        "bad home",
+        (slice) => ((slice["identity"] as Mutable)["home"] = "relative"),
+        /home: must be a canonical/,
+      ],
+      [
+        "bad umask",
+        (slice) => ((slice["identity"] as Mutable)["umask"] = "9999"),
+        /umask: must be four octal/,
+      ],
+    ];
+
+    for (const [name, change, expected] of cases) {
+      const slice = mutableSlice() as unknown as Mutable;
+      change(slice);
+      expect(() => validateVfsSlice(slice, "snapshot"), name).toThrow(expected);
+    }
+  });
+
+  it("rejects malformed event payloads with their event context", () => {
+    const cases: readonly [
+      string,
+      Record<string, unknown> | undefined,
+      RegExp,
+    ][] = [
+      ["vfs.read", undefined, /event 0 \(vfs\.read\).*requires a payload/],
+      [
+        "vfs.write",
+        { path: 42, contents: "x" },
+        /event 0 \(vfs\.write\).*path must be a string/,
+      ],
+      [
+        "vfs.write",
+        { path: "x", contents: "x", extra: true },
+        /event 0 \(vfs\.write\).*unexpected payload field/,
+      ],
+      [
+        "vfs.delete",
+        { path: "x", recursive: "yes" },
+        /event 0 \(vfs\.delete\).*recursive must be a boolean/,
+      ],
+      [
+        "vfs.copy",
+        { source: "README.md", destination: "x", preserve: 1 },
+        /event 0 \(vfs\.copy\).*preserve must be a boolean/,
+      ],
+      [
+        "vfs.chmod",
+        { path: "README.md", mode: "99" },
+        /event 0 \(vfs\.chmod\).*mode must be four octal digits/,
+      ],
+      [
+        "vfs.mkdir",
+        { path: "x", parents: null },
+        /event 0 \(vfs\.mkdir\).*parents must be a boolean/,
+      ],
+    ];
+
+    for (const [type, payload, expected] of cases) {
+      const event = payload === undefined ? { type } : { type, payload };
+      expect(() =>
+        reduce({
+          cartridge,
+          seed: "2026-08-05/0/deep-foundation",
+          events: [event],
+        }),
+      ).toThrow(expected);
+    }
   });
 });

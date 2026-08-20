@@ -132,6 +132,9 @@ recorded.
   persist for the session ("a deleted file stays deleted"). Directory listings
   sort names by numeric Unicode code point, shorter prefix first, with no locale
   collation; this is stable in Node and every browser even for astral characters.
+  VFS rename never overwrites an existing destination: it returns `EEXIST`.
+  This is a model contract, not an attempt to settle shell UX; a later shell
+  layer may choose an explicit replacement policy before issuing its VFS event.
 - **Git:** commit DAG with authors/timestamps/messages, branches, index,
   working tree, blame per line, diff. Coherence is a hard requirement — the
   moment `git log` contradicts `git blame`, reaction #3 ("the state is
