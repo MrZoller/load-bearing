@@ -182,10 +182,24 @@ function hasUnsafeRegexShape(pattern: string): boolean {
   const groups: RegexGroup[] = [];
   let escaped = false;
   let inClass = false;
+  // At the top level, adjacent repetitions of the same atom have the same
+  // ambiguity as a quantified group: `a+a+$` can split the input between the
+  // two `a+` terms in quadratically many ways. Keep the immediately preceding
+  // quantified atom so ordinary separated terms such as `a+ba+` stay usable.
+  let atom = "";
+  let atomWasQuantified = false;
+  let previousQuantifiedAtom: string | undefined;
+  const recordAtom = (value: string): void => {
+    if (groups.length !== 0) return;
+    previousQuantifiedAtom = atomWasQuantified ? atom : undefined;
+    atom = value;
+    atomWasQuantified = false;
+  };
   for (let index = 0; index < pattern.length; index += 1) {
     const character = pattern[index] ?? "";
     if (escaped) {
       if (/\d/.test(character)) return true;
+      recordAtom(`\\${character}`);
       escaped = false;
       continue;
     }
@@ -222,12 +236,24 @@ function hasUnsafeRegexShape(pattern: string): boolean {
         const parent = groups.at(-1);
         if (parent !== undefined) parent.hasQuantifier = true;
       }
+      recordAtom("()");
       continue;
     }
     if (isQuantifierStart(pattern, index)) {
+      if (
+        groups.length === 0 &&
+        previousQuantifiedAtom !== undefined &&
+        previousQuantifiedAtom === atom
+      )
+        return true;
       const group = groups.at(-1);
       if (group !== undefined) group.hasQuantifier = true;
+      else atomWasQuantified = true;
+      const closing = character === "{" ? pattern.indexOf("}", index + 1) : -1;
+      if (closing !== -1) index = closing;
+      continue;
     }
+    recordAtom(character);
   }
   return false;
 }

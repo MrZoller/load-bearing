@@ -234,11 +234,28 @@ describe("filesystem commands", () => {
   });
 
   it("rejects regex shapes that can monopolize deterministic replay", () => {
-    expect(run('grep "(a+)+$" README.md')).toEqual({
-      stdout: [],
-      stderr: ["grep: unsupported regular expression: unsafe repeated pattern"],
-      exitCode: 2,
+    for (const pattern of ["(a+)+$", "a+a+$"]) {
+      expect(run(`grep "${pattern}" README.md`)).toEqual({
+        stdout: [],
+        stderr: [
+          "grep: unsupported regular expression: unsafe repeated pattern",
+        ],
+        exitCode: 2,
+      });
+    }
+  });
+
+  it("keeps escaped long paths within the VFS event transcript budget", () => {
+    const path = '"'.repeat(3000);
+    const replayed = reduce({
+      cartridge: loadCartridge(loadCartridgeFixture("minimal")),
+      seed: "filesystem-escaped-path",
+      events: [
+        { type: "shell.execute", payload: { input: `touch '${path}'` } },
+      ],
     });
+    expect(replayed.transcript[0]?.summary).toContain("3020 chars");
+    expect(replayed.transcript.at(-1)?.exitCode).toBe(0);
   });
 
   it("prints wc totals for multiple operands when only one can be read", () => {
