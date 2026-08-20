@@ -8,7 +8,7 @@ import { deepFreeze } from "../freeze.js";
 import { hashString } from "../random/seed.js";
 import { serializeInline } from "../serialize/canonical.js";
 import { replaceVfsFiles } from "../vfs/vfs.js";
-import { isDescendant } from "../vfs/path.js";
+import { isAtOrBelow, isDescendant } from "../vfs/path.js";
 import type { VfsFileEntry, VfsSlice } from "../vfs/types.js";
 import type {
   GitBlameLine,
@@ -45,6 +45,13 @@ function compareText(left: string, right: string): number {
 
 function field<T, K extends keyof T>(value: T, key: K): T[K] {
   return value[key];
+}
+
+function ownValue<T>(
+  record: Readonly<Record<string, T>>,
+  key: string,
+): T | undefined {
+  return Object.hasOwn(record, key) ? record[key] : undefined;
 }
 
 /** Forty stable hexadecimal digits, without host crypto or random identity. */
@@ -99,13 +106,16 @@ function hashCommit(
 
 function headHash(slice: GitSlice): string | undefined {
   return slice.head.kind === "branch"
-    ? slice.branches[slice.head.target]
+    ? ownValue(slice.branches, slice.head.target)
     : slice.head.target || undefined;
 }
 
 function headTree(slice: GitSlice): Readonly<Record<string, string>> {
   const hash = headHash(slice);
-  const files = hash === undefined ? undefined : slice.commits[hash]?.files;
+  const files =
+    hash === undefined || !Object.hasOwn(slice.commits, hash)
+      ? undefined
+      : ownValue(slice.commits, hash)?.files;
   return files === undefined
     ? {}
     : Object.fromEntries(
@@ -189,9 +199,9 @@ export function currentGitHash(slice: GitSlice): string | undefined {
 }
 
 export function resolveGitRef(slice: GitSlice, ref: string): GitResult<string> {
-  const branch = slice.branches[ref];
+  const branch = ownValue(slice.branches, ref);
   if (branch !== undefined) return success(branch);
-  if (slice.commits[ref] !== undefined) return success(ref);
+  if (Object.hasOwn(slice.commits, ref)) return success(ref);
   if (/^[0-9a-f]{4,39}$/.test(ref)) {
     const matches = Object.keys(slice.commits).filter((hash) =>
       hash.startsWith(ref),
@@ -228,7 +238,8 @@ function reachable(slice: GitSlice, start: string): ReadonlySet<string> {
     const hash = pending.pop();
     if (hash === undefined || found.has(hash)) continue;
     found.add(hash);
-    pending.push(...(slice.commits[hash]?.parents ?? []));
+    if (Object.hasOwn(slice.commits, hash))
+      pending.push(...(ownValue(slice.commits, hash)?.parents ?? []));
   }
   return found;
 }
@@ -241,17 +252,19 @@ export function logGit(
   slice: GitSlice,
   from = headHash(slice),
 ): readonly GitCommit[] {
-  if (from === undefined || slice.commits[from] === undefined) return [];
+  if (from === undefined || !Object.hasOwn(slice.commits, from)) return [];
   const remaining = new Set(reachable(slice, from));
   const out: GitCommit[] = [];
   while (remaining.size > 0) {
     const eligible = [...remaining]
       .filter((hash) =>
         [...remaining].every(
-          (candidate) => !slice.commits[candidate]?.parents.includes(hash),
+          (candidate) =>
+            !Object.hasOwn(slice.commits, candidate) ||
+            !ownValue(slice.commits, candidate)?.parents.includes(hash),
         ),
       )
-      .map((hash) => slice.commits[hash] as GitCommit)
+      .map((hash) => ownValue(slice.commits, hash) as GitCommit)
       .sort(
         (left, right) =>
           compareText(right.committedAt, left.committedAt) ||
@@ -277,10 +290,13 @@ export function blameGit(
   path: string,
   at = headHash(slice),
 ): GitResult<readonly GitBlameLine[]> {
-  const commit = at === undefined ? undefined : slice.commits[at];
+  const commit =
+    at === undefined || !Object.hasOwn(slice.commits, at)
+      ? undefined
+      : ownValue(slice.commits, at);
   if (commit === undefined)
     return failure("NOT_FOUND", `cannot blame without an existing commit`);
-  const file = commit.files[path];
+  const file = ownValue(commit.files, path);
   if (file === undefined)
     return failure(
       "NOT_FOUND",
@@ -288,7 +304,11 @@ export function blameGit(
     );
   const lines = logicalLines(file.contents).map((text, index) => {
     const hash = file.blame[index] as string;
-    const source = slice.commits[hash] as GitCommit;
+    const source = Object.hasOwn(slice.commits, hash)
+      ? ownValue(slice.commits, hash)
+      : undefined;
+    if (source === undefined)
+      throw new Error(`Git blame source ${JSON.stringify(hash)} is missing`);
     return {
       line: index + 1,
       text,
@@ -301,13 +321,11 @@ export function blameGit(
 }
 
 function workingTree(slice: GitSlice, vfs: VfsSlice): Record<string, string> {
-  const prefix = slice.root === "/" ? "/" : `${slice.root}/`;
   return Object.fromEntries(
     Object.entries(vfs.entries)
       .filter(
         ([path, entry]) =>
-          entry.kind === "file" &&
-          (path === slice.root || path.startsWith(prefix)),
+          entry.kind === "file" && isAtOrBelow(path, slice.root),
       )
       .map(([path, entry]) => [path, (entry as VfsFileEntry).contents]),
   );
@@ -337,11 +355,11 @@ export function statusGit(
   const out: GitStatusEntry[] = [];
   for (const path of [...paths].sort()) {
     const untracked =
-      slice.index[path] === undefined && working[path] !== undefined;
-    const staged = change(head[path], slice.index[path]);
+      !Object.hasOwn(slice.index, path) && Object.hasOwn(working, path);
+    const staged = change(ownValue(head, path), ownValue(slice.index, path));
     const unstaged = untracked
       ? null
-      : change(slice.index[path], working[path]);
+      : change(ownValue(slice.index, path), ownValue(working, path));
     if (untracked || staged !== null || unstaged !== null)
       out.push({ path, staged, working: unstaged, untracked });
   }
@@ -410,12 +428,15 @@ export function diffGit(
   return deepFreeze(
     [...paths]
       .sort()
-      .filter((path) => before[path] !== after[path])
+      .filter((path) => ownValue(before, path) !== ownValue(after, path))
       .map((path) => ({
         path,
-        oldContents: before[path] ?? null,
-        newContents: after[path] ?? null,
-        lines: lineDiff(before[path] ?? "", after[path] ?? ""),
+        oldContents: ownValue(before, path) ?? null,
+        newContents: ownValue(after, path) ?? null,
+        lines: lineDiff(
+          ownValue(before, path) ?? "",
+          ownValue(after, path) ?? "",
+        ),
       })),
   );
 }
@@ -424,11 +445,12 @@ export function showGit(
   slice: GitSlice,
   ref = headHash(slice),
 ): GitResult<GitShowValue> {
+  if (ref === "HEAD") ref = headHash(slice);
   if (ref === undefined)
     return failure("NOT_FOUND", "HEAD does not name a commit");
   const resolved = resolveGitRef(slice, ref);
   if (!resolved.ok) return resolved;
-  const commit = slice.commits[resolved.value] as GitCommit;
+  const commit = ownValue(slice.commits, resolved.value) as GitCommit;
   const parentHash = commit.parents[0];
   const before =
     parentHash === undefined
@@ -440,12 +462,15 @@ export function showGit(
   const paths = new Set([...Object.keys(before), ...Object.keys(after)]);
   const files = [...paths]
     .sort()
-    .filter((path) => before[path] !== after[path])
+    .filter((path) => ownValue(before, path) !== ownValue(after, path))
     .map((path) => ({
       path,
-      oldContents: before[path] ?? null,
-      newContents: after[path] ?? null,
-      lines: lineDiff(before[path] ?? "", after[path] ?? ""),
+      oldContents: ownValue(before, path) ?? null,
+      newContents: ownValue(after, path) ?? null,
+      lines: lineDiff(
+        ownValue(before, path) ?? "",
+        ownValue(after, path) ?? "",
+      ),
     }));
   return success({ commit, files });
 }
@@ -467,7 +492,7 @@ export function stageGit(
           `${JSON.stringify(path)} is absent and untracked`,
         ),
       };
-    const contents = working[path];
+    const contents = ownValue(working, path);
     if (contents === undefined) delete index[path];
     else index[path] = contents;
   }
@@ -499,7 +524,7 @@ export function branchGit(
       slice,
       result: failure("INVALID", `invalid branch name ${JSON.stringify(name)}`),
     };
-  if (slice.branches[name] !== undefined)
+  if (Object.hasOwn(slice.branches, name))
     return {
       slice,
       result: failure(
@@ -573,7 +598,9 @@ export function commitGit(
   }
   const parentHash = headHash(slice);
   const parent =
-    parentHash === undefined ? undefined : slice.commits[parentHash];
+    parentHash === undefined || !Object.hasOwn(slice.commits, parentHash)
+      ? undefined
+      : ownValue(slice.commits, parentHash);
   const parentTree = Object.fromEntries(
     Object.entries(parent?.files ?? {}).map(([path, file]) => [
       path,
@@ -600,7 +627,13 @@ export function commitGit(
         path,
         {
           contents,
-          blame: inheritedLineSources(parent?.files[path], contents, hash),
+          blame: inheritedLineSources(
+            parent !== undefined && Object.hasOwn(parent.files, path)
+              ? ownValue(parent.files, path)
+              : undefined,
+            contents,
+            hash,
+          ),
         },
       ]),
   );
@@ -649,7 +682,7 @@ export function restoreGit(
         ),
       };
     const index = { ...slice.index } as Record<string, string>;
-    const contents = head[path];
+    const contents = ownValue(head, path);
     if (contents === undefined) delete index[path];
     else index[path] = contents;
     return deepFreeze({
@@ -667,7 +700,7 @@ export function restoreGit(
         `${JSON.stringify(path)} did not match any file known to git`,
       ),
     };
-  const indexed = slice.index[path];
+  const indexed = ownValue(slice.index, path);
   return deepFreeze({
     slice,
     plan: {
@@ -699,7 +732,7 @@ export function checkoutGit(
         `checkout refused: ${String(dirty.length)} staged, working, or untracked path(s)`,
       ),
     });
-  const branchHash = slice.branches[target];
+  const branchHash = ownValue(slice.branches, target);
   const resolved = resolveGitRef(slice, target);
   if (!resolved.ok)
     return Object.freeze({
@@ -708,7 +741,7 @@ export function checkoutGit(
       result: resolved,
     });
   const hash = resolved.value;
-  const commit = slice.commits[hash] as GitCommit;
+  const commit = ownValue(slice.commits, hash) as GitCommit;
   const replacement = replaceVfsFiles(
     vfs,
     Object.keys(slice.index),

@@ -6,7 +6,7 @@ import { deserialize, serialize } from "../serialize/canonical.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { createVfsSlice, deleteVfs, writeVfs } from "../vfs/vfs.js";
 import { readVfsSlice } from "../vfs/module.js";
-import { readGitSlice } from "./module.js";
+import { readGitSlice, validateGitSlice } from "./module.js";
 import {
   abbreviateGitHash,
   blameGit,
@@ -249,6 +249,27 @@ describe("the Git model", () => {
     });
   });
 
+  it("never resolves or rejects refs through Object.prototype", () => {
+    const { git, vfs } = world();
+    for (const name of ["constructor", "toString"]) {
+      expect(resolveGitRef(git, name)).toEqual({
+        ok: false,
+        code: "NOT_FOUND",
+        message: `unknown revision ${JSON.stringify(name)}`,
+      });
+      const created = branchGit(git, name);
+      expect(created.result).toMatchObject({ ok: true });
+      expect(resolveGitRef(created.slice, name)).toEqual({
+        ok: true,
+        value: git.branches["main"],
+      });
+      expect(checkoutGit(git, vfs, name, NOW).result).toMatchObject({
+        ok: false,
+        code: "NOT_FOUND",
+      });
+    }
+  });
+
   it("commits the index with cartridge identity and first-parent blame", () => {
     const { git, vfs } = world();
     const edited = writeVfs(vfs, FILE, "export const load = 2;\n", NOW).slice;
@@ -432,5 +453,50 @@ describe("the Git model", () => {
     files[FILE] = { ...files[FILE], blame: [] };
 
     expect(() => restoreSnapshot(serialize(recorded))).toThrow(/blame/);
+  });
+
+  it.each(["commit", "index"])(
+    "rejects a snapshot whose Git %s path escapes the repository root",
+    (kind) => {
+      const state = reduce({
+        cartridge: loadCartridge(source()),
+        seed: "2026-08-05/6/deep-foundation",
+        events: [{ type: "git.status", payload: {} }],
+      });
+      const recorded = deserialize(snapshot(state)) as Record<string, unknown>;
+      const slices = recorded["slices"] as Record<
+        string,
+        Record<string, unknown>
+      >;
+      const git = slices["git"] as Record<string, unknown>;
+      if (kind === "index") {
+        (git["index"] as Record<string, string>)["/production/service-copy/x"] =
+          "outside\n";
+      } else {
+        const commits = git["commits"] as Record<
+          string,
+          Record<string, unknown>
+        >;
+        const hash = (git["branches"] as Record<string, string>)[
+          "main"
+        ] as string;
+        const files = (commits[hash] as Record<string, unknown>)[
+          "files"
+        ] as Record<string, unknown>;
+        files["/production/service-copy/x"] = {
+          contents: "outside\n",
+          blame: [hash],
+        };
+      }
+
+      expect(() => restoreSnapshot(serialize(recorded))).toThrow(
+        /must be at or below repository root/,
+      );
+    },
+  );
+
+  it("treats slash as containing every absolute Git path", () => {
+    const git = { ...world().git, root: "/" };
+    expect(validateGitSlice(git, "git")).toBe(git);
   });
 });

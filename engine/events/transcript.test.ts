@@ -58,6 +58,20 @@ describe("renderEntry", () => {
       "      stderr> err",
     ]);
   });
+
+  it("renders blank output without invisible trailing whitespace", () => {
+    expect(
+      renderEntry(
+        entry({
+          output: [{ stream: "stdout", text: "" }],
+          exitCode: 0,
+        }),
+      ),
+    ).toEqual([
+      "0000  2026-08-05T09:14:22.000Z  clock.tick exit=0",
+      "      stdout>",
+    ]);
+  });
 });
 
 describe("a caller-owned transcript entry", () => {

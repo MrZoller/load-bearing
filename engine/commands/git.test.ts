@@ -33,6 +33,10 @@ function execute(state: SessionState, input: string): SessionState {
   return next;
 }
 
+function commandEvents(state: SessionState, input: string) {
+  return executeShell(state, input).slice(0, -1);
+}
+
 describe("Git commands", () => {
   it.each([
     ["git status", ["On branch main", "nothing to commit, working tree clean"]],
@@ -91,6 +95,12 @@ describe("Git commands", () => {
       stderr: [],
       exitCode: 0,
     });
+  });
+
+  it("treats explicit HEAD exactly like the default show operand", () => {
+    expect(executeShell(initial(), "git show HEAD")).toEqual(
+      executeShell(initial(), "git show"),
+    );
   });
 
   it.each([
@@ -252,6 +262,139 @@ describe("Git commands", () => {
       });
     },
   );
+
+  it("records the same failed restore event for restore and path checkout", () => {
+    const state = execute(initial(), "touch scratch.txt");
+    expect(commandEvents(state, "git checkout -- scratch.txt")).toEqual(
+      commandEvents(state, "git restore scratch.txt"),
+    );
+    expect(commandEvents(state, "git restore scratch.txt")).toEqual([
+      {
+        type: "git.restore",
+        payload: {
+          path: "/production/service/scratch.txt",
+          staged: false,
+        },
+        version: 0,
+      },
+    ]);
+  });
+
+  it("preserves staged deletion and recreated-untracked state in short status", () => {
+    let state = execute(initial(), "rm src/index.ts");
+    state = execute(state, "git add src/index.ts");
+    state = execute(state, "touch src/index.ts");
+
+    expect(run(state, "git status --short")).toEqual({
+      stdout: ["D? src/index.ts"],
+      stderr: [],
+      exitCode: 0,
+    });
+    expect(run(state, "git status").stdout).toEqual([
+      "On branch main",
+      "Changes to be committed:",
+      "  deleted: src/index.ts",
+      "Untracked files:",
+      "  src/index.ts",
+    ]);
+  });
+
+  it.each([
+    ["git blame /outside", 'fatal: no such path "/outside" in HEAD', 128],
+    [
+      "git blame ../../../../outside",
+      'fatal: no such path "../../../../outside" in HEAD',
+      128,
+    ],
+    ["git add /outside", 'fatal: "/outside" is outside repository', 128],
+    [
+      "git add ../../../../outside",
+      'fatal: "../../../../outside" is outside repository',
+      128,
+    ],
+    [
+      "git restore /outside",
+      'error: pathspec "/outside" did not match any file(s) known to git',
+      1,
+    ],
+    [
+      "git restore ../../../../outside",
+      'error: pathspec "../../../../outside" did not match any file(s) known to git',
+      1,
+    ],
+    [
+      "git checkout -- /outside",
+      'error: pathspec "/outside" did not match any file(s) known to git',
+      1,
+    ],
+    [
+      "git checkout -- ../../../../outside",
+      'error: pathspec "../../../../outside" did not match any file(s) known to git',
+      1,
+    ],
+  ])("confines operand command %s", (input, error, exitCode) => {
+    expect(run(initial(), input)).toEqual({
+      stdout: [],
+      stderr: [error],
+      exitCode,
+    });
+    expect(commandEvents(initial(), input)).toEqual([]);
+  });
+
+  it.each([
+    ["git", "git: missing subcommand"],
+    ["git unknown", "git: unknown subcommand: unknown"],
+    ["git status -z", "status: invalid option: -z"],
+    ["git status extra", "git status: too many arguments"],
+    ["git log -z", "log: invalid option: -z"],
+    ["git log extra", "git log: too many arguments"],
+    ["git diff -z", "diff: invalid option: -z"],
+    ["git diff extra", "git diff: too many arguments"],
+    ["git blame -z", "blame: invalid option: -z"],
+    ["git blame", "git blame: usage: git blame <path>"],
+    ["git branch -z", "branch: invalid option: -z"],
+    ["git branch one two", "git branch: too many arguments"],
+    ["git checkout -z", "checkout: invalid option: -z"],
+    [
+      "git checkout",
+      "git checkout: usage: git checkout <ref> | git checkout -- <path>",
+    ],
+    ["git show -z", "show: invalid option: -z"],
+    ["git show one two", "git show: too many arguments"],
+    ["git add -z", "add: invalid option: -z"],
+    ["git add", "git add: nothing specified, nothing added"],
+    ["git commit -z", "commit: invalid option: -z"],
+    ["git commit", "git commit: usage: git commit -m <message>"],
+    ["git restore -z", "restore: invalid option: -z"],
+    ["git restore", "git restore: usage: git restore [--staged] <path>"],
+  ])("returns exact usage error for %s", (input, error) => {
+    expect(run(initial(), input)).toEqual({
+      stdout: [],
+      stderr: [error],
+      exitCode: 2,
+    });
+  });
+
+  it("treats inherited subcommand and ref names as ordinary authored strings", () => {
+    for (const name of ["constructor", "toString"]) {
+      expect(run(initial(), `git ${name}`)).toEqual({
+        stdout: [],
+        stderr: [`git: unknown subcommand: ${name}`],
+        exitCode: 2,
+      });
+      let state = execute(initial(), `git branch ${name}`);
+      expect(run(state, `git checkout ${name}`)).toEqual({
+        stdout: [`Switched to branch '${name}'`],
+        stderr: [],
+        exitCode: 0,
+      });
+      state = execute(state, `git checkout ${name}`);
+      expect(readGitSlice(state).head).toEqual({
+        kind: "branch",
+        target: name,
+      });
+    }
+  });
 
   it("checks out branches and unique abbreviated hashes while refusing dirty switches", () => {
     expect(run(initial(), "git checkout before-load")).toEqual({

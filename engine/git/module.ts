@@ -14,6 +14,7 @@ import { readSlice } from "../events/state.js";
 import type { SessionState } from "../events/state.js";
 import { serializeInline } from "../serialize/canonical.js";
 import { readVfsSlice } from "../vfs/module.js";
+import { isAtOrBelow } from "../vfs/path.js";
 import {
   blameGit,
   branchGit,
@@ -142,9 +143,12 @@ export function validateGitSlice(slice: unknown, where: string): GitSlice {
         throw new Error(`${commitWhere}.parents: missing commit ${parent}`);
     const files = record(commit["files"], `${commitWhere}.files`);
     for (const path of Object.keys(files)) {
-      if (!ABSOLUTE_PATH_PATTERN.test(path))
+      if (
+        !ABSOLUTE_PATH_PATTERN.test(path) ||
+        !isAtOrBelow(path, repositoryRoot)
+      )
         throw new Error(
-          `${commitWhere}.files: invalid path ${JSON.stringify(path)}`,
+          `${commitWhere}.files: path ${JSON.stringify(path)} must be at or below repository root ${JSON.stringify(repositoryRoot)}`,
         );
       const file = record(
         files[path],
@@ -197,8 +201,10 @@ export function validateGitSlice(slice: unknown, where: string): GitSlice {
     throw new Error(`${where}.head.target: missing commit ${target}`);
   const index = stringRecord(root["index"], `${where}.index`);
   for (const path of Object.keys(index))
-    if (!ABSOLUTE_PATH_PATTERN.test(path))
-      throw new Error(`${where}.index: invalid path ${JSON.stringify(path)}`);
+    if (!ABSOLUTE_PATH_PATTERN.test(path) || !isAtOrBelow(path, repositoryRoot))
+      throw new Error(
+        `${where}.index: path ${JSON.stringify(path)} must be at or below repository root ${JSON.stringify(repositoryRoot)}`,
+      );
 
   const visiting = new Set<string>();
   const visited = new Set<string>();

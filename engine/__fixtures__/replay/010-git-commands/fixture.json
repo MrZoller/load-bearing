@@ -1,9 +1,39 @@
 {
   "name": "010-git-commands",
-  "description": "A tracked deletion appears in Git status, then path checkout restores the committed bytes and returns the repository to clean state.",
+  "description": "The bounded Git shell surface stays coherent through inspection, branching, staged and working diffs, restore variants, commit, blame, and ref checkout.",
   "seed": "2026-08-05/10/deep-foundation",
   "cartridge": "git",
   "events": [
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git log --oneline" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git diff" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git blame src/index.ts" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git branch" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git branch investigation" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git show HEAD" },
+      "version": 0
+    },
     {
       "type": "shell.execute",
       "payload": { "input": "rm src/index.ts" },
@@ -16,7 +46,77 @@
     },
     {
       "type": "shell.execute",
+      "payload": { "input": "git diff" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
       "payload": { "input": "git checkout -- src/index.ts" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm src/index.ts" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git add src/index.ts" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git diff --staged" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "touch src/index.ts" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git status --short" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git restore --staged src/index.ts" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git restore src/index.ts" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "touch load.txt" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git add load.txt" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git commit -m 'record load'" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git log --oneline" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git blame src/index.ts" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git checkout before-load" },
       "version": 0
     },
     {

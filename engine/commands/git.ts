@@ -35,7 +35,7 @@ import type {
   GitFailure,
   GitSlice,
 } from "../git/types.js";
-import { resolveVfsPath } from "../vfs/path.js";
+import { isAtOrBelow, resolveVfsPath } from "../vfs/path.js";
 import { describeUnwritableText } from "../text.js";
 import { readVfsSlice } from "../vfs/module.js";
 import { replaceVfsFiles } from "../vfs/vfs.js";
@@ -134,8 +134,7 @@ function pathFromOperand(
   const vfs = readVfsSlice(context.state);
   const path = resolveVfsPath(operand, vfs.cwd, vfs.identity.home).path;
   const root = readGitSlice(context.state).root;
-  const prefix = root === "/" ? "/" : `${root}/`;
-  return path === root || path.startsWith(prefix) ? path : undefined;
+  return isAtOrBelow(path, root) ? path : undefined;
 }
 
 function firstLine(text: string): string {
@@ -224,7 +223,10 @@ const STATUS: CommandDefinition = Object.freeze({
       ...context,
       argv: [subcommand ?? "", ...context.argv.slice(2)],
     };
-    const command = GIT_SUBCOMMANDS[subcommand ?? ""];
+    const key = subcommand ?? "";
+    const command = Object.hasOwn(GIT_SUBCOMMANDS, key)
+      ? GIT_SUBCOMMANDS[key]
+      : undefined;
     return command === undefined
       ? usage(
           "git",
@@ -256,11 +258,13 @@ const status: Subcommand = (context) => {
             ? "D"
             : " ";
     return result(
-      entries.map((entry) =>
-        entry.untracked
-          ? `?? ${relative(git, entry.path)}`
-          : `${letter(entry.staged)}${letter(entry.working)} ${relative(git, entry.path)}`,
-      ),
+      entries.map((entry) => {
+        // A staged deletion followed by recreation is both index-deleted and
+        // working-untracked. `D?` preserves both bounded status dimensions.
+        if (entry.untracked)
+          return `${entry.staged === null ? "?" : letter(entry.staged)}? ${relative(git, entry.path)}`;
+        return `${letter(entry.staged)}${letter(entry.working)} ${relative(git, entry.path)}`;
+      }),
       EMPTY,
       0,
       [eventValue],
@@ -423,6 +427,7 @@ const checkout: Subcommand = (context) => {
           `error: pathspec ${JSON.stringify(operand)} did not match any file(s) known to git`,
         ],
         1,
+        [event("git.restore", { path, staged: false })],
       );
     const plan = mutation.plan;
     if (plan === null) throw new Error("path checkout requires a VFS plan");
@@ -458,11 +463,19 @@ const checkout: Subcommand = (context) => {
         : `error: pathspec ${JSON.stringify(target)} did not match any branch or commit`;
     return result(EMPTY, [message], 1, [event("git.checkout", { target })]);
   }
+  const checkedOutCommit = Object.hasOwn(
+    mutation.git.commits,
+    mutation.result.value.hash,
+  )
+    ? mutation.git.commits[mutation.result.value.hash]
+    : undefined;
+  if (checkedOutCommit === undefined)
+    throw new Error("successful checkout must name an owned commit");
   const stdout =
     mutation.result.value.head.kind === "branch"
       ? [`Switched to branch '${mutation.result.value.head.target}'`]
       : [
-          `HEAD is now at ${abbreviateGitHash(git, mutation.result.value.hash)} ${firstLine(field(git.commits[mutation.result.value.hash] as GitCommit, "message"))}`,
+          `HEAD is now at ${abbreviateGitHash(git, mutation.result.value.hash)} ${firstLine(field(checkedOutCommit, "message"))}`,
         ];
   return result(stdout, EMPTY, 0, [event("git.checkout", { target })]);
 };
