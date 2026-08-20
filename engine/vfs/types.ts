@@ -67,6 +67,11 @@ export interface VfsReadValue {
   readonly contents: string;
 }
 
+export interface VfsStatValue {
+  readonly path: string;
+  readonly entry: VfsEntry;
+}
+
 export interface VfsListItem {
   readonly name: string;
   readonly path: string;

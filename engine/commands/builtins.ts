@@ -1,6 +1,8 @@
 import { createCommandRegistry } from "./registry.js";
 import { CommandOptionError, parseCommandOptions } from "./options.js";
 import type { CommandContext, CommandDefinition } from "./types.js";
+import { readVfsSlice } from "../vfs/module.js";
+import { FILESYSTEM_COMMANDS } from "./filesystem.js";
 
 const PWD: CommandDefinition = Object.freeze({
   name: "pwd",
@@ -25,12 +27,12 @@ const PWD: CommandDefinition = Object.freeze({
       return {
         stdout: [],
         stderr: ["pwd: too many arguments"],
-        exitCode: 1,
+        exitCode: 2,
         events: [],
       };
     }
     return {
-      stdout: [context.state.cartridge.repository.cwd],
+      stdout: [readVfsSlice(context.state).cwd],
       stderr: [],
       exitCode: 0,
       events: [],
@@ -57,5 +59,10 @@ const TRUE: CommandDefinition = Object.freeze({
   },
 });
 
-export const BUILTIN_COMMANDS = Object.freeze([PWD, ECHO, TRUE]);
+export const BUILTIN_COMMANDS = Object.freeze([
+  PWD,
+  ECHO,
+  TRUE,
+  ...FILESYSTEM_COMMANDS,
+]);
 export const BUILTIN_COMMAND_REGISTRY = createCommandRegistry(BUILTIN_COMMANDS);

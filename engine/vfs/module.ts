@@ -17,6 +17,7 @@ import { resolveVfsPath } from "./path.js";
 import type { VfsMutation, VfsResult, VfsSlice } from "./types.js";
 import {
   chmodVfs,
+  chdirVfs,
   copyVfs,
   createVfsSlice,
   deleteVfs,
@@ -25,6 +26,8 @@ import {
   readVfs,
   replaceVfsFiles,
   renameVfs,
+  statVfs,
+  touchVfs,
   writeVfs,
 } from "./vfs.js";
 
@@ -269,6 +272,21 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
         };
       },
     },
+    "vfs.stat": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["path"]);
+        const result = statVfs(slice, readString(data, "path", context.where));
+        return {
+          summary: summarize(
+            result,
+            result.ok
+              ? `path=${JSON.stringify(result.value.path)} kind=${result.value.entry.kind}`
+              : "",
+          ),
+        };
+      },
+    },
     "vfs.write": {
       version: 0,
       apply(context, slice) {
@@ -291,12 +309,13 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
     "vfs.delete": {
       version: 0,
       apply(context, slice) {
-        const data = payload(context, ["path", "recursive"]);
+        const data = payload(context, ["path", "recursive", "fileOnly"]);
         const mutation = deleteVfs(
           slice,
           readString(data, "path", context.where),
           context.clock.timestamp(),
           readBoolean(data, "recursive", false, context.where),
+          readBoolean(data, "fileOnly", false, context.where),
         );
         return mutationOutcome(
           mutation,
@@ -380,6 +399,36 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
           mutation,
           (value) =>
             `created=${String(value.paths.length)} path=${JSON.stringify(value.paths.at(-1) ?? "")}`,
+        );
+      },
+    },
+    "vfs.touch": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["path"]);
+        const mutation = touchVfs(
+          slice,
+          readString(data, "path", context.where),
+          context.clock.timestamp(),
+        );
+        return mutationOutcome(
+          mutation,
+          (value) =>
+            `path=${JSON.stringify(value.path)} created=${String(value.created)}`,
+        );
+      },
+    },
+    "vfs.chdir": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["path"]);
+        const mutation = chdirVfs(
+          slice,
+          readString(data, "path", context.where),
+        );
+        return mutationOutcome(
+          mutation,
+          (value) => `path=${JSON.stringify(value.path)}`,
         );
       },
     },
