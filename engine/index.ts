@@ -19,6 +19,7 @@ export type {
   EngineEvent,
   SessionState,
   TranscriptEntry,
+  TranscriptOutput,
 } from "./events/state.js";
 export { defineEventModule } from "./events/module.js";
 export type {
@@ -171,6 +172,34 @@ export type {
   WorldTicket,
 } from "./world/types.js";
 
+export { ShellSyntaxError, tokenizeShell } from "./commands/tokenize.js";
+export { CommandOptionError, parseCommandOptions } from "./commands/options.js";
+export {
+  CommandRegistryError,
+  createCommandRegistry,
+  executeCommand,
+} from "./commands/registry.js";
+export {
+  BUILTIN_COMMANDS,
+  BUILTIN_COMMAND_REGISTRY,
+} from "./commands/builtins.js";
+export {
+  createShellExecuteEvent,
+  executeShell,
+  MAX_SHELL_INPUT_LENGTH,
+} from "./commands/shell.js";
+export { SHELL_MODULE } from "./commands/module.js";
+export type {
+  CommandContext,
+  CommandDefinition,
+  CommandExecution,
+  CommandOptionSpec,
+  CommandRegistry,
+  CommandResult,
+  ParsedCommandOptions,
+  RegisteredCommand,
+} from "./commands/types.js";
+
 export { deepFreeze } from "./freeze.js";
 export {
   CONTROL_CHARACTER,
@@ -234,6 +263,7 @@ export {
   ARCHETYPES,
   CARTRIDGE_SCHEMA,
   CARTRIDGE_SCHEMA_VERSION,
+  COMMAND_NAME_PATTERN,
   GIT_BRANCH_PATTERN,
   GIT_COMMIT_ID_PATTERN,
   WORLD_ID_PATTERN,
@@ -242,6 +272,7 @@ export { CARTRIDGE_SCHEMA_ID, emitJsonSchema } from "./cartridge/jsonSchema.js";
 export type {
   Archetype,
   CartridgeDirectory,
+  CartridgeCommand,
   CartridgeFile,
   CartridgeIdentity,
   CartridgeGitAuthor,

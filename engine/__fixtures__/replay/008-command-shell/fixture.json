@@ -1,0 +1,13 @@
+{
+  "name": "008-command-shell",
+  "description": "Shell execution expands into ordinary logged result events; builtins, quoting, unknown-command stderr, blank success, and a cartridge override record stable stream-tagged output and exit codes.",
+  "seed": "2026-08-05/8/deep-foundation",
+  "cartridge": "commands",
+  "events": [
+    { "type": "shell.execute", "payload": { "input": "echo 'one two' three" } },
+    { "type": "shell.execute", "payload": { "input": "pwd ignored" } },
+    { "type": "shell.execute", "payload": { "input": "missing" } },
+    { "type": "shell.execute", "payload": { "input": "   " } },
+    { "type": "shell.execute", "payload": { "input": "true" } }
+  ]
+}

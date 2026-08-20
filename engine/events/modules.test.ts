@@ -50,6 +50,8 @@ describe("the engine's module list", () => {
       "probe.int",
       "probe.random",
       "probe.weighted",
+      "shell.execute",
+      "shell.result",
       "vfs.chmod",
       "vfs.copy",
       "vfs.delete",

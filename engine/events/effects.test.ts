@@ -76,3 +76,99 @@ describe("transactional effects", () => {
     expect(before.eventCount).toBe(0);
   });
 });
+
+describe("event expansion", () => {
+  function expansionModule(
+    mode: "normal" | "empty" | "nested" | "clock" | "random",
+  ) {
+    return defineEventModule<never>({
+      namespace: "expand",
+      description: "synthetic expansion contract",
+      events: {
+        "expand.child": {
+          version: 0,
+          apply(context) {
+            if (mode === "nested")
+              return { expansion: [{ type: "expand.result" }] };
+            if (mode === "clock") context.clock.advance(1);
+            if (mode === "random") context.random.nextUint32();
+            return { summary: "child" };
+          },
+        },
+        "expand.outer": {
+          version: 0,
+          apply() {
+            return {
+              expansion:
+                mode === "empty"
+                  ? []
+                  : [{ type: "expand.child" }, { type: "expand.result" }],
+            };
+          },
+        },
+        "expand.result": {
+          version: 0,
+          apply() {
+            return { summary: "result" };
+          },
+        },
+      },
+    });
+  }
+
+  function expanded(mode: "normal" | "empty" | "nested" | "clock" | "random") {
+    const registry = createRegistry([expansionModule(mode)]);
+    const before = bootstrap({
+      cartridge: cartridge(),
+      seed: "expand",
+      registry,
+    });
+    return () => step(before, { type: "expand.outer" }, registry);
+  }
+
+  it("logs children at ordinary consecutive indexes and not the envelope", () => {
+    const state = expanded("normal")();
+    expect(state.eventCount).toBe(2);
+    expect(state.transcript.map((entry) => [entry.index, entry.type])).toEqual([
+      [0, "expand.child"],
+      [1, "expand.result"],
+    ]);
+  });
+
+  it("rejects empty and nested expansions", () => {
+    expect(expanded("empty")).toThrow(/at least one logged child/);
+    expect(expanded("nested")).toThrow(/nested event expansion/);
+  });
+
+  it("rejects clock or random mutation by an expansion child that also expands", () => {
+    const mutatingExpander = (kind: "clock" | "random") => {
+      const module = defineEventModule<never>({
+        namespace: "mutate",
+        description: "mutates while expanding",
+        events: {
+          "mutate.child": { version: 0, apply: () => ({ summary: "child" }) },
+          "mutate.outer": {
+            version: 0,
+            apply(context) {
+              if (kind === "clock") context.clock.advance(1);
+              else context.random.nextUint32();
+              return { expansion: [{ type: "mutate.child" }] };
+            },
+          },
+        },
+      });
+      const registry = createRegistry([module]);
+      const before = bootstrap({
+        cartridge: cartridge(),
+        seed: "mutate",
+        registry,
+      });
+      return () => step(before, { type: "mutate.outer" }, registry);
+    };
+
+    expect(mutatingExpander("clock")).toThrow(/may not move the clock or PRNG/);
+    expect(mutatingExpander("random")).toThrow(
+      /may not move the clock or PRNG/,
+    );
+  });
+});

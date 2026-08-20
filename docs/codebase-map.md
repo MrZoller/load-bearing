@@ -6,8 +6,9 @@ this document is *what exists today*, as opposed to what is designed.
 `CLAUDE.md` and `AGENTS.md` carry the invariants and verified commands.
 
 Status: **Phase 0 — headless state engine.** The determinism substrate,
-event registry, cartridge validation, VFS, Git model, and environmental world
-state are built; commands, reactions, and agent state remain. See
+event registry, cartridge validation, VFS, Git model, environmental world
+state, and command interpreter core are built; command sets, reactions, and
+agent state remain. See
 [Implementation status vs Phase 0](#implementation-status-vs-phase-0).
 
 ---
@@ -52,6 +53,7 @@ compared byte-for-byte against committed golden fixtures.
 │   ├── vfs/                     immutable filesystem model + event module
 │   ├── git/                     DAG/index/status/blame/diff + event module
 │   ├── world/                   processes/services/logs/env/man/history/tickets
+│   ├── commands/                tokenizer/options/registry/builtins/shell events
 │   ├── cartridge/
 │   │   ├── schema.ts           descriptor-tree schema (the single authority)
 │   │   ├── load.ts             validate + normalize → LoadedCartridge
@@ -64,7 +66,7 @@ compared byte-for-byte against committed golden fixtures.
 │   │   ├── diff.ts, text.ts    diff + writable-text validation
 │   │   └── README.md           source of truth for fixtures + the gate
 │   └── __fixtures__/
-│       ├── replay/{001,002,003}/  fixture.json + state.json + transcript.txt
+│       ├── replay/{001-008}/      fixture.json + state.json + transcript.txt
 │       └── cartridges/            minimal.json + invalid/*.json
 ├── content/schema/cartridge.v0.json  published schema (emitted, contract)
 ├── scripts/
@@ -87,6 +89,8 @@ compared byte-for-byte against committed golden fixtures.
 | `ReplayOutput` | `engine/session.ts` | `state` + `transcript` (string[]). |
 | `SessionState` | `engine/events/state.ts` | Cartridge, clock/PRNG state, transcript, and namespace-owned subsystem slices. |
 | `EngineEvent` | `engine/events/state.ts` | Versionable `{ type, payload, version }` envelope dispatched by exact registered type. |
+| `CommandExecution` / `CommandResult` | `engine/commands/types.ts` | Owning events followed by deterministic stdout, stderr, and exit status. |
+| `CommandRegistry` | `engine/commands/types.ts` | Duplicate-safe runtime command lookup; cartridge records take explicit precedence at dispatch. |
 | `LoadedCartridge` | `engine/cartridge/types.ts` | The world after validation/normalization. Plain JSON, deep-copied, serializable. |
 | `CartridgeMeta/File/Model/Repository` | `engine/cartridge/types.ts` | Loaded shapes for meta, files, models, repository. |
 | `GitSlice` / `VfsSlice` / `WorldSlice` | `engine/git/types.ts`, `engine/vfs/types.ts`, `engine/world/types.ts` | Canonical plain-JSON machine state owned by each event module. |
@@ -114,7 +118,7 @@ cartridge JSON (authored / Phase-5 generated)
         │
         ▼  reduce()  [engine/events/reduce.ts]
         │   bootstrap registered slices + clock + named PRNG streams
-        │   fold events: dispatch owner → transactional effects → transcript
+        │   fold events: expand envelopes → dispatch owners/effects → transcript
         ▼
    SessionState + transcript:string[]
         │
@@ -190,6 +194,12 @@ in-transaction slices, and the reducer publishes only the final state. Effects
 cannot emit transcript output or nested effects. Git checkout is the first
 consumers: Git owns HEAD/index while VFS owns file replacement; world file logs
 read VFS and append through one atomic VFS-owned write effect.
+
+Shell orchestration uses ordered event expansion instead. `shell.execute` is an
+unlogged visitor-action envelope; its expander cannot mutate time, randomness,
+slices, or transcript, and empty/nested expansion is refused. Generated owning
+events plus the final `shell.result` are normal logged entries, so future
+filesystem, Git, and world commands retain one-module-one-slice ownership.
 
 ---
 
@@ -277,9 +287,9 @@ Phase 0 DoD (from `ROADMAP.md`), mapped to what exists:
 any rendering, any comedy writing, any real model calls.
 
 **What Phase 0 scope has NOT yet been built** (the gap a day-one agent will
-feel): the test runner and reactions, the command layer (~25 shell
-commands), the natural-language intent layer, escalation stage, metrics, and
-agent mind state (permission ledger, belief state, todo/thinking blocks). All
+feel): the remaining filesystem/Git/system command implementations, the test
+runner and reactions, the natural-language intent layer, escalation stage,
+metrics, and agent mind state (permission ledger, belief state, todo/thinking blocks). All
 are designed in `docs/ARCHITECTURE.md` and land behind the remaining Phase 0
 issues.
 

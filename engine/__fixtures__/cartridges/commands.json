@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 8,
+    "date": "2026-08-05",
+    "title": "Command Fixture World",
+    "assignment": "Exercise the shell without involving a real one.",
+    "startedAt": "2026-08-05T09:14:22.000Z"
+  },
+  "repository": {
+    "cwd": "/production/service",
+    "identity": {
+      "user": "root",
+      "group": "root",
+      "home": "/root"
+    },
+    "files": {
+      "/production/service/README.md": {
+        "contents": "# service\n"
+      }
+    },
+    "commands": {
+      "pwd": {
+        "stdout": ["/authored/override"],
+        "stderr": ["pwd: structural survey attached"],
+        "exitCode": 7
+      }
+    }
+  },
+  "models": [
+    {
+      "id": "deep-foundation",
+      "name": "Deep Foundation",
+      "archetype": "paranoid",
+      "description": "Thorough.",
+      "costMultiplier": 1
+    }
+  ]
+}

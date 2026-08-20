@@ -588,6 +588,9 @@ function validate(
       if (node.minItems !== undefined && value.length < node.minItems) {
         report.add(pointer, `at least ${String(node.minItems)} item(s)`, value);
       }
+      if (node.maxItems !== undefined && value.length > node.maxItems) {
+        report.add(pointer, `at most ${String(node.maxItems)} item(s)`, value);
+      }
       // Schema arrays need the same density check as a deferred one. Without
       // it `models = new Array(1)` satisfies `minItems`, `map` preserves the
       // hole, `checkModelIds` skips it without complaint, and the loader hands

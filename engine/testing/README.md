@@ -83,6 +83,8 @@ against the replay contract.
 | `004-reducer-core`   | the reducer's machinery at readable size: a stamped payload schema version, dispatch across two modules, a slice accumulating, transcript index and stamps  |
 | `005-vfs-lifecycle`  | VFS create, overwrite, chmod, delete, and persistence of deletion across a later event                                                                      |
 | `006-vfs-git`        | VFS edits reflected in Git status/diff, dirty checkout refusal, and atomic clean checkout across Git and VFS slices                                         |
+| `007-world-state`    | environmental hydration plus replayable process, service, log, environment, and history transitions                                                         |
+| `008-command-shell`  | unlogged shell expansion plus stable stream-tagged builtin, override, unknown, and blank command results                                                    |
 
 `002` records 1000 raw draws eight to a line with their index, so a divergence
 names the draw it started at rather than reporting that a file changed.
@@ -94,7 +96,7 @@ something other than empty, or key ordering moving.
 
 ### Why the transcript appears in both artifacts
 
-The transcript is _state_: the reducer folds a `TranscriptEntry` per event into
+The transcript is _state_: the reducer folds a `TranscriptEntry` per logged event into
 `SessionState.transcript`, because `state = reduce(cartridge, seed, eventLog)`
 has to be the whole session and a transcript accumulated on the side would not
 be reproducible from a snapshot. So `state.json` holds the structured entries

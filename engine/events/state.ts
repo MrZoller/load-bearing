@@ -70,7 +70,8 @@ export interface EngineEvent {
  * `transcript.txt` fixture records; a terminal view (Phase 1) renders the same
  * entries differently, and both are reproducible from the event log alone.
  *
- * Exactly one entry per event, at the same index. That is what turns a failing
+ * Exactly one entry per logged event, at the same index. Expansion envelopes
+ * are unlogged; every child they produce is logged normally. That turns a failing
  * fixture from "something diverged" into "event 37 diverged".
  */
 export interface TranscriptEntry {
@@ -83,6 +84,16 @@ export interface TranscriptEntry {
   readonly summary: string;
   /** Further lines belonging to this entry. Indented when rendered. */
   readonly detail: readonly string[];
+  /** Ordered shell output, present exactly when `exitCode` is present. */
+  readonly output?: readonly TranscriptOutput[];
+  /** Shell exit status, present exactly when `output` is present. */
+  readonly exitCode?: number;
+}
+
+/** One structured line emitted by a shell command. */
+export interface TranscriptOutput {
+  readonly stream: "stdout" | "stderr";
+  readonly text: string;
 }
 
 /** The whole session, as `reduce(cartridge, seed, eventLog)` produces it. */
@@ -94,7 +105,7 @@ export interface SessionState {
   readonly seed: string;
   /** The world, already validated and normalized by `loadCartridge`. */
   readonly cartridge: LoadedCartridge;
-  /** How many events have been folded in. Also the next event's index. */
+  /** How many logged events have been folded in. Also the next event's index. */
   readonly eventCount: number;
   readonly clock: ClockState;
   readonly random: RandomState;
@@ -111,7 +122,7 @@ export interface SessionState {
    * issues #5–#13 each add one key.
    */
   readonly slices: Readonly<Record<string, unknown>>;
-  /** One entry per folded event, in log order. */
+  /** One entry per logged event, in log order. */
   readonly transcript: readonly TranscriptEntry[];
 }
 

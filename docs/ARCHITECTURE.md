@@ -117,6 +117,15 @@ nested effects and no hidden transcript output. `git.checkout` uses this seam to
 ask `vfs.replace-files` to perform the filesystem transition, so Git never edits
 VFS entries and VFS never edits refs or the index.
 
+One visitor action may instead be an **unlogged expansion envelope**. Today
+`shell.execute` tokenizes and dispatches one input, then expands to any owning-
+subsystem events followed by one `shell.result`. The children are ordinary
+logged events: each gets its own index, timestamp, transcript entry, clock and
+named-stream position. Expansion itself may not change slices, transcript, time,
+or randomness; empty and nested expansions are rejected. This keeps command
+orchestration out of every owning subsystem without creating a privileged module
+that can write all their slices.
+
 **An unregistered event type is refused, never ignored.** Treating it as a
 no-op would let a subsystem missing from the module list produce a session that
 looks complete and is missing part of its own history — with the golden fixture
@@ -126,11 +135,13 @@ type is a defect in the engine or the log.) Payload schemas version per event
 type, on the handler that owns them, so a recorded event written against older
 rules fails loudly instead of being reinterpreted.
 
-**The transcript is derived state, not a rendering side effect.** Each event
-folds one `TranscriptEntry` into `SessionState.transcript` at the same index,
-and the recorded `transcript.txt` is a pure rendering of those entries. A Phase
-1 terminal view renders the same entries differently without changing what was
-recorded.
+**The transcript is derived state, not a rendering side effect.** Each logged
+event folds one `TranscriptEntry` into `SessionState.transcript` at the same
+index; an expansion envelope is not logged, while every child it emits is. The
+recorded `transcript.txt` is a pure rendering of those entries. Shell result
+entries optionally carry ordered `{stream, text}` output plus an exit code; the
+two fields are present together or absent together. A Phase 1 terminal view
+renders the same entries differently without changing what was recorded.
 
 ### Simulated machine state
 
@@ -180,9 +191,18 @@ recorded.
 
 ### Command layer
 
-- ~25 real shell commands implemented generically against the VFS/git/process
-  models; cartridges supply the world, not command behavior
-- Cartridge-defined **hidden commands** and overrides for authored gags
+- `engine/commands/` owns POSIX-ish word tokenization, generic short/long option
+  parsing, duplicate-safe command registration, and the one shell execution API
+  used by both terminal views
+- runtime commands are implemented generically against the VFS/git/process
+  models; `pwd`, `echo`, and `true` establish the frame before the remaining
+  Phase 0 command sets land
+- cartridge-defined hidden commands and overrides are static
+  `{stdout, stderr, exitCode}` records under `repository.commands`, never
+  executable behavior; a cartridge record explicitly wins over a runtime
+  builtin with the same name, and its stdout lines precede stderr lines
+- unknown names return straight shell-register stderr and exit 127; blank input
+  records a successful empty result
 - The TUI passes `!`-prefixed input straight to the shell layer; both views
   are thin renderers over the same engine session
 
@@ -265,6 +285,10 @@ shape:
     "manPages": [{ "name": "healthcheck", "section": "8",
                    "contents": "HEALTHCHECK(8)\n..." }],
     "shellHistory": ["git status", "npm test"],
+    "commands": {
+      "load-check": { "stdout": ["beam 4: nominal"],
+                      "stderr": [], "exitCode": 0 }
+    },
     "gitHistory": {
       "commits": [{ "id": "initial", "parents": [], "author": { "...": "..." },
                     "message": "...", "committedAt": "...",
