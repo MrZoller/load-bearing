@@ -59,6 +59,14 @@ describe("the engine's module list", () => {
       "vfs.rename",
       "vfs.replace-files",
       "vfs.write",
+      "world.env-set",
+      "world.env-unset",
+      "world.history-append",
+      "world.log-append",
+      "world.process-transition",
+      "world.service-restart",
+      "world.service-start",
+      "world.service-stop",
     ]);
   });
 

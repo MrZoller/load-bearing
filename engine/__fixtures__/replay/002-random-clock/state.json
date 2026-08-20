@@ -74,9 +74,13 @@
         "user": "root"
       },
       "logs": [],
-      "manPages": {
-        "service": "SERVICE(8)\n\nNAME\n     service - the service\n"
-      },
+      "manPages": [
+        {
+          "contents": "SERVICE(8)\n\nNAME\n     service - the service\n",
+          "name": "service",
+          "section": "8"
+        }
+      ],
       "processes": [],
       "services": [],
       "shellHistory": [
@@ -191,6 +195,28 @@
         "umask": "0022",
         "user": "root"
       }
+    },
+    "world": {
+      "env": {
+        "PATH": "/usr/local/bin:/usr/bin:/bin",
+        "SERVICE_TIER": "critical"
+      },
+      "logs": [],
+      "manPages": [
+        {
+          "contents": "SERVICE(8)\n\nNAME\n     service - the service\n",
+          "name": "service",
+          "section": "8"
+        }
+      ],
+      "processes": [],
+      "services": [],
+      "shellHistory": [
+        "cd /production/service",
+        "git status",
+        "npm test"
+      ],
+      "tickets": []
     }
   },
   "transcript": [

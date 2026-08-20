@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 7,
+    "date": "2026-08-05",
+    "title": "World State Fixture",
+    "assignment": "Exercise every environmental surface.",
+    "startedAt": "2026-08-05T09:14:22.000Z"
+  },
+  "repository": {
+    "cwd": "/production/service",
+    "identity": { "user": "root", "group": "root", "home": "/root" },
+    "files": {
+      "/production/service/app": { "contents": "binary" },
+      "/var/log/api.log": { "contents": "booted\n" }
+    },
+    "env": { "SERVICE_TIER": "critical" },
+    "manPages": [
+      { "name": "service", "section": "8", "contents": "SERVICE(8)\n" },
+      { "name": "service", "section": "1", "contents": "SERVICE(1)\n" }
+    ],
+    "shellHistory": ["git status"],
+    "processes": [
+      {
+        "id": "worker",
+        "pid": 0,
+        "user": "root",
+        "command": { "binary": "/production/service/app", "args": ["--serve"] },
+        "startedAt": "2026-08-05T09:00:00.000Z",
+        "state": "running"
+      },
+      {
+        "id": "fixed",
+        "pid": 1200,
+        "user": "root",
+        "command": { "binary": "/production/service/app", "args": [] },
+        "startedAt": "2026-08-05T08:00:00.000Z",
+        "state": "stopped"
+      }
+    ],
+    "services": [
+      {
+        "id": "api",
+        "state": "running",
+        "health": "healthy",
+        "ports": [443, 0],
+        "dependencies": []
+      },
+      {
+        "id": "worker",
+        "state": "stopped",
+        "health": "degraded",
+        "ports": [0],
+        "dependencies": ["api"]
+      }
+    ],
+    "logs": [
+      { "id": "api-file", "kind": "file", "path": "/var/log/api.log" },
+      { "id": "events", "kind": "stream", "entries": ["seeded"] }
+    ],
+    "tickets": [
+      {
+        "id": "T-1",
+        "status": "open",
+        "title": "API tilted",
+        "body": "It leans.",
+        "service": "api"
+      },
+      {
+        "id": "T-2",
+        "status": "closed",
+        "title": "Floor",
+        "body": "Expected.",
+        "service": ""
+      }
+    ]
+  },
+  "models": [
+    {
+      "id": "deep-foundation",
+      "name": "Deep Foundation",
+      "archetype": "paranoid",
+      "description": "Thorough. Expensive. Excavation permit required.",
+      "costMultiplier": 48000
+    }
+  ]
+}

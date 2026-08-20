@@ -1,0 +1,29 @@
+{
+  "name": "007-world-state",
+  "description": "Every environmental surface hydrates, PID and port zeros resolve on isolated streams, stream and VFS-backed logs append through their sole owners, and all required world mutations replay together.",
+  "seed": "2026-08-05/7/deep-foundation",
+  "cartridge": "world",
+  "events": [
+    { "type": "world.env-set", "payload": { "name": "NEW", "value": "yes" } },
+    { "type": "world.env-unset", "payload": { "name": "SERVICE_TIER" } },
+    {
+      "type": "world.log-append",
+      "payload": { "id": "events", "entry": "later" }
+    },
+    {
+      "type": "world.log-append",
+      "payload": { "id": "api-file", "entry": "failed" }
+    },
+    { "type": "world.service-start", "payload": { "id": "worker" } },
+    { "type": "world.service-stop", "payload": { "id": "api" } },
+    { "type": "world.service-restart", "payload": { "id": "api" } },
+    {
+      "type": "world.history-append",
+      "payload": { "command": "systemctl status api" }
+    },
+    {
+      "type": "world.process-transition",
+      "payload": { "id": "fixed", "state": "running" }
+    }
+  ]
+}

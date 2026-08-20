@@ -159,14 +159,24 @@ recorded.
   tracked VFS files through the VFS-owned effect above. Coherence is a hard
   requirement — the moment `git log` contradicts `git blame`, reaction #3
   ("the state is consistent") dies.
-- **Processes and services:** cartridge-defined units with states, health,
-  ports, and reactions to visitor actions (the health-check → load-balancer
-  routing gag is a service reaction)
+- **Processes and services:** `engine/world/` hydrates cartridge-defined units.
+  Zero PIDs and ports are assigned reproducibly from separate `world/pids` and
+  `world/ports` streams: explicit values are reserved first, authored entries
+  are sorted by stable id before each draw, and a random start plus bounded
+  linear probe selects the first free value. Adding a process therefore cannot
+  re-roll a service port. Process listings sort by numeric PID then code-point
+  id; service and ticket listings sort by code-point id, with no locale
+  collation. Service transitions change only running/stopped state; health
+  remains cartridge- and reaction-owned.
 - **Test runner:** simulated `npm test`-style output defined per cartridge,
   reactive to file state
-- **Logs, env, man pages, shell history, ticket archive:**
-  cartridge-supplied, queryable via shell commands — the primary carriers
-  of environmental jokes (see DESIGN.md → The shell plays it straight)
+- **Logs, env, man pages, shell history, ticket archive:** cartridge-supplied,
+  queryable environmental state. Stream log entries live in the world slice;
+  file-log contents live only in VFS and append atomically through a VFS-owned
+  effect. History remains authored order, oldest first. Man pages use exact
+  `(name, section)` identity; name-only lookup chooses code-point section order.
+  These are primary carriers of environmental jokes (see DESIGN.md → The shell
+  plays it straight).
 
 ### Command layer
 
@@ -252,7 +262,8 @@ shape:
       }
     },
     "env": { "SERVICE_TIER": "critical" },
-    "manPages": { "healthcheck": "HEALTHCHECK(8)\n..." },
+    "manPages": [{ "name": "healthcheck", "section": "8",
+                   "contents": "HEALTHCHECK(8)\n..." }],
     "shellHistory": ["git status", "npm test"],
     "gitHistory": {
       "commits": [{ "id": "initial", "parents": [], "author": { "...": "..." },
@@ -302,11 +313,12 @@ Three things worth noting, because each is a decision rather than a detail:
   this safe: a later version that adds fields declares itself rather than
   relying on old engines to shrug.
 
-`story`, `presentation`, and the interiors of `processes`, `services`, `tests`,
-`logs` and `tickets` are **declared but not validated** in v0. `gitHistory` is
-concrete and coherence-validated. Each remaining deferred section is marked in
-the emitted schema with the issue or phase that tightens it, so the gap reads as
-a decision rather than as something forgotten.
+`story`, `presentation`, and the interiors of `tests` are **declared but not
+validated** in v0. `gitHistory` and the world surfaces (`processes`, `services`,
+`logs`, env, man pages, history, and `tickets`) are concrete and
+coherence-validated. Each remaining deferred section is marked in the emitted
+schema with the issue or phase that tightens it, so the gap reads as a decision
+rather than as something forgotten.
 
 **Cartridge owns:** world (scene, repo, files with ownership metadata, git,
 processes, services, logs, env, man pages, shell history), models (names, archetypes, multipliers, quirks), story (premise,
