@@ -919,6 +919,32 @@ describe("deferred sections", () => {
 });
 
 describe("Git history coherence", () => {
+  it("accepts tracked files when the repository cwd is root", () => {
+    const source = loadCartridgeFixture("git") as Record<string, unknown>;
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["cwd"] = "/";
+
+    expect(() => loadCartridge(source)).not.toThrow();
+  });
+
+  it("does not derive Git path complaints from an invalid cwd", () => {
+    const source = loadCartridgeFixture("git") as Record<string, unknown>;
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["cwd"] = "relative/path";
+
+    const issues = issuesOf(source);
+    expect(issues).toContainEqual({
+      pointer: "/repository/cwd",
+      expected: "an absolute POSIX path",
+      found: '"relative/path"',
+    });
+    expect(
+      issues.some((issue) =>
+        issue.pointer.startsWith("/repository/gitHistory/"),
+      ),
+    ).toBe(false);
+  });
+
   it("rejects tracked files outside the repository cwd", () => {
     const source = loadCartridgeFixture("git") as Record<string, unknown>;
     const repository = source["repository"] as Record<string, unknown>;

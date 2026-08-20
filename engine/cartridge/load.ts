@@ -1198,6 +1198,7 @@ export function loadCartridge(value: unknown): LoadedCartridge {
   }
   if (
     !issueAt(report, "/repository") &&
+    !issueAt(report, "/repository/cwd") &&
     !issueWithin(report, "/repository/gitHistory") &&
     !issueAt(report, "/repository/files")
   ) {
