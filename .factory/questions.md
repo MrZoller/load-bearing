@@ -21,3 +21,22 @@ Please also specify root bypass, creation owner/group and umask, whether bare
 `~` is the only tilde form, chmod authorization, copy metadata behavior, and
 whether successful child mutations update parent-directory mtimes.
 **A:**
+
+## Q2 (task T4, open) — How should shell execution coordinate cross-slice mutations?
+Context: An event module may return only its own namespace slice, but T5–T7
+commands must atomically mutate VFS, git, process, service, and environment
+slices while recording one ordered shell result. The approved plan names this
+as an orchestration blocker; T4 also needs a cartridge-command schema and a
+structured stdout/stderr transcript contract that do not yet exist. Parked
+branch: `factory/t4-command-interpreter`.
+Options considered: A — add reducer-supported ordered event expansion, with one
+visitor command expanding into owning-subsystem events plus a shell-result
+event; B — add a privileged orchestration module allowed to return multiple
+slices, weakening the current isolation invariant; C — have each mutating
+command be an owning-subsystem event and keep `shell.execute` only for pure
+commands, complicating the single shell API and transcript ordering.
+Please select the orchestration model and confirm whether cartridge commands
+should be static `{stdout, stderr, exitCode}` records under `repository.commands`,
+and whether transcript entries should gain structured stream-tagged output plus
+an exit code.
+**A:**
