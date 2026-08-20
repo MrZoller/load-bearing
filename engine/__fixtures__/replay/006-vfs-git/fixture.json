@@ -1,0 +1,35 @@
+{
+  "name": "006-vfs-git",
+  "description": "A VFS edit changes Git status and structured diff, dirty checkout refuses both slices, and restoring clean contents allows one atomic branch checkout through the VFS.",
+  "seed": "2026-08-05/6/deep-foundation",
+  "cartridge": "git",
+  "events": [
+    {
+      "type": "vfs.write",
+      "payload": {
+        "path": "/production/service/src/index.ts",
+        "contents": "export const load = 2;\n"
+      }
+    },
+    { "type": "git.status", "payload": {} },
+    {
+      "type": "git.diff",
+      "payload": { "comparison": "working-index" }
+    },
+    { "type": "git.checkout", "payload": { "target": "before-load" } },
+    {
+      "type": "vfs.write",
+      "payload": {
+        "path": "/production/service/src/index.ts",
+        "contents": "export const load = 1;\n"
+      }
+    },
+    { "type": "git.checkout", "payload": { "target": "before-load" } },
+    { "type": "git.status", "payload": {} },
+    {
+      "type": "git.blame",
+      "payload": { "path": "/production/service/src/index.ts" }
+    },
+    { "type": "git.log", "payload": {} }
+  ]
+}

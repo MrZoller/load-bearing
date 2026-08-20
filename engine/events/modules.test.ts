@@ -41,6 +41,12 @@ describe("the engine's module list", () => {
     );
     expect(ENGINE_EVENT_REGISTRY.types).toEqual([
       "clock.tick",
+      "git.blame",
+      "git.checkout",
+      "git.diff",
+      "git.log",
+      "git.stage",
+      "git.status",
       "probe.int",
       "probe.random",
       "probe.weighted",
@@ -51,6 +57,7 @@ describe("the engine's module list", () => {
       "vfs.mkdir",
       "vfs.read",
       "vfs.rename",
+      "vfs.replace-files",
       "vfs.write",
     ]);
   });
@@ -426,7 +433,7 @@ describe("the probe events", () => {
             ]),
           ),
         ) as Record<string, unknown>),
-        slices: { probe: atCeiling, vfs: fold([]).slices["vfs"] },
+        slices: { ...fold([]).slices, probe: atCeiling },
       }),
     );
 

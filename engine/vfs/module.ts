@@ -9,6 +9,8 @@ import {
 } from "../cartridge/schema.js";
 import { defineEventModule } from "../events/module.js";
 import type { EventContext } from "../events/module.js";
+import { readSlice } from "../events/state.js";
+import type { SessionState } from "../events/state.js";
 import { readString, requirePayload } from "../events/payload.js";
 import type { EventPayload } from "../events/payload.js";
 import { resolveVfsPath } from "./path.js";
@@ -21,6 +23,7 @@ import {
   listVfs,
   mkdirVfs,
   readVfs,
+  replaceVfsFiles,
   renameVfs,
   writeVfs,
 } from "./vfs.js";
@@ -209,6 +212,11 @@ export function validateVfsSlice(slice: unknown, where: string): VfsSlice {
   return slice as VfsSlice;
 }
 
+/** Read another module's VFS view through the VFS-owned validator. */
+export function readVfsSlice(state: SessionState): VfsSlice {
+  return validateVfsSlice(readSlice(state, "vfs"), "session state: slices.vfs");
+}
+
 function payload(
   context: EventContext,
   fields: readonly string[],
@@ -371,6 +379,46 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
           (value) =>
             `created=${String(value.paths.length)} path=${JSON.stringify(value.paths.at(-1) ?? "")}`,
         );
+      },
+    },
+    "vfs.replace-files": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["tracked", "target"]);
+        const rawTracked = data["tracked"];
+        if (!Array.isArray(rawTracked))
+          throw new Error(`${context.where}: tracked must be an array`);
+        const tracked = rawTracked.map((value, index) => {
+          if (typeof value !== "string")
+            throw new Error(
+              `${context.where}: tracked[${String(index)}] must be a string`,
+            );
+          return value;
+        });
+        const rawTarget = requireRecord(
+          data["target"],
+          `${context.where}.target`,
+        );
+        const target: Record<string, string> = {};
+        for (const path of Object.keys(rawTarget).sort()) {
+          const contents = rawTarget[path];
+          if (typeof contents !== "string")
+            throw new Error(
+              `${context.where}: target[${JSON.stringify(path)}] must be a string`,
+            );
+          target[path] = contents;
+        }
+        const mutation = replaceVfsFiles(
+          slice,
+          tracked,
+          target,
+          context.clock.timestamp(),
+        );
+        if (!mutation.result.ok)
+          throw new Error(
+            `${context.where}: VFS replacement failed with ${mutation.result.code} at ${JSON.stringify(mutation.result.path)}`,
+          );
+        return { slice: mutation.slice };
       },
     },
   },

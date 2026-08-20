@@ -1,0 +1,357 @@
+{
+  "cartridge": {
+    "meta": {
+      "assignment": "Keep the repository consistent.",
+      "date": "2026-08-05",
+      "number": 6,
+      "schemaVersion": 0,
+      "startedAt": "2026-08-05T09:14:22.000Z",
+      "title": "Git Fixture World"
+    },
+    "models": [
+      {
+        "archetype": "paranoid",
+        "costMultiplier": 48000,
+        "description": "Thorough. Expensive. Excavation permit required.",
+        "id": "deep-foundation",
+        "name": "Deep Foundation",
+        "quirks": []
+      }
+    ],
+    "presentation": {},
+    "repository": {
+      "cwd": "/production/service",
+      "directories": {},
+      "env": {},
+      "files": {
+        "/etc/motd": {
+          "contents": "This system is load-bearing.\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/README.md": {
+          "contents": "# service\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src/index.ts": {
+          "contents": "export const load = 1;\n",
+          "group": "departed",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "greg"
+        }
+      },
+      "gitHistory": {
+        "branches": {
+          "before-load": "initial",
+          "main": "current"
+        },
+        "commits": [
+          {
+            "author": {
+              "email": "greg@example.test",
+              "name": "Greg Formerly"
+            },
+            "committedAt": "2026-07-30T10:00:00.000Z",
+            "files": {
+              "/production/service/README.md": {
+                "blame": [
+                  "initial"
+                ],
+                "contents": "# service\n"
+              },
+              "/production/service/src/index.ts": {
+                "blame": [
+                  "initial"
+                ],
+                "contents": "export const load = 0;\n"
+              }
+            },
+            "id": "initial",
+            "message": "establish the service\n",
+            "parents": []
+          },
+          {
+            "author": {
+              "email": "greg@example.test",
+              "name": "Greg Formerly"
+            },
+            "committedAt": "2026-07-31T02:11:09.000Z",
+            "files": {
+              "/production/service/README.md": {
+                "blame": [
+                  "initial"
+                ],
+                "contents": "# service\n"
+              },
+              "/production/service/src/index.ts": {
+                "blame": [
+                  "current"
+                ],
+                "contents": "export const load = 1;\n"
+              }
+            },
+            "id": "current",
+            "message": "increase structural load\n",
+            "parents": [
+              "initial"
+            ]
+          }
+        ],
+        "head": {
+          "kind": "branch",
+          "target": "main"
+        }
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      },
+      "logs": [],
+      "manPages": {},
+      "processes": [],
+      "services": [],
+      "shellHistory": [],
+      "tests": [],
+      "tickets": []
+    },
+    "story": {}
+  },
+  "clock": {
+    "elapsedMs": 0,
+    "startMs": 1785921262000
+  },
+  "engineVersion": "0.0.0",
+  "eventCount": 9,
+  "eventSchemaVersion": 0,
+  "random": {
+    "cursors": {},
+    "seed": 3987123762
+  },
+  "seed": "2026-08-05/6/deep-foundation",
+  "slices": {
+    "git": {
+      "branches": {
+        "before-load": "1371060ac7908e038722ae38887e2d71004f7aae",
+        "main": "ec8411560e51cbb72c92dc14430df6b52a836e92"
+      },
+      "commits": {
+        "1371060ac7908e038722ae38887e2d71004f7aae": {
+          "author": {
+            "email": "greg@example.test",
+            "name": "Greg Formerly"
+          },
+          "committedAt": "2026-07-30T10:00:00.000Z",
+          "files": {
+            "/production/service/README.md": {
+              "blame": [
+                "1371060ac7908e038722ae38887e2d71004f7aae"
+              ],
+              "contents": "# service\n"
+            },
+            "/production/service/src/index.ts": {
+              "blame": [
+                "1371060ac7908e038722ae38887e2d71004f7aae"
+              ],
+              "contents": "export const load = 0;\n"
+            }
+          },
+          "hash": "1371060ac7908e038722ae38887e2d71004f7aae",
+          "id": "initial",
+          "message": "establish the service\n",
+          "parents": []
+        },
+        "ec8411560e51cbb72c92dc14430df6b52a836e92": {
+          "author": {
+            "email": "greg@example.test",
+            "name": "Greg Formerly"
+          },
+          "committedAt": "2026-07-31T02:11:09.000Z",
+          "files": {
+            "/production/service/README.md": {
+              "blame": [
+                "1371060ac7908e038722ae38887e2d71004f7aae"
+              ],
+              "contents": "# service\n"
+            },
+            "/production/service/src/index.ts": {
+              "blame": [
+                "ec8411560e51cbb72c92dc14430df6b52a836e92"
+              ],
+              "contents": "export const load = 1;\n"
+            }
+          },
+          "hash": "ec8411560e51cbb72c92dc14430df6b52a836e92",
+          "id": "current",
+          "message": "increase structural load\n",
+          "parents": [
+            "1371060ac7908e038722ae38887e2d71004f7aae"
+          ]
+        }
+      },
+      "head": {
+        "kind": "branch",
+        "target": "before-load"
+      },
+      "index": {
+        "/production/service/README.md": "# service\n",
+        "/production/service/src/index.ts": "export const load = 0;\n"
+      },
+      "root": "/production/service"
+    },
+    "probe": {
+      "events": 0,
+      "values": 0
+    },
+    "vfs": {
+      "cwd": "/production/service",
+      "entries": {
+        "/": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/etc": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/etc/motd": {
+          "contents": "This system is load-bearing.\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/README.md": {
+          "contents": "# service\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src/index.ts": {
+          "contents": "export const load = 0;\n",
+          "group": "departed",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "greg"
+        }
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      }
+    }
+  },
+  "transcript": [
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 0,
+      "summary": "path=\"/production/service/src/index.ts\" created=false",
+      "type": "vfs.write"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [
+        "{\"path\":\"/production/service/src/index.ts\",\"staged\":null,\"untracked\":false,\"working\":\"modified\"}"
+      ],
+      "index": 1,
+      "summary": "paths=1",
+      "type": "git.status"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [
+        "{\"lines\":[{\"kind\":\"deletion\",\"text\":\"export const load = 1;\"},{\"kind\":\"addition\",\"text\":\"export const load = 2;\"}],\"newContents\":\"export const load = 2;\\n\",\"oldContents\":\"export const load = 1;\\n\",\"path\":\"/production/service/src/index.ts\"}"
+      ],
+      "index": 2,
+      "summary": "comparison=working-index files=1",
+      "type": "git.diff"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 3,
+      "summary": "failed code=DIRTY",
+      "type": "git.checkout"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 4,
+      "summary": "path=\"/production/service/src/index.ts\" created=false",
+      "type": "vfs.write"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 5,
+      "summary": "head=branch:before-load hash=1371060ac7908e038722ae38887e2d71004f7aae",
+      "type": "git.checkout"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 6,
+      "summary": "paths=0",
+      "type": "git.status"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [
+        "{\"author\":{\"email\":\"greg@example.test\",\"name\":\"Greg Formerly\"},\"committedAt\":\"2026-07-30T10:00:00.000Z\",\"hash\":\"1371060ac7908e038722ae38887e2d71004f7aae\",\"line\":1,\"text\":\"export const load = 0;\"}"
+      ],
+      "index": 7,
+      "summary": "lines=1",
+      "type": "git.blame"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [
+        "1371060ac7908e038722ae38887e2d71004f7aae"
+      ],
+      "index": 8,
+      "summary": "commits=1",
+      "type": "git.log"
+    }
+  ]
+}

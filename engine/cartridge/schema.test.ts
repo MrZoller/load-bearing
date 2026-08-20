@@ -20,6 +20,11 @@ import type {
 } from "./schema.js";
 import type {
   CartridgeFile,
+  CartridgeGitAuthor,
+  CartridgeGitCommit,
+  CartridgeGitFile,
+  CartridgeGitHead,
+  CartridgeGitHistory,
   CartridgeIdentity,
   CartridgeMeta,
   CartridgeModel,
@@ -94,7 +99,7 @@ describe("the published schema", () => {
     // The gap is a decision, not an oversight — and a reader should be able to
     // see that without noticing an absence.
     const rendered = serialize(emitJsonSchema());
-    for (const owner of ["issue #6", "issue #7", "issue #12", "Phase 4"]) {
+    for (const owner of ["issue #7", "issue #12", "Phase 4"]) {
       expect(rendered).toContain(owner);
     }
   });
@@ -323,6 +328,34 @@ describe("descriptor and type lockstep", () => {
     );
     agrees<CartridgeRepository["shellHistory"][number]>(
       repository.fields.shellHistory.node.items,
+    );
+
+    const history = repository.fields.gitHistory.node;
+    const commit = history.fields.commits.node.items;
+    agrees<CartridgeGitCommit["id"]>(commit.fields.id.node);
+    agrees<CartridgeGitCommit["parents"][number]>(
+      commit.fields.parents.node.items,
+    );
+    agrees<CartridgeGitCommit["message"]>(commit.fields.message.node);
+    agrees<CartridgeGitCommit["committedAt"]>(commit.fields.committedAt.node);
+    agrees<CartridgeGitAuthor["name"]>(
+      commit.fields.author.node.fields.name.node,
+    );
+    agrees<CartridgeGitAuthor["email"]>(
+      commit.fields.author.node.fields.email.node,
+    );
+    agrees<CartridgeGitFile["contents"]>(
+      commit.fields.files.node.values.fields.contents.node,
+    );
+    agrees<CartridgeGitFile["blame"][number]>(
+      commit.fields.files.node.values.fields.blame.node.items,
+    );
+    agrees<CartridgeGitHistory["branches"][string]>(
+      history.fields.branches.node.values,
+    );
+    agrees<CartridgeGitHead["kind"]>(history.fields.head.node.fields.kind.node);
+    agrees<CartridgeGitHead["target"]>(
+      history.fields.head.node.fields.target.node,
     );
 
     const file = repository.fields.files.node.values;

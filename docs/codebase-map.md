@@ -5,9 +5,9 @@ The deep map of the repository, for a day-one agent or engineer. Companion to
 this document is *what exists today*, as opposed to what is designed.
 `CLAUDE.md` and `AGENTS.md` carry the invariants and verified commands.
 
-Status: **Phase 0 — headless state engine, early.** The determinism substrate
-and the cartridge validation layer are built and green; the actual simulation
-machine (VFS, git, processes, shell) does not exist yet. See
+Status: **Phase 0 — headless state engine.** The determinism substrate,
+event registry, cartridge validation, VFS, and Git model are built; processes,
+services, commands, and agent state remain. See
 [Implementation status vs Phase 0](#implementation-status-vs-phase-0).
 
 ---
@@ -27,8 +27,7 @@ machine-checked. Three inputs, one output, byte-identical for identical input:
 - **eventLog** — an append-only list of `EngineEvent`s; every visitor action
   appends one.
 
-`state` is `SessionState` (provisional — see [the reducer is scaffolding](#the-reducer-is-scaffolding-issue-4)),
-rendered to `state.json` and `transcript.txt` by the canonical serializer and
+`state` is the registered-slice `SessionState`, rendered to `state.json` and `transcript.txt` by the canonical serializer and
 compared byte-for-byte against committed golden fixtures.
 
 ---
@@ -49,6 +48,9 @@ compared byte-for-byte against committed golden fixtures.
 │   ├── clock/
 │   │   ├── clock.ts            simulated clock (startMs + elapsedMs)
 │   │   └── civil.ts            hand-written UTC calendar arithmetic
+│   ├── events/                  registry, reducer, snapshots, transcript
+│   ├── vfs/                     immutable filesystem model + event module
+│   ├── git/                     DAG/index/status/blame/diff + event module
 │   ├── cartridge/
 │   │   ├── schema.ts           descriptor-tree schema (the single authority)
 │   │   ├── load.ts             validate + normalize → LoadedCartridge
@@ -82,11 +84,12 @@ compared byte-for-byte against committed golden fixtures.
 |---|---|---|
 | `ReplayInput` | `engine/session.ts` | The input triple: `cartridge` (already loaded), `seed` (canonical string), `events`. |
 | `ReplayOutput` | `engine/session.ts` | `state` + `transcript` (string[]). |
-| `SessionState` | `engine/session.ts` | **PROVISIONAL**: `engineVersion`, `seed`, `cartridge`, `eventCount`, `clock`, `random`. Will be replaced by the real state tree in issue #4. |
-| `EngineEvent` | `engine/session.ts` | **PROVISIONAL** envelope: `{ type: string, payload? }`. Will become a discriminated union + registry. |
+| `SessionState` | `engine/events/state.ts` | Cartridge, clock/PRNG state, transcript, and namespace-owned subsystem slices. |
+| `EngineEvent` | `engine/events/state.ts` | Versionable `{ type, payload, version }` envelope dispatched by exact registered type. |
 | `LoadedCartridge` | `engine/cartridge/types.ts` | The world after validation/normalization. Plain JSON, deep-copied, serializable. |
 | `CartridgeMeta/File/Model/Repository` | `engine/cartridge/types.ts` | Loaded shapes for meta, files, models, repository. |
-| `DeferredObject` | `engine/cartridge/types.ts` | A subtree v0 validates as "an object" but doesn't look inside (`story`, `presentation`, git/process/service/log/ticket/test interiors). |
+| `GitSlice` / `VfsSlice` | `engine/git/types.ts`, `engine/vfs/types.ts` | Canonical plain-JSON machine state owned by each event module. |
+| `DeferredObject` | `engine/cartridge/types.ts` | A subtree v0 validates as "an object" but doesn't look inside (`story`, `presentation`, process/service/log/ticket/test interiors). |
 | `SimulatedClock` / `ClockState` | `engine/clock/clock.ts` | `now() = startMs + elapsedMs`. Advances only via events. |
 | `CivilTime` / `CivilInput` | `engine/clock/civil.ts` | UTC calendar fields; hand-computed (no `Date`/`Intl`). |
 | `RandomStream` / `RandomState` | `engine/random/stream.ts` | A named mulberry32 stream in the shared registry. `fork(label)` derives a child from seed+path, not position. |
@@ -108,10 +111,9 @@ cartridge JSON (authored / Phase-5 generated)
         ▼
    LoadedCartridge (plain JSON, validated, serializable)
         │
-        ▼  replaySession()  [engine/session.ts]
-        │   createClock(cartridge.meta.startedAt)
-        │   createRandom(seed)
-        │   fold events:  stamp → applyEvent → append transcript line
+        ▼  reduce()  [engine/events/reduce.ts]
+        │   bootstrap registered slices + clock + named PRNG streams
+        │   fold events: dispatch owner → transactional effects → transcript
         ▼
    SessionState + transcript:string[]
         │
@@ -174,31 +176,18 @@ Supporting: `engine/pattern.ts` (validators can't be mutated), the purity gate
 
 ---
 
-## The reducer is scaffolding (issue #4)
+## Registered state and cross-slice transactions
 
-`engine/session.ts` is the honest weak point and the single most important
-thing to know before changing the engine. Its doc comment says it plainly:
+`engine/events/modules.ts` is the extension point. A subsystem registers its
+namespace, initial slice, snapshot validator, and exact event types; handlers
+can return only their namespace's slice. Unknown events and payload-version
+mismatches fail rather than becoming no-ops.
 
-- **`SessionState` is not the real state tree.** It's a trivially derived
-  shape (`engineVersion`, `seed`, `cartridge`, `eventCount`, `clock`,
-  `random`) that proves the replay loop end-to-end in CI.
-- **`EngineEvent` is not the real event vocabulary.** It's a free-form
-  `{type, payload}` envelope; the probe event types (`clock.tick`,
-  `random.draw`, `random.int`, `random.weighted`) exist only so fixtures can
-  lock a thousand PRNG draws and a distribution snapshot as committed
-  artifacts.
-- It **does** drive the real PRNG and the real simulated clock, because those
-  two *are* the determinism contract — a placeholder that threaded the seed
-  without drawing would prove the harness and nothing else.
-
-**Issue #4 replaces `replaySession`'s body, `SessionState`, and the whole
-`EngineEvent` vocabulary with a real event registry.** That designed change
-invalidates every fixture's recorded artifacts. This is the planned path, not
-an accident: re-record with `npm run fixtures:update` and justify in the PR.
-
-> Do not build new subsystems on the current event vocabulary as if it were
-> stable. The VFS/git/process subsystems (issues #5–#7) are where the real
-> reducer lands.
+Cross-slice mechanics use bounded transactional effects. The outer handler
+declares effect events, each is dispatched to its registered owner against the
+in-transaction slices, and the reducer publishes only the final state. Effects
+cannot emit transcript output or nested effects. Git checkout is the first
+consumer: Git owns HEAD/index and VFS owns file replacement.
 
 ---
 
@@ -278,36 +267,34 @@ Phase 0 DoD (from `ROADMAP.md`), mapped to what exists:
 | DoD item | Status |
 |---|---|
 | Engine runs in Node with zero DOM dependencies | ✅ **Done** — `engine/` is pure TS; purity gate + `index.test.ts` enforce no `document`/`window`; zero runtime deps. |
-| Replay test: same (cartridge, seed, event log) → byte-identical state/transcript in CI | ✅ **Done** — 3 golden fixtures, byte-identity compare, two timezones. |
-| Full unit coverage of filesystem + git semantics | ❌ **Not started** — VFS (issue #5) and git (issue #6) do not exist. |
-| Cartridge schema validator rejects malformed fixtures with useful errors | ✅ **Done** — descriptor-tree validator, all-issues-at-once with JSON pointers, 10 `invalid/*.json` fixtures. |
+| Replay test: same (cartridge, seed, event log) → byte-identical state/transcript in CI | ✅ **Done** — golden fixtures, byte-identity compare, two timezones. |
+| Full unit coverage of filesystem + git semantics | ✅ **Built** — immutable VFS and Git models, cartridge coherence checks, and cross-slice replay fixtures. |
+| Cartridge schema validator rejects malformed fixtures with useful errors | ✅ **Done** — descriptor-tree validator and all-issues-at-once JSON pointers, including malformed Git graphs/refs/blame. |
 
 **Explicitly not in this phase** (per ROADMAP) — all correct to be absent:
 any rendering, any comedy writing, any real model calls.
 
 **What Phase 0 scope has NOT yet been built** (the gap a day-one agent will
-feel): the simulated machine — virtual filesystem, git, processes/services,
-test runner, logs/env/man, shell history — and the command layer (~25 shell
+feel): the remaining simulated machine — processes/services, test runner,
+logs/env/man and shell history — and the command layer (~25 shell
 commands), the natural-language intent layer, escalation stage, metrics, and
 agent mind state (permission ledger, belief state, todo/thinking blocks). All
-are designed in `docs/ARCHITECTURE.md` and land behind issues #4–#12. Today
-the engine proves the replay substrate with probe events; the real event
-registry (issue #4) is the gate the rest waits on.
+are designed in `docs/ARCHITECTURE.md` and land behind the remaining Phase 0
+issues.
 
 ---
 
 ## Extension points
 
-1. **The event registry (issue #4)** — replace `replaySession`'s dispatch.
-   The designed shape: a discriminated union plus a registry subsystems
-   extend. This is the load-bearing seam; get the registry shape right and
-   every subsystem slots in.
+1. **The event registry** (`engine/events/modules.ts`) — add one module and one
+   list entry. A cross-slice operation uses transactional effects rather than
+   writing another module's slice.
 2. **The cartridge schema descriptor tree** (`engine/cartridge/schema.ts`) —
    adding a world concept means adding a descriptor node here; the published
    schema and the loader follow automatically (three-way agreement: validator /
    emitted JSON Schema / hand-written types, one source of truth). Deferred
    sections name who tightens them and when: `story`/`presentation` (Phase 2
-   shapes, Phase 4 hardens), `gitHistory` (issue #6), `processes`/`services`/
+   shapes, Phase 4 hardens), `processes`/`services`/
    `logs`/`tickets` (issue #7), `tests` (issue #12).
 3. **New golden fixtures** — every Phase 0 subsystem PR adds at least one
    (`engine/__fixtures__/replay/NNN-…/`). A subsystem with unit tests and no
@@ -342,9 +329,8 @@ registry (issue #4) is the gate the rest waits on.
 
 ## Where the bodies are buried
 
-- **`engine/session.ts`** — the entire event/reducer vocabulary is provisional
-  scaffolding. This is by design and documented, but any agent assuming
-  `SessionState` or `EngineEvent` is stable will build on sand. Issue #4.
+- **`engine/session.ts`** — a compatibility facade over the registered reducer;
+  subsystem mechanics belong in event modules, never back in a central switch.
 - **`engine/version.ts`** — `ENGINE_VERSION` is hardcoded `"0.0.0"` and
   baked into fixture state. Bumping it deliberately invalidates fixtures (as
   recorded `engineVersion` will differ). It is not wired to `package.json`
