@@ -29,7 +29,7 @@ remains blocked until review findings are deliberately batched into it.
 - [x] T4 (standard) — Command interpreter core: tokenizer, registry, dispatch (Fixes #8)
   - acceptance: `engine/commands/` provides tested POSIX-ish tokenization and option parsing, duplicate-safe registration, validated cartridge overrides, exit-127 unknown-command behavior, and a pure shell execution API whose ordered stdout/stderr/exit results enter the replay transcript; `pwd`, `echo`, and `true` prove the path end to end; purity passes
   - pr: 26
-- [R] T5 (standard) — Filesystem commands (Fixes #9)
+- [x] T5 (standard) — Filesystem commands (Fixes #9)
   - acceptance: filesystem command modules implement the issue's command and flag set over the VFS with exact deterministic output and exit codes; per-command golden tests cover success, missing-target, and permission-denied paths; `ls -la` preserves declared metadata; a replay proves multi-command mutation and persistent deletion across timezones
   - deps: T1, T4
   - pr: 27
@@ -81,3 +81,4 @@ remains blocked until review findings are deliberately batched into it.
   - PR #26: directly test malformed `shell.result` stream payload guards on replay
   - PR #26: return a deterministic shell result for oversized command input
   - PR #26: return a deterministic shell result for control-character and lone-surrogate input
+  - PR #27: reject empty authored filesystem operands rather than resolving them to the current working directory
