@@ -134,6 +134,46 @@
           "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$",
           "type": "string"
         },
+        "directories": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "description": "Metadata for one explicitly declared directory. Contents are derived from path keys, never embedded here.",
+            "properties": {
+              "group": {
+                "$comment": "Defaults to the nearest explicitly declared ancestor's group, or `root` when none declares one.",
+                "description": "Owning group. Defaults to the nearest explicitly declared ancestor's group, or root.",
+                "pattern": "^[a-z_][a-z0-9_-]*$",
+                "type": "string"
+              },
+              "mode": {
+                "default": "0755",
+                "description": "Permission bits as four octal digits.",
+                "pattern": "^[0-7]{4}$",
+                "type": "string"
+              },
+              "mtime": {
+                "$comment": "The loader applies a further check this pattern cannot express. Defaults to `meta.startedAt`.",
+                "description": "A UTC instant, `YYYY-MM-DDTHH:MM:SS.mmmZ`. Fixed width, so one instant has exactly one spelling. The simulated machine has no other timezone.",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                "type": "string"
+              },
+              "owner": {
+                "$comment": "Defaults to the nearest explicitly declared ancestor's owner, or `root` when none declares one.",
+                "description": "Owning user. Defaults to the nearest explicitly declared ancestor's owner, or root.",
+                "pattern": "^[a-z_][a-z0-9_-]*$",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "default": {},
+          "description": "Optional explicit directory metadata keyed by absolute path. Undeclared ancestors inherit owner/group from the nearest declared ancestor, otherwise root:root; their mode is 0755 and mtime is meta.startedAt.",
+          "propertyNames": {
+            "description": "Each key is an absolute POSIX path naming a directory.",
+            "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$"
+          },
+          "type": "object"
+        },
         "env": {
           "additionalProperties": {
             "description": "The variable's value.",
@@ -203,6 +243,39 @@
             "type": "object"
           },
           "type": "array"
+        },
+        "identity": {
+          "additionalProperties": false,
+          "description": "The acting POSIX identity. Root bypasses permission checks; all other operations use these user and group names.",
+          "properties": {
+            "group": {
+              "description": "Acting primary group name.",
+              "pattern": "^[a-z_][a-z0-9_-]*$",
+              "type": "string"
+            },
+            "home": {
+              "description": "Absolute home directory. Only bare `~` and `~/...` expand to it; `~user` remains a literal path segment.",
+              "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$",
+              "type": "string"
+            },
+            "umask": {
+              "default": "0022",
+              "description": "Permission mask for new files and directories, as four octal digits.",
+              "pattern": "^0[0-7]{3}$",
+              "type": "string"
+            },
+            "user": {
+              "description": "Acting user name.",
+              "pattern": "^[a-z_][a-z0-9_-]*$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "user",
+            "group",
+            "home"
+          ],
+          "type": "object"
         },
         "logs": {
           "default": [],
@@ -279,6 +352,7 @@
       },
       "required": [
         "cwd",
+        "identity",
         "files"
       ],
       "type": "object"

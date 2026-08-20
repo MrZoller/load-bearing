@@ -209,6 +209,18 @@ This restraint is itself load-bearing: the shell's deadpan realism is what
 makes the larger failures — and the agent's escalation — hit harder. Do not
 turn every shell line into a punchline.
 
+**Public cartridge filesystem policy.** A cartridge publishes the acting
+repository identity (`user`, primary `group`, absolute `home`, and `umask`) and
+may publish metadata for selected absolute directory paths. File and directory
+owners, groups, modes, and mtimes are authored world facts, not decorative
+output. Undeclared ancestors inherit owner/group from the nearest declared
+ancestor, otherwise `root:root`, with mode `0755` and the incident start time.
+The runtime applies ordinary owner/group/other permissions, with root bypass,
+and creates entries as the acting identity under its umask. Only bare `~` and
+`~/...` expand to `home`; `~someone` remains a literal path segment. This policy
+is public so incident authors can deliberately build jokes around who owns a
+file without depending on undocumented shell behavior.
+
 ### Failure is content
 
 There is no "I don't understand" state anywhere in the product:

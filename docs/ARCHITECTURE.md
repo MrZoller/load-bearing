@@ -126,10 +126,12 @@ recorded.
 
 ### Simulated machine state
 
-- **VFS:** tree with contents, permissions, owners/groups, mtimes, cwd —
-  ownership metadata is a comedy surface (`ls -la` shows owner `greg`,
-  group `departed`); mutations persist
-  for the session ("a deleted file stays deleted")
+- **VFS:** an immutable, flat path-keyed slice that reconstructs a tree with
+  contents, permissions, owners/groups, mtimes, and cwd. Ownership metadata is
+  a comedy surface (`ls -la` shows owner `greg`, group `departed`); mutations
+  persist for the session ("a deleted file stays deleted"). Directory listings
+  sort names by numeric Unicode code point, shorter prefix first, with no locale
+  collation; this is stable in Node and every browser even for astral characters.
 - **Git:** commit DAG with authors/timestamps/messages, branches, index,
   working tree, blame per line, diff. Coherence is a hard requirement — the
   moment `git log` contradicts `git blame`, reaction #3 ("the state is
@@ -214,6 +216,13 @@ shape:
             "assignment": "Restore observability without making the service healthy" },
   "repository": {
     "cwd": "/production/availability-service",
+    "identity": { "user": "visitor", "group": "visitor",
+                  "home": "/home/visitor", "umask": "0022" },
+    "directories": {
+      "/production/availability-service": {
+        "owner": "greg", "group": "departed", "mode": "0755"
+      }
+    },
     "files": {
       "/production/availability-service/src/healthcheck.ts": {
         "contents": "...", "owner": "greg", "group": "departed", "mode": "0644"
@@ -247,7 +256,13 @@ Three things worth noting, because each is a decision rather than a detail:
 - **File keys are absolute paths**, not paths relative to `cwd`. The world is a
   filesystem, not a project folder — `cat /etc/motd` and `ls /var/log` are part
   of the joke surface — and `cwd` is then checkable against it. v0's one
-  cross-reference check is that some declared file lives under `cwd`.
+  cross-reference check is that `cwd` is a declared or implied directory.
+- **Filesystem identity is explicit.** `repository.identity` is required, with
+  `umask` defaulting to `0022`. Optional `repository.directories` supplies the
+  owner/group/mode/mtime comedy surface for selected absolute paths; omitted
+  ancestors inherit owner/group from their nearest declared ancestor (otherwise
+  `root:root`) and default to mode `0755` at `meta.startedAt`. New entries use
+  the acting identity and umask. Root alone bypasses permissions.
 - **`meta.startedAt` is required.** A cartridge that does not say when its
   session begins is a generation bug, and Phase 5 has no human in the loop to
   notice a plausible-looking wrong date. Invariant 7 says a pipeline failure

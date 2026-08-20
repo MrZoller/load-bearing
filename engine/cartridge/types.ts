@@ -47,6 +47,24 @@ export interface CartridgeFile {
   readonly mtime: string;
 }
 
+export interface CartridgeDirectory {
+  /** Four octal digits. */
+  readonly mode: string;
+  readonly owner: string;
+  readonly group: string;
+  /** UTC instant. Defaults to `meta.startedAt` when the cartridge is silent. */
+  readonly mtime: string;
+}
+
+export interface CartridgeIdentity {
+  readonly user: string;
+  readonly group: string;
+  /** Absolute home directory used for bare `~` and `~/...` expansion. */
+  readonly home: string;
+  /** Four octal digits. New files and directories mask their base mode with it. */
+  readonly umask: string;
+}
+
 export interface CartridgeModel {
   readonly id: string;
   readonly name: string;
@@ -59,8 +77,12 @@ export interface CartridgeModel {
 export interface CartridgeRepository {
   /** Absolute path the session opens in. */
   readonly cwd: string;
+  /** The user whose shell and filesystem permissions the session uses. */
+  readonly identity: CartridgeIdentity;
   /** The simulated filesystem, keyed by absolute path. */
   readonly files: Readonly<Record<string, CartridgeFile>>;
+  /** Explicit directory metadata. Missing ancestors are synthesized by the VFS. */
+  readonly directories: Readonly<Record<string, CartridgeDirectory>>;
   readonly env: Readonly<Record<string, string>>;
   readonly manPages: Readonly<Record<string, string>>;
   readonly shellHistory: readonly string[];

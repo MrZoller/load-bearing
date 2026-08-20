@@ -63,6 +63,40 @@ export type { EventPayload } from "./events/payload.js";
 export { CLOCK_MODULE, MAX_TICK_MS } from "./events/core.js";
 export { PROBE_MODULE } from "./events/probe.js";
 export type { ProbeSlice } from "./events/probe.js";
+export { VFS_MODULE, validateVfsSlice } from "./vfs/module.js";
+export {
+  baseName,
+  compareVfsNames,
+  isDescendant,
+  parentPath,
+  resolveVfsPath,
+} from "./vfs/path.js";
+export {
+  chmodVfs,
+  copyVfs,
+  createVfsSlice,
+  deleteVfs,
+  listVfs,
+  mkdirVfs,
+  readVfs,
+  renameVfs,
+  writeVfs,
+} from "./vfs/vfs.js";
+export type {
+  VfsCopyOptions,
+  VfsDirectoryEntry,
+  VfsEntry,
+  VfsErrorCode,
+  VfsFailure,
+  VfsFileEntry,
+  VfsIdentity,
+  VfsListItem,
+  VfsMutation,
+  VfsReadValue,
+  VfsResult,
+  VfsSlice,
+  VfsSuccess,
+} from "./vfs/types.js";
 
 export { deepFreeze } from "./freeze.js";
 export {
@@ -131,7 +165,9 @@ export {
 export { CARTRIDGE_SCHEMA_ID, emitJsonSchema } from "./cartridge/jsonSchema.js";
 export type {
   Archetype,
+  CartridgeDirectory,
   CartridgeFile,
+  CartridgeIdentity,
   CartridgeMeta,
   CartridgeModel,
   CartridgeRepository,
