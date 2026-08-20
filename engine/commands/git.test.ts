@@ -254,6 +254,47 @@ describe("Git commands", () => {
     ]);
   });
 
+  it("records status for a valid repository whose absolute paths exceed a transcript line", () => {
+    const source = loadCartridgeFixture("git") as Record<string, unknown>;
+    const repository = source["repository"] as Record<string, unknown>;
+    const oldRoot = "/production/service";
+    const root = `/${"a".repeat(5000)}`;
+    const rename = (path: string): string =>
+      path.startsWith(oldRoot) ? `${root}${path.slice(oldRoot.length)}` : path;
+    repository["cwd"] = root;
+    repository["files"] = Object.fromEntries(
+      Object.entries(repository["files"] as Record<string, unknown>).map(
+        ([path, file]) => [rename(path), file],
+      ),
+    );
+    const history = repository["gitHistory"] as Record<string, unknown>;
+    for (const commit of history["commits"] as Record<string, unknown>[]) {
+      commit["files"] = Object.fromEntries(
+        Object.entries(commit["files"] as Record<string, unknown>).map(
+          ([path, file]) => [rename(path), file],
+        ),
+      );
+    }
+    const files = repository["files"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    files[`${root}/src/index.ts`] = {
+      ...files[`${root}/src/index.ts`],
+      contents: "export const load = 2;\n",
+    };
+    const state = bootstrap({
+      cartridge: loadCartridge(source),
+      seed: "git-commands",
+    });
+
+    expect(() => execute(state, "git status --short")).not.toThrow();
+    expect(run(state, "git status --short")).toMatchObject({
+      stdout: [" M src/index.ts"],
+      exitCode: 0,
+    });
+  });
+
   it.each(["git restore src/index.ts", "git checkout -- src/index.ts"])(
     "%s deletes a working file when its staged index entry is deleted",
     (command) => {

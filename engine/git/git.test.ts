@@ -499,6 +499,25 @@ describe("the Git model", () => {
     expect(() => restoreSnapshot(serialize(recorded))).toThrow(/blame/);
   });
 
+  it("rejects a snapshot with a commit timestamp that commands cannot render", () => {
+    const state = reduce({
+      cartridge: loadCartridge(source()),
+      seed: "2026-08-05/6/deep-foundation",
+      events: [{ type: "git.status", payload: {} }],
+    });
+    const recorded = deserialize(snapshot(state)) as Record<string, unknown>;
+    const git = (recorded["slices"] as Record<string, Record<string, unknown>>)[
+      "git"
+    ] as Record<string, unknown>;
+    const commits = git["commits"] as Record<string, Record<string, unknown>>;
+    const head = (git["branches"] as Record<string, string>)["main"] as string;
+    (commits[head] as Record<string, unknown>)["committedAt"] = "bogus";
+
+    expect(() => restoreSnapshot(serialize(recorded))).toThrow(
+      /invalid commit timestamp/,
+    );
+  });
+
   it.each(["commit", "index"])(
     "rejects a snapshot whose Git %s path escapes the repository root",
     (kind) => {

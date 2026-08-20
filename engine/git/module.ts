@@ -6,6 +6,7 @@ import {
   GIT_EMAIL_PATTERN,
   SINGLE_LINE_PATTERN,
 } from "../cartridge/schema.js";
+import { parseTimestamp } from "../clock/civil.js";
 import { defineEventModule } from "../events/module.js";
 import type { EventContext } from "../events/module.js";
 import { readString, requirePayload } from "../events/payload.js";
@@ -91,6 +92,20 @@ function stringArray(value: unknown, where: string): readonly string[] {
 
 const HASH_PATTERN = /^[0-9a-f]{40}$/;
 
+function summaryPath(path: string): string {
+  const rendered = JSON.stringify(path);
+  // Status detail is diagnostic transcript data, not an event payload. A valid
+  // long cartridge path must therefore remain representable in the transcript.
+  if (rendered.length <= 2048) return rendered;
+  const budget = 2016;
+  let end = 0;
+  for (const character of rendered) {
+    if (end + character.length > budget) break;
+    end += character.length;
+  }
+  return `${rendered.slice(0, end)}… (${String(path.length)} chars)`;
+}
+
 /** Validate snapshots without normalization; malformed Git state never resumes. */
 export function validateGitSlice(slice: unknown, where: string): GitSlice {
   const root = record(slice, where);
@@ -130,7 +145,14 @@ export function validateGitSlice(slice: unknown, where: string): GitSlice {
       throw new Error(`${commitWhere}.hash: must equal its record key`);
     stringField(commit, "id", commitWhere);
     stringField(commit, "message", commitWhere);
-    stringField(commit, "committedAt", commitWhere);
+    const committedAt = stringField(commit, "committedAt", commitWhere);
+    try {
+      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(committedAt))
+        throw new Error("noncanonical timestamp");
+      parseTimestamp(committedAt);
+    } catch {
+      throw new Error(`${commitWhere}.committedAt: invalid commit timestamp`);
+    }
     const author = record(commit["author"], `${commitWhere}.author`);
     fields(author, ["name", "email"], `${commitWhere}.author`);
     stringField(author, "name", `${commitWhere}.author`);
@@ -265,7 +287,9 @@ export const GIT_MODULE = defineEventModule<GitSlice>({
         const entries = statusGit(slice, readVfsSlice(context.state));
         return {
           summary: `paths=${String(entries.length)}`,
-          detail: entries.map((entry) => serializeInline(entry)),
+          detail: entries.map((entry) =>
+            serializeInline({ ...entry, path: summaryPath(entry.path) }),
+          ),
         };
       },
     },
