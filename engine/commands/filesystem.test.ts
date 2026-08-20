@@ -104,6 +104,10 @@ describe("filesystem commands", () => {
     ["grep load missing", "grep: missing: No such file or directory", 2],
     ["find missing", "find: missing: No such file or directory"],
     [
+      "mkdir missing/directory",
+      "mkdir: cannot create directory 'missing/directory': No such file or directory",
+    ],
+    [
       "touch missing/file",
       "touch: cannot touch 'missing/file': No such file or directory",
     ],
@@ -164,6 +168,11 @@ describe("filesystem commands", () => {
       stderr: ["ls: invalid option: -z"],
       exitCode: 2,
     });
+    expect(run("head -n")).toEqual({
+      stdout: [],
+      stderr: ['head: option "-n": missing required value'],
+      exitCode: 2,
+    });
     expect(run("rm -f missing")).toEqual({
       stdout: [],
       stderr: [],
@@ -183,6 +192,28 @@ describe("filesystem commands", () => {
     expect(run("cp README.md src/index.ts copied")).toEqual({
       stdout: [],
       stderr: ["cp: target 'copied' is not a directory"],
+      exitCode: 1,
+    });
+  });
+
+  it("keeps recursive grep matches when a sibling directory is unreadable", () => {
+    expect(run("grep -r load .", state("filesystem"))).toEqual({
+      stdout: ["./src/index.ts:export const load = 1;"],
+      stderr: [
+        "grep: ./sealed: Permission denied",
+        "grep: ./private.txt: Permission denied",
+      ],
+      exitCode: 2,
+    });
+  });
+
+  it("prints wc totals for multiple operands when only one can be read", () => {
+    expect(run("wc README.md missing")).toEqual({
+      stdout: [
+        "      1       2      10 README.md",
+        "      1       2      10 total",
+      ],
+      stderr: ["wc: missing: No such file or directory"],
       exitCode: 1,
     });
   });

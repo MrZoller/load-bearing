@@ -2,11 +2,13 @@ import type { CommandOptionSpec, ParsedCommandOptions } from "./types.js";
 
 export class CommandOptionError extends Error {
   readonly token: string;
+  readonly detail: string;
 
   constructor(token: string, detail: string) {
     super(`option ${JSON.stringify(token)}: ${detail}`);
     this.name = "CommandOptionError";
     this.token = token;
+    this.detail = detail;
   }
 }
 

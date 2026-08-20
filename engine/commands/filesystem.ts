@@ -91,7 +91,11 @@ function parse(
   } catch (error) {
     if (!(error instanceof CommandOptionError)) throw error;
     const token = error.token;
-    return usage(context.argv[0] ?? "command", `invalid option: ${token}`);
+    const detail = error.detail;
+    const message = detail.startsWith("unknown ")
+      ? `invalid option: ${token}`
+      : `option ${JSON.stringify(token)}: ${detail}`;
+    return usage(context.argv[0] ?? "command", message);
   }
 }
 
@@ -442,7 +446,7 @@ const WC: CommandDefinition = Object.freeze({
         return [];
       },
     );
-    if (rows.length > 1)
+    if (parsed.operands.length > 1 && rows.length > 0)
       rows.push(
         `${String(totals.lines).padStart(7)} ${String(totals.words).padStart(7)} ${String(totals.bytes).padStart(7)} total`,
       );
@@ -455,44 +459,63 @@ interface GrepFile {
   readonly label: string;
 }
 
+interface GrepFailure {
+  readonly label: string;
+  readonly value: VfsFailure;
+}
+
+interface RecursiveFiles {
+  readonly files: readonly GrepFile[];
+  readonly failures: readonly GrepFailure[];
+}
+
 function recursiveFiles(
   slice: VfsSlice,
   root: string,
   events: EngineEvent[],
-): readonly GrepFile[] | VfsFailure {
+): RecursiveFiles | VfsFailure {
   const rootResult = statVfs(slice, root);
   if (!rootResult.ok) return rootResult;
   if (rootResult.value.entry.kind === "file")
-    return [{ path: rootResult.value.path, label: root }];
+    return {
+      files: [{ path: rootResult.value.path, label: root }],
+      failures: [],
+    };
   const paths: GrepFile[] = [];
+  const failures: GrepFailure[] = [];
   const displayRoot = root.length > 1 ? root.replace(/\/$/, "") : root;
-  const pending = [rootResult.value.path];
+  const pending: [string, string][] = [[rootResult.value.path, displayRoot]];
   while (pending.length > 0) {
-    const directory = pending.shift();
-    if (directory === undefined) break;
+    const current = pending.shift();
+    if (current === undefined) break;
+    const [directory, display] = current;
     const listed = listVfs(slice, directory);
     events.push(event("vfs.list", { path: directory }));
-    if (!listed.ok) return listed;
+    if (!listed.ok) {
+      failures.push({ label: display, value: listed });
+      continue;
+    }
     for (const item of listed.value) {
-      if (item.entry.kind === "directory") pending.push(item.path);
+      const label =
+        display === "/" ? `/${item.name}` : `${display}/${item.name}`;
+      if (item.entry.kind === "directory") pending.push([item.path, label]);
       else {
-        const relative = item.path.slice(
-          rootResult.value.path === "/" ? 1 : rootResult.value.path.length + 1,
-        );
         paths.push({
           path: item.path,
-          label:
-            displayRoot === "/" ? `/${relative}` : `${displayRoot}/${relative}`,
+          label,
         });
       }
     }
   }
-  return paths.sort((left, right) => compareVfsNames(left.path, right.path));
+  return {
+    files: paths.sort((left, right) => compareVfsNames(left.path, right.path)),
+    failures: failures.sort((left, right) =>
+      compareVfsNames(left.label, right.label),
+    ),
+  };
 }
 
-function isVfsFailure(
-  value: readonly GrepFile[] | VfsFailure,
-): value is VfsFailure {
+function isVfsFailure(value: RecursiveFiles | VfsFailure): value is VfsFailure {
   return Object.hasOwn(value, "ok");
 }
 
@@ -532,7 +555,12 @@ const GREP: CommandDefinition = Object.freeze({
           stderr.push(genericFailure("grep", root, found));
           continue;
         }
-        files.push(...found);
+        files.push(...found.files);
+        stderr.push(
+          ...found.failures.map(({ label, value }) =>
+            genericFailure("grep", label, value),
+          ),
+        );
       } else files.push({ path: root, label: root });
     }
     const stdout: string[] = [];
