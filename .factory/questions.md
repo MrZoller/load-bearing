@@ -40,7 +40,7 @@ Sub-questions — take standard POSIX behavior for all of these:
 
 This is public cartridge policy, not incident-specific: document it in the cartridge schema descriptions and record the decision in `docs/DESIGN.md` as part of this task.
 
-## Q2 (task T4, open) — How should shell execution coordinate cross-slice mutations?
+## Q2 (task T4, consumed) — How should shell execution coordinate cross-slice mutations?
 
 Context: An event module may return only its own namespace slice, but T5–T7
 commands must atomically mutate VFS, git, process, service, and environment
@@ -58,4 +58,23 @@ Please select the orchestration model and confirm whether cartridge commands
 should be static `{stdout, stderr, exitCode}` records under `repository.commands`,
 and whether transcript entries should gain structured stream-tagged output plus
 an exit code.
-**A:**
+**A:** Option A — reducer-supported ordered event expansion.
+
+One visitor command expands into owning-subsystem events plus a shell-result
+event. Rejected B because a privileged multi-slice module trades away the
+one-module-one-slice isolation invariant (ARCHITECTURE.md:97), and CLAUDE.md
+holds that weakening an invariant is never a valid solution. Rejected C because
+issue #8 requires a single shell execution entry point that Phase 1's `!`
+passthrough and Bash view both call; splitting mutating commands out of
+`shell.execute` fights that requirement and complicates transcript ordering.
+
+Expansion order must be deterministic and documented, and each expanded event
+folds one TranscriptEntry at the same index, per ARCHITECTURE.md:121.
+
+Sub-questions, both yes:
+- Cartridge commands are static `{stdout, stderr, exitCode}` records under
+  `repository.commands`. Data, not behavior — keeps incident logic out of the
+  interpreter per invariant 1.
+- Transcript entries gain stream-tagged output plus an exit code. Issue #8 makes
+  the result shape part of the replay contract, and without stream tags Phase 1
+  cannot render stderr distinctly or fixtures assert on it.
