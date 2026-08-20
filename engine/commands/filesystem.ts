@@ -184,6 +184,15 @@ function isQuantifierStart(pattern: string, index: number): boolean {
  * is preferable to letting native RegExp monopolize deterministic replay.
  */
 function characterClassMembers(atom: string): ReadonlySet<string> | undefined {
+  // Shorthand classes are repeatable atoms too. Model their finite ASCII
+  // member sets so a shorthand next to an overlapping literal or class cannot
+  // bypass the ambiguous-repetition guard.
+  if (atom === "\\d") return new Set("0123456789");
+  if (atom === "\\w")
+    return new Set(
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_",
+    );
+  if (atom === "\\s") return new Set(" \t\n\r\f\v");
   if (!atom.startsWith("[") || !atom.endsWith("]") || atom[1] === "^")
     return undefined;
 

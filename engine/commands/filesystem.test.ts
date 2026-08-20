@@ -239,6 +239,7 @@ describe("filesystem commands", () => {
       "a+a+$",
       "a+aa+$",
       ".+a+$",
+      "\\w+a+$",
       "[ab]+[ab]+$",
       "[ab]+[ac]+$",
       "[a-z]+[m-z]+$",
