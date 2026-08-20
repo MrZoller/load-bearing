@@ -38,6 +38,7 @@ import { detectBrand } from "../serialize/canonical.js";
 import { CARTRIDGE_SCHEMA, CARTRIDGE_SCHEMA_VERSION } from "./schema.js";
 import type { SchemaNode, ObjectNode } from "./schema.js";
 import type {
+  CartridgeDirectory,
   CartridgeMeta,
   CartridgeModel,
   CartridgeRepository,
@@ -837,13 +838,59 @@ function checkCwd(repository: CartridgeRepository, report: Report): void {
     return;
   }
 
-  const contained = usable.some((path) => path.startsWith(prefix));
+  const contained =
+    Object.hasOwn(repository.directories, repository.cwd) ||
+    usable.some((path) => path.startsWith(prefix)) ||
+    Object.keys(repository.directories).some((path) => path.startsWith(prefix));
   if (!contained) {
     report.addPhrase(
       "/repository/cwd",
       "a directory that at least one declared file lives under",
       `${JSON.stringify(repository.cwd)}, which contains no files`,
     );
+  }
+}
+
+/** Reject path maps that cannot form one directory tree. */
+function checkFilesystem(
+  repository: CartridgeRepository,
+  report: Report,
+): void {
+  const files = report.usableKeys(
+    "/repository/files",
+    Object.keys(repository.files),
+  );
+  const directories = report.usableKeys(
+    "/repository/directories",
+    Object.keys(repository.directories),
+  );
+  const directorySet = new Set(directories);
+
+  for (const path of files) {
+    if (directorySet.has(path)) {
+      report.addPhrase(
+        `/repository/directories/${pointerToken(path)}`,
+        "a path not also declared as a regular file",
+        `${JSON.stringify(path)}, which repository.files already declares`,
+      );
+    }
+  }
+
+  for (const path of [...files, ...directories].sort()) {
+    let ancestor = path.slice(0, path.lastIndexOf("/")) || "/";
+    while (ancestor !== "/") {
+      if (files.includes(ancestor)) {
+        report.addPhrase(
+          path.startsWith("/")
+            ? `/repository/${directorySet.has(path) ? "directories" : "files"}/${pointerToken(path)}`
+            : "/repository/files",
+          "a path whose ancestors are directories",
+          `${JSON.stringify(path)}, below regular file ${JSON.stringify(ancestor)}`,
+        );
+        break;
+      }
+      ancestor = ancestor.slice(0, ancestor.lastIndexOf("/")) || "/";
+    }
   }
 }
 
@@ -929,6 +976,13 @@ export function loadCartridge(value: unknown): LoadedCartridge {
   ) {
     checkCwd(cartridge.repository, report);
   }
+  if (
+    !issueAt(report, "/repository") &&
+    !issueAt(report, "/repository/files") &&
+    !issueAt(report, "/repository/directories")
+  ) {
+    checkFilesystem(cartridge.repository, report);
+  }
   // `checkModelIds` gates per model, so it only needs the array to exist.
   if (!issueAt(report, "/models")) {
     checkModelIds(cartridge.models, report);
@@ -955,8 +1009,8 @@ export function loadCartridge(value: unknown): LoadedCartridge {
 /**
  * Fill the defaults that read another field rather than a constant.
  *
- * v0 has exactly one: a file the cartridge does not date was already there
- * when the session opened, so `mtime` falls back to `meta.startedAt`. It
+ * File and directory mtimes fall back to the session start. Directory owners
+ * and groups inherit from the nearest explicitly declared ancestor. These
  * cannot be a schema `fill`, which is copied without seeing the rest of the
  * document, and JSON Schema cannot express it either — the published schema
  * states the rule in prose beside the field.
@@ -968,9 +1022,31 @@ function fillDerivedDefaults(normalized: Record<string, unknown>): void {
   const meta = normalized["meta"] as CartridgeMeta;
   const repository = normalized["repository"] as {
     files: Record<string, Record<string, unknown>>;
+    directories: Record<string, Record<string, unknown>>;
   };
 
   for (const file of Object.values(repository.files)) {
     file["mtime"] ??= meta.startedAt;
+  }
+
+  const paths = Object.keys(repository.directories).sort(
+    (left, right) => left.split("/").length - right.split("/").length,
+  );
+  for (const path of paths) {
+    const directory = repository.directories[path] as Record<string, unknown>;
+    let ancestor = path.slice(0, path.lastIndexOf("/")) || "/";
+    let inherited: CartridgeDirectory | undefined;
+    while (true) {
+      const candidate = repository.directories[ancestor];
+      if (candidate !== undefined) {
+        inherited = candidate as unknown as CartridgeDirectory;
+        break;
+      }
+      if (ancestor === "/") break;
+      ancestor = ancestor.slice(0, ancestor.lastIndexOf("/")) || "/";
+    }
+    directory["owner"] ??= inherited?.owner ?? "root";
+    directory["group"] ??= inherited?.group ?? "root";
+    directory["mtime"] ??= meta.startedAt;
   }
 }

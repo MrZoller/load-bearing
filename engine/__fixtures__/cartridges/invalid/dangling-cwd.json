@@ -9,6 +9,7 @@
   },
   "repository": {
     "cwd": "/srv/other",
+    "identity": { "user": "root", "group": "root", "home": "/root" },
     "files": {
       "/srv/app/main.ts": {
         "contents": "export const load = 1;\n"

@@ -9,6 +9,11 @@
   },
   "repository": {
     "cwd": "/production/service",
+    "identity": {
+      "user": "root",
+      "group": "root",
+      "home": "/root"
+    },
     "files": {
       "/production/service/src/index.ts": {
         "contents": "export const load = 1;\n",

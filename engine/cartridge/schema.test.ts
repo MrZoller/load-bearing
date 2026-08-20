@@ -20,6 +20,7 @@ import type {
 } from "./schema.js";
 import type {
   CartridgeFile,
+  CartridgeIdentity,
   CartridgeMeta,
   CartridgeModel,
   CartridgeRepository,
@@ -309,6 +310,11 @@ describe("descriptor and type lockstep", () => {
 
     const repository = CARTRIDGE_SCHEMA.fields.repository.node;
     agrees<CartridgeRepository["cwd"]>(repository.fields.cwd.node);
+    const identity = repository.fields.identity.node;
+    agrees<CartridgeIdentity["user"]>(identity.fields.user.node);
+    agrees<CartridgeIdentity["group"]>(identity.fields.group.node);
+    agrees<CartridgeIdentity["home"]>(identity.fields.home.node);
+    agrees<CartridgeIdentity["umask"]>(identity.fields.umask.node);
     agrees<CartridgeRepository["env"][string]>(
       repository.fields.env.node.values,
     );

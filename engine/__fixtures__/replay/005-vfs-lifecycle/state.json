@@ -83,11 +83,11 @@
     "story": {}
   },
   "clock": {
-    "elapsedMs": 1500,
+    "elapsedMs": 1,
     "startMs": 1785921262000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 2,
+  "eventCount": 5,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {},
@@ -175,14 +175,35 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "index": 0,
-      "summary": "ms=0",
-      "type": "clock.tick"
+      "summary": "path=\"/production/service/replay-file\" created=true",
+      "type": "vfs.write"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "index": 1,
-      "summary": "ms=1500",
+      "summary": "path=\"/production/service/replay-file\" created=false",
+      "type": "vfs.write"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 2,
+      "summary": "path=\"/production/service/replay-file\" mode=0600",
+      "type": "vfs.chmod"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 3,
+      "summary": "path=\"/production/service/replay-file\" removed=1",
+      "type": "vfs.delete"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 4,
+      "summary": "ms=1",
       "type": "clock.tick"
     }
   ]

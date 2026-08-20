@@ -9,6 +9,7 @@
   },
   "repository": {
     "cwd": "/srv/app",
+    "identity": { "user": "root", "group": "root", "home": "/root" },
     "files": {
       "/srv/app/main.ts": {
         "contents": 42

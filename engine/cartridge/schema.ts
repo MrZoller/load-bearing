@@ -124,6 +124,9 @@ export const SINGLE_LINE_PATTERN = pattern(
 /** Four octal digits, as `ls -l` renders a mode. */
 export const FILE_MODE_PATTERN = pattern(/^[0-7]{4}$/);
 
+/** A permission mask, without set-id or sticky bits. */
+export const UMASK_PATTERN = pattern(/^0[0-7]{3}$/);
+
 /** A POSIX user or group name. */
 export const ACCOUNT_NAME_PATTERN = pattern(/^[a-z_][a-z0-9_-]*$/);
 
@@ -358,6 +361,89 @@ const FILE = {
   },
 } satisfies ObjectNode;
 
+const DIRECTORY = {
+  kind: "object",
+  description:
+    "Metadata for one explicitly declared directory. Contents are derived from path keys, never embedded here.",
+  fields: {
+    mode: optional(
+      {
+        kind: "string",
+        description: "Permission bits as four octal digits.",
+        pattern: FILE_MODE_PATTERN,
+        patternLabel: "four octal digits",
+      },
+      "0755",
+    ),
+    owner: {
+      node: {
+        kind: "string",
+        description:
+          "Owning user. Defaults to the nearest explicitly declared ancestor's owner, or root.",
+        pattern: ACCOUNT_NAME_PATTERN,
+        patternLabel: "a POSIX user name",
+      },
+      required: false,
+      derived:
+        "Defaults to the nearest explicitly declared ancestor's owner, or `root` when none declares one.",
+    },
+    group: {
+      node: {
+        kind: "string",
+        description:
+          "Owning group. Defaults to the nearest explicitly declared ancestor's group, or root.",
+        pattern: ACCOUNT_NAME_PATTERN,
+        patternLabel: "a POSIX group name",
+      },
+      required: false,
+      derived:
+        "Defaults to the nearest explicitly declared ancestor's group, or `root` when none declares one.",
+    },
+    mtime: {
+      node: TIMESTAMP,
+      required: false,
+      derived: "Defaults to `meta.startedAt`.",
+    },
+  },
+} satisfies ObjectNode;
+
+const IDENTITY = {
+  kind: "object",
+  description:
+    "The acting POSIX identity. Root bypasses permission checks; all other operations use these user and group names.",
+  fields: {
+    user: required({
+      kind: "string",
+      description: "Acting user name.",
+      pattern: ACCOUNT_NAME_PATTERN,
+      patternLabel: "a POSIX user name",
+    }),
+    group: required({
+      kind: "string",
+      description: "Acting primary group name.",
+      pattern: ACCOUNT_NAME_PATTERN,
+      patternLabel: "a POSIX group name",
+    }),
+    home: required({
+      kind: "string",
+      description:
+        "Absolute home directory. Only bare `~` and `~/...` expand to it; `~user` remains a literal path segment.",
+      pattern: ABSOLUTE_PATH_PATTERN,
+      patternLabel: "an absolute POSIX path",
+    }),
+    umask: optional(
+      {
+        kind: "string",
+        description:
+          "Permission mask for new files and directories, as four octal digits.",
+        pattern: UMASK_PATTERN,
+        patternLabel: "four octal digits beginning with 0",
+      },
+      "0022",
+    ),
+  },
+} satisfies ObjectNode;
+
 const MODEL = {
   kind: "object",
   description: "One selectable model persona.",
@@ -418,6 +504,7 @@ const REPOSITORY = {
       pattern: ABSOLUTE_PATH_PATTERN,
       patternLabel: "an absolute POSIX path",
     }),
+    identity: required(IDENTITY),
     files: required({
       kind: "record",
       description: "The simulated filesystem, keyed by absolute path.",
@@ -434,6 +521,17 @@ const REPOSITORY = {
       // validating against the published document catches it too.
       minEntries: 1,
     }),
+    directories: optional(
+      {
+        kind: "record",
+        description:
+          "Optional explicit directory metadata keyed by absolute path. Undeclared ancestors inherit owner/group from the nearest declared ancestor, otherwise root:root; their mode is 0755 and mtime is meta.startedAt.",
+        keyPattern: ABSOLUTE_PATH_PATTERN,
+        keyLabel: "an absolute POSIX path naming a directory",
+        values: DIRECTORY,
+      },
+      {},
+    ),
     env: optional(
       {
         kind: "record",

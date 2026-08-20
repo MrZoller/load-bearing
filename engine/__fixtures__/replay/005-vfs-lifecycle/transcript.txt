@@ -1,0 +1,5 @@
+0000  2026-08-05T09:14:22.000Z  vfs.write path="/production/service/replay-file" created=true
+0001  2026-08-05T09:14:22.000Z  vfs.write path="/production/service/replay-file" created=false
+0002  2026-08-05T09:14:22.000Z  vfs.chmod path="/production/service/replay-file" mode=0600
+0003  2026-08-05T09:14:22.000Z  vfs.delete path="/production/service/replay-file" removed=1
+0004  2026-08-05T09:14:22.000Z  clock.tick ms=1

@@ -43,12 +43,14 @@
 import { CLOCK_MODULE } from "./core.js";
 import { PROBE_MODULE } from "./probe.js";
 import { createRegistry } from "./registry.js";
+import { VFS_MODULE } from "../vfs/module.js";
 import type { EventRegistry } from "./registry.js";
 import type { EventModule } from "./module.js";
 
 export const ENGINE_EVENT_MODULES: readonly EventModule[] = Object.freeze([
   CLOCK_MODULE,
   PROBE_MODULE,
+  VFS_MODULE,
 ]);
 
 /**
