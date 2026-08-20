@@ -79,3 +79,22 @@ Sub-questions, both yes:
 - Transcript entries gain stream-tagged output plus an exit code. Issue #8 makes
   the result shape part of the replay contract, and without stream tags Phase 1
   cannot render stderr distinctly or fixtures assert on it.
+
+## Q3 (task T6, open) — What bounded Git CLI and commit-identity policy should the simulator expose?
+
+Context: Issue #10 names ten commands and requires full semantics, but the Git
+model has no author identity for new commits and the issue does not define the
+mutating forms for `branch`, `commit`, `restore`, path checkout, or pathspecs.
+Choosing these details defines public cartridge and shell behavior rather than
+an implementation detail. Parked branch: `factory/t6-git-commands`.
+Options considered: A — add required `repository.gitIdentity` name/email and
+support a bounded Git-compatible contract (`branch [name]`, `commit -m`,
+`restore [--staged] <path>`, `checkout <ref>` and `checkout -- <path>`, exact
+cwd-relative paths plus `.` for add); B — derive author identity from the VFS
+user and support only the narrowest happy-path forms, avoiding schema work but
+inventing an email/default policy; C — make commit author/message explicit on
+every command invocation, which is deterministic but unlike the requested Git
+register. Please also confirm fixed seven-character hash abbreviations with
+deterministic extension on collisions, UTC/C-locale dates, and committed-tree
+blame (working edits remain visible through diff/status, not blame).
+**A:**
