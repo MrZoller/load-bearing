@@ -22,7 +22,7 @@ remains blocked until review findings are deliberately batched into it.
   - acceptance: `engine/git/` and cartridge git-history validation provide deterministic content-derived commits, branches/HEAD, index/working-tree status, blame, diff, and defined dirty-checkout semantics over the VFS; coherence failures produce useful load errors; tests prove log/blame agreement and full git-model semantics, with a byte-stable VFS+git replay fixture
   - deps: T1
   - pr: 24
-- [R] T3 (standard) — Processes, services, logs, env, man pages, history, tickets (Fixes #7)
+- [x] T3 (standard) — Processes, services, logs, env, man pages, history, tickets (Fixes #7)
   - acceptance: engine world-state modules hydrate and canonically serialize every declared surface; deterministic PID/port assignment and listing order are documented and tested; env, logs, services, and history mutate only through replayable events; pure lookups and load-time collision/dangling-reference errors are covered; purity passes
   - deps: T1
   - pr: 25
@@ -74,3 +74,5 @@ remains blocked until review findings are deliberately batched into it.
   - PR #24: hoist the inherited-line LCS map during cartridge blame validation to avoid redundant per-line work
   - PR #24: harden restored Git snapshot blame provenance against unrelated sibling commits
   - PR #24: validate restored Git snapshot `committedAt` values as fixed-width UTC timestamps
+  - PR #25: guard environment lookups against inherited `Object.prototype` names
+  - PR #25: reject noncanonical fixed-width process timestamps in restored world snapshots
