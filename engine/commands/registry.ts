@@ -1,4 +1,5 @@
 import { COMMAND_NAME_PATTERN } from "../cartridge/schema.js";
+import { stampEvent } from "../events/log.js";
 import { MAX_TRANSCRIPT_DETAIL_LINES } from "../events/transcript.js";
 import type { EngineEvent, SessionState } from "../events/state.js";
 import type {
@@ -127,7 +128,9 @@ function captureExecution(raw: unknown, name: string): CommandExecution {
         `${name}.events[${String(index)}] must be an event object`,
       );
     }
-    events.push(event as EngineEvent);
+    events.push(
+      stampEvent(event as EngineEvent, `${name}.events[${String(index)}]`),
+    );
   }
   return Object.freeze({
     stdout,

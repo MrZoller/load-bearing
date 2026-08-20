@@ -43,6 +43,11 @@ describe("shell execution", () => {
     });
   });
 
+  it("stamps the shell envelope and its expanded result", () => {
+    expect(createShellExecuteEvent("true")).toMatchObject({ version: 0 });
+    expect(fold("true").transcript).toHaveLength(1);
+  });
+
   it("returns plausible exit-127 stderr for an unknown command", () => {
     expect(fold("missing").transcript[0]).toMatchObject({
       output: [{ stream: "stderr", text: "missing: command not found" }],

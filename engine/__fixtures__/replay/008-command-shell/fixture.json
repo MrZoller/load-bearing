@@ -4,10 +4,22 @@
   "seed": "2026-08-05/8/deep-foundation",
   "cartridge": "commands",
   "events": [
-    { "type": "shell.execute", "payload": { "input": "echo 'one two' three" } },
-    { "type": "shell.execute", "payload": { "input": "pwd ignored" } },
-    { "type": "shell.execute", "payload": { "input": "missing" } },
-    { "type": "shell.execute", "payload": { "input": "   " } },
-    { "type": "shell.execute", "payload": { "input": "true" } }
+    {
+      "type": "shell.execute",
+      "payload": { "input": "echo 'one two' three" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "pwd ignored" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "missing" },
+      "version": 0
+    },
+    { "type": "shell.execute", "payload": { "input": "   " }, "version": 0 },
+    { "type": "shell.execute", "payload": { "input": "true" }, "version": 0 }
   ]
 }

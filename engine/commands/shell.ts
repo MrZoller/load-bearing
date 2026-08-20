@@ -1,4 +1,5 @@
 import type { EngineEvent, SessionState } from "../events/state.js";
+import { stampEvent } from "../events/log.js";
 import { BUILTIN_COMMAND_REGISTRY } from "./builtins.js";
 import { executeCommand } from "./registry.js";
 import { ShellSyntaxError, tokenizeShell } from "./tokenize.js";
@@ -8,14 +9,17 @@ import type { CommandExecution, CommandRegistry } from "./types.js";
 export const MAX_SHELL_INPUT_LENGTH = 4000;
 
 function resultEvent(result: CommandExecution): EngineEvent {
-  return Object.freeze({
-    type: "shell.result",
-    payload: Object.freeze({
-      stdout: result.stdout,
-      stderr: result.stderr,
-      exitCode: result.exitCode,
-    }),
-  });
+  return stampEvent(
+    {
+      type: "shell.result",
+      payload: {
+        stdout: result.stdout,
+        stderr: result.stderr,
+        exitCode: result.exitCode,
+      },
+    },
+    "shell result",
+  );
 }
 
 /** Expand one visitor command into ordinary logged subsystem events. */
@@ -49,8 +53,8 @@ export function executeShell(
 
 /** The event Phase 1 views append for a visitor shell command. */
 export function createShellExecuteEvent(input: string): EngineEvent {
-  return Object.freeze({
-    type: "shell.execute",
-    payload: Object.freeze({ input }),
-  });
+  return stampEvent(
+    { type: "shell.execute", payload: { input } },
+    "shell execute",
+  );
 }

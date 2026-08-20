@@ -76,6 +76,33 @@ describe("the command registry", () => {
     });
   });
 
+  it("stamps command-emitted events with their handler payload version", () => {
+    const registry = createCommandRegistry([
+      {
+        name: "emits-result",
+        execute: () => ({
+          stdout: [],
+          stderr: [],
+          exitCode: 0,
+          events: [
+            {
+              type: "shell.result",
+              payload: { stdout: [], stderr: [], exitCode: 0 },
+            },
+          ],
+        }),
+      },
+    ]);
+
+    expect(executeCommand(state(), ["emits-result"], registry).events).toEqual([
+      {
+        type: "shell.result",
+        payload: { stdout: [], stderr: [], exitCode: 0 },
+        version: 0,
+      },
+    ]);
+  });
+
   it.each([
     ["a non-object execution", null, /must return an execution object/],
     ["an array execution", [], /must return an execution object/],
