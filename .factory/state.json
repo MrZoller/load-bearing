@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T2",
-  "branch": "factory/t2-git-model",
-  "pr": 24,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-20T04:53:23Z"
+  "updated": "2026-08-20T05:03:51Z"
 }

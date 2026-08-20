@@ -18,7 +18,7 @@ remains blocked until review findings are deliberately batched into it.
 - [x] T1 (standard) — Virtual filesystem model (Fixes #5)
   - acceptance: `engine/vfs/` and its event registration hydrate cartridge files into a deterministic tree; path resolution, permissions, recursive mutation, ownership/mode round-trips, and simulated-clock mtimes have unit coverage; replay fixtures prove create → write → chmod → delete and that deleted files stay absent; purity and canonical serialization gates pass
   - pr: 23
-- [R] T2 (standard) — Git model: commit DAG, branches, index, blame, diff (Fixes #6)
+- [x] T2 (standard) — Git model: commit DAG, branches, index, blame, diff (Fixes #6)
   - acceptance: `engine/git/` and cartridge git-history validation provide deterministic content-derived commits, branches/HEAD, index/working-tree status, blame, diff, and defined dirty-checkout semantics over the VFS; coherence failures produce useful load errors; tests prove log/blame agreement and full git-model semantics, with a byte-stable VFS+git replay fixture
   - deps: T1
   - pr: 24
@@ -70,3 +70,6 @@ remains blocked until review findings are deliberately batched into it.
   - PR #23: preserve `..` traversal semantics across a regular-file component until the shell/VFS contract is deliberately defined
   - PR #23: reject noncanonical fixed-width VFS snapshot mtime spellings
   - PR #23: ignore unusable directory keys while checking whether the cartridge cwd exists
+  - PR #24: hoist the inherited-line LCS map during cartridge blame validation to avoid redundant per-line work
+  - PR #24: harden restored Git snapshot blame provenance against unrelated sibling commits
+  - PR #24: validate restored Git snapshot `committedAt` values as fixed-width UTC timestamps
