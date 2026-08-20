@@ -29,9 +29,10 @@ remains blocked until review findings are deliberately batched into it.
 - [x] T4 (standard) — Command interpreter core: tokenizer, registry, dispatch (Fixes #8)
   - acceptance: `engine/commands/` provides tested POSIX-ish tokenization and option parsing, duplicate-safe registration, validated cartridge overrides, exit-127 unknown-command behavior, and a pure shell execution API whose ordered stdout/stderr/exit results enter the replay transcript; `pwd`, `echo`, and `true` prove the path end to end; purity passes
   - pr: 26
-- [~] T5 (standard) — Filesystem commands (Fixes #9)
+- [R] T5 (standard) — Filesystem commands (Fixes #9)
   - acceptance: filesystem command modules implement the issue's command and flag set over the VFS with exact deterministic output and exit codes; per-command golden tests cover success, missing-target, and permission-denied paths; `ls -la` preserves declared metadata; a replay proves multi-command mutation and persistent deletion across timezones
   - deps: T1, T4
+  - pr: 27
 - [ ] T6 (standard) — Git commands (Fixes #10)
   - acceptance: git command modules render and mutate only through the git/VFS models for the issue's command set; golden tests cover exact output, errors, deterministic hashes, log/blame coherence, and full command semantics; a replay proves tracked deletion → status → checkout restoration with byte-identical output across platforms and timezones
   - deps: T2, T4, T5
