@@ -98,3 +98,25 @@ register. Please also confirm fixed seven-character hash abbreviations with
 deterministic extension on collisions, UTC/C-locale dates, and committed-tree
 blame (working edits remain visible through diff/status, not blame).
 **A:**
+
+## Q4 (task T7, open) — What cartridge contracts should back curl, machine identity, uptime, and shell history?
+
+Context: Issue #11 requires simulated endpoints, `uname`, machine uptime, and
+session-accumulated history, but the cartridge has no endpoint, machine, or boot
+metadata and shell execution does not append history. The approved plan names
+these source-of-truth choices as a design blocker. Parked branch:
+`factory/t7-system-world-commands`.
+Options considered: A — add `repository.system` (`hostname`, `operatingSystem`,
+`kernelRelease`, `architecture`, `bootedAt`) and exact-URL
+`repository.endpoints` records linked to a service, with declared running and
+unavailable `{stdout, stderr, exitCode}` responses; append every nonblank raw
+shell input before its command-owned events, while `history` displays only
+prior entries because command output is computed before expansion; B — use
+runtime-fixed machine strings/session elapsed time and body-only endpoint
+records, which is simpler but moves world content and uptime semantics into the
+engine; C — defer `curl`/`uname`/`uptime`/accumulated history, which does not meet
+issue #11. For bounded CLI behavior, please also confirm no options except
+`uname -a`; `export NAME=value`; `man [section] name`; `systemctl
+status|start|stop|restart service`; one PID for `kill`; and UTC/C-locale
+formats for `date` and `uptime`.
+**A:**
