@@ -1,0 +1,419 @@
+{
+  "cartridge": {
+    "meta": {
+      "assignment": "Exercise every environmental surface.",
+      "date": "2026-08-05",
+      "number": 7,
+      "schemaVersion": 0,
+      "startedAt": "2026-08-05T09:14:22.000Z",
+      "title": "World State Fixture"
+    },
+    "models": [
+      {
+        "archetype": "paranoid",
+        "costMultiplier": 48000,
+        "description": "Thorough. Expensive. Excavation permit required.",
+        "id": "deep-foundation",
+        "name": "Deep Foundation",
+        "quirks": []
+      }
+    ],
+    "presentation": {},
+    "repository": {
+      "cwd": "/production/service",
+      "directories": {},
+      "env": {
+        "SERVICE_TIER": "critical"
+      },
+      "files": {
+        "/production/service/app": {
+          "contents": "binary",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var/log/api.log": {
+          "contents": "booted\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        }
+      },
+      "gitHistory": {
+        "branches": {},
+        "commits": [],
+        "head": {
+          "kind": "detached",
+          "target": ""
+        }
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      },
+      "logs": [
+        {
+          "entries": [],
+          "id": "api-file",
+          "kind": "file",
+          "path": "/var/log/api.log"
+        },
+        {
+          "entries": [
+            "seeded"
+          ],
+          "id": "events",
+          "kind": "stream",
+          "path": ""
+        }
+      ],
+      "manPages": [
+        {
+          "contents": "SERVICE(8)\n",
+          "name": "service",
+          "section": "8"
+        },
+        {
+          "contents": "SERVICE(1)\n",
+          "name": "service",
+          "section": "1"
+        }
+      ],
+      "processes": [
+        {
+          "command": {
+            "args": [
+              "--serve"
+            ],
+            "binary": "/production/service/app"
+          },
+          "id": "worker",
+          "pid": 0,
+          "startedAt": "2026-08-05T09:00:00.000Z",
+          "state": "running",
+          "user": "root"
+        },
+        {
+          "command": {
+            "args": [],
+            "binary": "/production/service/app"
+          },
+          "id": "fixed",
+          "pid": 1200,
+          "startedAt": "2026-08-05T08:00:00.000Z",
+          "state": "stopped",
+          "user": "root"
+        }
+      ],
+      "services": [
+        {
+          "dependencies": [],
+          "health": "healthy",
+          "id": "api",
+          "ports": [
+            443,
+            0
+          ],
+          "state": "running"
+        },
+        {
+          "dependencies": [
+            "api"
+          ],
+          "health": "degraded",
+          "id": "worker",
+          "ports": [
+            0
+          ],
+          "state": "stopped"
+        }
+      ],
+      "shellHistory": [
+        "git status"
+      ],
+      "tests": [],
+      "tickets": [
+        {
+          "body": "It leans.",
+          "id": "T-1",
+          "service": "api",
+          "status": "open",
+          "title": "API tilted"
+        },
+        {
+          "body": "Expected.",
+          "id": "T-2",
+          "service": "",
+          "status": "closed",
+          "title": "Floor"
+        }
+      ]
+    },
+    "story": {}
+  },
+  "clock": {
+    "elapsedMs": 0,
+    "startMs": 1785921262000
+  },
+  "engineVersion": "0.0.0",
+  "eventCount": 9,
+  "eventSchemaVersion": 0,
+  "random": {
+    "cursors": {
+      "root/world/pids": 4034308574,
+      "root/world/ports": 1022749943
+    },
+    "seed": 4005091003
+  },
+  "seed": "2026-08-05/7/deep-foundation",
+  "slices": {
+    "git": {
+      "branches": {},
+      "commits": {},
+      "head": {
+        "kind": "detached",
+        "target": ""
+      },
+      "index": {},
+      "root": "/production/service"
+    },
+    "probe": {
+      "events": 0,
+      "values": 0
+    },
+    "vfs": {
+      "cwd": "/production/service",
+      "entries": {
+        "/": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/app": {
+          "contents": "binary",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var/log": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var/log/api.log": {
+          "contents": "booted\nfailed\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        }
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      }
+    },
+    "world": {
+      "env": {
+        "NEW": "yes"
+      },
+      "logs": [
+        {
+          "entries": [],
+          "id": "api-file",
+          "kind": "file",
+          "path": "/var/log/api.log"
+        },
+        {
+          "entries": [
+            "seeded",
+            "later"
+          ],
+          "id": "events",
+          "kind": "stream",
+          "path": ""
+        }
+      ],
+      "manPages": [
+        {
+          "contents": "SERVICE(8)\n",
+          "name": "service",
+          "section": "8"
+        },
+        {
+          "contents": "SERVICE(1)\n",
+          "name": "service",
+          "section": "1"
+        }
+      ],
+      "processes": [
+        {
+          "command": {
+            "args": [
+              "--serve"
+            ],
+            "binary": "/production/service/app"
+          },
+          "id": "worker",
+          "pid": 26752,
+          "startedAt": "2026-08-05T09:00:00.000Z",
+          "state": "running",
+          "user": "root"
+        },
+        {
+          "command": {
+            "args": [],
+            "binary": "/production/service/app"
+          },
+          "id": "fixed",
+          "pid": 1200,
+          "startedAt": "2026-08-05T08:00:00.000Z",
+          "state": "running",
+          "user": "root"
+        }
+      ],
+      "services": [
+        {
+          "dependencies": [],
+          "health": "healthy",
+          "id": "api",
+          "ports": [
+            443,
+            13463
+          ],
+          "state": "running"
+        },
+        {
+          "dependencies": [
+            "api"
+          ],
+          "health": "degraded",
+          "id": "worker",
+          "ports": [
+            18733
+          ],
+          "state": "running"
+        }
+      ],
+      "shellHistory": [
+        "git status",
+        "systemctl status api"
+      ],
+      "tickets": [
+        {
+          "body": "It leans.",
+          "id": "T-1",
+          "service": "api",
+          "status": "open",
+          "title": "API tilted"
+        },
+        {
+          "body": "Expected.",
+          "id": "T-2",
+          "service": "",
+          "status": "closed",
+          "title": "Floor"
+        }
+      ]
+    }
+  },
+  "transcript": [
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 0,
+      "summary": "name=\"NEW\"",
+      "type": "world.env-set"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 1,
+      "summary": "name=\"SERVICE_TIER\"",
+      "type": "world.env-unset"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 2,
+      "summary": "id=\"events\"",
+      "type": "world.log-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 3,
+      "summary": "id=\"api-file\"",
+      "type": "world.log-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 4,
+      "summary": "id=\"worker\"",
+      "type": "world.service-start"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 5,
+      "summary": "id=\"api\"",
+      "type": "world.service-stop"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 6,
+      "summary": "id=\"api\"",
+      "type": "world.service-restart"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 7,
+      "summary": "length=2",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 8,
+      "summary": "id=\"fixed\" state=running",
+      "type": "world.process-transition"
+    }
+  ]
+}

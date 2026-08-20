@@ -35,7 +35,11 @@
 
 import { deepFreeze } from "../freeze.js";
 import { detectBrand } from "../serialize/canonical.js";
-import { CARTRIDGE_SCHEMA, CARTRIDGE_SCHEMA_VERSION } from "./schema.js";
+import {
+  CARTRIDGE_SCHEMA,
+  CARTRIDGE_SCHEMA_VERSION,
+  FILE_PATH_PATTERN,
+} from "./schema.js";
 import type { SchemaNode, ObjectNode } from "./schema.js";
 import type {
   CartridgeDirectory,
@@ -1139,6 +1143,150 @@ function checkModelIds(
   });
 }
 
+/** Cross-references and uniqueness that descriptor nodes cannot express. */
+function checkWorld(repository: CartridgeRepository, report: Report): void {
+  const uniqueIds = <T extends { readonly id: string }>(
+    values: readonly T[],
+    field: "processes" | "services" | "logs" | "tickets",
+  ): Map<string, number> => {
+    const seen = new Map<string, number>();
+    values.forEach((value, index) => {
+      const first = seen.get(value.id);
+      if (first === undefined) seen.set(value.id, index);
+      else
+        report.addPhrase(
+          `/repository/${field}/${String(index)}/id`,
+          `an id no other ${field.slice(0, -1)} uses`,
+          `${JSON.stringify(value.id)}, already used by /repository/${field}/${String(first)}`,
+        );
+    });
+    return seen;
+  };
+
+  uniqueIds(repository.processes, "processes");
+  const services = uniqueIds(repository.services, "services");
+  uniqueIds(repository.logs, "logs");
+  uniqueIds(repository.tickets, "tickets");
+
+  const pids = new Map<number, number>();
+  let automaticPids = 0;
+  repository.processes.forEach((entry, index) => {
+    if (entry.pid === 0) automaticPids += 1;
+    else {
+      const first = pids.get(entry.pid);
+      if (first === undefined) pids.set(entry.pid, index);
+      else
+        report.addPhrase(
+          `/repository/processes/${String(index)}/pid`,
+          "a nonzero PID no other process declares",
+          `${String(entry.pid)}, already used by /repository/processes/${String(first)}`,
+        );
+    }
+    if (!Object.hasOwn(repository.files, entry.command.binary))
+      report.addPhrase(
+        `/repository/processes/${String(index)}/command/binary`,
+        "an absolute path declared by repository.files",
+        `${JSON.stringify(entry.command.binary)}, which does not exist`,
+      );
+  });
+  const reservedAssignablePids = [...pids.keys()].filter(
+    (pid) => pid >= 1000,
+  ).length;
+  if (automaticPids > 31768 - reservedAssignablePids)
+    report.addPhrase(
+      "/repository/processes",
+      "enough free PIDs in [1000, 32767] for every zero PID",
+      `${String(automaticPids)} automatic PIDs and ${String(reservedAssignablePids)} reserved values in the assignment range`,
+    );
+
+  const ports = new Map<number, string>();
+  let automaticPorts = 0;
+  repository.services.forEach((service, serviceIndex) => {
+    service.ports.forEach((port, portIndex) => {
+      if (port === 0) automaticPorts += 1;
+      else {
+        const first = ports.get(port);
+        if (first === undefined)
+          ports.set(
+            port,
+            `/repository/services/${String(serviceIndex)}/ports/${String(portIndex)}`,
+          );
+        else
+          report.addPhrase(
+            `/repository/services/${String(serviceIndex)}/ports/${String(portIndex)}`,
+            "a nonzero port no service declares elsewhere",
+            `${String(port)}, already used by ${first}`,
+          );
+      }
+    });
+    service.dependencies.forEach((id, dependencyIndex) => {
+      if (!services.has(id))
+        report.addPhrase(
+          `/repository/services/${String(serviceIndex)}/dependencies/${String(dependencyIndex)}`,
+          "the id of a declared service",
+          `${JSON.stringify(id)}, which does not exist`,
+        );
+    });
+  });
+  const reservedAssignablePorts = [...ports.keys()].filter(
+    (port) => port >= 1024,
+  ).length;
+  if (automaticPorts > 64512 - reservedAssignablePorts)
+    report.addPhrase(
+      "/repository/services",
+      "enough free ports in [1024, 65535] for every zero port",
+      `${String(automaticPorts)} automatic ports and ${String(reservedAssignablePorts)} reserved values`,
+    );
+
+  repository.logs.forEach((log, index) => {
+    const pointer = `/repository/logs/${String(index)}`;
+    if (log.kind === "file") {
+      if (
+        !FILE_PATH_PATTERN.test(log.path) ||
+        !Object.hasOwn(repository.files, log.path)
+      )
+        report.addPhrase(
+          `${pointer}/path`,
+          "a canonical absolute path declared by repository.files",
+          `${JSON.stringify(log.path)}, which does not name a repository file`,
+        );
+      if (log.entries.length !== 0)
+        report.addPhrase(
+          `${pointer}/entries`,
+          "an empty array; file log contents live only in VFS",
+          `${String(log.entries.length)} seeded entries`,
+        );
+    } else if (log.path !== "")
+      report.addPhrase(
+        `${pointer}/path`,
+        "an empty string for a stream log",
+        JSON.stringify(log.path),
+      );
+  });
+
+  const pages = new Map<string, number>();
+  repository.manPages.forEach((page, index) => {
+    const key = `${page.name}\u0000${page.section}`;
+    const first = pages.get(key);
+    if (first === undefined) pages.set(key, index);
+    else
+      report.addPhrase(
+        `/repository/manPages/${String(index)}/section`,
+        "a name and section pair no other man page uses",
+        `${JSON.stringify(`${page.name}(${page.section})`)}, already used by /repository/manPages/${String(first)}`,
+      );
+  });
+
+  repository.tickets.forEach((ticket, index) => {
+    if (ticket.service !== "" && !services.has(ticket.service))
+      report.addPhrase(
+        `/repository/tickets/${String(index)}/service`,
+        "an empty string or the id of a declared service",
+        `${JSON.stringify(ticket.service)}, which does not exist`,
+      );
+  });
+}
+
 /**
  * Validate and normalize a parsed cartridge.
  *
@@ -1211,6 +1359,17 @@ export function loadCartridge(value: unknown): LoadedCartridge {
   // `checkModelIds` gates per model, so it only needs the array to exist.
   if (!issueAt(report, "/models")) {
     checkModelIds(cartridge.models, report);
+  }
+  if (
+    !issueAt(report, "/repository") &&
+    !issueAt(report, "/repository/files") &&
+    !issueWithin(report, "/repository/processes") &&
+    !issueWithin(report, "/repository/services") &&
+    !issueWithin(report, "/repository/logs") &&
+    !issueWithin(report, "/repository/manPages") &&
+    !issueWithin(report, "/repository/tickets")
+  ) {
+    checkWorld(cartridge.repository, report);
   }
 
   if (report.issues.length > 0)

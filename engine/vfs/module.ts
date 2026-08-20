@@ -272,18 +272,20 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
     "vfs.write": {
       version: 0,
       apply(context, slice) {
-        const data = payload(context, ["path", "contents"]);
+        const data = payload(context, ["path", "contents", "transcript"]);
         const mutation = writeVfs(
           slice,
           readString(data, "path", context.where),
           readString(data, "contents", context.where),
           context.clock.timestamp(),
         );
-        return mutationOutcome(
+        const outcome = mutationOutcome(
           mutation,
           (value) =>
             `path=${JSON.stringify(value.path)} created=${String(value.created)}`,
         );
+        const transcript = readBoolean(data, "transcript", true, context.where);
+        return transcript ? outcome : { slice: outcome.slice };
       },
     },
     "vfs.delete": {

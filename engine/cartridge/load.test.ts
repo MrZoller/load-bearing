@@ -63,12 +63,75 @@ describe("loadCartridge", () => {
     });
     expect(cartridge.story).toEqual({});
     expect(cartridge.presentation).toEqual({});
+    expect(cartridge.repository.processes).toEqual([]);
+    expect(cartridge.repository.services).toEqual([]);
+    expect(cartridge.repository.logs).toEqual([]);
+    expect(cartridge.repository.tickets).toEqual([]);
     expect(cartridge.repository.identity).toEqual({
       user: "root",
       group: "root",
       home: "/root",
       umask: "0022",
     });
+  });
+
+  it("validates world collisions and references at the cartridge boundary", () => {
+    const value = minimal();
+    const repository = value["repository"] as Record<string, unknown>;
+    repository["processes"] = [
+      {
+        id: "one",
+        pid: 7,
+        user: "root",
+        command: { binary: "/missing", args: [] },
+        startedAt: "2026-08-05T09:00:00.000Z",
+        state: "running",
+      },
+      {
+        id: "one",
+        pid: 7,
+        user: "root",
+        command: { binary: "/etc/motd", args: [] },
+        startedAt: "2026-08-05T09:00:00.000Z",
+        state: "stopped",
+      },
+    ];
+    repository["services"] = [
+      {
+        id: "api",
+        state: "running",
+        health: "healthy",
+        ports: [80, 80],
+        dependencies: ["missing"],
+      },
+    ];
+    repository["logs"] = [
+      { id: "file", kind: "file", path: "/missing", entries: ["duplicated"] },
+      { id: "stream", kind: "stream", path: "/etc/motd", entries: [] },
+    ];
+    repository["manPages"] = [
+      { name: "service", section: "8", contents: "one" },
+      { name: "service", section: "8", contents: "two" },
+    ];
+    repository["tickets"] = [
+      { id: "T", status: "open", title: "x", body: "y", service: "missing" },
+    ];
+
+    const issues = issuesOf(value);
+    expect(issues.map((issue) => issue.pointer)).toEqual(
+      expect.arrayContaining([
+        "/repository/processes/1/id",
+        "/repository/processes/1/pid",
+        "/repository/processes/0/command/binary",
+        "/repository/services/0/ports/1",
+        "/repository/services/0/dependencies/0",
+        "/repository/logs/0/path",
+        "/repository/logs/0/entries",
+        "/repository/logs/1/path",
+        "/repository/manPages/1/section",
+        "/repository/tickets/0/service",
+      ]),
+    );
   });
 
   it("requires an identity and derives directory metadata from declared ancestors", () => {
@@ -1141,6 +1204,21 @@ describe("rejection", () => {
           pointer: "/models/1/id",
           expected: "an id no other model uses; ids seed the PRNG",
           found: '"deep-foundation", already used by /models/0',
+        },
+      ],
+    ],
+    [
+      "world-collisions",
+      [
+        {
+          pointer: "/repository/services/0/dependencies/0",
+          expected: "the id of a declared service",
+          found: '"missing", which does not exist',
+        },
+        {
+          pointer: "/repository/services/1/ports/0",
+          expected: "a nonzero port no service declares elsewhere",
+          found: "8080, already used by /repository/services/0/ports/0",
         },
       ],
     ],

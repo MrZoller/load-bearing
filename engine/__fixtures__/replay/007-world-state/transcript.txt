@@ -1,0 +1,9 @@
+0000  2026-08-05T09:14:22.000Z  world.env-set name="NEW"
+0001  2026-08-05T09:14:22.000Z  world.env-unset name="SERVICE_TIER"
+0002  2026-08-05T09:14:22.000Z  world.log-append id="events"
+0003  2026-08-05T09:14:22.000Z  world.log-append id="api-file"
+0004  2026-08-05T09:14:22.000Z  world.service-start id="worker"
+0005  2026-08-05T09:14:22.000Z  world.service-stop id="api"
+0006  2026-08-05T09:14:22.000Z  world.service-restart id="api"
+0007  2026-08-05T09:14:22.000Z  world.history-append length=2
+0008  2026-08-05T09:14:22.000Z  world.process-transition id="fixed" state=running

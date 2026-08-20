@@ -115,7 +115,7 @@
         "user": "root"
       },
       "logs": [],
-      "manPages": {},
+      "manPages": [],
       "processes": [],
       "services": [],
       "shellHistory": [],
@@ -279,6 +279,15 @@
         "umask": "0022",
         "user": "root"
       }
+    },
+    "world": {
+      "env": {},
+      "logs": [],
+      "manPages": [],
+      "processes": [],
+      "services": [],
+      "shellHistory": [],
+      "tickets": []
     }
   },
   "transcript": [

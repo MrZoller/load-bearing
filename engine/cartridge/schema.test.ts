@@ -28,7 +28,12 @@ import type {
   CartridgeIdentity,
   CartridgeMeta,
   CartridgeModel,
+  CartridgeLog,
+  CartridgeManPage,
+  CartridgeProcess,
   CartridgeRepository,
+  CartridgeService,
+  CartridgeTicket,
 } from "./types.js";
 
 const PUBLISHED = fileURLToPath(
@@ -99,7 +104,7 @@ describe("the published schema", () => {
     // The gap is a decision, not an oversight — and a reader should be able to
     // see that without noticing an absence.
     const rendered = serialize(emitJsonSchema());
-    for (const owner of ["issue #7", "issue #12", "Phase 4"]) {
+    for (const owner of ["issue #12", "Phase 4"]) {
       expect(rendered).toContain(owner);
     }
   });
@@ -323,12 +328,45 @@ describe("descriptor and type lockstep", () => {
     agrees<CartridgeRepository["env"][string]>(
       repository.fields.env.node.values,
     );
-    agrees<CartridgeRepository["manPages"][string]>(
-      repository.fields.manPages.node.values,
-    );
+    const manPage = repository.fields.manPages.node.items;
+    agrees<CartridgeManPage["name"]>(manPage.fields.name.node);
+    agrees<CartridgeManPage["section"]>(manPage.fields.section.node);
+    agrees<CartridgeManPage["contents"]>(manPage.fields.contents.node);
     agrees<CartridgeRepository["shellHistory"][number]>(
       repository.fields.shellHistory.node.items,
     );
+
+    const proc = repository.fields.processes.node.items;
+    agrees<CartridgeProcess["id"]>(proc.fields.id.node);
+    agrees<CartridgeProcess["pid"]>(proc.fields.pid.node);
+    agrees<CartridgeProcess["user"]>(proc.fields.user.node);
+    agrees<CartridgeProcess["startedAt"]>(proc.fields.startedAt.node);
+    agrees<CartridgeProcess["state"]>(proc.fields.state.node);
+    agrees<CartridgeProcess["command"]["binary"]>(
+      proc.fields.command.node.fields.binary.node,
+    );
+    agrees<CartridgeProcess["command"]["args"][number]>(
+      proc.fields.command.node.fields.args.node.items,
+    );
+    const service = repository.fields.services.node.items;
+    agrees<CartridgeService["id"]>(service.fields.id.node);
+    agrees<CartridgeService["state"]>(service.fields.state.node);
+    agrees<CartridgeService["health"]>(service.fields.health.node);
+    agrees<CartridgeService["ports"][number]>(service.fields.ports.node.items);
+    agrees<CartridgeService["dependencies"][number]>(
+      service.fields.dependencies.node.items,
+    );
+    const log = repository.fields.logs.node.items;
+    agrees<CartridgeLog["id"]>(log.fields.id.node);
+    agrees<CartridgeLog["kind"]>(log.fields.kind.node);
+    agrees<CartridgeLog["path"]>(log.fields.path.node);
+    agrees<CartridgeLog["entries"][number]>(log.fields.entries.node.items);
+    const ticket = repository.fields.tickets.node.items;
+    agrees<CartridgeTicket["id"]>(ticket.fields.id.node);
+    agrees<CartridgeTicket["status"]>(ticket.fields.status.node);
+    agrees<CartridgeTicket["title"]>(ticket.fields.title.node);
+    agrees<CartridgeTicket["body"]>(ticket.fields.body.node);
+    agrees<CartridgeTicket["service"]>(ticket.fields.service.node);
 
     const history = repository.fields.gitHistory.node;
     const commit = history.fields.commits.node.items;

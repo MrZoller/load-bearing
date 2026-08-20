@@ -6,8 +6,8 @@ this document is *what exists today*, as opposed to what is designed.
 `CLAUDE.md` and `AGENTS.md` carry the invariants and verified commands.
 
 Status: **Phase 0 — headless state engine.** The determinism substrate,
-event registry, cartridge validation, VFS, and Git model are built; processes,
-services, commands, and agent state remain. See
+event registry, cartridge validation, VFS, Git model, and environmental world
+state are built; commands, reactions, and agent state remain. See
 [Implementation status vs Phase 0](#implementation-status-vs-phase-0).
 
 ---
@@ -51,6 +51,7 @@ compared byte-for-byte against committed golden fixtures.
 │   ├── events/                  registry, reducer, snapshots, transcript
 │   ├── vfs/                     immutable filesystem model + event module
 │   ├── git/                     DAG/index/status/blame/diff + event module
+│   ├── world/                   processes/services/logs/env/man/history/tickets
 │   ├── cartridge/
 │   │   ├── schema.ts           descriptor-tree schema (the single authority)
 │   │   ├── load.ts             validate + normalize → LoadedCartridge
@@ -88,8 +89,8 @@ compared byte-for-byte against committed golden fixtures.
 | `EngineEvent` | `engine/events/state.ts` | Versionable `{ type, payload, version }` envelope dispatched by exact registered type. |
 | `LoadedCartridge` | `engine/cartridge/types.ts` | The world after validation/normalization. Plain JSON, deep-copied, serializable. |
 | `CartridgeMeta/File/Model/Repository` | `engine/cartridge/types.ts` | Loaded shapes for meta, files, models, repository. |
-| `GitSlice` / `VfsSlice` | `engine/git/types.ts`, `engine/vfs/types.ts` | Canonical plain-JSON machine state owned by each event module. |
-| `DeferredObject` | `engine/cartridge/types.ts` | A subtree v0 validates as "an object" but doesn't look inside (`story`, `presentation`, process/service/log/ticket/test interiors). |
+| `GitSlice` / `VfsSlice` / `WorldSlice` | `engine/git/types.ts`, `engine/vfs/types.ts`, `engine/world/types.ts` | Canonical plain-JSON machine state owned by each event module. |
+| `DeferredObject` | `engine/cartridge/types.ts` | A subtree v0 validates as "an object" but doesn't look inside (`story`, `presentation`, and test interiors). |
 | `SimulatedClock` / `ClockState` | `engine/clock/clock.ts` | `now() = startMs + elapsedMs`. Advances only via events. |
 | `CivilTime` / `CivilInput` | `engine/clock/civil.ts` | UTC calendar fields; hand-computed (no `Date`/`Intl`). |
 | `RandomStream` / `RandomState` | `engine/random/stream.ts` | A named mulberry32 stream in the shared registry. `fork(label)` derives a child from seed+path, not position. |
@@ -187,7 +188,8 @@ Cross-slice mechanics use bounded transactional effects. The outer handler
 declares effect events, each is dispatched to its registered owner against the
 in-transaction slices, and the reducer publishes only the final state. Effects
 cannot emit transcript output or nested effects. Git checkout is the first
-consumer: Git owns HEAD/index and VFS owns file replacement.
+consumers: Git owns HEAD/index while VFS owns file replacement; world file logs
+read VFS and append through one atomic VFS-owned write effect.
 
 ---
 
@@ -275,8 +277,7 @@ Phase 0 DoD (from `ROADMAP.md`), mapped to what exists:
 any rendering, any comedy writing, any real model calls.
 
 **What Phase 0 scope has NOT yet been built** (the gap a day-one agent will
-feel): the remaining simulated machine — processes/services, test runner,
-logs/env/man and shell history — and the command layer (~25 shell
+feel): the test runner and reactions, the command layer (~25 shell
 commands), the natural-language intent layer, escalation stage, metrics, and
 agent mind state (permission ledger, belief state, todo/thinking blocks). All
 are designed in `docs/ARCHITECTURE.md` and land behind the remaining Phase 0
@@ -295,7 +296,8 @@ issues.
    emitted JSON Schema / hand-written types, one source of truth). Deferred
    sections name who tightens them and when: `story`/`presentation` (Phase 2
    shapes, Phase 4 hardens), `processes`/`services`/
-   `logs`/`tickets` (issue #7), `tests` (issue #12).
+    `tests` (issue #12). Processes, services, logs, tickets, env, man pages, and
+    history are concrete and validated in `engine/world/`.
 3. **New golden fixtures** — every Phase 0 subsystem PR adds at least one
    (`engine/__fixtures__/replay/NNN-…/`). A subsystem with unit tests and no
    fixture is tested against its own idea of correct.

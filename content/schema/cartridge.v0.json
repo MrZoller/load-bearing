@@ -426,33 +426,148 @@
         },
         "logs": {
           "default": [],
-          "description": "Log entries queryable from the shell.",
+          "description": "File-backed and stream logs queryable from the shell.",
           "items": {
-            "$comment": "Declared but not validated in schema v0. Tightened by: issue #7. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
-            "description": "One entry. Log entries queryable from the shell.",
+            "additionalProperties": false,
+            "description": "A file-backed or in-memory stream log.",
+            "properties": {
+              "entries": {
+                "default": [],
+                "description": "Seeded stream entries; file logs keep contents only in VFS.",
+                "items": {
+                  "description": "One log entry.",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "id": {
+                "description": "A stable, non-empty single-line cartridge-local identifier.",
+                "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                "type": "string"
+              },
+              "kind": {
+                "description": "Where log contents live.",
+                "enum": [
+                  "file",
+                  "stream"
+                ],
+                "type": "string"
+              },
+              "path": {
+                "default": "",
+                "description": "Canonical VFS path for file logs; empty for streams.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "kind"
+            ],
             "type": "object"
           },
           "type": "array"
         },
         "manPages": {
-          "additionalProperties": {
-            "description": "The page's full text.",
-            "type": "string"
+          "default": [],
+          "description": "Manual pages with explicit sections.",
+          "items": {
+            "additionalProperties": false,
+            "description": "One manual page, identified by exact name and section.",
+            "properties": {
+              "contents": {
+                "description": "The page's full text.",
+                "type": "string"
+              },
+              "name": {
+                "description": "Manual page name.",
+                "pattern": "^[a-z0-9][a-z0-9._-]*$",
+                "type": "string"
+              },
+              "section": {
+                "description": "A stable, non-empty single-line cartridge-local identifier.",
+                "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "section",
+              "contents"
+            ],
+            "type": "object"
           },
-          "default": {},
-          "description": "`man` page bodies, keyed by page name.",
-          "propertyNames": {
-            "description": "Each key is a man page name.",
-            "pattern": "^[a-z0-9][a-z0-9._-]*$"
-          },
-          "type": "object"
+          "type": "array"
         },
         "processes": {
           "default": [],
           "description": "Process table rows, as `ps` would show them.",
           "items": {
-            "$comment": "Declared but not validated in schema v0. Tightened by: issue #7. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
-            "description": "One entry. Process table rows, as `ps` would show them.",
+            "additionalProperties": false,
+            "description": "One row in the simulated process table.",
+            "properties": {
+              "command": {
+                "additionalProperties": false,
+                "description": "The executable and exact argument vector.",
+                "properties": {
+                  "args": {
+                    "default": [],
+                    "description": "Arguments after argv[0].",
+                    "items": {
+                      "description": "One argument.",
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "binary": {
+                    "description": "Absolute executable path naming a repository file.",
+                    "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "binary"
+                ],
+                "type": "object"
+              },
+              "id": {
+                "description": "A stable, non-empty single-line cartridge-local identifier.",
+                "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                "type": "string"
+              },
+              "pid": {
+                "description": "PID; zero requests deterministic assignment.",
+                "maximum": 32767,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "startedAt": {
+                "$comment": "The loader applies a further check this pattern cannot express.",
+                "description": "A UTC instant, `YYYY-MM-DDTHH:MM:SS.mmmZ`. Fixed width, so one instant has exactly one spelling. The simulated machine has no other timezone.",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                "type": "string"
+              },
+              "state": {
+                "description": "Current process state.",
+                "enum": [
+                  "running",
+                  "stopped"
+                ],
+                "type": "string"
+              },
+              "user": {
+                "description": "User shown by process listings.",
+                "pattern": "^[a-z_][a-z0-9_-]*$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "pid",
+              "user",
+              "command",
+              "startedAt",
+              "state"
+            ],
             "type": "object"
           },
           "type": "array"
@@ -461,8 +576,59 @@
           "default": [],
           "description": "Service units, with states, health and ports.",
           "items": {
-            "$comment": "Declared but not validated in schema v0. Tightened by: issue #7. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
-            "description": "One entry. Service units, with states, health and ports.",
+            "additionalProperties": false,
+            "description": "One simulated service unit.",
+            "properties": {
+              "dependencies": {
+                "default": [],
+                "description": "Service ids this unit depends on.",
+                "items": {
+                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "health": {
+                "description": "Cartridge- and reaction-owned health.",
+                "enum": [
+                  "healthy",
+                  "degraded",
+                  "unhealthy",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "description": "A stable, non-empty single-line cartridge-local identifier.",
+                "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                "type": "string"
+              },
+              "ports": {
+                "default": [],
+                "description": "Listening ports; zero requests deterministic assignment.",
+                "items": {
+                  "description": "A TCP/UDP port number.",
+                  "maximum": 65535,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              "state": {
+                "description": "Current service state.",
+                "enum": [
+                  "running",
+                  "stopped"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "state",
+              "health"
+            ],
             "type": "object"
           },
           "type": "array"
@@ -490,8 +656,41 @@
           "default": [],
           "description": "The in-world ticket archive.",
           "items": {
-            "$comment": "Declared but not validated in schema v0. Tightened by: issue #7. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
-            "description": "One entry. The in-world ticket archive.",
+            "additionalProperties": false,
+            "description": "One archived in-world ticket.",
+            "properties": {
+              "body": {
+                "description": "Ticket body.",
+                "type": "string"
+              },
+              "id": {
+                "description": "A stable, non-empty single-line cartridge-local identifier.",
+                "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                "type": "string"
+              },
+              "service": {
+                "default": "",
+                "description": "Referenced service id, or empty when unrelated.",
+                "type": "string"
+              },
+              "status": {
+                "description": "A stable, non-empty single-line cartridge-local identifier.",
+                "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                "type": "string"
+              },
+              "title": {
+                "description": "Single-line ticket title.",
+                "minLength": 1,
+                "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "status",
+              "title",
+              "body"
+            ],
             "type": "object"
           },
           "type": "array"

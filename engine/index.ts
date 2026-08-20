@@ -130,6 +130,47 @@ export type {
   GitSuccess,
 } from "./git/types.js";
 
+export {
+  WORLD_MODULE,
+  readWorldSlice,
+  validateWorldSlice,
+} from "./world/module.js";
+export {
+  appendShellHistory,
+  appendStreamLog,
+  createWorldSlice,
+  listEnv,
+  listProcesses,
+  listServices,
+  listTickets,
+  lookupEnv,
+  lookupLog,
+  lookupManPage,
+  lookupProcess,
+  lookupProcessByPid,
+  lookupService,
+  lookupTicket,
+  readShellHistory,
+  readWorldLog,
+  restartService,
+  setWorldEnv,
+  transitionProcess,
+  transitionService,
+  unsetWorldEnv,
+} from "./world/world.js";
+export type {
+  LogReadResult,
+  ProcessFilter,
+  ServiceFilter,
+  TicketFilter,
+  WorldLog,
+  WorldManPage,
+  WorldProcess,
+  WorldService,
+  WorldSlice,
+  WorldTicket,
+} from "./world/types.js";
+
 export { deepFreeze } from "./freeze.js";
 export {
   CONTROL_CHARACTER,
@@ -195,6 +236,7 @@ export {
   CARTRIDGE_SCHEMA_VERSION,
   GIT_BRANCH_PATTERN,
   GIT_COMMIT_ID_PATTERN,
+  WORLD_ID_PATTERN,
 } from "./cartridge/schema.js";
 export { CARTRIDGE_SCHEMA_ID, emitJsonSchema } from "./cartridge/jsonSchema.js";
 export type {
@@ -210,6 +252,13 @@ export type {
   CartridgeMeta,
   CartridgeModel,
   CartridgeRepository,
+  CartridgeLog,
+  CartridgeManPage,
+  CartridgeProcess,
+  CartridgeService,
+  CartridgeTicket,
   DeferredObject,
   LoadedCartridge,
+  ServiceHealth,
+  WorldUnitState,
 } from "./cartridge/types.js";
