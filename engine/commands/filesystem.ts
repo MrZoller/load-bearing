@@ -248,6 +248,9 @@ function characterClassMembers(atom: string): ReadonlySet<string> | undefined {
 
 function atomsCanOverlap(left: string, right: string): boolean {
   if (left === right) return true;
+  // An unescaped dot matches every character, including any literal or class
+  // member in its neighboring repetition.
+  if (left === "." || right === ".") return true;
   const leftMembers = characterClassMembers(left);
   const rightMembers = characterClassMembers(right);
   if (leftMembers !== undefined && rightMembers !== undefined)
