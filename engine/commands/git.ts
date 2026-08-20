@@ -547,6 +547,11 @@ const commit: Subcommand = (context) => {
   const commitText = options.options["commitText"]?.at(-1);
   if (typeof commitText !== "string" || options.operands.length !== 0)
     return usage("git commit", "usage: git commit -m <message>");
+  // The full message becomes observable later through log, show, and blame;
+  // validating only the one-line commit acknowledgement would admit text that
+  // those renderers cannot record and permanently poison the simulated history.
+  if (describeUnwritableText(commitText) !== undefined)
+    return result([commitText], EMPTY, 0);
   const git = readGitSlice(context.state);
   const mutation = commitGit(git, commitText, now(context));
   if (!mutation.result.ok)

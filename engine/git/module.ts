@@ -93,17 +93,16 @@ function stringArray(value: unknown, where: string): readonly string[] {
 const HASH_PATTERN = /^[0-9a-f]{40}$/;
 
 function summaryPath(path: string): string {
-  const rendered = JSON.stringify(path);
   // Status detail is diagnostic transcript data, not an event payload. A valid
   // long cartridge path must therefore remain representable in the transcript.
-  if (rendered.length <= 2048) return rendered;
+  if (path.length <= 2048) return path;
   const budget = 2016;
   let end = 0;
-  for (const character of rendered) {
+  for (const character of path) {
     if (end + character.length > budget) break;
     end += character.length;
   }
-  return `${rendered.slice(0, end)}… (${String(path.length)} chars)`;
+  return `${path.slice(0, end)}… (${String(path.length)} chars)`;
 }
 
 /** Validate snapshots without normalization; malformed Git state never resumes. */

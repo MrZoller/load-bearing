@@ -205,6 +205,22 @@ describe("Git commands", () => {
     expect(readGitSlice(execute(state, input))).toEqual(readGitSlice(state));
   });
 
+  it("does not fold a multiline commit whose later line cannot be rendered", () => {
+    let state = execute(initial(), "touch recorded.txt");
+    state = execute(state, "git add recorded.txt");
+    const input = "git commit -m 'safe\nbad\rafter'";
+
+    expect(run(state, input)).toEqual({
+      stdout: [],
+      stderr: [
+        "shell: command output exceeds the deterministic transcript limit",
+      ],
+      exitCode: 1,
+    });
+    expect(commandEvents(state, input)).toEqual([]);
+    expect(readGitSlice(execute(state, input))).toEqual(readGitSlice(state));
+  });
+
   it("stages, unstages, commits, updates a branch, and keeps log and blame coherent", () => {
     let state = execute(initial(), "touch load.txt");
     state = execute(state, "git add load.txt");
