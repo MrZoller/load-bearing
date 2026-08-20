@@ -163,6 +163,11 @@ interface RegexGroup {
   hasAlternation: boolean;
 }
 
+interface CharacterClassToken {
+  value: string;
+  escaped: boolean;
+}
+
 function isQuantifierStart(pattern: string, index: number): boolean {
   const character = pattern[index];
   if (character === "*" || character === "+" || character === "?") return true;
@@ -171,6 +176,87 @@ function isQuantifierStart(pattern: string, index: number): boolean {
   return (
     closing !== -1 && /^\d+(,\d*)?$/.test(pattern.slice(index + 1, closing))
   );
+}
+
+/**
+ * Returns the finite character set for a positive character class. Unknown
+ * forms deliberately return undefined: rejecting an uncertain repeated shape
+ * is preferable to letting native RegExp monopolize deterministic replay.
+ */
+function characterClassMembers(atom: string): ReadonlySet<string> | undefined {
+  if (!atom.startsWith("[") || !atom.endsWith("]") || atom[1] === "^")
+    return undefined;
+
+  const tokens: CharacterClassToken[] = [];
+  for (let index = 1; index < atom.length - 1; index += 1) {
+    const character = atom[index] ?? "";
+    if (character !== "\\") {
+      tokens.push({ value: character, escaped: false });
+      continue;
+    }
+
+    const escaped = atom[index + 1];
+    if (
+      escaped === undefined ||
+      escaped === "D" ||
+      escaped === "S" ||
+      escaped === "W"
+    )
+      return undefined;
+    index += 1;
+    if (escaped === "d") {
+      for (let digit = 0; digit <= 9; digit += 1)
+        tokens.push({ value: String(digit), escaped: true });
+    } else if (escaped === "w") {
+      for (const value of "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_")
+        tokens.push({ value, escaped: true });
+    } else if (escaped === "s") {
+      for (const value of " \t\n\r\f\v") tokens.push({ value, escaped: true });
+    } else {
+      tokens.push({ value: escaped, escaped: true });
+    }
+  }
+
+  const members = new Set<string>();
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index];
+    const separator = tokens[index + 1];
+    const rangeEnd = tokens[index + 2];
+    if (
+      token !== undefined &&
+      separator?.value === "-" &&
+      !separator.escaped &&
+      rangeEnd !== undefined
+    ) {
+      const first = token.value.charCodeAt(0);
+      const last = rangeEnd.value.charCodeAt(0);
+      if (
+        token.value.length !== 1 ||
+        rangeEnd.value.length !== 1 ||
+        first > last
+      )
+        return undefined;
+      for (let code = first; code <= last; code += 1)
+        members.add(String.fromCharCode(code));
+      index += 2;
+    } else if (token !== undefined) {
+      members.add(token.value);
+    }
+  }
+  return members;
+}
+
+function atomsCanOverlap(left: string, right: string): boolean {
+  if (left === right) return true;
+  const leftMembers = characterClassMembers(left);
+  const rightMembers = characterClassMembers(right);
+  if (leftMembers !== undefined && rightMembers !== undefined)
+    return [...leftMembers].some((member) => rightMembers.has(member));
+  if (leftMembers !== undefined) return leftMembers.has(right);
+  if (rightMembers !== undefined) return rightMembers.has(left);
+  // A negated or otherwise unknown class can overlap any adjacent atom. This
+  // deliberate false positive preserves the no-unbounded-evaluation promise.
+  return left.startsWith("[") || right.startsWith("[");
 }
 
 /**
@@ -266,8 +352,10 @@ function hasUnsafeRegexShape(pattern: string): boolean {
       if (
         groups.length === 0 &&
         previousQuantifiedAtom !== undefined &&
-        previousQuantifiedAtom === atom &&
-        atomsSinceQuantifier.split(previousQuantifiedAtom).join("") === ""
+        atomsCanOverlap(previousQuantifiedAtom, atom) &&
+        (atomsSinceQuantifier === atom ||
+          (previousQuantifiedAtom === atom &&
+            atomsSinceQuantifier.split(previousQuantifiedAtom).join("") === ""))
       )
         return true;
       const group = groups.at(-1);

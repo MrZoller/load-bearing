@@ -234,7 +234,14 @@ describe("filesystem commands", () => {
   });
 
   it("rejects regex shapes that can monopolize deterministic replay", () => {
-    for (const pattern of ["(a+)+$", "a+a+$", "a+aa+$", "[ab]+[ab]+$"]) {
+    for (const pattern of [
+      "(a+)+$",
+      "a+a+$",
+      "a+aa+$",
+      "[ab]+[ab]+$",
+      "[ab]+[ac]+$",
+      "[a-z]+[m-z]+$",
+    ]) {
       expect(run(`grep "${pattern}" README.md`)).toEqual({
         stdout: [],
         stderr: [
