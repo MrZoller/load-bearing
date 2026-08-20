@@ -26,7 +26,7 @@ remains blocked until review findings are deliberately batched into it.
   - acceptance: engine world-state modules hydrate and canonically serialize every declared surface; deterministic PID/port assignment and listing order are documented and tested; env, logs, services, and history mutate only through replayable events; pure lookups and load-time collision/dangling-reference errors are covered; purity passes
   - deps: T1
   - pr: 25
-- [R] T4 (standard) — Command interpreter core: tokenizer, registry, dispatch (Fixes #8)
+- [x] T4 (standard) — Command interpreter core: tokenizer, registry, dispatch (Fixes #8)
   - acceptance: `engine/commands/` provides tested POSIX-ish tokenization and option parsing, duplicate-safe registration, validated cartridge overrides, exit-127 unknown-command behavior, and a pure shell execution API whose ordered stdout/stderr/exit results enter the replay transcript; `pwd`, `echo`, and `true` prove the path end to end; purity passes
   - pr: 26
 - [ ] T5 (standard) — Filesystem commands (Fixes #9)
@@ -78,3 +78,5 @@ remains blocked until review findings are deliberately batched into it.
   - PR #25: guard environment lookups against inherited `Object.prototype` names
   - PR #25: reject noncanonical fixed-width process timestamps in restored world snapshots
   - PR #26: directly test malformed `shell.result` stream payload guards on replay
+  - PR #26: return a deterministic shell result for oversized command input
+  - PR #26: return a deterministic shell result for control-character and lone-surrogate input
