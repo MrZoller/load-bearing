@@ -59,7 +59,14 @@
           "owner": "greg"
         }
       },
-      "gitHistory": [],
+      "gitHistory": {
+        "branches": {},
+        "commits": [],
+        "head": {
+          "kind": "detached",
+          "target": ""
+        }
+      },
       "identity": {
         "group": "root",
         "home": "/root",
@@ -98,6 +105,16 @@
   },
   "seed": "2026-08-05/0/deep-foundation",
   "slices": {
+    "git": {
+      "branches": {},
+      "commits": {},
+      "head": {
+        "kind": "detached",
+        "target": ""
+      },
+      "index": {},
+      "root": "/production/service"
+    },
     "probe": {
       "events": 3,
       "values": 12

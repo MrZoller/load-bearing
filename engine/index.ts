@@ -63,7 +63,7 @@ export type { EventPayload } from "./events/payload.js";
 export { CLOCK_MODULE, MAX_TICK_MS } from "./events/core.js";
 export { PROBE_MODULE } from "./events/probe.js";
 export type { ProbeSlice } from "./events/probe.js";
-export { VFS_MODULE, validateVfsSlice } from "./vfs/module.js";
+export { VFS_MODULE, readVfsSlice, validateVfsSlice } from "./vfs/module.js";
 export {
   baseName,
   compareVfsNames,
@@ -80,6 +80,7 @@ export {
   mkdirVfs,
   readVfs,
   renameVfs,
+  replaceVfsFiles,
   writeVfs,
 } from "./vfs/vfs.js";
 export type {
@@ -97,6 +98,37 @@ export type {
   VfsSlice,
   VfsSuccess,
 } from "./vfs/types.js";
+
+export { GIT_MODULE, readGitSlice, validateGitSlice } from "./git/module.js";
+export {
+  blameGit,
+  checkoutGit,
+  createGitSlice,
+  diffGit,
+  logGit,
+  stageGit,
+  statusGit,
+} from "./git/git.js";
+export type {
+  GitAuthor,
+  GitBlameLine,
+  GitChange,
+  GitCheckoutMutation,
+  GitCommit,
+  GitDiffComparison,
+  GitDiffFile,
+  GitDiffLine,
+  GitDiffLineKind,
+  GitErrorCode,
+  GitFailure,
+  GitFileSnapshot,
+  GitHead,
+  GitMutation,
+  GitResult,
+  GitSlice,
+  GitStatusEntry,
+  GitSuccess,
+} from "./git/types.js";
 
 export { deepFreeze } from "./freeze.js";
 export {
@@ -161,6 +193,8 @@ export {
   ARCHETYPES,
   CARTRIDGE_SCHEMA,
   CARTRIDGE_SCHEMA_VERSION,
+  GIT_BRANCH_PATTERN,
+  GIT_COMMIT_ID_PATTERN,
 } from "./cartridge/schema.js";
 export { CARTRIDGE_SCHEMA_ID, emitJsonSchema } from "./cartridge/jsonSchema.js";
 export type {
@@ -168,6 +202,11 @@ export type {
   CartridgeDirectory,
   CartridgeFile,
   CartridgeIdentity,
+  CartridgeGitAuthor,
+  CartridgeGitCommit,
+  CartridgeGitFile,
+  CartridgeGitHead,
+  CartridgeGitHistory,
   CartridgeMeta,
   CartridgeModel,
   CartridgeRepository,

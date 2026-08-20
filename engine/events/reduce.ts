@@ -333,6 +333,17 @@ export function step(
   // like the event envelope, and everything downstream now reads the capture
   // rather than the handler's object — see `captureOutcome`.
   const outcome = captureOutcome(handler.apply(context, slice), where);
+  const slices = applyEffects(
+    before,
+    previousSlices,
+    namespace,
+    stateful,
+    outcome,
+    clock,
+    random,
+    registry,
+    where,
+  );
 
   return freezeState({
     engineVersion,
@@ -342,7 +353,7 @@ export function step(
     eventCount: index + 1,
     clock: clock.toState(),
     random: random.toState(),
-    slices: nextSlices(previousSlices, namespace, stateful, outcome, where),
+    slices,
     transcript: Object.freeze([
       ...previousTranscript,
       makeEntry(index, at, envelope.type, outcome, where),
@@ -357,6 +368,7 @@ interface CapturedOutcome {
   readonly slice: unknown;
   readonly summary: string;
   readonly detail: readonly string[];
+  readonly effects: readonly EngineEvent[];
 }
 
 /**
@@ -419,6 +431,7 @@ function captureOutcome(raw: unknown, where: string): CapturedOutcome {
   const slice: unknown = outcome.slice;
   const summary: unknown = outcome.summary;
   const detail: unknown = outcome.detail;
+  const effects: unknown = outcome.effects;
 
   if (summary !== undefined && typeof summary !== "string") {
     throw new Error(
@@ -483,12 +496,116 @@ function captureOutcome(raw: unknown, where: string): CapturedOutcome {
     lines = copied;
   }
 
+  const dispatched: EngineEvent[] = [];
+  if (effects !== undefined) {
+    if (!Array.isArray(effects))
+      throw new Error(
+        `${where}: effects must be an array, got ${typeof effects}`,
+      );
+    for (let offset = 0; offset < effects.length; offset += 1) {
+      if (!(offset in effects))
+        throw new Error(
+          `${where}: effects[${String(offset)}] is a hole in a sparse array`,
+        );
+      const effect = effects[offset];
+      if (
+        typeof effect !== "object" ||
+        effect === null ||
+        Array.isArray(effect)
+      )
+        throw new Error(
+          `${where}: effects[${String(offset)}] must be an event object`,
+        );
+      dispatched.push(effect as EngineEvent);
+    }
+  }
+
   return {
     hasSlice: slice !== undefined,
     slice,
     summary: summary ?? "",
     detail: lines,
+    effects: dispatched,
   };
+}
+
+/** Dispatch module-owned effects and publish their slices as one transaction. */
+function applyEffects(
+  before: SessionState,
+  previousSlices: Readonly<Record<string, unknown>>,
+  namespace: string,
+  stateful: boolean,
+  outer: CapturedOutcome,
+  clock: ReturnType<typeof restoreClock>,
+  random: ReturnType<typeof restoreRandom>,
+  registry: EventRegistry,
+  where: string,
+): Readonly<Record<string, unknown>> {
+  let slices = nextSlices(previousSlices, namespace, stateful, outer, where);
+  for (let offset = 0; offset < outer.effects.length; offset += 1) {
+    const envelope = assertEventEnvelope(
+      outer.effects[offset] as EngineEvent,
+      `${where} effect ${String(offset)}`,
+    );
+    const effectWhere = `${where} effect ${String(offset)} (${envelope.type})`;
+    const handler = registry.handler(envelope.type);
+    if (handler === undefined)
+      throw new UnknownEventTypeError(
+        envelope.type,
+        before.eventCount,
+        registry.namespaces,
+      );
+    if (envelope.version !== undefined && envelope.version !== handler.version)
+      throw new EventVersionError(
+        effectWhere,
+        envelope.type,
+        envelope.version,
+        handler.version,
+      );
+    const module = registry.module(handler.namespace) as EventModule;
+    const effectState: SessionState = Object.freeze({ ...before, slices });
+    const effectContext: EventContext = {
+      state: effectState,
+      cartridge: before.cartridge,
+      index: before.eventCount,
+      event: envelope,
+      clock,
+      random: random.fork(module.namespace),
+      where: effectWhere,
+    };
+    const effectSlice = module.stateful
+      ? readSlice(effectState, module.namespace)
+      : undefined;
+    const clockBefore = clock.toState();
+    const randomBefore = random.toState();
+    const outcome = captureOutcome(
+      handler.apply(effectContext, effectSlice),
+      effectWhere,
+    );
+    if (
+      serialize(clock.toState()) !== serialize(clockBefore) ||
+      serialize(random.toState()) !== serialize(randomBefore)
+    )
+      throw new Error(
+        `${effectWhere}: an effect may update only its owned slice; time and randomness belong to logged outer events`,
+      );
+    if (
+      outcome.summary !== "" ||
+      outcome.detail.length > 0 ||
+      outcome.effects.length > 0
+    )
+      throw new Error(
+        `${effectWhere}: an effect may return only its owned slice; transcript output and nested effects belong to logged outer events`,
+      );
+    slices = nextSlices(
+      slices,
+      module.namespace,
+      module.stateful,
+      outcome,
+      effectWhere,
+    );
+  }
+  return slices;
 }
 
 /**

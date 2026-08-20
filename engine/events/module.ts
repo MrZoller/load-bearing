@@ -197,6 +197,16 @@ export interface EventOutcome<S> {
   readonly summary?: string;
   /** Further transcript lines belonging to this entry. */
   readonly detail?: readonly string[];
+  /**
+   * Additional module-owned transitions committed with this event.
+   *
+   * Effects are for atomic cross-slice mechanics such as Git checkout writing
+   * through the VFS. The reducer dispatches each effect to its registered
+   * owner, publishes no intermediate state, and records only the outer event.
+   * An effect may return only a slice: transcript output and nested effects are
+   * refused so hidden events cannot become an unbounded second event log.
+   */
+  readonly effects?: readonly EngineEvent[];
 }
 
 /** One event type's implementation. */

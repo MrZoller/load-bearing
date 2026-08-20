@@ -39,6 +39,8 @@ import { CARTRIDGE_SCHEMA, CARTRIDGE_SCHEMA_VERSION } from "./schema.js";
 import type { SchemaNode, ObjectNode } from "./schema.js";
 import type {
   CartridgeDirectory,
+  CartridgeGitCommit,
+  CartridgeGitHistory,
   CartridgeMeta,
   CartridgeModel,
   CartridgeRepository,
@@ -782,6 +784,13 @@ function issueAt(report: Report, pointer: string): boolean {
   return report.issues.some((issue) => issue.pointer === pointer);
 }
 
+function issueWithin(report: Report, pointer: string): boolean {
+  return report.issues.some(
+    (issue) =>
+      issue.pointer === pointer || issue.pointer.startsWith(`${pointer}/`),
+  );
+}
+
 /**
  * The one cross-reference v0 makes.
  *
@@ -894,6 +903,202 @@ function checkFilesystem(
   }
 }
 
+/** Logical text lines: a terminal newline ends the last line, not an empty one. */
+function gitLines(contents: string): readonly string[] {
+  if (contents === "") return [];
+  const lines = contents.split("\n");
+  if (lines.at(-1) === "") lines.pop();
+  return lines;
+}
+
+/**
+ * Map each child line to the parent line it inherits under the same stable LCS
+ * tie-break used by the Git diff model. A deletion wins a tie, so duplicate
+ * lines cannot make provenance depend on an arbitrary text-only search.
+ */
+function inheritedGitLines(
+  parent: readonly string[],
+  child: readonly string[],
+): ReadonlyMap<number, number> {
+  const lengths = Array.from({ length: parent.length + 1 }, () =>
+    Array.from({ length: child.length + 1 }, () => 0),
+  );
+  for (let left = parent.length - 1; left >= 0; left -= 1) {
+    for (let right = child.length - 1; right >= 0; right -= 1) {
+      lengths[left]![right] =
+        parent[left] === child[right]
+          ? 1 + (lengths[left + 1]?.[right + 1] ?? 0)
+          : Math.max(
+              lengths[left + 1]?.[right] ?? 0,
+              lengths[left]?.[right + 1] ?? 0,
+            );
+    }
+  }
+  const inherited = new Map<number, number>();
+  let left = 0;
+  let right = 0;
+  while (left < parent.length && right < child.length) {
+    if (parent[left] === child[right]) {
+      inherited.set(right, left);
+      left += 1;
+      right += 1;
+    } else if (
+      (lengths[left + 1]?.[right] ?? 0) >= (lengths[left]?.[right + 1] ?? 0)
+    ) {
+      left += 1;
+    } else {
+      right += 1;
+    }
+  }
+  return inherited;
+}
+
+function gitCommitPointer(index: number): string {
+  return `/repository/gitHistory/commits/${String(index)}`;
+}
+
+/** The concrete Git cartridge is a graph, so its useful checks live here. */
+function checkGitHistory(
+  history: CartridgeGitHistory,
+  repository: CartridgeRepository,
+  report: Report,
+): void {
+  const byId = new Map<string, { commit: CartridgeGitCommit; index: number }>();
+  history.commits.forEach((commit, index) => {
+    const first = byId.get(commit.id);
+    if (first === undefined) byId.set(commit.id, { commit, index });
+    else
+      report.addPhrase(
+        `${gitCommitPointer(index)}/id`,
+        "an id no other commit uses",
+        `${JSON.stringify(commit.id)}, already used by ${gitCommitPointer(first.index)}`,
+      );
+  });
+
+  history.commits.forEach((commit, index) => {
+    commit.parents.forEach((parent, parentIndex) => {
+      if (!byId.has(parent))
+        report.addPhrase(
+          `${gitCommitPointer(index)}/parents/${String(parentIndex)}`,
+          "an id of a commit in this history",
+          `${JSON.stringify(parent)}, which does not exist`,
+        );
+    });
+    for (const path of Object.keys(commit.files).sort()) {
+      if (!Object.hasOwn(repository.files, path))
+        report.addPhrase(
+          `${gitCommitPointer(index)}/files/${pointerToken(path)}`,
+          "a file declared by repository.files",
+          `${JSON.stringify(path)}, which the VFS world does not declare`,
+        );
+    }
+  });
+
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
+  const visit = (id: string): void => {
+    if (visited.has(id)) return;
+    const entry = byId.get(id);
+    if (entry === undefined) return;
+    if (visiting.has(id)) {
+      report.addPhrase(
+        `${gitCommitPointer(entry.index)}/parents`,
+        "an acyclic commit ancestry",
+        `a cycle returning to ${JSON.stringify(id)}`,
+      );
+      return;
+    }
+    visiting.add(id);
+    for (const parent of entry.commit.parents) visit(parent);
+    visiting.delete(id);
+    visited.add(id);
+  };
+  for (const commit of history.commits) visit(commit.id);
+
+  for (const [branch, tip] of Object.entries(history.branches).sort()) {
+    if (!byId.has(tip))
+      report.addPhrase(
+        `/repository/gitHistory/branches/${pointerToken(branch)}`,
+        "an id of a commit in this history",
+        `${JSON.stringify(tip)}, which does not exist`,
+      );
+  }
+
+  if (history.commits.length === 0) {
+    if (
+      Object.keys(history.branches).length !== 0 ||
+      history.head.kind !== "detached" ||
+      history.head.target !== ""
+    )
+      report.addPhrase(
+        "/repository/gitHistory/head",
+        "detached HEAD with an empty target when history has no commits or refs",
+        "a ref in an empty history",
+      );
+    return;
+  }
+
+  if (history.head.kind === "branch") {
+    if (!Object.hasOwn(history.branches, history.head.target))
+      report.addPhrase(
+        "/repository/gitHistory/head/target",
+        "the name of a declared branch",
+        `${JSON.stringify(history.head.target)}, which is not a branch`,
+      );
+  } else if (!byId.has(history.head.target)) {
+    report.addPhrase(
+      "/repository/gitHistory/head/target",
+      "an id of a commit in this history",
+      `${JSON.stringify(history.head.target)}, which does not exist`,
+    );
+  }
+
+  history.commits.forEach((commit, commitIndex) => {
+    for (const [path, file] of Object.entries(commit.files).sort()) {
+      const lines = gitLines(file.contents);
+      const filePointer = `${gitCommitPointer(commitIndex)}/files/${pointerToken(path)}`;
+      if (file.blame.length !== lines.length) {
+        report.addPhrase(
+          `${filePointer}/blame`,
+          `one commit id per logical line (${String(lines.length)})`,
+          `${String(file.blame.length)} entries`,
+        );
+        continue;
+      }
+      file.blame.forEach((sourceId, lineIndex) => {
+        const source = byId.get(sourceId)?.commit;
+        const pointer = `${filePointer}/blame/${String(lineIndex)}`;
+        if (source === undefined) {
+          report.addPhrase(
+            pointer,
+            "an id of a commit in this history",
+            `${JSON.stringify(sourceId)}, which does not exist`,
+          );
+          return;
+        }
+        const firstParent = commit.parents[0];
+        const parentFile =
+          firstParent === undefined
+            ? undefined
+            : byId.get(firstParent)?.commit.files[path];
+        const inherited = inheritedGitLines(
+          gitLines(parentFile?.contents ?? ""),
+          lines,
+        );
+        const parentLine = inherited.get(lineIndex);
+        const expectedSource =
+          parentLine === undefined ? commit.id : parentFile?.blame[parentLine];
+        if (sourceId !== expectedSource)
+          report.addPhrase(
+            pointer,
+            "the first-parent commit provenance for this line",
+            `${JSON.stringify(sourceId)}, expected ${JSON.stringify(expectedSource)}`,
+          );
+      });
+    }
+  });
+}
+
 /** Model ids seed the PRNG, so two models sharing one is two models sharing a session. */
 function checkModelIds(
   models: readonly CartridgeModel[],
@@ -982,6 +1187,17 @@ export function loadCartridge(value: unknown): LoadedCartridge {
     !issueAt(report, "/repository/directories")
   ) {
     checkFilesystem(cartridge.repository, report);
+  }
+  if (
+    !issueAt(report, "/repository") &&
+    !issueWithin(report, "/repository/gitHistory") &&
+    !issueAt(report, "/repository/files")
+  ) {
+    checkGitHistory(
+      cartridge.repository.gitHistory,
+      cartridge.repository,
+      report,
+    );
   }
   // `checkModelIds` gates per model, so it only needs the array to exist.
   if (!issueAt(report, "/models")) {

@@ -74,6 +74,41 @@ export interface CartridgeModel {
   readonly quirks: readonly string[];
 }
 
+export interface CartridgeGitAuthor {
+  readonly name: string;
+  readonly email: string;
+}
+
+export interface CartridgeGitFile {
+  readonly contents: string;
+  /** One authored commit id per logical line. */
+  readonly blame: readonly string[];
+}
+
+export interface CartridgeGitCommit {
+  /** Author-facing stable name used by parents, refs, and blame. */
+  readonly id: string;
+  readonly parents: readonly string[];
+  readonly author: CartridgeGitAuthor;
+  readonly message: string;
+  readonly committedAt: string;
+  /** Complete tracked tree at this commit, keyed by absolute VFS path. */
+  readonly files: Readonly<Record<string, CartridgeGitFile>>;
+}
+
+export interface CartridgeGitHead {
+  readonly kind: "branch" | "detached";
+  /** A branch name for branch HEAD, or commit id for detached HEAD. */
+  readonly target: string;
+}
+
+export interface CartridgeGitHistory {
+  readonly commits: readonly CartridgeGitCommit[];
+  /** Branch names mapped to authored commit ids. */
+  readonly branches: Readonly<Record<string, string>>;
+  readonly head: CartridgeGitHead;
+}
+
 export interface CartridgeRepository {
   /** Absolute path the session opens in. */
   readonly cwd: string;
@@ -86,7 +121,7 @@ export interface CartridgeRepository {
   readonly env: Readonly<Record<string, string>>;
   readonly manPages: Readonly<Record<string, string>>;
   readonly shellHistory: readonly string[];
-  readonly gitHistory: readonly DeferredObject[];
+  readonly gitHistory: CartridgeGitHistory;
   readonly processes: readonly DeferredObject[];
   readonly services: readonly DeferredObject[];
   readonly logs: readonly DeferredObject[];

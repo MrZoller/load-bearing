@@ -405,7 +405,7 @@ describe("an unregistered event type", () => {
     expect(attempt).toThrow(/no registered module handles this event type/);
     // The message has to be actionable: which event, and what does exist.
     expect(attempt).toThrow(/event 0 \(shell\.exec\)/);
-    expect(attempt).toThrow(/Registered namespaces: clock, probe/);
+    expect(attempt).toThrow(/Registered namespaces: clock, git, probe, vfs/);
   });
 
   it("names the offending event, since a log has many", () => {

@@ -109,6 +109,14 @@ order could leak in (a shared stream, a shared clock) are unreachable.
 `engine/events/registry.test.ts` shuffles the list and asserts the fold is
 byte-identical.
 
+One logged event may declare **transactional effects** when a mechanic crosses
+slice ownership. The reducer dispatches each effect to the module that owns its
+namespace, records no intermediate state, and publishes all resulting slices
+only after every effect succeeds. Effects may return only their own slice: no
+nested effects and no hidden transcript output. `git.checkout` uses this seam to
+ask `vfs.replace-files` to perform the filesystem transition, so Git never edits
+VFS entries and VFS never edits refs or the index.
+
 **An unregistered event type is refused, never ignored.** Treating it as a
 no-op would let a subsystem missing from the module list produce a session that
 looks complete and is missing part of its own history — with the golden fixture
@@ -135,10 +143,22 @@ recorded.
   VFS rename never overwrites an existing destination: it returns `EEXIST`.
   This is a model contract, not an attempt to settle shell UX; a later shell
   layer may choose an explicit replacement policy before issuing its VFS event.
-- **Git:** commit DAG with authors/timestamps/messages, branches, index,
-  working tree, blame per line, diff. Coherence is a hard requirement — the
-  moment `git log` contradicts `git blame`, reaction #3 ("the state is
-  consistent") dies
+- **Git:** an immutable `engine/git/` slice hydrates the cartridge commit DAG,
+  branches, branch or detached HEAD, and index. Forty-hex commit identities are
+  derived from canonical commit mechanics (parent hashes, author, message,
+  timestamp, and complete file contents), never from authored ids, time, or
+  randomness. Log order is topological (every child before every parent), with
+  authored timestamp descending then hash ascending as the deterministic tie
+  break. Status compares HEAD → index → VFS and distinguishes staged,
+  modified/deleted, and untracked paths. Diff is structured line data rather
+  than command output; issue #10 owns command rendering. Authored blame has one
+  commit id per logical line and load rejects a source that is absent, outside
+  the commit's ancestry, never introduced matching text, or merely inherited
+  every matching line unchanged. Checkout refuses any dirty repository path,
+  including untracked files, then atomically changes HEAD/index and replaces
+  tracked VFS files through the VFS-owned effect above. Coherence is a hard
+  requirement — the moment `git log` contradicts `git blame`, reaction #3
+  ("the state is consistent") dies.
 - **Processes and services:** cartridge-defined units with states, health,
   ports, and reactions to visitor actions (the health-check → load-balancer
   routing gag is a service reaction)
@@ -234,7 +254,14 @@ shape:
     "env": { "SERVICE_TIER": "critical" },
     "manPages": { "healthcheck": "HEALTHCHECK(8)\n..." },
     "shellHistory": ["git status", "npm test"],
-    "gitHistory": [{ "...": "..." }], "services": [{ "...": "..." }],
+    "gitHistory": {
+      "commits": [{ "id": "initial", "parents": [], "author": { "...": "..." },
+                    "message": "...", "committedAt": "...",
+                    "files": { "/absolute/path": { "contents": "...",
+                                                         "blame": ["initial"] } } }],
+      "branches": { "main": "initial" },
+      "head": { "kind": "branch", "target": "main" }
+    }, "services": [{ "...": "..." }],
     "tests": [{ "...": "..." }], "logs": [{ "...": "..." }]
   },
   "models": [
@@ -275,10 +302,11 @@ Three things worth noting, because each is a decision rather than a detail:
   this safe: a later version that adds fields declares itself rather than
   relying on old engines to shrug.
 
-`story`, `presentation`, and the interiors of `gitHistory`, `processes`,
-`services`, `tests`, `logs` and `tickets` are **declared but not validated** in
-v0 — each is marked in the emitted schema with the issue or phase that tightens
-it, so the gap reads as a decision rather than as something forgotten.
+`story`, `presentation`, and the interiors of `processes`, `services`, `tests`,
+`logs` and `tickets` are **declared but not validated** in v0. `gitHistory` is
+concrete and coherence-validated. Each remaining deferred section is marked in
+the emitted schema with the issue or phase that tightens it, so the gap reads as
+a decision rather than as something forgotten.
 
 **Cartridge owns:** world (scene, repo, files with ownership metadata, git,
 processes, services, logs, env, man pages, shell history), models (names, archetypes, multipliers, quirks), story (premise,

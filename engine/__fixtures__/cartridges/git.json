@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 6,
+    "date": "2026-08-05",
+    "title": "Git Fixture World",
+    "assignment": "Keep the repository consistent.",
+    "startedAt": "2026-08-05T09:14:22.000Z"
+  },
+  "repository": {
+    "cwd": "/production/service",
+    "identity": { "user": "root", "group": "root", "home": "/root" },
+    "files": {
+      "/production/service/README.md": { "contents": "# service\n" },
+      "/production/service/src/index.ts": {
+        "contents": "export const load = 1;\n",
+        "owner": "greg",
+        "group": "departed"
+      },
+      "/etc/motd": { "contents": "This system is load-bearing.\n" }
+    },
+    "gitHistory": {
+      "commits": [
+        {
+          "id": "initial",
+          "author": { "name": "Greg Formerly", "email": "greg@example.test" },
+          "message": "establish the service\n",
+          "committedAt": "2026-07-30T10:00:00.000Z",
+          "files": {
+            "/production/service/README.md": {
+              "contents": "# service\n",
+              "blame": ["initial"]
+            },
+            "/production/service/src/index.ts": {
+              "contents": "export const load = 0;\n",
+              "blame": ["initial"]
+            }
+          }
+        },
+        {
+          "id": "current",
+          "parents": ["initial"],
+          "author": { "name": "Greg Formerly", "email": "greg@example.test" },
+          "message": "increase structural load\n",
+          "committedAt": "2026-07-31T02:11:09.000Z",
+          "files": {
+            "/production/service/README.md": {
+              "contents": "# service\n",
+              "blame": ["initial"]
+            },
+            "/production/service/src/index.ts": {
+              "contents": "export const load = 1;\n",
+              "blame": ["current"]
+            }
+          }
+        }
+      ],
+      "branches": { "main": "current", "before-load": "initial" },
+      "head": { "kind": "branch", "target": "main" }
+    }
+  },
+  "models": [
+    {
+      "id": "deep-foundation",
+      "name": "Deep Foundation",
+      "archetype": "paranoid",
+      "description": "Thorough. Expensive. Excavation permit required.",
+      "costMultiplier": 48000
+    }
+  ]
+}

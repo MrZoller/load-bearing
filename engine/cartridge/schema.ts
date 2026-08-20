@@ -31,16 +31,14 @@
  *
  * - `story` and `presentation` carry Phase 2 content and are hardened in
  *   Phase 4. v0 requires them to be objects and looks no further.
- * - the interiors of `gitHistory`, `processes`, `services`, `tests`, `logs`
- *   and `tickets` belong to the subsystems that model them (issues #6, #7,
- *   #12). v0 requires each to be an array of objects. Tightening them there is
- *   the plan, not an oversight here.
+ * - the interiors of `processes`, `services`, `tests`, `logs` and `tickets`
+ *   belong to the subsystems that model them (issues #7 and #12). v0 requires
+ *   each to be an array of objects. Tightening them there is the plan, not an
+ *   oversight here. `gitHistory` is concrete as of issue #6.
  *
- * Semantic coherence — endings reachable, callbacks sourced, git history
- * consistent with the working tree — is Phase 4's `cartridge validate`. The one
- * cross-reference v0 does make is `repository.cwd`, which has to be a directory
- * some declared file actually lives under; a session that opens in a directory
- * the world does not contain is broken before the first command.
+ * Broader semantic coherence — endings reachable and callbacks sourced — is
+ * Phase 4's `cartridge validate`. v0 already checks repository paths and Git
+ * history because an incoherent machine is broken before the first command.
  */
 
 import { parseTimestamp } from "../clock/civil.js";
@@ -135,6 +133,14 @@ export const ENV_NAME_PATTERN = pattern(/^[A-Za-z_][A-Za-z0-9_]*$/);
 
 /** A man page name, e.g. `systemd.service` or `ls`. */
 export const MAN_PAGE_PATTERN = pattern(/^[a-z0-9][a-z0-9._-]*$/);
+
+/** Stable cartridge-local commit name, used before content hashes are derived. */
+export const GIT_COMMIT_ID_PATTERN = pattern(/^[a-z][a-z0-9-]*$/);
+
+/** Git ref component spelling; slashes separate non-empty components. */
+export const GIT_BRANCH_PATTERN = pattern(
+  /^(?!\/|.*(?:\/\/|\.\.|@\{|\\|\s|[~^:?*\[]))[A-Za-z0-9._/-]+(?<![/.])$/,
+);
 
 export type { Pattern };
 
@@ -444,6 +450,141 @@ const IDENTITY = {
   },
 } satisfies ObjectNode;
 
+const GIT_AUTHOR = {
+  kind: "object",
+  description: "Authorship recorded on one simulated commit.",
+  fields: {
+    name: required({
+      kind: "string",
+      description: "Author display name.",
+      pattern: SINGLE_LINE_PATTERN,
+      patternLabel: "a single-line string",
+      minLength: 1,
+      maxLength: 120,
+    }),
+    email: required({
+      kind: "string",
+      description: "Author email, displayed as authored rather than contacted.",
+      pattern: pattern(/^[^\s<>@]+@[^\s<>@]+$/),
+      patternLabel: "a single-line email address",
+      maxLength: 254,
+    }),
+  },
+} satisfies ObjectNode;
+
+const GIT_FILE = {
+  kind: "object",
+  description: "One tracked file snapshot and its per-line provenance.",
+  fields: {
+    contents: required({
+      kind: "string",
+      description: "The complete text at this commit.",
+    }),
+    blame: required({
+      kind: "array",
+      description: "One authored commit id per logical line in contents.",
+      items: {
+        kind: "string",
+        description: "Authored id of the commit that last touched this line.",
+        pattern: GIT_COMMIT_ID_PATTERN,
+        patternLabel: "a lowercase commit id slug",
+      },
+    }),
+  },
+} satisfies ObjectNode;
+
+const GIT_COMMIT = {
+  kind: "object",
+  description: "One commit in the simulated DAG, with a complete tracked tree.",
+  fields: {
+    id: required({
+      kind: "string",
+      description: "Cartridge-local name used by parents, refs, and blame.",
+      pattern: GIT_COMMIT_ID_PATTERN,
+      patternLabel: "a lowercase commit id slug",
+    }),
+    parents: optional(
+      {
+        kind: "array",
+        description: "Authored ids of parent commits, first parent first.",
+        items: {
+          kind: "string",
+          description: "One parent commit id.",
+          pattern: GIT_COMMIT_ID_PATTERN,
+          patternLabel: "a lowercase commit id slug",
+        },
+      },
+      [],
+    ),
+    author: required(GIT_AUTHOR),
+    message: required({
+      kind: "string",
+      description: "Commit message, including any deliberate newlines.",
+      minLength: 1,
+    }),
+    committedAt: required(TIMESTAMP),
+    files: required({
+      kind: "record",
+      description: "Complete tracked tree, keyed by absolute VFS file path.",
+      keyPattern: FILE_PATH_PATTERN,
+      keyLabel: "an absolute POSIX path naming a tracked file",
+      values: GIT_FILE,
+    }),
+  },
+} satisfies ObjectNode;
+
+const GIT_HISTORY = {
+  kind: "object",
+  description:
+    "The simulated commit DAG, refs, HEAD, and authored line provenance.",
+  fields: {
+    commits: optional(
+      {
+        kind: "array",
+        description:
+          "Commits in authoring order; graph order comes from parents.",
+        items: GIT_COMMIT,
+      },
+      [],
+    ),
+    branches: optional(
+      {
+        kind: "record",
+        description: "Local branch names mapped to authored commit ids.",
+        keyPattern: GIT_BRANCH_PATTERN,
+        keyLabel: "a valid local branch name",
+        values: {
+          kind: "string",
+          description: "Authored id of the branch tip.",
+          pattern: GIT_COMMIT_ID_PATTERN,
+          patternLabel: "a lowercase commit id slug",
+        },
+      },
+      {},
+    ),
+    head: optional(
+      {
+        kind: "object",
+        description:
+          "Current branch or detached commit. Empty target is valid only for an empty history.",
+        fields: {
+          kind: required({
+            kind: "enum",
+            description: "Whether HEAD follows a branch or names a commit.",
+            values: ["branch", "detached"],
+          }),
+          target: required({
+            kind: "string",
+            description:
+              "Branch name or authored commit id, according to kind.",
+          }),
+        },
+      },
+      { kind: "detached", target: "" },
+    ),
+  },
+} satisfies ObjectNode;
+
 const MODEL = {
   kind: "object",
   description: "One selectable model persona.",
@@ -562,10 +703,11 @@ const REPOSITORY = {
       },
       [],
     ),
-    gitHistory: deferredList(
-      "Commit history for the repository at `cwd`.",
-      "issue #6",
-    ),
+    gitHistory: optional(GIT_HISTORY, {
+      commits: [],
+      branches: {},
+      head: { kind: "detached", target: "" },
+    }),
     processes: deferredList(
       "Process table rows, as `ps` would show them.",
       "issue #7",

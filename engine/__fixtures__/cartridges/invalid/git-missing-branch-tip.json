@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 6,
+    "date": "2026-08-05",
+    "title": "Bad Git",
+    "assignment": "Reject it.",
+    "startedAt": "2026-08-05T09:14:22.000Z"
+  },
+  "repository": {
+    "cwd": "/repo",
+    "identity": { "user": "root", "group": "root", "home": "/root" },
+    "files": { "/repo/a": { "contents": "a\n" } },
+    "gitHistory": {
+      "commits": [
+        {
+          "id": "root",
+          "author": { "name": "A", "email": "a@example.test" },
+          "message": "root",
+          "committedAt": "2026-08-01T00:00:00.000Z",
+          "files": { "/repo/a": { "contents": "a\n", "blame": ["root"] } }
+        }
+      ],
+      "branches": { "main": "absent" },
+      "head": { "kind": "branch", "target": "main" }
+    }
+  },
+  "models": [
+    {
+      "id": "model",
+      "name": "Model",
+      "archetype": "paranoid",
+      "description": "Fixture.",
+      "costMultiplier": 1
+    }
+  ]
+}

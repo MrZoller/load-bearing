@@ -56,7 +56,11 @@ describe("loadCartridge", () => {
     // `quick-patch` declares no quirks.
     expect(cartridge.models[1]?.quirks).toEqual([]);
     // Absent world sections normalize to empty, not to missing.
-    expect(cartridge.repository.gitHistory).toEqual([]);
+    expect(cartridge.repository.gitHistory).toEqual({
+      commits: [],
+      branches: {},
+      head: { kind: "detached", target: "" },
+    });
     expect(cartridge.story).toEqual({});
     expect(cartridge.presentation).toEqual({});
     expect(cartridge.repository.identity).toEqual({
@@ -914,6 +918,60 @@ describe("deferred sections", () => {
   });
 });
 
+describe("Git history coherence", () => {
+  it("rejects an ancestry cycle before constructing content-derived hashes", () => {
+    const source = loadCartridgeFixture("git") as Record<string, unknown>;
+    const repository = source["repository"] as Record<string, unknown>;
+    const history = repository["gitHistory"] as Record<string, unknown>;
+    const commits = history["commits"] as Record<string, unknown>[];
+    (commits[0] as Record<string, unknown>)["parents"] = ["current"];
+
+    expect(issuesOf(source)).toContainEqual({
+      pointer: "/repository/gitHistory/commits/0/parents",
+      expected: "an acyclic commit ancestry",
+      found: 'a cycle returning to "initial"',
+    });
+  });
+
+  it("rejects blame that credits a commit for an unchanged duplicate line", () => {
+    // A later duplicate can make a text-only scan claim that `current` touched
+    // the first line. Provenance is per line, so the comparison must retain the
+    // line position rather than accepting any equal duplicate in the file.
+    const source = loadCartridgeFixture("git") as Record<string, unknown>;
+    const repository = source["repository"] as Record<string, unknown>;
+    const history = repository["gitHistory"] as Record<string, unknown>;
+    const commits = history["commits"] as Record<string, unknown>[];
+    const initial = commits[0] as Record<string, unknown>;
+    const current = commits[1] as Record<string, unknown>;
+    const initialFiles = initial["files"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    const currentFiles = current["files"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+
+    initialFiles["/production/service/src/index.ts"] = {
+      contents: "duplicate\nstable\nduplicate\n",
+      blame: ["initial", "initial", "initial"],
+    };
+    currentFiles["/production/service/src/index.ts"] = {
+      contents: "duplicate\nstable\nchanged\nduplicate\n",
+      // `current` added only "changed". It cannot be blamed for the first
+      // duplicate merely because another duplicate was shifted later in the file.
+      blame: ["current", "initial", "current", "initial"],
+    };
+
+    expect(issuesOf(source)).toContainEqual({
+      pointer:
+        "/repository/gitHistory/commits/1/files/~1production~1service~1src~1index.ts/blame/0",
+      expected: "the first-parent commit provenance for this line",
+      found: '"current", expected "initial"',
+    });
+  });
+});
+
 describe("rejection", () => {
   it("rejects every malformed fixture", () => {
     const names = listInvalidCartridgeFixtures();
@@ -927,6 +985,36 @@ describe("rejection", () => {
   });
 
   it.each([
+    [
+      "git-missing-branch-tip",
+      [
+        {
+          pointer: "/repository/gitHistory/branches/main",
+          expected: "an id of a commit in this history",
+          found: '"absent", which does not exist',
+        },
+      ],
+    ],
+    [
+      "git-orphan-parent",
+      [
+        {
+          pointer: "/repository/gitHistory/commits/0/parents/0",
+          expected: "an id of a commit in this history",
+          found: '"absent", which does not exist',
+        },
+      ],
+    ],
+    [
+      "git-missing-blame-commit",
+      [
+        {
+          pointer: "/repository/gitHistory/commits/0/files/~1repo~1a/blame/0",
+          expected: "an id of a commit in this history",
+          found: '"absent", which does not exist',
+        },
+      ],
+    ],
     [
       "missing-required-field",
       [

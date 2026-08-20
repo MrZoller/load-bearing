@@ -1001,3 +1001,39 @@ export function chmodVfs(
     },
   );
 }
+
+/**
+ * Atomically replace a set of regular files through ordinary VFS operations.
+ * Git checkout uses this rather than editing `entries`: VFS retains ownership
+ * of permissions, metadata, path checks, and the all-or-nothing result.
+ */
+export function replaceVfsFiles(
+  slice: VfsSlice,
+  tracked: readonly string[],
+  target: Readonly<Record<string, string>>,
+  now: string,
+): VfsMutation<{ readonly removed: number; readonly written: number }> {
+  let next = slice;
+  let removed = 0;
+  let written = 0;
+  for (const path of [...new Set(tracked)].sort()) {
+    if (Object.hasOwn(target, path)) continue;
+    const mutation = deleteVfs(next, path, now);
+    if (!mutation.result.ok) return unchanged(slice, mutation.result);
+    next = mutation.slice;
+    removed += 1;
+  }
+  for (const path of Object.keys(target).sort()) {
+    const contents = target[path] as string;
+    const existing = next.entries[path];
+    if (existing?.kind === "file" && existing.contents === contents) continue;
+    const mutation = writeVfs(next, path, contents, now);
+    if (!mutation.result.ok) return unchanged(slice, mutation.result);
+    next = mutation.slice;
+    written += 1;
+  }
+  return Object.freeze({
+    slice: next,
+    result: frozenSuccess({ removed, written }),
+  });
+}
