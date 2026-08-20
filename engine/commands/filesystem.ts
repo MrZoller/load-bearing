@@ -138,6 +138,12 @@ function genericFailure(name: string, path: string, value: VfsFailure): string {
   return `${name}: ${path}: ${FAILURE_TEXT[value.code]}`;
 }
 
+function displayResolvedPath(path: string, cwd: string): string {
+  if (path === cwd) return ".";
+  const prefix = cwd === "/" ? "/" : `${cwd}/`;
+  return path.startsWith(prefix) ? path.slice(prefix.length) : path;
+}
+
 function now(state: CommandContext["state"]): string {
   return formatTimestamp(state.clock.startMs + state.clock.elapsedMs);
 }
@@ -305,6 +311,11 @@ function hasUnsafeRegexShape(pattern: string): boolean {
     const character = pattern[index] ?? "";
     if (escaped) {
       if (/\d/.test(character)) return true;
+      // Hex and Unicode escapes are complete regex atoms. Their variable
+      // spelling is outside this guard's finite overlap model, so reject them
+      // conservatively instead of allowing `\x61+a+$` to disguise two
+      // overlapping repetitions.
+      if (character === "x" || character === "u") return true;
       recordAtom(`\\${character}`);
       escaped = false;
       continue;
@@ -1018,7 +1029,14 @@ function transfer(
       }),
     );
     if (mutation.result.ok) shadow = mutation.slice;
-    else stderr.push(genericFailure(name, source, mutation.result));
+    else
+      stderr.push(
+        genericFailure(
+          name,
+          displayResolvedPath(mutation.result.path, shadow.cwd),
+          mutation.result,
+        ),
+      );
   }
   return execution(EMPTY, stderr, stderr.length === 0 ? 0 : 1, events);
 }

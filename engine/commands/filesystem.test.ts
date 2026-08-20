@@ -144,8 +144,8 @@ describe("filesystem commands", () => {
       "rm sealed/hidden",
       "rm: cannot remove 'sealed/hidden': Permission denied",
     ],
-    ["mv sealed/hidden moved", "mv: sealed/hidden: Permission denied"],
-    ["cp sealed/hidden copied", "cp: sealed/hidden: Permission denied"],
+    ["mv sealed/hidden moved", "mv: sealed: Permission denied"],
+    ["cp sealed/hidden copied", "cp: sealed: Permission denied"],
     [
       "chmod 0600 private.txt",
       "chmod: cannot access 'private.txt': Operation not permitted",
@@ -233,25 +233,36 @@ describe("filesystem commands", () => {
     }
   });
 
-  it("rejects regex shapes that can monopolize deterministic replay", () => {
-    for (const pattern of [
-      "(a+)+$",
-      "a+a+$",
-      "a+aa+$",
-      ".+a+$",
-      "\\w+a+$",
-      "[ab]+[ab]+$",
-      "[ab]+[ac]+$",
-      "[a-z]+[m-z]+$",
-    ]) {
-      expect(run(`grep "${pattern}" README.md`)).toEqual({
+  it.each([
+    "(a+)+$",
+    "a+a+$",
+    "a+aa+$",
+    ".+a+$",
+    "\\w+a+$",
+    "\\x61+a+$",
+    "\\u0061+a+$",
+    "\\x61+\\x61+$",
+    "[ab]+[ab]+$",
+    "[ab]+[ac]+$",
+    "[a-z]+[m-z]+$",
+  ])(
+    "rejects regex shape %s before it can monopolize deterministic replay",
+    (pattern) => {
+      expect(run(`grep '${pattern}' README.md`)).toEqual({
         stdout: [],
         stderr: [
           "grep: unsupported regular expression: unsafe repeated pattern",
         ],
         exitCode: 2,
       });
-    }
+    },
+  );
+
+  it.each([
+    ["cp README.md src/index.ts", "cp: src/index.ts: File exists"],
+    ["cp README.md missing/output", "cp: missing: No such file or directory"],
+  ])("reports the failed transfer path for %s", (input, stderr) => {
+    expect(run(input)).toEqual({ stdout: [], stderr: [stderr], exitCode: 1 });
   });
 
   it("keeps escaped long paths within the VFS event transcript budget", () => {
