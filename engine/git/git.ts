@@ -199,6 +199,12 @@ export function currentGitHash(slice: GitSlice): string | undefined {
 }
 
 export function resolveGitRef(slice: GitSlice, ref: string): GitResult<string> {
+  if (ref === "HEAD") {
+    const hash = headHash(slice);
+    return hash === undefined
+      ? failure("NOT_FOUND", "HEAD does not name a commit")
+      : success(hash);
+  }
   const branch = ownValue(slice.branches, ref);
   if (branch !== undefined) return success(branch);
   if (Object.hasOwn(slice.commits, ref)) return success(ref);
@@ -443,11 +449,8 @@ export function diffGit(
 
 export function showGit(
   slice: GitSlice,
-  ref = headHash(slice),
+  ref = "HEAD",
 ): GitResult<GitShowValue> {
-  if (ref === "HEAD") ref = headHash(slice);
-  if (ref === undefined)
-    return failure("NOT_FOUND", "HEAD does not name a commit");
   const resolved = resolveGitRef(slice, ref);
   if (!resolved.ok) return resolved;
   const commit = ownValue(slice.commits, resolved.value) as GitCommit;
@@ -760,9 +763,11 @@ export function checkoutGit(
       ),
     });
   const head: GitHead =
-    branchHash === undefined
-      ? { kind: "detached", target: hash }
-      : { kind: "branch", target };
+    target === "HEAD"
+      ? slice.head
+      : branchHash === undefined
+        ? { kind: "detached", target: hash }
+        : { kind: "branch", target };
   const git = deepFreeze({
     ...slice,
     head,

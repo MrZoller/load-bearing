@@ -1084,6 +1084,19 @@ describe("deferred sections", () => {
 });
 
 describe("Git history coherence", () => {
+  it("rejects HEAD as an authored branch name", () => {
+    const source = loadCartridgeFixture("git") as Record<string, unknown>;
+    const repository = source["repository"] as Record<string, unknown>;
+    const history = repository["gitHistory"] as Record<string, unknown>;
+    (history["branches"] as Record<string, unknown>)["HEAD"] = "current";
+
+    expect(issuesOf(source)).toContainEqual({
+      pointer: "/repository/gitHistory/branches/HEAD",
+      expected: "a key that is a valid local branch name other than HEAD",
+      found: '"HEAD"',
+    });
+  });
+
   it("accepts tracked files when the repository cwd is root", () => {
     const source = loadCartridgeFixture("git") as Record<string, unknown>;
     const repository = source["repository"] as Record<string, unknown>;

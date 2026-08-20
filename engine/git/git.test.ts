@@ -249,6 +249,20 @@ describe("the Git model", () => {
     });
   });
 
+  it("reserves HEAD for the current commit at the model boundary", () => {
+    const { git } = world();
+
+    expect(branchGit(git, "HEAD").result).toEqual({
+      ok: false,
+      code: "INVALID",
+      message: 'invalid branch name "HEAD"',
+    });
+    expect(resolveGitRef(git, "HEAD")).toEqual({
+      ok: true,
+      value: git.branches["main"],
+    });
+  });
+
   it("never resolves or rejects refs through Object.prototype", () => {
     const { git, vfs } = world();
     for (const name of ["constructor", "toString"]) {
@@ -432,6 +446,36 @@ describe("the Git model", () => {
     });
     expect(state.transcript).toHaveLength(1);
     expect(state.transcript[0]?.type).toBe("git.checkout");
+  });
+
+  it("rejects HEAD branch events before they can enter state", () => {
+    expect(() =>
+      reduce({
+        cartridge: loadCartridge(source()),
+        seed: "2026-08-05/6/deep-foundation",
+        events: [{ type: "git.branch", payload: { name: "HEAD" } }],
+      }),
+    ).toThrow(/invalid branch name/);
+  });
+
+  it("rejects snapshots containing a HEAD branch", () => {
+    const state = reduce({
+      cartridge: loadCartridge(source()),
+      seed: "2026-08-05/6/deep-foundation",
+      events: [{ type: "git.status", payload: {} }],
+    });
+    const recorded = deserialize(snapshot(state)) as Record<string, unknown>;
+    const slices = recorded["slices"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    const git = slices["git"] as Record<string, unknown>;
+    const branches = git["branches"] as Record<string, string>;
+    branches["HEAD"] = branches["main"] as string;
+
+    expect(() => restoreSnapshot(serialize(recorded))).toThrow(
+      /invalid branch "HEAD"/,
+    );
   });
 
   it("rejects a snapshot whose Git blame cannot safely serve a later blame event", () => {

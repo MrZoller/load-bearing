@@ -103,6 +103,15 @@ describe("Git commands", () => {
     );
   });
 
+  it("keeps HEAD as the current-head checkout synonym", () => {
+    const before = initial();
+    const after = execute(before, "git checkout HEAD");
+
+    expect(readGitSlice(after).head).toEqual(readGitSlice(before).head);
+    expect(readGitSlice(after).branches).toEqual(readGitSlice(before).branches);
+    expect(readVfsSlice(after)).toEqual(readVfsSlice(before));
+  });
+
   it.each([
     [
       "git checkout missing",
@@ -128,6 +137,7 @@ describe("Git commands", () => {
     ],
     ["git show missing", ["fatal: bad object missing"], 128],
     ["git branch 'bad name'", ['fatal: invalid branch name "bad name"'], 1],
+    ["git branch HEAD", ['fatal: invalid branch name "HEAD"'], 1],
     ["git commit -m unchanged", ["nothing to commit, working tree clean"], 1],
   ])("returns exact errors for %s", (input, stderr, exitCode) => {
     expect(run(initial(), input)).toEqual({ stdout: [], stderr, exitCode });

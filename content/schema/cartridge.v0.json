@@ -302,10 +302,10 @@
                 "type": "string"
               },
               "default": {},
-              "description": "Local branch names mapped to authored commit ids.",
+              "description": "Local branch names mapped to authored commit ids. Exact HEAD is reserved for the current-head ref.",
               "propertyNames": {
-                "description": "Each key is a valid local branch name.",
-                "pattern": "^(?!\\/|.*(?:\\/\\/|\\.\\.|@\\{|\\\\|\\s|[~^:?*\\[]))[A-Za-z0-9._/-]+(?<![/.])$"
+                "description": "Each key is a valid local branch name other than HEAD.",
+                "pattern": "^(?!HEAD$)(?!\\/|.*(?:\\/\\/|\\.\\.|@\\{|\\\\|\\s|[~^:?*\\[]))[A-Za-z0-9._/-]+(?<![/.])$"
               },
               "type": "object"
             },

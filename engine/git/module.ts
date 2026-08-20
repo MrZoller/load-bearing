@@ -310,7 +310,7 @@ export const GIT_MODULE = defineEventModule<GitSlice>({
       apply(context, slice) {
         const data = payload(context, ["ref"]);
         const ref = readString(data, "ref", context.where);
-        const shown = showGit(slice, ref === "HEAD" ? undefined : ref);
+        const shown = showGit(slice, ref);
         return shown.ok
           ? {
               summary: `hash=${shown.value.commit.hash} files=${String(shown.value.files.length)}`,

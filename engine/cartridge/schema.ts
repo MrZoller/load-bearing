@@ -150,9 +150,9 @@ export const GIT_COMMIT_ID_PATTERN = pattern(/^[a-z][a-z0-9-]*$/);
 /** Authored commit email; displayed locally and never contacted. */
 export const GIT_EMAIL_PATTERN = pattern(/^[^\s<>@]+@[^\s<>@]+$/);
 
-/** Git ref component spelling; slashes separate non-empty components. */
+/** Git branch spelling; exact `HEAD` remains reserved as the current-head ref. */
 export const GIT_BRANCH_PATTERN = pattern(
-  /^(?!\/|.*(?:\/\/|\.\.|@\{|\\|\s|[~^:?*\[]))[A-Za-z0-9._/-]+(?<![/.])$/,
+  /^(?!HEAD$)(?!\/|.*(?:\/\/|\.\.|@\{|\\|\s|[~^:?*\[]))[A-Za-z0-9._/-]+(?<![/.])$/,
 );
 
 export type { Pattern };
@@ -564,9 +564,10 @@ const GIT_HISTORY = {
     branches: optional(
       {
         kind: "record",
-        description: "Local branch names mapped to authored commit ids.",
+        description:
+          "Local branch names mapped to authored commit ids. Exact HEAD is reserved for the current-head ref.",
         keyPattern: GIT_BRANCH_PATTERN,
-        keyLabel: "a valid local branch name",
+        keyLabel: "a valid local branch name other than HEAD",
         values: {
           kind: "string",
           description: "Authored id of the branch tip.",
