@@ -5,7 +5,7 @@ import { reduce, restoreSnapshot, snapshot } from "../events/reduce.js";
 import type { SessionState } from "../events/state.js";
 import { renderTranscript } from "../events/transcript.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
-import { createShellExecuteEvent } from "./shell.js";
+import { MAX_SHELL_INPUT_LENGTH, createShellExecuteEvent } from "./shell.js";
 
 function fold(input: string, commands?: Record<string, unknown>): SessionState {
   const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
@@ -80,6 +80,40 @@ describe("shell execution", () => {
       exitCode: 2,
     });
   });
+
+  it("accepts the shell input limit exactly and throws its bare limit error over it", () => {
+    expect(
+      fold("x".repeat(MAX_SHELL_INPUT_LENGTH)).transcript[0],
+    ).toMatchObject({
+      exitCode: 127,
+    });
+    expect(() => fold("x".repeat(MAX_SHELL_INPUT_LENGTH + 1))).toThrow(
+      `shell input is ${String(MAX_SHELL_INPUT_LENGTH + 1)} characters, over the ${String(MAX_SHELL_INPUT_LENGTH)} command limit`,
+    );
+  });
+
+  it.each([
+    ["a string", "0"],
+    ["a fraction", 0.5],
+    ["a negative integer", -1],
+    ["an integer above 255", 256],
+  ])(
+    "rejects a direct shell.result replay payload with exitCode %s",
+    (_case, exitCode) => {
+      expect(() =>
+        reduce({
+          cartridge: loadCartridge(loadCartridgeFixture("minimal")),
+          seed: "shell-result-payload",
+          events: [
+            {
+              type: "shell.result",
+              payload: { stdout: [], stderr: [], exitCode },
+            },
+          ],
+        }),
+      ).toThrow(/exitCode must be an integer in \[0, 255\]/);
+    },
+  );
 
   it("renders stream tags and the exit status from structured state", () => {
     expect(

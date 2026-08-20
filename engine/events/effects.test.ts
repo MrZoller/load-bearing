@@ -171,4 +171,39 @@ describe("event expansion", () => {
       /may not move the clock or PRNG/,
     );
   });
+
+  it.each([
+    ["a slice", { slice: {} }],
+    ["a summary", { summary: "envelope" }],
+    ["detail", { detail: ["envelope"] }],
+    ["structured output and exit status", { output: [], exitCode: 0 }],
+    ["effects", { effects: [{ type: "forbidden.child" }] }],
+  ])("rejects an expansion combined with %s", (_case, forbidden) => {
+    const registry = createRegistry([
+      defineEventModule<never>({
+        namespace: "forbidden",
+        description: "expansions are envelopes, not outcomes",
+        events: {
+          "forbidden.child": { version: 0, apply: () => ({}) },
+          "forbidden.outer": {
+            version: 0,
+            apply: () =>
+              ({
+                ...forbidden,
+                expansion: [{ type: "forbidden.child" }],
+              }) as never,
+          },
+        },
+      }),
+    ]);
+    const before = bootstrap({
+      cartridge: cartridge(),
+      seed: "forbidden",
+      registry,
+    });
+
+    expect(() => step(before, { type: "forbidden.outer" }, registry)).toThrow(
+      /may return only expansion children/,
+    );
+  });
 });

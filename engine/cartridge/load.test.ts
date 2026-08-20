@@ -98,6 +98,65 @@ describe("loadCartridge", () => {
     );
   });
 
+  it.each([
+    [
+      "missing stdout",
+      { stderr: [], exitCode: 0 },
+      "/repository/commands/sample/stdout",
+    ],
+    [
+      "missing stderr",
+      { stdout: [], exitCode: 0 },
+      "/repository/commands/sample/stderr",
+    ],
+    [
+      "missing exitCode",
+      { stdout: [], stderr: [] },
+      "/repository/commands/sample/exitCode",
+    ],
+    [
+      "a non-array output stream",
+      { stdout: "line", stderr: [], exitCode: 0 },
+      "/repository/commands/sample/stdout",
+    ],
+    [
+      "a non-integer exit code",
+      { stdout: [], stderr: [], exitCode: "0" },
+      "/repository/commands/sample/exitCode",
+    ],
+    [
+      "an out-of-range exit code",
+      { stdout: [], stderr: [], exitCode: 256 },
+      "/repository/commands/sample/exitCode",
+    ],
+    [
+      "a control character in output",
+      { stdout: ["two\nlines"], stderr: [], exitCode: 0 },
+      "/repository/commands/sample/stdout/0",
+    ],
+    [
+      "an overlong output line",
+      { stdout: ["x".repeat(4097)], stderr: [], exitCode: 0 },
+      "/repository/commands/sample/stdout/0",
+    ],
+    [
+      "too many output lines",
+      {
+        stdout: Array.from({ length: 2049 }, () => "line"),
+        stderr: [],
+        exitCode: 0,
+      },
+      "/repository/commands/sample/stdout",
+    ],
+  ])("rejects a command record with %s", (_case, command, pointer) => {
+    const source = minimal();
+    (source["repository"] as Record<string, unknown>)["commands"] = {
+      sample: command,
+    };
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toContain(pointer);
+  });
+
   it("validates world collisions and references at the cartridge boundary", () => {
     const value = minimal();
     const repository = value["repository"] as Record<string, unknown>;
