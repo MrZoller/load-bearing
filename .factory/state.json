@@ -5,7 +5,7 @@
   "plan_approved": true,
   "current_task": "T1",
   "branch": "factory/t1-virtual-filesystem",
-  "pr": null,
+  "pr": 23,
   "hold": false,
-  "updated": "2026-08-20T02:53:18Z"
+  "updated": "2026-08-20T03:46:56Z"
 }
