@@ -218,3 +218,24 @@ summary history) rather than patching them.
   truth leak through and dampen the exact effect the mechanism exists to
   create. Document the replace semantics in the module's public API docs
   (already required by the task's acceptance).
+
+## Q7 (task T10, open) — What filesystem/Git coverage threshold is agreed for the Phase 0 exit gate?
+
+Context: Issue #14 and the approved plan require an agreed threshold and warn
+against silently substituting line coverage for semantic coverage, but no
+number was approved. Parked branch: `factory/t10-phase-0-exit`. A trial 100%
+per-file gate over the five executable VFS/Git model files started at 90.67%
+statements/lines, 82.10% branches, and 100% functions. Focused semantic tests
+raised the aggregate to 95.71% statements/lines, 86.74% branches, and 100%
+functions, but individual files remain as low as 93.85% lines and 76.51%
+branches; reaching literal 100% still requires substantial error-path work and
+would materially expand this exit task.
+Options considered: A — require 100% per file for statements, lines, branches,
+and functions, and continue adding semantic tests until all five files meet it;
+B — enforce aggregate floors of 95% statements/lines, 85% branches, and 100%
+functions, retaining the named semantic tests as the meaning behind the metric;
+C — enforce per-file floors of 93% statements/lines, 75% branches, and 100%
+functions so no weak file can hide in the aggregate. Recommendation: B balances
+a strong no-regression gate with the issue's explicit named semantic evidence;
+A is the strict reading of “full,” while C is the strongest anti-masking gate.
+**A:**
