@@ -21,3 +21,9 @@ docs/
 engine/__fixtures__/replay/*/state.json
 engine/__fixtures__/replay/*/transcript.txt
 content/schema/cartridge.v0.json
+
+# Factory bookkeeping. Written by the factory's agents directly on main;
+# whichever tool writes a file owns its formatting (same rule as the
+# fixtures above). Keeping these in prettier's scope means one bookkeeping
+# commit can turn main red and block factory run starts (#30).
+.factory/
