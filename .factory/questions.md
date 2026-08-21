@@ -238,4 +238,22 @@ C — enforce per-file floors of 93% statements/lines, 75% branches, and 100%
 functions so no weak file can hide in the aggregate. Recommendation: B balances
 a strong no-regression gate with the issue's explicit named semantic evidence;
 A is the strict reading of “full,” while C is the strongest anti-masking gate.
-**A:**
+**A:** Option C — per-file floors of 93% statements/lines, 75% branches, and
+100% functions — with B's semantic rider made explicit.
+
+Reasoning: the plan's risk line warns against a weak file hiding behind a
+healthy average, and aggregates (B) permit exactly that; C is the anti-masking
+gate, and its floors clear today's worst files (93.85 / 76.51), so it lands
+without materially expanding the exit task the way literal 100% (A) would.
+
+Pinned details:
+- No percentage defines "full unit coverage." The DoD's "full" is carried by
+  the NAMED semantic tests — the issue-enumerated behaviors (path resolution
+  edge cases, permission denials, `mkdir -p`, rename/copy, deletion
+  persistence, log/blame agreement) each present and passing. The per-file
+  floors are the anti-regression mechanism, not the definition. State this
+  distinction in the exit documentation.
+- Floors may be RAISED later without a question (ratcheting up is safe);
+  lowering one is a design question and stops the line.
+- Functions stay at 100% per file — already achieved everywhere.
+
