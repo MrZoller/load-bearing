@@ -89,8 +89,8 @@ remains blocked until review findings are deliberately batched into it.
   - PR #28: render an extended unterminated final line as changed rather than shared diff context
   - PR #28: deduplicate no-final-newline markers on a shared diff context row
   - PR #29: make the `man <section> <name>` grammar reach schema-valid hyphen-prefixed sections, or deliberately narrow that section contract
-   - PR #32: update the root `AGENTS.md` deferred-validation wording for the now-concrete `repository.tests` interior
-   - PR #32: require a declared `file-exists` path to be a file rather than a directory
-   - PR #32: count only reaction-derived events against the reaction cascade limit
-   - PR #32: treat `ENOTDIR` as absence for `file-exists` predicates
-   - PR #32: enforce fixed-width canonical timestamps when restoring test-run snapshots
+  - PR #32: update the root `AGENTS.md` deferred-validation wording for the now-concrete `repository.tests` interior
+  - PR #32: require a declared `file-exists` path to be a file rather than a directory
+  - PR #32: count only reaction-derived events against the reaction cascade limit
+  - PR #32: treat `ENOTDIR` as absence for `file-exists` predicates
+  - PR #32: enforce fixed-width canonical timestamps when restoring test-run snapshots
