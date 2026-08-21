@@ -358,7 +358,12 @@ export const GIT_MODULE = defineEventModule<GitSlice>({
         return result.ok
           ? {
               summary: `lines=${String(result.value.length)}`,
-              detail: result.value.map((line) => serializeInline(line)),
+              // The rendered command owns source text. Repeating it in the
+              // transcript detail escapes quotes and can make a valid output
+              // line exceed the transcript's per-detail budget.
+              detail: result.value.map(({ line, hash, author, committedAt }) =>
+                serializeInline({ line, hash, author, committedAt }),
+              ),
             }
           : { summary: `failed code=${result.code}` };
       },

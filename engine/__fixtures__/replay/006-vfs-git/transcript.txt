@@ -8,6 +8,6 @@
 0005  2026-08-05T09:14:22.000Z  git.checkout head=branch:before-load hash=1371060ac7908e038722ae38887e2d71004f7aae
 0006  2026-08-05T09:14:22.000Z  git.status paths=0
 0007  2026-08-05T09:14:22.000Z  git.blame lines=1
-      {"author":{"email":"greg@example.test","name":"Greg Formerly"},"committedAt":"2026-07-30T10:00:00.000Z","hash":"1371060ac7908e038722ae38887e2d71004f7aae","line":1,"text":"export const load = 0;"}
+      {"author":{"email":"greg@example.test","name":"Greg Formerly"},"committedAt":"2026-07-30T10:00:00.000Z","hash":"1371060ac7908e038722ae38887e2d71004f7aae","line":1}
 0008  2026-08-05T09:14:22.000Z  git.log commits=1
       1371060ac7908e038722ae38887e2d71004f7aae

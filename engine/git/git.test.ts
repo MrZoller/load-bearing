@@ -383,7 +383,7 @@ describe("the Git model", () => {
     expect(refused.vfs).toBe(vfs);
   });
 
-  it("keeps a trailing-newline-only diff observable and byte-stable", () => {
+  it("renders a trailing-newline-only diff as an applicable byte-stable change", () => {
     const { git, vfs } = world();
     const withoutTerminalNewline = writeVfs(
       vfs,
@@ -401,7 +401,10 @@ describe("the Git model", () => {
         path: FILE,
         oldContents: "export const load = 1;\n",
         newContents: "export const load = 1;",
-        lines: [{ kind: "context", text: "export const load = 1;" }],
+        lines: [
+          { kind: "deletion", text: "export const load = 1;" },
+          { kind: "addition", text: "export const load = 1;" },
+        ],
       },
     ]);
   });

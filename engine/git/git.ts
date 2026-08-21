@@ -378,6 +378,19 @@ function lineDiff(
 ): readonly GitDiffLine[] {
   const oldLines = logicalLines(oldContents);
   const newLines = logicalLines(newContents);
+  // A terminal newline is byte-significant even though logicalLines omits it.
+  // Without this special case, the LCS treats a final-newline-only edit as
+  // context and renderDiff cannot express the change as a unified patch.
+  if (
+    oldContents !== newContents &&
+    oldLines.length > 0 &&
+    oldLines.length === newLines.length &&
+    oldLines.every((line, index) => line === newLines[index])
+  )
+    return oldLines.flatMap((text) => [
+      { kind: "deletion" as const, text },
+      { kind: "addition" as const, text },
+    ]);
   const rows = oldLines.length + 1;
   const columns = newLines.length + 1;
   const lengths = Array.from({ length: rows }, () =>

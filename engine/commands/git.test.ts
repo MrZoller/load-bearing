@@ -352,6 +352,40 @@ describe("Git commands", () => {
     expect(run(state, "git diff")).toMatchObject({ exitCode: 0 });
   });
 
+  it("records quote-heavy blame output without overflowing transcript detail", () => {
+    const source = loadCartridgeFixture("git") as Record<string, unknown>;
+    const repository = source["repository"] as Record<string, unknown>;
+    const history = repository["gitHistory"] as Record<string, unknown>;
+    const commit = (
+      history["commits"] as Record<string, unknown>[]
+    )[1] as Record<string, unknown>;
+    const contents = `${'"'.repeat(2000)}\n`;
+    const committedFiles = commit["files"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    committedFiles["/production/service/src/index.ts"] = {
+      ...committedFiles["/production/service/src/index.ts"],
+      contents,
+      blame: ["current"],
+    };
+    const files = repository["files"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    files["/production/service/src/index.ts"] = {
+      ...files["/production/service/src/index.ts"],
+      contents,
+    };
+    const state = bootstrap({
+      cartridge: loadCartridge(source),
+      seed: "git-commands",
+    });
+
+    expect(() => execute(state, "git blame src/index.ts")).not.toThrow();
+    expect(run(state, "git blame src/index.ts")).toMatchObject({ exitCode: 0 });
+  });
+
   it("places no-newline markers beside their respective diff rows", () => {
     const source = loadCartridgeFixture("git") as Record<string, unknown>;
     const repository = source["repository"] as Record<string, unknown>;

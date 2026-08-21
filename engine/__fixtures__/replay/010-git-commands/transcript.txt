@@ -7,7 +7,7 @@
 0002  2026-08-05T09:14:22.000Z  git.diff comparison=working-index files=0
 0003  2026-08-05T09:14:22.000Z  shell.result exit=0
 0004  2026-08-05T09:14:22.000Z  git.blame lines=1
-      {"author":{"email":"greg@example.test","name":"Greg Formerly"},"committedAt":"2026-07-31T02:11:09.000Z","hash":"ec8411560e51cbb72c92dc14430df6b52a836e92","line":1,"text":"export const load = 1;"}
+      {"author":{"email":"greg@example.test","name":"Greg Formerly"},"committedAt":"2026-07-31T02:11:09.000Z","hash":"ec8411560e51cbb72c92dc14430df6b52a836e92","line":1}
 0005  2026-08-05T09:14:22.000Z  shell.result exit=0
       stdout> ec84115 (Greg Formerly 2026-07-31 02:11:09 +0000    1) export const load = 1;
 0006  2026-08-05T09:14:22.000Z  git.branches branches=2
@@ -88,7 +88,7 @@
       stdout> ec84115 increase structural load
       stdout> 1371060 establish the service
 0042  2026-08-05T09:14:22.000Z  git.blame lines=1
-      {"author":{"email":"greg@example.test","name":"Greg Formerly"},"committedAt":"2026-07-31T02:11:09.000Z","hash":"ec8411560e51cbb72c92dc14430df6b52a836e92","line":1,"text":"export const load = 1;"}
+      {"author":{"email":"greg@example.test","name":"Greg Formerly"},"committedAt":"2026-07-31T02:11:09.000Z","hash":"ec8411560e51cbb72c92dc14430df6b52a836e92","line":1}
 0043  2026-08-05T09:14:22.000Z  shell.result exit=0
       stdout> ec84115 (Greg Formerly 2026-07-31 02:11:09 +0000    1) export const load = 1;
 0044  2026-08-05T09:14:22.000Z  git.checkout head=branch:before-load hash=1371060ac7908e038722ae38887e2d71004f7aae
