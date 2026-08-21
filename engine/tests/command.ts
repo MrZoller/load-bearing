@@ -14,8 +14,11 @@ export const NPM_COMMAND: CommandDefinition = Object.freeze({
       };
     const plan = planTestRun(context.state);
     return {
-      stdout: plan.stdout,
-      stderr: plan.stderr,
+      // tests.run owns the visible test output and advances the simulated
+      // clock. Returning it here too would make shell.result duplicate every
+      // line in the transcript after the child event has rendered it.
+      stdout: [],
+      stderr: [],
       exitCode: plan.exitCode,
       events: [stampEvent({ type: "tests.run", payload: {} }, "npm test")],
     };

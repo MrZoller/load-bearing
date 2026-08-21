@@ -477,24 +477,7 @@
       "detail": [],
       "exitCode": 1,
       "index": 2,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "FAIL stale readiness sentinel is absent (750ms)"
-        },
-        {
-          "stream": "stdout",
-          "text": "PASS worker source is intact (250ms)"
-        },
-        {
-          "stream": "stdout",
-          "text": "Tests: 1 passed, 1 failed, 2 total"
-        },
-        {
-          "stream": "stdout",
-          "text": "Time: 1000ms"
-        }
-      ],
+      "output": [],
       "summary": "",
       "type": "shell.result"
     },
@@ -559,24 +542,7 @@
       "detail": [],
       "exitCode": 0,
       "index": 8,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "PASS stale readiness sentinel is absent (750ms)"
-        },
-        {
-          "stream": "stdout",
-          "text": "PASS worker source is intact (250ms)"
-        },
-        {
-          "stream": "stdout",
-          "text": "Tests: 2 passed, 0 failed, 2 total"
-        },
-        {
-          "stream": "stdout",
-          "text": "Time: 1000ms"
-        }
-      ],
+      "output": [],
       "summary": "",
       "type": "shell.result"
     }

@@ -131,6 +131,27 @@ describe("simulated tests", () => {
     );
   });
 
+  it("does not mistake an unsearchable ancestor for an absent file", () => {
+    const state = reduce({
+      cartridge: cartridge(),
+      seed: "inaccessible-exists",
+      events: [
+        {
+          type: "vfs.chmod",
+          payload: { path: "/production/service", mode: "0600" },
+        },
+        { type: "tests.run", payload: {} },
+      ],
+    });
+    const run = readTestsSlice(state).runs[0];
+    if (run === undefined) throw new Error("test run was not recorded");
+    expect(run.cases).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "readme", passed: true }),
+      ]),
+    );
+  });
+
   it("rejects test history snapshots whose derived timing is incoherent", () => {
     const state = step(
       bootstrap({ cartridge: cartridge(), seed: "snapshot" }),
@@ -152,9 +173,7 @@ describe("simulated tests", () => {
     expect(
       executeCommand(state, ["npm", "test"], BUILTIN_COMMAND_REGISTRY),
     ).toMatchObject({
-      stdout: expect.arrayContaining([
-        "FAIL source has repaired load (1250ms)",
-      ]),
+      stdout: [],
       stderr: [],
       exitCode: 1,
       events: [{ type: "tests.run", payload: {}, version: 0 }],
