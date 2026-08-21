@@ -49,7 +49,7 @@ remains blocked until review findings are deliberately batched into it.
   - acceptance: engine mind-state modules record grant, deny, and standing permission decisions with simulated timestamps; belief state is separately serialized and exposes queryable divergence from world truth; isolation tests prove belief changes cannot mutate VFS/git/services and world changes cannot silently correct belief; a replay preserves induced divergence and purity passes
   - deps: T8
   - pr: 34
-- [R] T10 (standard) — Phase 0 exit: end-to-end replay, coverage gate, DoD verification (Fixes #14)
+- [x] T10 (standard) — Phase 0 exit: end-to-end replay, coverage gate, DoD verification (Fixes #14)
   - acceptance: a full-session fixture exercises filesystem, git, services/processes, tests before and after an edit, permissions, and belief divergence with byte-identical state/transcript; CI enforces agreed filesystem/git coverage and cross-timezone determinism; public engine APIs, fixtures, and purity gates are documented; malformed-cartridge errors are asserted; all four Phase 0 ROADMAP boxes cite passing evidence on a clean checkout
   - deps: T1, T2, T3, T4, T5, T6, T7, T8, T9
   - pr: 35
@@ -101,3 +101,4 @@ remains blocked until review findings are deliberately batched into it.
 - [!] T12 (trivial) — parked review minors (batch)
   - acceptance: confirmed non-blocking review findings are collected and fixed as one focused batch with affected-test and repository-gate verification
   - PR #33: reject unrenderable shell input before tokenization errors so malformed syntax cannot enter shell history
+  - PR #35: make the VFS/Git coverage gate fail when a new runtime production file falls outside its measured inventory, and align its comments and README wording
