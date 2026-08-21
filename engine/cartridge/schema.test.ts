@@ -99,6 +99,7 @@ describe("the published schema", () => {
 
     expect(publishedPattern.test("visitor😀@example.test")).toBe(true);
     expect(publishedPattern.test("visitor\ud800@example.test")).toBe(false);
+    expect(publishedPattern.test("visitor\udc00@example.test")).toBe(false);
   });
 
   it("closes every object, so a typo is a rejection rather than a shrug", () => {
