@@ -91,6 +91,28 @@ function commandName(binary: string, args: readonly string[]): string {
   return [binary.slice(slash + 1), ...args].join(" ");
 }
 
+/** Keep raw command history replayable while making its transcript rendering safe. */
+function displayHistoryCommand(command: string): string {
+  let displayed = "";
+  for (let index = 0; index < command.length; index += 1) {
+    const code = command.charCodeAt(index);
+    const next = command.charCodeAt(index + 1);
+    const control =
+      code <= 0x1f ||
+      (code >= 0x7f && code <= 0x9f) ||
+      code === 0x2028 ||
+      code === 0x2029;
+    const loneHigh =
+      code >= 0xd800 && code <= 0xdbff && !(next >= 0xdc00 && next <= 0xdfff);
+    const loneLow = code >= 0xdc00 && code <= 0xdfff;
+    displayed +=
+      control || loneHigh || loneLow
+        ? `\\u${code.toString(16).padStart(4, "0")}`
+        : (command[index] as string);
+  }
+  return displayed;
+}
+
 const PS: CommandDefinition = {
   name: "ps",
   execute(context) {
@@ -177,7 +199,8 @@ const HISTORY: CommandDefinition = {
     if (rejected !== undefined) return rejected;
     return result(
       readShellHistory(readWorldSlice(context.state)).map(
-        (command, index) => `${String(index + 1).padStart(5)}  ${command}`,
+        (command, index) =>
+          `${String(index + 1).padStart(5)}  ${displayHistoryCommand(command)}`,
       ),
       EMPTY,
       0,

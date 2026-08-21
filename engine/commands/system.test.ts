@@ -128,6 +128,26 @@ describe("system commands", () => {
     expect(readWorldSlice(state).shellHistory.at(-1)).toBe("history");
   });
 
+  it("renders control characters in history without changing raw state", () => {
+    const state = run(["echo\tfirst", "echo\nsecond", "history"]);
+    expect(output(results(state)[2])).toEqual({
+      stdout: [
+        "    1  cd /production/service",
+        "    2  git status",
+        "    3  npm test",
+        "    4  echo\\u0009first",
+        "    5  echo\\u000asecond",
+      ],
+      stderr: [],
+      exitCode: 0,
+    });
+    expect(readWorldSlice(state).shellHistory.slice(-3)).toEqual([
+      "echo\tfirst",
+      "echo\nsecond",
+      "history",
+    ]);
+  });
+
   it("persists environment, service and process mutations through reducer events", () => {
     const state = run([
       "export BEAM=load=bearing",

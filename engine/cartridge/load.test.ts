@@ -103,6 +103,16 @@ describe("loadCartridge", () => {
   });
 
   it("requires cartridge-owned system metadata and bounds boot time", () => {
+    const missingRepository = minimal();
+    delete missingRepository["repository"];
+    expect(issuesOf(missingRepository)).toEqual([
+      {
+        pointer: "/repository",
+        expected: "an object (required)",
+        found: "nothing",
+      },
+    ]);
+
     const missing = minimal();
     delete (missing["repository"] as Record<string, unknown>)["system"];
     expect(issuesOf(missing)).toEqual([

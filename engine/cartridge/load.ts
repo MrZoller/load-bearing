@@ -1374,6 +1374,7 @@ export function loadCartridge(value: unknown): LoadedCartridge {
     checkModelIds(cartridge.models, report);
   }
   if (
+    !issueAt(report, "/repository") &&
     !issueAt(report, "/meta/startedAt") &&
     !issueAt(report, "/repository/system") &&
     !issueAt(report, "/repository/system/bootedAt") &&
