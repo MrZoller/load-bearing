@@ -25,15 +25,14 @@
  *
  * ## What v0 does not check
  *
- * Two kinds of gap, both deliberate, both marked `deferred` in the tree so they
- * are visible in the emitted schema rather than being an absence a reader has
- * to notice:
+ * The remaining gap is deliberate and marked `deferred` in the tree so it is
+ * visible in the emitted schema rather than being an absence a reader has to
+ * notice:
  *
  * - `story` and `presentation` carry Phase 2 content and are hardened in
  *   Phase 4. v0 requires them to be objects and looks no further.
- * - the interior of `tests` belongs to issue #12. v0 requires each test to be
- *   an object. The other machine surfaces are concrete as of issue #7, and
- *   `gitHistory` is concrete as of issue #6.
+ *
+ * The machine surfaces, including tests and reactions, are concrete.
  *
  * Broader semantic coherence — endings reachable and callbacks sourced — is
  * Phase 4's `cartridge validate`. v0 already checks repository paths and Git
@@ -45,6 +44,7 @@ import { deepFreeze } from "../freeze.js";
 import { pattern } from "../pattern.js";
 import type { Pattern } from "../pattern.js";
 import { INCIDENT_DATE_PATTERN, MODEL_ID_PATTERN } from "../random/seed.js";
+import { WORLD_PROCESS_FIELD } from "./types.js";
 
 /**
  * The only schema version this engine understands.
@@ -149,6 +149,11 @@ export const WORLD_ID_PATTERN = pattern(
   /^[^\u0000-\u001F\u007F-\u009F\u2028\u2029]+$/,
 );
 
+/** Exact syntax accepted by the event registry for a complete event type. */
+export const EVENT_TYPE_PATTERN = pattern(
+  /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)*$/,
+);
+
 /** Stable cartridge-local commit name, used before content hashes are derived. */
 export const GIT_COMMIT_ID_PATTERN = pattern(/^[a-z][a-z0-9-]*$/);
 
@@ -187,6 +192,11 @@ export interface EnumNode {
   readonly values: readonly string[];
 }
 
+export interface BooleanNode {
+  readonly kind: "boolean";
+  readonly description: string;
+}
+
 export interface ObjectNode {
   readonly kind: "object";
   readonly description: string;
@@ -212,6 +222,14 @@ export interface RecordNode {
   readonly minEntries?: number;
 }
 
+/** A closed discriminated object union, selected by one required string field. */
+export interface UnionNode {
+  readonly kind: "union";
+  readonly description: string;
+  readonly discriminator: string;
+  readonly variants: Readonly<Record<string, ObjectNode>>;
+}
+
 /**
  * A JSON object carried through untouched.
  *
@@ -228,9 +246,11 @@ export type SchemaNode =
   | StringNode
   | IntegerNode
   | EnumNode
+  | BooleanNode
   | ObjectNode
   | ArrayNode
   | RecordNode
+  | UnionNode
   | DeferredNode;
 
 export interface SchemaField {
@@ -257,28 +277,6 @@ function optional<T extends SchemaNode>(
   fill: unknown,
 ): { node: T; required: false; fill: unknown } {
   return { node, required: false, fill };
-}
-
-/**
- * A section the engine models but v0 does not look inside.
- *
- * Each is an array of objects, so a cartridge cannot smuggle a string into a
- * place that will later hold a record, and the issue that tightens it is named.
- */
-function deferredList(description: string, owner: string): SchemaField {
-  return {
-    node: {
-      kind: "array",
-      description,
-      items: {
-        kind: "deferred",
-        description: `One entry. ${description}`,
-        owner,
-      },
-    },
-    required: false,
-    fill: [],
-  };
 }
 
 /** Rejects `2026-02-30` and friends, which the pattern alone accepts. */
@@ -768,6 +766,194 @@ const TICKET = {
   },
 } satisfies ObjectNode;
 
+const FILE_EXISTS_PREDICATE = {
+  kind: "object",
+  description:
+    "A predicate comparing whether a declared file currently exists.",
+  fields: {
+    kind: required({
+      kind: "enum",
+      description: "The file-existence predicate kind.",
+      values: ["file-exists"],
+    }),
+    path: required({
+      kind: "string",
+      description: "A declared absolute file path.",
+      pattern: FILE_PATH_PATTERN,
+      patternLabel: "an absolute POSIX file path",
+    }),
+    exists: required({
+      kind: "boolean",
+      description: "Whether the file must exist.",
+    }),
+  },
+} satisfies ObjectNode;
+
+const FILE_CONTENTS_PREDICATE = {
+  kind: "object",
+  description: "A predicate comparing a declared file's complete contents.",
+  fields: {
+    kind: required({
+      kind: "enum",
+      description: "The predicate kind.",
+      values: ["file-contents"],
+    }),
+    path: required({
+      kind: "string",
+      description: "A declared absolute file path.",
+      pattern: FILE_PATH_PATTERN,
+      patternLabel: "an absolute POSIX file path",
+    }),
+    equals: required({
+      kind: "string",
+      description: "The exact expected contents.",
+    }),
+  },
+} satisfies ObjectNode;
+
+const UNIT_STATE = {
+  kind: "enum",
+  description: "A unit state.",
+  values: ["running", "stopped"],
+} satisfies EnumNode;
+const SERVICE_HEALTH = {
+  kind: "enum",
+  description: "A service health.",
+  values: ["healthy", "degraded", "unhealthy", "unknown"],
+} satisfies EnumNode;
+const SERVICE_STATE = {
+  kind: "object",
+  description: "A service-state predicate or action.",
+  fields: {
+    kind: required({
+      kind: "enum",
+      description: "The rule kind.",
+      values: ["service-state"],
+    }),
+    service: required(WORLD_ID),
+    state: required(UNIT_STATE),
+  },
+} satisfies ObjectNode;
+const SERVICE_HEALTH_RULE = {
+  kind: "object",
+  description: "A service-health predicate or action.",
+  fields: {
+    kind: required({
+      kind: "enum",
+      description: "The rule kind.",
+      values: ["service-health"],
+    }),
+    service: required(WORLD_ID),
+    health: required(SERVICE_HEALTH),
+  },
+} satisfies ObjectNode;
+const PROCESS_STATE = {
+  kind: "object",
+  description: "A process-state predicate or action.",
+  fields: {
+    kind: required({
+      kind: "enum",
+      description: "The rule kind.",
+      values: ["process-state"],
+    }),
+    [WORLD_PROCESS_FIELD]: required(WORLD_ID),
+    state: required(UNIT_STATE),
+  },
+} satisfies ObjectNode;
+const FILE_PREDICATE = {
+  kind: "union",
+  description: "A predicate over the current virtual filesystem.",
+  discriminator: "kind",
+  variants: {
+    "file-exists": FILE_EXISTS_PREDICATE,
+    "file-contents": FILE_CONTENTS_PREDICATE,
+  },
+} satisfies UnionNode;
+const REACTION_PREDICATE = {
+  kind: "union",
+  description: "One all-of condition evaluated against staged session state.",
+  discriminator: "kind",
+  variants: {
+    "file-exists": FILE_EXISTS_PREDICATE,
+    "file-contents": FILE_CONTENTS_PREDICATE,
+    "service-state": SERVICE_STATE,
+    "service-health": SERVICE_HEALTH_RULE,
+    "process-state": PROCESS_STATE,
+  },
+} satisfies UnionNode;
+const REACTION_ACTION = {
+  kind: "union",
+  description:
+    "One registered owner-applied transition produced by a reaction.",
+  discriminator: "kind",
+  variants: {
+    "service-state": SERVICE_STATE,
+    "service-health": SERVICE_HEALTH_RULE,
+    "process-state": PROCESS_STATE,
+    "log-append": {
+      kind: "object",
+      description: "Append one entry to a declared log.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "The rule kind.",
+          values: ["log-append"],
+        }),
+        log: required(WORLD_ID),
+        entry: required({
+          kind: "string",
+          description: "The complete appended entry.",
+        }),
+      },
+    },
+  },
+} satisfies UnionNode;
+const TEST = {
+  kind: "object",
+  description: "One simulated test case, evaluated in authored order.",
+  fields: {
+    id: required(WORLD_ID),
+    name: required({
+      kind: "string",
+      description: "Single-line test name rendered in output.",
+      pattern: SINGLE_LINE_PATTERN,
+      patternLabel: "a single-line string",
+      minLength: 1,
+      maxLength: 4000,
+    }),
+    durationMs: required({
+      kind: "integer",
+      description: "Simulated duration in milliseconds.",
+      minimum: 0,
+      maximum: 600000,
+    }),
+    predicate: required(FILE_PREDICATE),
+  },
+} satisfies ObjectNode;
+const REACTION = {
+  kind: "object",
+  description: "A post-event all-of rule with ordered actions.",
+  fields: {
+    id: required(WORLD_ID),
+    on: required({
+      kind: "string",
+      description: "Exact triggering event type.",
+      pattern: EVENT_TYPE_PATTERN,
+      patternLabel: "an exact namespace.event event type",
+    }),
+    predicates: required({
+      kind: "array",
+      description: "All-of staged-state conditions.",
+      items: REACTION_PREDICATE,
+    }),
+    actions: required({
+      kind: "array",
+      description: "Owner-applied transitions in authored order.",
+      items: REACTION_ACTION,
+    }),
+  },
+} satisfies ObjectNode;
+
 const COMMAND_OUTPUT = {
   kind: "array",
   description:
@@ -1033,9 +1219,22 @@ const REPOSITORY = {
       },
       [],
     ),
-    tests: deferredList(
-      "Simulated test-runner cases and their reactions.",
-      "issue #12",
+    tests: optional(
+      {
+        kind: "array",
+        description: "Simulated test-runner cases in execution order.",
+        items: TEST,
+        maxItems: MAX_COMMAND_STREAM_LINES - 2,
+      },
+      [],
+    ),
+    reactions: optional(
+      {
+        kind: "array",
+        description: "Post-event reaction rules in evaluation order.",
+        items: REACTION,
+      },
+      [],
     ),
   },
 } satisfies ObjectNode;

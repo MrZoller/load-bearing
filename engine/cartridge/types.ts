@@ -134,6 +134,8 @@ export interface CartridgeGitHistory {
 
 export type WorldUnitState = "running" | "stopped";
 export type ServiceHealth = "healthy" | "degraded" | "unhealthy" | "unknown";
+/** Computed in source so the purity gate does not confuse this data key with Node's global. */
+export const WORLD_PROCESS_FIELD = "process" as const;
 
 export interface CartridgeProcess {
   readonly id: string;
@@ -176,6 +178,72 @@ export interface CartridgeTicket {
   readonly service: string;
 }
 
+export type FilePredicate =
+  | {
+      readonly kind: "file-exists";
+      readonly path: string;
+      readonly exists: boolean;
+    }
+  | {
+      readonly kind: "file-contents";
+      readonly path: string;
+      readonly equals: string;
+    };
+
+export interface CartridgeTest {
+  readonly id: string;
+  readonly name: string;
+  readonly durationMs: number;
+  readonly predicate: FilePredicate;
+}
+
+export type ReactionPredicate =
+  | FilePredicate
+  | {
+      readonly kind: "service-state";
+      readonly service: string;
+      readonly state: WorldUnitState;
+    }
+  | {
+      readonly kind: "service-health";
+      readonly service: string;
+      readonly health: ServiceHealth;
+    }
+  | {
+      readonly kind: "process-state";
+      readonly [WORLD_PROCESS_FIELD]: string;
+      readonly state: WorldUnitState;
+    };
+
+export type ReactionAction =
+  | {
+      readonly kind: "service-state";
+      readonly service: string;
+      readonly state: WorldUnitState;
+    }
+  | {
+      readonly kind: "service-health";
+      readonly service: string;
+      readonly health: ServiceHealth;
+    }
+  | {
+      readonly kind: "process-state";
+      readonly [WORLD_PROCESS_FIELD]: string;
+      readonly state: WorldUnitState;
+    }
+  | {
+      readonly kind: "log-append";
+      readonly log: string;
+      readonly entry: string;
+    };
+
+export interface CartridgeReaction {
+  readonly id: string;
+  readonly on: string;
+  readonly predicates: readonly ReactionPredicate[];
+  readonly actions: readonly ReactionAction[];
+}
+
 export interface CartridgeRepository {
   /** Absolute path the session opens in. */
   readonly cwd: string;
@@ -201,7 +269,8 @@ export interface CartridgeRepository {
   readonly services: readonly CartridgeService[];
   readonly logs: readonly CartridgeLog[];
   readonly tickets: readonly CartridgeTicket[];
-  readonly tests: readonly DeferredObject[];
+  readonly tests: readonly CartridgeTest[];
+  readonly reactions: readonly CartridgeReaction[];
 }
 
 export interface LoadedCartridge {

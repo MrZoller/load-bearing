@@ -172,6 +172,7 @@ export {
   setWorldEnv,
   transitionProcess,
   transitionService,
+  transitionServiceHealth,
   unsetWorldEnv,
 } from "./world/world.js";
 export type {
@@ -216,6 +217,21 @@ export type {
   ParsedCommandOptions,
   RegisteredCommand,
 } from "./commands/types.js";
+
+export { NPM_COMMAND } from "./tests/command.js";
+export {
+  TESTS_MODULE,
+  readTestsSlice,
+  validateTestsSlice,
+} from "./tests/module.js";
+export { evaluateFilePredicate, planTestRun } from "./tests/planner.js";
+export type {
+  TestCaseResult,
+  TestRun,
+  TestRunPlan,
+  TestsSlice,
+} from "./tests/types.js";
+export { reactionActionEvent, reactionPredicateMatches } from "./reactions.js";
 
 export { deepFreeze } from "./freeze.js";
 export {
@@ -286,6 +302,7 @@ export {
   GIT_COMMIT_ID_PATTERN,
   GIT_EMAIL_PATTERN,
   WORLD_ID_PATTERN,
+  EVENT_TYPE_PATTERN,
 } from "./cartridge/schema.js";
 export { CARTRIDGE_SCHEMA_ID, emitJsonSchema } from "./cartridge/jsonSchema.js";
 export type {
@@ -309,8 +326,13 @@ export type {
   CartridgeService,
   CartridgeSystem,
   CartridgeTicket,
+  CartridgeTest,
+  CartridgeReaction,
   DeferredObject,
+  FilePredicate,
   LoadedCartridge,
+  ReactionAction,
+  ReactionPredicate,
   ServiceHealth,
   WorldUnitState,
 } from "./cartridge/types.js";

@@ -48,7 +48,9 @@ import type {
   CartridgeGitHistory,
   CartridgeMeta,
   CartridgeModel,
+  CartridgeReaction,
   CartridgeRepository,
+  ReactionAction,
   DeferredObject,
   LoadedCartridge,
 } from "./types.js";
@@ -229,10 +231,10 @@ function objectFromEntries(
 /**
  * How deep a `deferred` subtree may nest.
  *
- * The validated sections are bounded by the schema itself, but `story`,
- * `presentation` and the deferred world lists are explicitly unconstrained —
- * so their depth is whatever a cartridge says, and the clone below is
- * recursive. `JSON.parse` happily accepts a few thousand levels; the clone
+ * The validated sections are bounded by the schema itself, but `story` and
+ * `presentation` are explicitly unconstrained — so their depth is whatever a
+ * cartridge says, and the clone below is recursive. `JSON.parse` happily
+ * accepts a few thousand levels; the clone
  * then exhausts the stack and `loadCartridge` escapes with a bare `RangeError`
  * instead of a validation issue, which is the validation boundary failing open
  * on ordinary parsed JSON rather than on anything exotic.
@@ -572,6 +574,14 @@ function validate(
       return value;
     }
 
+    case "boolean": {
+      if (typeof value !== "boolean") {
+        report.add(pointer, "a boolean", value);
+        return false;
+      }
+      return value;
+    }
+
     case "object": {
       if (!isPlainObject(value)) {
         report.add(pointer, "an object", value);
@@ -638,6 +648,33 @@ function validate(
         entries.push([key, validate(value[key], node.values, at, report)]);
       }
       return objectFromEntries(entries);
+    }
+
+    case "union": {
+      if (!isPlainObject(value)) {
+        report.add(pointer, "an object", value);
+        return {};
+      }
+      if (!isDataObject(value, pointer, report)) return {};
+      const discriminant: unknown = value[node.discriminator];
+      if (typeof discriminant !== "string") {
+        report.add(
+          child(pointer, node.discriminator),
+          `one of ${Object.keys(node.variants).join(", ")}`,
+          discriminant,
+        );
+        return {};
+      }
+      const variant = node.variants[discriminant];
+      if (variant === undefined) {
+        report.add(
+          child(pointer, node.discriminator),
+          `one of ${Object.keys(node.variants).join(", ")}`,
+          discriminant,
+        );
+        return {};
+      }
+      return validateFields(value, variant, pointer, report);
     }
 
     case "deferred": {
@@ -707,6 +744,8 @@ function describeNode(node: SchemaNode): string {
       return "an integer";
     case "enum":
       return `one of ${node.values.join(", ")}`;
+    case "boolean":
+      return "a boolean";
     case "object":
     case "deferred":
       return "an object";
@@ -714,6 +753,8 @@ function describeNode(node: SchemaNode): string {
       return "an array";
     case "record":
       return "an object";
+    case "union":
+      return "a discriminated object";
   }
 }
 
@@ -1313,6 +1354,171 @@ function checkEndpointServiceReferences(
   }
 }
 
+function reactionActionType(action: ReactionAction): string {
+  switch (action.kind) {
+    case "service-state":
+      return action.state === "running"
+        ? "world.service-start"
+        : "world.service-stop";
+    case "service-health":
+      return "world.service-health";
+    case "process-state":
+      return "world.process-transition";
+    case "log-append":
+      return "world.log-append";
+  }
+}
+
+/** Concrete test/reaction references and the conservative event-type graph. */
+function checkTestsAndReactions(
+  repository: CartridgeRepository,
+  report: Report,
+): void {
+  const files = new Set(Object.keys(repository.files));
+  const services = new Set(repository.services.map((value) => value.id));
+  const processes = new Set(repository.processes.map((value) => value.id));
+  const logs = new Set(repository.logs.map((value) => value.id));
+
+  const unique = <T extends { readonly id: string }>(
+    values: readonly T[],
+    field: "tests" | "reactions",
+  ): void => {
+    const seen = new Map<string, number>();
+    values.forEach((value, index) => {
+      const first = seen.get(value.id);
+      if (first === undefined) seen.set(value.id, index);
+      else
+        report.addPhrase(
+          `/repository/${field}/${String(index)}/id`,
+          `an id no other ${field.slice(0, -1)} uses`,
+          `${JSON.stringify(value.id)}, already used by /repository/${field}/${String(first)}`,
+        );
+    });
+  };
+  unique(repository.tests, "tests");
+  unique(repository.reactions, "reactions");
+
+  repository.tests.forEach((test, index) => {
+    if (!files.has(test.predicate.path))
+      report.addPhrase(
+        `/repository/tests/${String(index)}/predicate/path`,
+        "a path declared by repository.files",
+        `${JSON.stringify(test.predicate.path)}, which does not exist`,
+      );
+  });
+
+  const checkReference = (
+    id: string,
+    ids: ReadonlySet<string>,
+    pointer: string,
+    noun: string,
+  ): void => {
+    if (!ids.has(id))
+      report.addPhrase(
+        pointer,
+        `the id of a declared ${noun}`,
+        `${JSON.stringify(id)}, which does not exist`,
+      );
+  };
+  repository.reactions.forEach((reaction, reactionIndex) => {
+    const root = `/repository/reactions/${String(reactionIndex)}`;
+    reaction.predicates.forEach((predicate, predicateIndex) => {
+      const pointer = `${root}/predicates/${String(predicateIndex)}`;
+      switch (predicate.kind) {
+        case "file-exists":
+        case "file-contents":
+          checkReference(predicate.path, files, `${pointer}/path`, "file");
+          break;
+        case "service-state":
+        case "service-health":
+          checkReference(
+            predicate.service,
+            services,
+            `${pointer}/service`,
+            "service",
+          );
+          break;
+        case "process-state":
+          checkReference(
+            predicate["process"],
+            processes,
+            `${pointer}/process`,
+            "process",
+          );
+          break;
+      }
+    });
+    reaction.actions.forEach((action, actionIndex) => {
+      const pointer = `${root}/actions/${String(actionIndex)}`;
+      switch (action.kind) {
+        case "service-state":
+        case "service-health":
+          checkReference(
+            action.service,
+            services,
+            `${pointer}/service`,
+            "service",
+          );
+          break;
+        case "process-state":
+          checkReference(
+            action["process"],
+            processes,
+            `${pointer}/process`,
+            "process",
+          );
+          break;
+        case "log-append":
+          checkReference(action.log, logs, `${pointer}/log`, "log");
+          break;
+      }
+    });
+  });
+
+  interface Edge {
+    readonly to: string;
+    readonly reaction: CartridgeReaction;
+    readonly reactionIndex: number;
+    readonly actionIndex: number;
+  }
+  const edges = new Map<string, Edge[]>();
+  repository.reactions.forEach((reaction, reactionIndex) => {
+    const list = edges.get(reaction.on) ?? [];
+    reaction.actions.forEach((action, actionIndex) => {
+      list.push({
+        to: reactionActionType(action),
+        reaction,
+        reactionIndex,
+        actionIndex,
+      });
+    });
+    edges.set(reaction.on, list);
+  });
+  const active = new Set<string>();
+  const complete = new Set<string>();
+  const reported = new Set<string>();
+  const visit = (type: string): void => {
+    if (complete.has(type)) return;
+    active.add(type);
+    for (const edge of edges.get(type) ?? []) {
+      if (active.has(edge.to)) {
+        const pointer = `/repository/reactions/${String(edge.reactionIndex)}/actions/${String(edge.actionIndex)}/kind`;
+        if (!reported.has(pointer)) {
+          reported.add(pointer);
+          report.addPhrase(
+            pointer,
+            "an action whose event-type cascade is acyclic",
+            `${JSON.stringify(edge.reaction.on)} -> ${JSON.stringify(edge.to)} closes a reaction cycle`,
+          );
+        }
+      } else visit(edge.to);
+    }
+    active.delete(type);
+    complete.add(type);
+  };
+  for (const type of [...edges.keys()].sort()) visit(type);
+}
+
 /**
  * Validate and normalize a parsed cartridge.
  *
@@ -1417,6 +1623,17 @@ export function loadCartridge(value: unknown): LoadedCartridge {
     !issueWithin(report, "/repository/services")
   ) {
     checkEndpointServiceReferences(cartridge.repository, report);
+  }
+  if (
+    !issueAt(report, "/repository") &&
+    !issueAt(report, "/repository/files") &&
+    !issueWithin(report, "/repository/tests") &&
+    !issueWithin(report, "/repository/reactions") &&
+    !issueWithin(report, "/repository/services") &&
+    !issueWithin(report, "/repository/processes") &&
+    !issueWithin(report, "/repository/logs")
+  ) {
+    checkTestsAndReactions(cartridge.repository, report);
   }
 
   if (report.issues.length > 0)

@@ -5,6 +5,7 @@ import { readVfsSlice } from "../vfs/module.js";
 import { FILESYSTEM_COMMANDS } from "./filesystem.js";
 import { GIT_COMMANDS } from "./git.js";
 import { SYSTEM_COMMANDS } from "./system.js";
+import { NPM_COMMAND } from "../tests/command.js";
 
 const PWD: CommandDefinition = Object.freeze({
   name: "pwd",
@@ -65,6 +66,7 @@ export const BUILTIN_COMMANDS = Object.freeze([
   PWD,
   ECHO,
   TRUE,
+  NPM_COMMAND,
   ...FILESYSTEM_COMMANDS,
   ...GIT_COMMANDS,
   ...SYSTEM_COMMANDS,
