@@ -371,6 +371,29 @@ describe("loadCartridge", () => {
     ]);
   });
 
+  it.each([
+    "visitor\u0000@example.test",
+    "visitor\ud800@example.test",
+    "visitor\udc00@example.test",
+  ])("rejects an unwritable Git identity email %j", (email) => {
+    const source = minimal();
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["gitIdentity"] = { name: "Visitor", email };
+    expect(issuesOf(source).map((issue) => issue.pointer)).toContain(
+      "/repository/gitIdentity/email",
+    );
+  });
+
+  it("accepts writable supplementary characters in Git emails", () => {
+    const source = minimal();
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["gitIdentity"] = {
+      name: "Visitor",
+      email: "visitor😀@example.test",
+    };
+    expect(() => loadCartridge(source)).not.toThrow();
+  });
+
   it("rejects paths that collide with files or place a child below one", () => {
     const collision = minimal();
     (collision["repository"] as Record<string, unknown>)["directories"] = {
@@ -1193,6 +1216,23 @@ describe("deferred sections", () => {
 });
 
 describe("Git history coherence", () => {
+  it.each([
+    "visitor\u0000@example.test",
+    "visitor\ud800@example.test",
+    "visitor\udc00@example.test",
+  ])("rejects an unwritable authored commit email %j", (email) => {
+    const source = loadCartridgeFixture("git") as Record<string, unknown>;
+    const repository = source["repository"] as Record<string, unknown>;
+    const history = repository["gitHistory"] as Record<string, unknown>;
+    const commits = history["commits"] as Record<string, unknown>[];
+    const first = commits[0] as Record<string, unknown>;
+    first["author"] = { name: "Visitor", email };
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toContain(
+      "/repository/gitHistory/commits/0/author/email",
+    );
+  });
+
   it("rejects HEAD as an authored branch name", () => {
     const source = loadCartridgeFixture("git") as Record<string, unknown>;
     const repository = source["repository"] as Record<string, unknown>;
@@ -1785,6 +1825,20 @@ describe("rejection", () => {
     expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
       "/repository/files/relative",
     ]);
+  });
+
+  it("does not use an invalid directory key as evidence that cwd exists", () => {
+    const source = minimal();
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["cwd"] = "/ghost";
+    repository["directories"] = { "/ghost/bad\\name": {} };
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual(
+      expect.arrayContaining([
+        "/repository/cwd",
+        "/repository/directories/~1ghost~1bad\\name",
+      ]),
+    );
   });
 
   it("rejects a world with no files at the record, not at the cwd", () => {

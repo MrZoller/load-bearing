@@ -292,6 +292,19 @@ describe("system commands", () => {
     });
   });
 
+  it("selects a schema-valid hyphen-prefixed man section", () => {
+    const state = runWithCartridge(["man -internal service"], (repository) => {
+      repository["manPages"] = [
+        { name: "service", section: "-internal", contents: "private\n" },
+      ];
+    });
+    expect(output(results(state)[0])).toEqual({
+      stdout: ["private"],
+      stderr: [],
+      exitCode: 0,
+    });
+  });
+
   it("returns a schema-maximum astral endpoint response", () => {
     const response = "😀".repeat(4096);
     const state = runWithCartridge(
@@ -343,6 +356,7 @@ describe("system commands", () => {
     "ps -x",
     "env --null",
     "export -p",
+    "man -h",
     "man -a service",
     "history -c",
     "curl -I https://api.example.test/health",

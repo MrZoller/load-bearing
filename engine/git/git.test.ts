@@ -141,6 +141,23 @@ describe("the Git model", () => {
     ]);
   });
 
+  it("treats an extended unterminated final line as changed", () => {
+    const { git, vfs } = world();
+    const unterminated = {
+      ...git,
+      index: { ...git.index, [FILE]: "export const load = 1;" },
+    };
+    const changed = writeVfs(vfs, FILE, "export const load = 1;\nextra", NOW);
+    if (!changed.result.ok) throw new Error("fixture edit must succeed");
+    const lines = diffGit(unterminated, changed.slice, "working-index")[0]
+      ?.lines;
+    expect(lines).toEqual([
+      { kind: "deletion", text: "export const load = 1;" },
+      { kind: "addition", text: "export const load = 1;" },
+      { kind: "addition", text: "extra" },
+    ]);
+  });
+
   it("computes clean, modified, staged, deleted, and untracked states", () => {
     const { git, vfs } = world();
     expect(statusGit(git, vfs)).toEqual([]);
@@ -502,6 +519,27 @@ describe("the Git model", () => {
     expect(() => restoreSnapshot(serialize(recorded))).toThrow(/blame/);
   });
 
+  it("rejects restored blame attributed to an unrelated existing commit", () => {
+    const git = JSON.parse(JSON.stringify(world().git)) as Record<
+      string,
+      unknown
+    >;
+    const commits = git["commits"] as Record<string, Record<string, unknown>>;
+    const hashes = Object.keys(commits);
+    const head = (git["branches"] as Record<string, string>)["main"] as string;
+    const sibling = hashes.find((hash) => hash !== head);
+    if (sibling === undefined) throw new Error("fixture must have two commits");
+    const files = commits[head]?.["files"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    files[FILE] = { ...files[FILE], blame: [sibling] };
+
+    expect(() => validateGitSlice(git, "git")).toThrow(
+      /first-parent provenance/,
+    );
+  });
+
   it("rejects a snapshot with a commit timestamp that commands cannot render", () => {
     const state = reduce({
       cartridge: loadCartridge(source()),
@@ -517,6 +555,20 @@ describe("the Git model", () => {
     (commits[head] as Record<string, unknown>)["committedAt"] = "bogus";
 
     expect(() => restoreSnapshot(serialize(recorded))).toThrow(
+      /invalid commit timestamp/,
+    );
+  });
+
+  it("rejects a noncanonical spelling of a valid commit instant", () => {
+    const git = JSON.parse(JSON.stringify(world().git)) as Record<
+      string,
+      unknown
+    >;
+    const commits = git["commits"] as Record<string, Record<string, unknown>>;
+    const first = Object.values(commits)[0];
+    if (first === undefined) throw new Error("fixture must have a commit");
+    first["committedAt"] = "2026-07-31T02:11:09Z";
+    expect(() => validateGitSlice(git, "git")).toThrow(
       /invalid commit timestamp/,
     );
   });

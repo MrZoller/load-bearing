@@ -102,15 +102,59 @@ describe("shell execution", () => {
     });
   });
 
-  it("accepts the shell input limit exactly and throws its bare limit error over it", () => {
+  it("accepts the shell input limit exactly and returns an error result over it", () => {
     expect(shellResult(fold("x".repeat(MAX_SHELL_INPUT_LENGTH)))).toMatchObject(
       {
         exitCode: 127,
       },
     );
-    expect(() => fold("x".repeat(MAX_SHELL_INPUT_LENGTH + 1))).toThrow(
-      `shell input is ${String(MAX_SHELL_INPUT_LENGTH + 1)} characters, over the ${String(MAX_SHELL_INPUT_LENGTH)} command limit`,
-    );
+    expect(
+      shellResult(fold("x".repeat(MAX_SHELL_INPUT_LENGTH + 1))),
+    ).toMatchObject({
+      output: [
+        {
+          stream: "stderr",
+          text: `shell: command exceeds the ${String(MAX_SHELL_INPUT_LENGTH)} character limit`,
+        },
+      ],
+      exitCode: 2,
+    });
+  });
+
+  it.each(["echo bad\u0000input", "echo \ud800"])(
+    "returns an error result for unrenderable input %j",
+    (input) => {
+      expect(shellResult(fold(input))).toMatchObject({
+        output: [
+          {
+            stream: "stderr",
+            text: "shell: command contains unrenderable input",
+          },
+        ],
+        exitCode: 2,
+      });
+    },
+  );
+
+  it.each([
+    [
+      "an oversized command",
+      `touch /production/service/should-not-exist ${"x".repeat(MAX_SHELL_INPUT_LENGTH)}`,
+    ],
+    ["a control character", "touch /production/service/should-not-exist\u0000"],
+    ["a lone surrogate", "touch /production/service/should-not-exist\ud800"],
+  ])("does not mutate state or history for %s", (_case, input) => {
+    const before = reduce({
+      cartridge: loadCartridge(loadCartridgeFixture("minimal")),
+      seed: "shell",
+      events: [],
+    });
+    const after = fold(input);
+
+    // Rejected input gets its result event but must not become history or run
+    // even a valid-looking command prefix before the invalid bytes.
+    expect(after.slices).toEqual(before.slices);
+    expect(after.transcript).toHaveLength(1);
   });
 
   it.each([
@@ -135,6 +179,24 @@ describe("shell execution", () => {
       ).toThrow(/exitCode must be an integer in \[0, 255\]/);
     },
   );
+
+  it.each([
+    ["non-array stdout", "stdout", "bad", /stdout must be an array/],
+    ["non-string stderr", "stderr", [1], /stderr\[0\] must be a string/],
+  ])("rejects shell.result with %s", (_case, key, value, expected) => {
+    expect(() =>
+      reduce({
+        cartridge: loadCartridge(loadCartridgeFixture("minimal")),
+        seed: "shell-result-stream-payload",
+        events: [
+          {
+            type: "shell.result",
+            payload: { stdout: [], stderr: [], exitCode: 0, [key]: value },
+          },
+        ],
+      }),
+    ).toThrow(expected);
+  });
 
   it("renders stream tags and the exit status from structured state", () => {
     expect(

@@ -291,6 +291,22 @@ function logicalLines(contents: string): readonly string[] {
   return lines;
 }
 
+interface DiffLine {
+  readonly text: string;
+  readonly terminated: boolean;
+}
+
+function diffLines(contents: string): readonly DiffLine[] {
+  if (contents === "") return [];
+  const lines = contents.split("\n");
+  const terminated = lines.at(-1) === "";
+  if (terminated) lines.pop();
+  return lines.map((text, index) => ({
+    text,
+    terminated: index < lines.length - 1 || terminated,
+  }));
+}
+
 export function blameGit(
   slice: GitSlice,
   path: string,
@@ -376,21 +392,11 @@ function lineDiff(
   oldContents: string,
   newContents: string,
 ): readonly GitDiffLine[] {
-  const oldLines = logicalLines(oldContents);
-  const newLines = logicalLines(newContents);
-  // A terminal newline is byte-significant even though logicalLines omits it.
-  // Without this special case, the LCS treats a final-newline-only edit as
-  // context and renderDiff cannot express the change as a unified patch.
-  if (
-    oldContents !== newContents &&
-    oldLines.length > 0 &&
-    oldLines.length === newLines.length &&
-    oldLines.every((line, index) => line === newLines[index])
-  )
-    return oldLines.flatMap((text) => [
-      { kind: "deletion" as const, text },
-      { kind: "addition" as const, text },
-    ]);
+  const oldLines = diffLines(oldContents);
+  const newLines = diffLines(newContents);
+  const matches = (left: number, right: number): boolean =>
+    oldLines[left]?.text === newLines[right]?.text &&
+    oldLines[left]?.terminated === newLines[right]?.terminated;
   const rows = oldLines.length + 1;
   const columns = newLines.length + 1;
   const lengths = Array.from({ length: rows }, () =>
@@ -398,21 +404,20 @@ function lineDiff(
   );
   for (let left = oldLines.length - 1; left >= 0; left -= 1) {
     for (let right = newLines.length - 1; right >= 0; right -= 1) {
-      lengths[left]![right] =
-        oldLines[left] === newLines[right]
-          ? 1 + (lengths[left + 1]?.[right + 1] ?? 0)
-          : Math.max(
-              lengths[left + 1]?.[right] ?? 0,
-              lengths[left]?.[right + 1] ?? 0,
-            );
+      lengths[left]![right] = matches(left, right)
+        ? 1 + (lengths[left + 1]?.[right + 1] ?? 0)
+        : Math.max(
+            lengths[left + 1]?.[right] ?? 0,
+            lengths[left]?.[right + 1] ?? 0,
+          );
     }
   }
   const out: GitDiffLine[] = [];
   let left = 0;
   let right = 0;
   while (left < oldLines.length || right < newLines.length) {
-    if (oldLines[left] === newLines[right] && left < oldLines.length) {
-      out.push({ kind: "context", text: oldLines[left] as string });
+    if (matches(left, right) && left < oldLines.length) {
+      out.push({ kind: "context", text: oldLines[left]?.text as string });
       left += 1;
       right += 1;
     } else if (
@@ -420,10 +425,10 @@ function lineDiff(
       (left < oldLines.length &&
         (lengths[left + 1]?.[right] ?? 0) >= (lengths[left]?.[right + 1] ?? 0))
     ) {
-      out.push({ kind: "deletion", text: oldLines[left] as string });
+      out.push({ kind: "deletion", text: oldLines[left]?.text as string });
       left += 1;
     } else {
-      out.push({ kind: "addition", text: newLines[right] as string });
+      out.push({ kind: "addition", text: newLines[right]?.text as string });
       right += 1;
     }
   }
@@ -560,7 +565,7 @@ export function branchGit(
   });
 }
 
-function inheritedLineSources(
+export function inheritedLineSources(
   parent: GitFileSnapshot | undefined,
   contents: string,
   createdBy: string,

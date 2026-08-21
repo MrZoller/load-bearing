@@ -207,7 +207,7 @@ export function lookupManPage(
 }
 
 export function lookupEnv(slice: WorldSlice, name: string): string | undefined {
-  return slice.env[name];
+  return Object.hasOwn(slice.env, name) ? slice.env[name] : undefined;
 }
 
 export function listEnv(

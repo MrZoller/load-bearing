@@ -164,6 +164,7 @@ describe("world state", () => {
     expect(lookupTicket(world, "T-404")).toBeUndefined();
     expect(lookupEnv(world, "PATH")).toBe("/usr/local/bin:/usr/bin:/bin");
     expect(lookupEnv(world, "MISSING")).toBeUndefined();
+    expect(lookupEnv(world, "constructor")).toBeUndefined();
   });
 
   it("reports unavailable world logs without hiding VFS failures", () => {
@@ -394,5 +395,25 @@ describe("world state", () => {
         "snapshot: slices.world",
       ),
     ).toThrow(/file logs require an absolute path and no entries/);
+  });
+
+  it("rejects noncanonical process timestamp spellings in snapshots", () => {
+    const world = readWorldSlice(
+      reduce({ cartridge: cartridge(), seed: SEED, events: [] }),
+    );
+    const first = world.processes[0];
+    if (first === undefined) throw new Error("fixture must provide a process");
+    expect(() =>
+      validateWorldSlice(
+        {
+          ...world,
+          processes: [
+            { ...first, startedAt: "2026-08-05T09:00:00Z" },
+            ...world.processes.slice(1),
+          ],
+        },
+        "snapshot: slices.world",
+      ),
+    ).toThrow(/startedAt: must be a real UTC instant/);
   });
 });

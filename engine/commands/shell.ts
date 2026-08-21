@@ -4,6 +4,7 @@ import { BUILTIN_COMMAND_REGISTRY } from "./builtins.js";
 import { executeCommand } from "./registry.js";
 import { ShellSyntaxError, tokenizeShell } from "./tokenize.js";
 import type { CommandExecution, CommandRegistry } from "./types.js";
+import { describeUnwritableText } from "../text.js";
 
 /** Leaves room for the fixed suffix on unknown-command stderr. */
 export const MAX_SHELL_INPUT_LENGTH = 4000;
@@ -29,9 +30,16 @@ export function executeShell(
   registry: CommandRegistry = BUILTIN_COMMAND_REGISTRY,
 ): readonly EngineEvent[] {
   if (input.length > MAX_SHELL_INPUT_LENGTH) {
-    throw new Error(
-      `shell input is ${String(input.length)} characters, over the ${String(MAX_SHELL_INPUT_LENGTH)} command limit`,
-    );
+    return Object.freeze([
+      resultEvent({
+        stdout: [],
+        stderr: [
+          `shell: command exceeds the ${String(MAX_SHELL_INPUT_LENGTH)} character limit`,
+        ],
+        exitCode: 2,
+        events: [],
+      }),
+    ]);
   }
   const history =
     input.trim() === ""
@@ -56,6 +64,25 @@ export function executeShell(
     };
     return Object.freeze([...history, resultEvent(result)]);
   }
+  if (
+    argv.some(
+      (argument) =>
+        describeUnwritableText(
+          argument
+            .replaceAll("\t", "")
+            .replaceAll("\n", "")
+            .replaceAll("\r", ""),
+        ) !== undefined,
+    )
+  )
+    return Object.freeze([
+      resultEvent({
+        stdout: [],
+        stderr: ["shell: command contains unrenderable input"],
+        exitCode: 2,
+        events: [],
+      }),
+    ]);
   const execution = executeCommand(state, argv, registry);
   return Object.freeze([
     ...history,

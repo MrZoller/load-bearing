@@ -439,6 +439,38 @@ describe("Git commands", () => {
     ]);
   });
 
+  it("emits one no-newline marker for shared context", () => {
+    const source = loadCartridgeFixture("git") as Record<string, unknown>;
+    const repository = source["repository"] as Record<string, unknown>;
+    const commits = (repository["gitHistory"] as Record<string, unknown>)[
+      "commits"
+    ] as Record<string, unknown>[];
+    const current = commits[1] as Record<string, unknown>;
+    const committedFiles = current["files"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    committedFiles["/production/service/README.md"] = {
+      contents: "old\nlast",
+      blame: ["current", "current"],
+    };
+    const files = repository["files"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    files["/production/service/README.md"] = { contents: "new\nlast" };
+    const state = bootstrap({
+      cartridge: loadCartridge(source),
+      seed: "git-shared-marker",
+    });
+
+    expect(
+      run(state, "git diff").stdout.filter(
+        (line) => line === "\\ No newline at end of file",
+      ),
+    ).toHaveLength(1);
+  });
+
   it.each(["git restore src/index.ts", "git checkout -- src/index.ts"])(
     "%s deletes a working file when its staged index entry is deleted",
     (command) => {

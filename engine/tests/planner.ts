@@ -15,9 +15,11 @@ export function evaluateFilePredicate(
   if (predicate.kind === "file-exists") {
     const result = statVfs(vfs, predicate.path);
     // A traversal permission failure says nothing about whether the declared
-    // path exists. Only ENOENT proves absence; an inaccessible path remains
-    // present for predicates that model test and reaction expectations.
-    const exists = result.ok || result.code !== "ENOENT";
+    // file exists. Missing/non-directory paths and directories at the exact
+    // path are absent for a predicate specifically about a file.
+    const exists = result.ok
+      ? result.value.entry.kind === "file"
+      : result.code === "EACCES";
     return exists === predicate.exists;
   }
   const result = readVfs(vfs, predicate.path);

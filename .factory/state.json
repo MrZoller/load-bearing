@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T8",
-  "branch": "factory/t8-test-runner-reactions",
+  "current_task": "T11",
+  "branch": "factory/t11-parked-review-minors",
   "pr": null,
   "hold": false,
-  "updated": "2026-08-21T03:05:25Z"
+  "updated": "2026-08-21T04:57:14Z"
 }

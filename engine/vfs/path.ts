@@ -12,6 +12,7 @@ export function resolveVfsPath(
   cwd: string,
   home: string,
 ): ResolvedPath {
+  if (input === "") return { path: "", trailingSlash: false };
   const expanded =
     input === "~"
       ? home
@@ -31,6 +32,43 @@ export function resolveVfsPath(
     path: parts.length === 0 ? "/" : `/${parts.join("/")}`,
     trailingSlash: input.length > 1 && input.endsWith("/"),
   };
+}
+
+/** Paths that the authored spelling must traverse as directories. */
+export function vfsTraversalPaths(
+  input: string,
+  cwd: string,
+  home: string,
+): readonly string[] {
+  const expanded =
+    input === "~"
+      ? home
+      : input.startsWith("~/")
+        ? home + input.slice(1)
+        : input;
+  const absolute = expanded.startsWith("/")
+    ? expanded
+    : `${cwd === "/" ? "" : cwd}/${expanded}`;
+  const segments = absolute.split("/");
+  const parts: string[] = [];
+  const traversed: string[] = [];
+  for (let index = 0; index < segments.length; index += 1) {
+    const segment = segments[index];
+    if (segment === "") continue;
+    if (segment === ".") {
+      if (parts.length > 0) traversed.push(`/${parts.join("/")}`);
+      continue;
+    }
+    if (segment === "..") {
+      if (parts.length > 0) traversed.push(`/${parts.join("/")}`);
+      parts.pop();
+      continue;
+    }
+    parts.push(segment as string);
+    if (segments.slice(index + 1).some((part) => part !== ""))
+      traversed.push(`/${parts.join("/")}`);
+  }
+  return traversed;
 }
 
 export function parentPath(path: string): string {

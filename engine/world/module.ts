@@ -1,6 +1,6 @@
 /** Event registration and snapshot boundary for the environmental world slice. */
 
-import { parseTimestamp } from "../clock/civil.js";
+import { formatTimestamp, parseTimestamp } from "../clock/civil.js";
 import {
   ACCOUNT_NAME_PATTERN,
   ENV_NAME_PATTERN,
@@ -229,7 +229,9 @@ export function validateWorldSlice(slice: unknown, where: string): WorldSlice {
         );
       stringArray(command["args"], `${at}.command.args`);
       try {
-        parseTimestamp(stringField(entry, "startedAt", at));
+        const startedAt = stringField(entry, "startedAt", at);
+        if (formatTimestamp(parseTimestamp(startedAt)) !== startedAt)
+          throw new Error("noncanonical timestamp");
       } catch {
         throw new Error(`${at}.startedAt: must be a real UTC instant`);
       }

@@ -209,7 +209,9 @@ function renderDiff(slice: GitSlice, file: GitDiffFile): string[] {
   const markedRows = rows.flatMap((row, index) => [
     row,
     ...(index === oldMarkerAt ? ["\\ No newline at end of file"] : []),
-    ...(index === newMarkerAt ? ["\\ No newline at end of file"] : []),
+    ...(index === newMarkerAt && newMarkerAt !== oldMarkerAt
+      ? ["\\ No newline at end of file"]
+      : []),
   ]);
   return [
     `diff --git a/${path} b/${path}`,

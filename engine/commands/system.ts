@@ -175,13 +175,13 @@ const MAN: CommandDefinition = {
   name: "man",
   execute(context) {
     const args = context.argv.slice(1);
-    const rejected = invalidOption("man", args);
-    if (rejected !== undefined) return rejected;
     if (args.length < 1 || args.length > 2)
       return result(EMPTY, ["man: usage: man [section] name"], 2);
     const name = args.at(-1) as string;
     const section = args.length === 2 ? args[0] : undefined;
     const page = lookupManPage(readWorldSlice(context.state), name, section);
+    const rejected = invalidOption("man", args);
+    if (page === undefined && rejected !== undefined) return rejected;
     if (page === undefined)
       return result(
         EMPTY,
