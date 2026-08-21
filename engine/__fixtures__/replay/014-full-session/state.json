@@ -1,0 +1,648 @@
+{
+  "cartridge": {
+    "meta": {
+      "assignment": "Remove the stale readiness sentinel, then verify every subsystem agrees.",
+      "date": "2026-08-05",
+      "number": 14,
+      "schemaVersion": 0,
+      "startedAt": "2026-08-05T09:14:22.000Z",
+      "title": "Full Session Fixture"
+    },
+    "models": [
+      {
+        "archetype": "paranoid",
+        "costMultiplier": 48000,
+        "description": "Thorough. Expensive. Excavation permit required.",
+        "id": "deep-foundation",
+        "name": "Deep Foundation",
+        "quirks": []
+      }
+    ],
+    "presentation": {},
+    "repository": {
+      "commands": {},
+      "cwd": "/production/service",
+      "directories": {},
+      "endpoints": {},
+      "env": {},
+      "files": {
+        "/production/service/src/ready.stale": {
+          "contents": "remove me\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src/worker.ts": {
+          "contents": "export const load = 2;\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var/log/reactions.log": {
+          "contents": "booted\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        }
+      },
+      "gitHistory": {
+        "branches": {
+          "before-ready": "before-ready",
+          "main": "before-ready"
+        },
+        "commits": [
+          {
+            "author": {
+              "email": "greg@example.test",
+              "name": "Greg Formerly"
+            },
+            "committedAt": "2026-07-31T02:11:09.000Z",
+            "files": {
+              "/production/service/src/ready.stale": {
+                "blame": [
+                  "before-ready"
+                ],
+                "contents": "remove me\n"
+              },
+              "/production/service/src/worker.ts": {
+                "blame": [
+                  "before-ready"
+                ],
+                "contents": "export const load = 2;\n"
+              }
+            },
+            "id": "before-ready",
+            "message": "add readiness sentinel\n",
+            "parents": []
+          }
+        ],
+        "head": {
+          "kind": "branch",
+          "target": "main"
+        }
+      },
+      "gitIdentity": {
+        "email": "visitor@example.test",
+        "name": "Visitor"
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      },
+      "logs": [],
+      "manPages": [],
+      "processes": [
+        {
+          "command": {
+            "args": [],
+            "binary": "/production/service/src/worker.ts"
+          },
+          "id": "worker",
+          "pid": 1200,
+          "startedAt": "2026-08-05T09:00:00.000Z",
+          "state": "stopped",
+          "user": "root"
+        }
+      ],
+      "reactions": [
+        {
+          "actions": [
+            {
+              "kind": "service-state",
+              "service": "api",
+              "state": "running"
+            },
+            {
+              "kind": "process-state",
+              "process": "worker",
+              "state": "running"
+            }
+          ],
+          "id": "start-units-after-edit",
+          "on": "vfs.delete",
+          "predicates": [
+            {
+              "exists": false,
+              "kind": "file-exists",
+              "path": "/production/service/src/ready.stale"
+            }
+          ]
+        },
+        {
+          "actions": [
+            {
+              "health": "healthy",
+              "kind": "service-health",
+              "service": "api"
+            }
+          ],
+          "id": "mark-healthy-after-units",
+          "on": "vfs.delete",
+          "predicates": [
+            {
+              "kind": "service-state",
+              "service": "api",
+              "state": "running"
+            },
+            {
+              "kind": "process-state",
+              "process": "worker",
+              "state": "running"
+            }
+          ]
+        }
+      ],
+      "services": [
+        {
+          "dependencies": [],
+          "health": "unknown",
+          "id": "api",
+          "ports": [
+            8080
+          ],
+          "state": "stopped"
+        }
+      ],
+      "shellHistory": [],
+      "system": {
+        "architecture": "x86_64",
+        "bootedAt": "2025-07-01T06:10:00.000Z",
+        "hostname": "full-session",
+        "kernelRelease": "6.1.0-load-bearing",
+        "operatingSystem": "Linux"
+      },
+      "tests": [
+        {
+          "durationMs": 750,
+          "id": "stale-sentinel",
+          "name": "stale readiness sentinel is absent",
+          "predicate": {
+            "exists": false,
+            "kind": "file-exists",
+            "path": "/production/service/src/ready.stale"
+          }
+        },
+        {
+          "durationMs": 250,
+          "id": "worker-source",
+          "name": "worker source is intact",
+          "predicate": {
+            "equals": "export const load = 2;\n",
+            "kind": "file-contents",
+            "path": "/production/service/src/worker.ts"
+          }
+        }
+      ],
+      "tickets": []
+    },
+    "story": {}
+  },
+  "clock": {
+    "elapsedMs": 2000,
+    "startMs": 1785921262000
+  },
+  "engineVersion": "0.0.0",
+  "eventCount": 20,
+  "eventSchemaVersion": 0,
+  "random": {
+    "cursors": {},
+    "seed": 3442430233
+  },
+  "seed": "2026-08-05/14/deep-foundation",
+  "slices": {
+    "git": {
+      "branches": {
+        "before-ready": "5c8c7e818ace84180423f5737dafb64af96c3425",
+        "main": "5c8c7e818ace84180423f5737dafb64af96c3425"
+      },
+      "commits": {
+        "5c8c7e818ace84180423f5737dafb64af96c3425": {
+          "author": {
+            "email": "greg@example.test",
+            "name": "Greg Formerly"
+          },
+          "committedAt": "2026-07-31T02:11:09.000Z",
+          "files": {
+            "/production/service/src/ready.stale": {
+              "blame": [
+                "5c8c7e818ace84180423f5737dafb64af96c3425"
+              ],
+              "contents": "remove me\n"
+            },
+            "/production/service/src/worker.ts": {
+              "blame": [
+                "5c8c7e818ace84180423f5737dafb64af96c3425"
+              ],
+              "contents": "export const load = 2;\n"
+            }
+          },
+          "hash": "5c8c7e818ace84180423f5737dafb64af96c3425",
+          "id": "before-ready",
+          "message": "add readiness sentinel\n",
+          "parents": []
+        }
+      },
+      "head": {
+        "kind": "branch",
+        "target": "main"
+      },
+      "identity": {
+        "email": "visitor@example.test",
+        "name": "Visitor"
+      },
+      "index": {
+        "/production/service/src/ready.stale": "remove me\n",
+        "/production/service/src/worker.ts": "export const load = 2;\n"
+      },
+      "root": "/production/service"
+    },
+    "mind": {
+      "beliefs": [
+        {
+          "health": "unknown",
+          "kind": "service-health",
+          "service": "api"
+        }
+      ],
+      "compactHistory": [],
+      "permissions": [
+        {
+          "at": "2026-08-05T09:14:24.000Z",
+          "capability": {
+            "action": "write",
+            "kind": "exact",
+            "resource": "/etc/motd"
+          },
+          "decision": "always-allow"
+        }
+      ]
+    },
+    "probe": {
+      "events": 0,
+      "values": 0
+    },
+    "tests": {
+      "runs": [
+        {
+          "cases": [
+            {
+              "durationMs": 750,
+              "id": "stale-sentinel",
+              "name": "stale readiness sentinel is absent",
+              "passed": false
+            },
+            {
+              "durationMs": 250,
+              "id": "worker-source",
+              "name": "worker source is intact",
+              "passed": true
+            }
+          ],
+          "durationMs": 1000,
+          "exitCode": 1,
+          "finishedAt": "2026-08-05T09:14:23.000Z",
+          "startedAt": "2026-08-05T09:14:22.000Z"
+        },
+        {
+          "cases": [
+            {
+              "durationMs": 750,
+              "id": "stale-sentinel",
+              "name": "stale readiness sentinel is absent",
+              "passed": true
+            },
+            {
+              "durationMs": 250,
+              "id": "worker-source",
+              "name": "worker source is intact",
+              "passed": true
+            }
+          ],
+          "durationMs": 1000,
+          "exitCode": 0,
+          "finishedAt": "2026-08-05T09:14:24.000Z",
+          "startedAt": "2026-08-05T09:14:23.000Z"
+        }
+      ]
+    },
+    "vfs": {
+      "cwd": "/production/service",
+      "entries": {
+        "/": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:24.000Z",
+          "owner": "root"
+        },
+        "/production/service/src/ready.stale": {
+          "contents": "remove me\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:24.000Z",
+          "owner": "root"
+        },
+        "/production/service/src/worker.ts": {
+          "contents": "export const load = 2;\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var/log": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var/log/reactions.log": {
+          "contents": "booted\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        }
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      }
+    },
+    "world": {
+      "env": {},
+      "logs": [],
+      "manPages": [],
+      "processes": [
+        {
+          "command": {
+            "args": [],
+            "binary": "/production/service/src/worker.ts"
+          },
+          "id": "worker",
+          "pid": 1200,
+          "startedAt": "2026-08-05T09:00:00.000Z",
+          "state": "running",
+          "user": "root"
+        }
+      ],
+      "services": [
+        {
+          "dependencies": [],
+          "health": "healthy",
+          "id": "api",
+          "ports": [
+            8080
+          ],
+          "state": "running"
+        }
+      ],
+      "shellHistory": [
+        "npm test",
+        "git status --short",
+        "rm src/ready.stale",
+        "git status --short",
+        "npm test",
+        "git checkout -- src/ready.stale"
+      ],
+      "tickets": []
+    }
+  },
+  "transcript": [
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 0,
+      "summary": "length=1",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 1,
+      "index": 1,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "FAIL stale readiness sentinel is absent (750ms)"
+        },
+        {
+          "stream": "stdout",
+          "text": "PASS worker source is intact (250ms)"
+        },
+        {
+          "stream": "stdout",
+          "text": "Tests: 1 passed, 1 failed, 2 total"
+        },
+        {
+          "stream": "stdout",
+          "text": "Time: 1000ms"
+        }
+      ],
+      "summary": "",
+      "type": "tests.run"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [],
+      "exitCode": 1,
+      "index": 2,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [],
+      "index": 3,
+      "summary": "length=2",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [],
+      "index": 4,
+      "summary": "paths=0",
+      "type": "git.status"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 5,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [],
+      "index": 6,
+      "summary": "length=3",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [],
+      "index": 7,
+      "summary": "path=\"/production/service/src/ready.stale\" removed=1",
+      "type": "vfs.delete"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 8,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [],
+      "index": 9,
+      "summary": "length=4",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [
+        "{\"path\":\"/production/service/src/ready.stale\",\"staged\":null,\"untracked\":false,\"working\":\"deleted\"}"
+      ],
+      "index": 10,
+      "summary": "paths=1",
+      "type": "git.status"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 11,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": " D src/ready.stale"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [],
+      "index": 12,
+      "summary": "length=5",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 13,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "PASS stale readiness sentinel is absent (750ms)"
+        },
+        {
+          "stream": "stdout",
+          "text": "PASS worker source is intact (250ms)"
+        },
+        {
+          "stream": "stdout",
+          "text": "Tests: 2 passed, 0 failed, 2 total"
+        },
+        {
+          "stream": "stdout",
+          "text": "Time: 1000ms"
+        }
+      ],
+      "summary": "",
+      "type": "tests.run"
+    },
+    {
+      "at": "2026-08-05T09:14:24.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 14,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:24.000Z",
+      "detail": [],
+      "index": 15,
+      "summary": "length=6",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:24.000Z",
+      "detail": [],
+      "index": 16,
+      "summary": "path=\"/production/service/src/ready.stale\" staged=false",
+      "type": "git.restore"
+    },
+    {
+      "at": "2026-08-05T09:14:24.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 17,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:24.000Z",
+      "detail": [],
+      "index": 18,
+      "summary": "decision=always-allow",
+      "type": "mind.permission-decision"
+    },
+    {
+      "at": "2026-08-05T09:14:24.000Z",
+      "detail": [],
+      "index": 19,
+      "summary": "kind=service-health",
+      "type": "mind.belief-set"
+    }
+  ]
+}

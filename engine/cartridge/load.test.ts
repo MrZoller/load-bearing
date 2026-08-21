@@ -1358,6 +1358,22 @@ describe("rejection", () => {
     }
   });
 
+  it("renders malformed cartridges as complete, actionable diagnostic text", () => {
+    try {
+      loadCartridge(loadInvalidCartridgeFixture("several-problems"));
+      expect.unreachable("the malformed fixture must not load");
+    } catch (error) {
+      expect(error).toBeInstanceOf(CartridgeValidationError);
+      expect((error as Error).message).toBe(
+        "cartridge is not valid (4 issues):\n" +
+          '  /meta/date: expected a real day of that month (1-28), found "2026-02-30"\n' +
+          "  /meta/assignment: expected a single-line string (required), found nothing\n" +
+          '  /repository/cwd: expected an absolute POSIX path, found "relative/path"\n' +
+          '  /models/0/costMultiplier: expected an integer, found "expensive"',
+      );
+    }
+  });
+
   it.each([
     [
       "git-missing-branch-tip",

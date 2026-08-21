@@ -90,6 +90,7 @@ against the replay contract.
 | `011-system-commands`       | world inspection, raw shell history, exact endpoint responses, and persistent environment, service and process transitions                                  |
 | `012-test-runner-reactions` | authored test outcomes and durations before/after a shell edit, plus ordered persistent service, process, health and dual-log reactions                     |
 | `013-agent-mind`            | timestamped exact permission and intentionally false file/service beliefs, preserving an induced divergence through replay                                  |
+| `014-full-session`          | one Phase 0 session spanning VFS mutation, Git restore, test failure and recovery, service/process reactions, permission, and belief divergence             |
 
 `002` records 1000 raw draws eight to a line with their index, so a divergence
 names the draw it started at rather than reporting that a file changed.

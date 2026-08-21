@@ -1,11 +1,11 @@
 {
   "project": "Load Bearing",
-  "phase": "idle",
+  "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": null,
-  "branch": null,
+  "current_task": "T10",
+  "branch": "factory/t10-phase-0-exit",
   "pr": null,
   "hold": false,
-  "updated": "2026-08-21T06:55:51Z"
+  "updated": "2026-08-21T06:58:05Z"
 }

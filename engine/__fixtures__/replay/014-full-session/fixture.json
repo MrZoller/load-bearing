@@ -1,0 +1,61 @@
+{
+  "name": "014-full-session",
+  "description": "A full simulated session fails tests, edits the filesystem, starts authored units, inspects Git, restores the edit, records permission, and preserves a deliberately false belief.",
+  "seed": "2026-08-05/14/deep-foundation",
+  "cartridge": "full-session",
+  "events": [
+    {
+      "type": "shell.execute",
+      "payload": { "input": "npm test" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git status --short" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm src/ready.stale" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git status --short" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "npm test" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git checkout -- src/ready.stale" },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-decision",
+      "payload": {
+        "capability": {
+          "kind": "exact",
+          "action": "write",
+          "resource": "/etc/motd"
+        },
+        "decision": "always-allow"
+      },
+      "version": 0
+    },
+    {
+      "type": "mind.belief-set",
+      "payload": {
+        "belief": {
+          "kind": "service-health",
+          "service": "api",
+          "health": "unknown"
+        }
+      },
+      "version": 0
+    }
+  ]
+}

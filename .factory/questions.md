@@ -219,7 +219,7 @@ summary history) rather than patching them.
   create. Document the replace semantics in the module's public API docs
   (already required by the task's acceptance).
 
-## Q7 (task T10, open) — What filesystem/Git coverage threshold is agreed for the Phase 0 exit gate?
+## Q7 (task T10, consumed) — What filesystem/Git coverage threshold is agreed for the Phase 0 exit gate?
 
 Context: Issue #14 and the approved plan require an agreed threshold and warn
 against silently substituting line coverage for semantic coverage, but no
@@ -256,4 +256,3 @@ Pinned details:
 - Floors may be RAISED later without a question (ratcheting up is safe);
   lowering one is a design question and stops the line.
 - Functions stay at 100% per file — already achieved everywhere.
-

@@ -2,6 +2,26 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
+    coverage: {
+      provider: "v8",
+      all: true,
+      include: [
+        "engine/vfs/{path,vfs,module}.ts",
+        "engine/git/{git,module}.ts",
+      ],
+      thresholds: {
+        perFile: true,
+        // These floors prevent any one model file from hiding behind a healthy
+        // aggregate. They are an anti-regression gate, not the meaning of
+        // "full" semantics coverage; the named behavior tests carry that
+        // contract (engine/README.md → Filesystem and Git coverage).
+        branches: 75,
+        functions: 100,
+        lines: 93,
+        statements: 93,
+      },
+      reporter: ["text"],
+    },
     // Pinned, not defaulted. `jsdom` or `happy-dom` here would hand the engine
     // a `document` and quietly retire invariant 3 — the "no DOM in the
     // engine's environment" test in engine/index.test.ts only means something

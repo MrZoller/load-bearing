@@ -10,7 +10,7 @@ import {
   parseReplayFixture,
 } from "./fixtures.js";
 import { compareRecording, replayFixture } from "./replay.js";
-import { serialize } from "../serialize/canonical.js";
+import { deserialize, serialize } from "../serialize/canonical.js";
 
 const FIXTURES = listReplayFixtures();
 
@@ -40,6 +40,39 @@ function deepFreeze(value: unknown): unknown {
 const RESOLVE_CARTRIDGE = (name: string) => ({ resolved: name });
 
 describe("golden replay fixtures", () => {
+  it("records the full session's cross-subsystem consequences", () => {
+    const recording = replayFixture(loadReplayFixture("014-full-session"));
+    const state = deserialize(recording.state) as Record<string, unknown>;
+    const slices = state["slices"] as Record<string, Record<string, unknown>>;
+    const vfs = slices["vfs"] as Record<string, unknown>;
+    const entries = vfs["entries"] as Record<string, unknown>;
+    const git = slices["git"] as Record<string, unknown>;
+    const mind = slices["mind"] as Record<string, unknown>;
+    const world = slices["world"] as Record<string, unknown>;
+
+    // The edit triggers services and a process, while checkout restores the
+    // tracked file. The belief deliberately retains the earlier observation.
+    expect(entries["/production/service/src/ready.stale"]).toMatchObject({
+      kind: "file",
+      contents: "remove me\n",
+    });
+    expect(git["head"]).toEqual({ kind: "branch", target: "main" });
+    expect(world["services"]).toMatchObject([
+      { id: "api", state: "running", health: "healthy" },
+    ]);
+    expect(world["processes"]).toMatchObject([
+      { id: "worker", state: "running" },
+    ]);
+    expect(mind["permissions"]).toMatchObject([{ decision: "always-allow" }]);
+    expect(mind["beliefs"]).toMatchObject([
+      { kind: "service-health", service: "api", health: "unknown" },
+    ]);
+    expect(recording.transcript).toContain("tests.run exit=1");
+    expect(recording.transcript).toContain("tests.run exit=0");
+    expect(recording.transcript).toContain("git.status paths=1");
+    expect(recording.transcript).toContain("git.restore");
+  });
+
   it("has fixtures to replay", () => {
     // A suite that silently found nothing would pass forever while proving
     // nothing, which is the failure mode this whole harness exists to prevent.

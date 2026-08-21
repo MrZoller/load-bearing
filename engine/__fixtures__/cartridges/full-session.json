@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 14,
+    "date": "2026-08-05",
+    "title": "Full Session Fixture",
+    "assignment": "Remove the stale readiness sentinel, then verify every subsystem agrees.",
+    "startedAt": "2026-08-05T09:14:22.000Z"
+  },
+  "repository": {
+    "cwd": "/production/service",
+    "identity": { "user": "root", "group": "root", "home": "/root" },
+    "gitIdentity": { "name": "Visitor", "email": "visitor@example.test" },
+    "system": {
+      "hostname": "full-session",
+      "operatingSystem": "Linux",
+      "kernelRelease": "6.1.0-load-bearing",
+      "architecture": "x86_64",
+      "bootedAt": "2025-07-01T06:10:00.000Z"
+    },
+    "files": {
+      "/production/service/src/ready.stale": { "contents": "remove me\n" },
+      "/production/service/src/worker.ts": {
+        "contents": "export const load = 2;\n"
+      },
+      "/var/log/reactions.log": { "contents": "booted\n" }
+    },
+    "gitHistory": {
+      "commits": [
+        {
+          "id": "before-ready",
+          "author": { "name": "Greg Formerly", "email": "greg@example.test" },
+          "message": "add readiness sentinel\n",
+          "committedAt": "2026-07-31T02:11:09.000Z",
+          "files": {
+            "/production/service/src/ready.stale": {
+              "contents": "remove me\n",
+              "blame": ["before-ready"]
+            },
+            "/production/service/src/worker.ts": {
+              "contents": "export const load = 2;\n",
+              "blame": ["before-ready"]
+            }
+          }
+        }
+      ],
+      "branches": { "main": "before-ready", "before-ready": "before-ready" },
+      "head": { "kind": "branch", "target": "main" }
+    },
+    "processes": [
+      {
+        "id": "worker",
+        "pid": 1200,
+        "user": "root",
+        "command": {
+          "binary": "/production/service/src/worker.ts",
+          "args": []
+        },
+        "startedAt": "2026-08-05T09:00:00.000Z",
+        "state": "stopped"
+      }
+    ],
+    "services": [
+      {
+        "id": "api",
+        "state": "stopped",
+        "health": "unknown",
+        "ports": [8080],
+        "dependencies": []
+      }
+    ],
+    "tests": [
+      {
+        "id": "stale-sentinel",
+        "name": "stale readiness sentinel is absent",
+        "durationMs": 750,
+        "predicate": {
+          "kind": "file-exists",
+          "path": "/production/service/src/ready.stale",
+          "exists": false
+        }
+      },
+      {
+        "id": "worker-source",
+        "name": "worker source is intact",
+        "durationMs": 250,
+        "predicate": {
+          "kind": "file-contents",
+          "path": "/production/service/src/worker.ts",
+          "equals": "export const load = 2;\n"
+        }
+      }
+    ],
+    "reactions": [
+      {
+        "id": "start-units-after-edit",
+        "on": "vfs.delete",
+        "predicates": [
+          {
+            "kind": "file-exists",
+            "path": "/production/service/src/ready.stale",
+            "exists": false
+          }
+        ],
+        "actions": [
+          { "kind": "service-state", "service": "api", "state": "running" },
+          { "kind": "process-state", "process": "worker", "state": "running" }
+        ]
+      },
+      {
+        "id": "mark-healthy-after-units",
+        "on": "vfs.delete",
+        "predicates": [
+          { "kind": "service-state", "service": "api", "state": "running" },
+          { "kind": "process-state", "process": "worker", "state": "running" }
+        ],
+        "actions": [
+          { "kind": "service-health", "service": "api", "health": "healthy" }
+        ]
+      }
+    ]
+  },
+  "models": [
+    {
+      "id": "deep-foundation",
+      "name": "Deep Foundation",
+      "archetype": "paranoid",
+      "description": "Thorough. Expensive. Excavation permit required.",
+      "costMultiplier": 48000
+    }
+  ]
+}
