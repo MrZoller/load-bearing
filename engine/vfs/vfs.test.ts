@@ -76,6 +76,29 @@ describe("VFS construction and paths", () => {
     expect(resolveVfsPath("~nobody", slice.cwd, "/root").path).toBe(
       "/production/service/~nobody",
     );
+    expect(resolveVfsPath("", slice.cwd, slice.identity.home).path).toBe("");
+  });
+
+  it("does not normalize traversal through a regular file into another path", () => {
+    const slice = fresh();
+    expect(readVfs(slice, "README.md/../src/index.ts")).toMatchObject({
+      ok: false,
+      code: "ENOTDIR",
+      path: "/production/service/README.md",
+    });
+    expect(writeVfs(slice, "README.md/../new", "x", NOW).result).toMatchObject({
+      ok: false,
+      code: "ENOTDIR",
+    });
+  });
+
+  it("rejects empty authored paths instead of targeting cwd", () => {
+    const slice = fresh();
+    expect(statVfs(slice, "")).toMatchObject({ ok: false, code: "ENOENT" });
+    expect(touchVfs(slice, "", NOW).result).toMatchObject({
+      ok: false,
+      code: "EINVAL",
+    });
   });
 
   it("lists names in Unicode code-point order", () => {
@@ -132,6 +155,18 @@ describe("VFS construction and paths", () => {
       expect(mutation.result).toMatchObject({ ok: false, code: "EINVAL" });
       expect(mutation.slice).toBe(slice);
     }
+  });
+
+  it("rejects noncanonical snapshot mtime spellings", () => {
+    const slice = mutableSlice();
+    const entry = slice.entries["/etc/motd"] as VfsEntry;
+    (slice.entries as Record<string, VfsEntry>)["/etc/motd"] = {
+      ...entry,
+      mtime: "2026-08-05T09:14:22Z",
+    };
+    expect(() => validateVfsSlice(slice, "snapshot: slices.vfs")).toThrow(
+      /mtime: must be a real fixed-width UTC instant/,
+    );
   });
 });
 

@@ -23,6 +23,7 @@ import {
   commitGit,
   createGitSlice,
   diffGit,
+  inheritedLineSources,
   logGit,
   restoreGit,
   showGit,
@@ -155,7 +156,12 @@ export function validateGitSlice(slice: unknown, where: string): GitSlice {
     const author = record(commit["author"], `${commitWhere}.author`);
     fields(author, ["name", "email"], `${commitWhere}.author`);
     stringField(author, "name", `${commitWhere}.author`);
-    stringField(author, "email", `${commitWhere}.author`);
+    if (
+      !GIT_EMAIL_PATTERN.test(
+        stringField(author, "email", `${commitWhere}.author`),
+      )
+    )
+      throw new Error(`${commitWhere}.author.email: must be an email address`);
     for (const parent of stringArray(
       commit["parents"],
       `${commitWhere}.parents`,
@@ -194,10 +200,32 @@ export function validateGitSlice(slice: unknown, where: string): GitSlice {
         throw new Error(
           `${commitWhere}.files[${JSON.stringify(path)}].blame: must contain one commit hash per logical line (${String(lineCount)}), got ${String(blame.length)}`,
         );
-      for (const source of blame)
+      for (let index = 0; index < blame.length; index += 1) {
+        const source = blame[index] as string;
         if (!Object.hasOwn(commits, source))
           throw new Error(
             `${commitWhere}.files: blame references missing commit ${source}`,
+          );
+      }
+    }
+  }
+  const typedCommits = commits as Readonly<
+    Record<string, GitSlice["commits"][string]>
+  >;
+  for (const [hash, commit] of Object.entries(typedCommits)) {
+    const parentHash = commit.parents[0];
+    const parent =
+      parentHash === undefined ? undefined : typedCommits[parentHash];
+    for (const [path, file] of Object.entries(commit.files)) {
+      const expected = inheritedLineSources(
+        parent?.files[path],
+        file.contents,
+        hash,
+      );
+      for (let index = 0; index < file.blame.length; index += 1)
+        if (file.blame[index] !== expected[index])
+          throw new Error(
+            `${where}.commits[${JSON.stringify(hash)}].files[${JSON.stringify(path)}].blame[${String(index)}]: must follow first-parent provenance`,
           );
     }
   }

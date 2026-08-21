@@ -12,6 +12,9 @@ import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { executeCommand } from "../commands/registry.js";
 import { BUILTIN_COMMAND_REGISTRY } from "../commands/builtins.js";
 import { readTestsSlice } from "./module.js";
+import { evaluateFilePredicate } from "./planner.js";
+import { readVfsSlice } from "../vfs/module.js";
+import type { VfsSlice } from "../vfs/types.js";
 
 function cartridge(override = false) {
   const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
@@ -152,6 +155,40 @@ describe("simulated tests", () => {
     );
   });
 
+  it("requires file-exists to name a file and treats ENOTDIR as absence", () => {
+    const state = bootstrap({ cartridge: cartridge(), seed: "file-kind" });
+    const vfs = JSON.parse(JSON.stringify(readVfsSlice(state))) as VfsSlice;
+    const entries = vfs.entries as Record<string, unknown>;
+    const readme = "/production/service/README.md";
+    const readmeEntry = entries[readme] as Record<string, unknown>;
+    entries[readme] = { ...readmeEntry, kind: "directory" };
+    delete (entries[readme] as Record<string, unknown>)["contents"];
+    expect(
+      evaluateFilePredicate(
+        { kind: "file-exists", path: readme, exists: true },
+        vfs,
+      ),
+    ).toBe(false);
+
+    const blocked = JSON.parse(JSON.stringify(readVfsSlice(state))) as VfsSlice;
+    const blockedEntries = blocked.entries as Record<string, unknown>;
+    blockedEntries["/production/service/src"] = {
+      ...readmeEntry,
+      kind: "file",
+      contents: "not a directory\n",
+    };
+    expect(
+      evaluateFilePredicate(
+        {
+          kind: "file-exists",
+          path: "/production/service/src/index.ts",
+          exists: false,
+        },
+        blocked,
+      ),
+    ).toBe(true);
+  });
+
   it("rejects test history snapshots whose derived timing is incoherent", () => {
     const state = step(
       bootstrap({ cartridge: cartridge(), seed: "snapshot" }),
@@ -165,6 +202,27 @@ describe("simulated tests", () => {
     first["finishedAt"] = first["startedAt"];
     expect(() => restoreSnapshot(JSON.stringify(parsed))).toThrow(
       /timestamps must span durationMs exactly/,
+    );
+  });
+
+  it("rejects noncanonical test-run timestamp spellings on restore", () => {
+    const state = step(
+      bootstrap({ cartridge: cartridge(), seed: "timestamp" }),
+      {
+        type: "tests.run",
+        payload: {},
+      },
+    );
+    const parsed = JSON.parse(snapshot(state)) as Record<string, unknown>;
+    const tests = (parsed["slices"] as Record<string, unknown>)["tests"] as {
+      runs: Record<string, unknown>[];
+    };
+    const first = tests.runs[0];
+    if (first === undefined) throw new Error("test run was not recorded");
+    first["startedAt"] = "2026-08-05T09:14:22Z";
+    first["finishedAt"] = "2026-08-05T09:14:23.5Z";
+    expect(() => restoreSnapshot(JSON.stringify(parsed))).toThrow(
+      /timestamps must be real fixed-width UTC instants/,
     );
   });
 

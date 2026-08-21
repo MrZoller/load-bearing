@@ -454,6 +454,7 @@ function applyReactions(
   const maxDerivedEvents = 1024;
   let state = initial;
   const queue = [...sourceTypes];
+  let derivedEvents = 0;
   for (let cursor = 0; cursor < queue.length; cursor += 1) {
     const sourceType = queue[cursor];
     if (sourceType === undefined) continue;
@@ -472,6 +473,11 @@ function applyReactions(
       ) {
         const action = reaction.actions[actionIndex];
         if (action === undefined) continue;
+        if (derivedEvents >= maxDerivedEvents) {
+          throw new Error(
+            `${where}: reaction cascade exceeds the ${String(maxDerivedEvents)} derived-event limit`,
+          );
+        }
         const event = reactionActionEvent(action);
         state = applyReactionEvent(
           state,
@@ -479,11 +485,7 @@ function applyReactions(
           registry,
           `${where} reaction ${JSON.stringify(reaction.id)} action ${String(actionIndex)}`,
         );
-        if (queue.length >= maxDerivedEvents) {
-          throw new Error(
-            `${where}: reaction cascade exceeds the ${String(maxDerivedEvents)} derived-event limit`,
-          );
-        }
+        derivedEvents += 1;
         queue.push(event.type);
       }
     }

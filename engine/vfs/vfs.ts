@@ -13,6 +13,7 @@ import {
   isDescendant,
   parentPath,
   resolveVfsPath,
+  vfsTraversalPaths,
 } from "./path.js";
 import type {
   VfsCopyOptions,
@@ -136,6 +137,36 @@ function traversalFailure(
       return frozenFailure(
         operation,
         current,
+        "EACCES",
+        "search permission is denied",
+      );
+  }
+  return undefined;
+}
+
+function authoredTraversalFailure(
+  slice: VfsSlice,
+  input: string,
+  operation: string,
+): VfsFailure | undefined {
+  for (const path of vfsTraversalPaths(input, slice.cwd, slice.identity.home)) {
+    const entry = slice.entries[path];
+    // Creation operations may deliberately supply missing intermediate paths
+    // (`mkdir -p`). Canonical operation handling decides whether absence is
+    // allowed; this authored walk exists to retain regular-file semantics that
+    // lexical `..` normalization would otherwise erase.
+    if (entry === undefined) continue;
+    if (entry.kind !== "directory")
+      return frozenFailure(
+        operation,
+        path,
+        "ENOTDIR",
+        "an intermediate path is not a directory",
+      );
+    if (!permits(slice, entry, 1))
+      return frozenFailure(
+        operation,
+        path,
         "EACCES",
         "search permission is denied",
       );
@@ -279,6 +310,8 @@ export function readVfs(
   slice: VfsSlice,
   input: string,
 ): VfsResult<VfsReadValue> {
+  const authoredDenied = authoredTraversalFailure(slice, input, "read");
+  if (authoredDenied !== undefined) return authoredDenied;
   const resolved = resolveVfsPath(input, slice.cwd, slice.identity.home);
   const denied = traversalFailure(slice, resolved.path, "read");
   if (denied !== undefined) return denied;
@@ -314,6 +347,8 @@ export function statVfs(
   slice: VfsSlice,
   input: string,
 ): VfsResult<VfsStatValue> {
+  const authoredDenied = authoredTraversalFailure(slice, input, "stat");
+  if (authoredDenied !== undefined) return authoredDenied;
   const resolved = resolveVfsPath(input, slice.cwd, slice.identity.home);
   const denied = traversalFailure(slice, resolved.path, "stat");
   if (denied !== undefined) return denied;
@@ -334,6 +369,8 @@ export function listVfs(
   slice: VfsSlice,
   input: string,
 ): VfsResult<readonly VfsListItem[]> {
+  const authoredDenied = authoredTraversalFailure(slice, input, "list");
+  if (authoredDenied !== undefined) return authoredDenied;
   const resolved = resolveVfsPath(input, slice.cwd, slice.identity.home);
   const denied = traversalFailure(slice, resolved.path, "list");
   if (denied !== undefined) return denied;
@@ -373,6 +410,8 @@ export function writeVfs(
   contents: string,
   now: string,
 ): VfsMutation<{ readonly path: string; readonly created: boolean }> {
+  const authoredDenied = authoredTraversalFailure(slice, input, "write");
+  if (authoredDenied !== undefined) return unchanged(slice, authoredDenied);
   const resolved = resolveVfsPath(input, slice.cwd, slice.identity.home);
   const invalid = invalidMutationPathFailure(resolved.path, "write");
   if (invalid !== undefined) return unchanged(slice, invalid);
@@ -448,6 +487,8 @@ export function touchVfs(
   input: string,
   now: string,
 ): VfsMutation<{ readonly path: string; readonly created: boolean }> {
+  const authoredDenied = authoredTraversalFailure(slice, input, "touch");
+  if (authoredDenied !== undefined) return unchanged(slice, authoredDenied);
   const resolved = resolveVfsPath(input, slice.cwd, slice.identity.home);
   const existing = slice.entries[resolved.path];
   if (existing === undefined) return writeVfs(slice, input, "", now);
@@ -493,6 +534,8 @@ export function chdirVfs(
   slice: VfsSlice,
   input: string,
 ): VfsMutation<{ readonly path: string }> {
+  const authoredDenied = authoredTraversalFailure(slice, input, "chdir");
+  if (authoredDenied !== undefined) return unchanged(slice, authoredDenied);
   const resolved = resolveVfsPath(input, slice.cwd, slice.identity.home);
   const denied = traversalFailure(slice, resolved.path, "chdir");
   if (denied !== undefined) return unchanged(slice, denied);
@@ -540,6 +583,8 @@ export function mkdirVfs(
   now: string,
   parents = false,
 ): VfsMutation<{ readonly paths: readonly string[] }> {
+  const authoredDenied = authoredTraversalFailure(slice, input, "mkdir");
+  if (authoredDenied !== undefined) return unchanged(slice, authoredDenied);
   const resolved = resolveVfsPath(input, slice.cwd, slice.identity.home);
   const invalid = invalidMutationPathFailure(resolved.path, "mkdir");
   if (invalid !== undefined) return unchanged(slice, invalid);
@@ -666,6 +711,8 @@ export function deleteVfs(
   recursive = false,
   refuseDirectory = false,
 ): VfsMutation<{ readonly path: string; readonly removed: number }> {
+  const authoredDenied = authoredTraversalFailure(slice, input, "delete");
+  if (authoredDenied !== undefined) return unchanged(slice, authoredDenied);
   const resolved = resolveVfsPath(input, slice.cwd, slice.identity.home);
   const invalid = invalidMutationPathFailure(resolved.path, "delete");
   if (invalid !== undefined) return unchanged(slice, invalid);
@@ -771,6 +818,20 @@ export function renameVfs(
   destinationInput: string,
   now: string,
 ): VfsMutation<{ readonly from: string; readonly to: string }> {
+  const sourceAuthoredDenied = authoredTraversalFailure(
+    slice,
+    sourceInput,
+    "rename",
+  );
+  if (sourceAuthoredDenied !== undefined)
+    return unchanged(slice, sourceAuthoredDenied);
+  const destinationAuthoredDenied = authoredTraversalFailure(
+    slice,
+    destinationInput,
+    "rename",
+  );
+  if (destinationAuthoredDenied !== undefined)
+    return unchanged(slice, destinationAuthoredDenied);
   const source = resolveVfsPath(sourceInput, slice.cwd, slice.identity.home);
   const authoredDestination = resolveVfsPath(
     destinationInput,
@@ -940,6 +1001,20 @@ export function copyVfs(
   readonly to: string;
   readonly copied: number;
 }> {
+  const sourceAuthoredDenied = authoredTraversalFailure(
+    slice,
+    sourceInput,
+    "copy",
+  );
+  if (sourceAuthoredDenied !== undefined)
+    return unchanged(slice, sourceAuthoredDenied);
+  const destinationAuthoredDenied = authoredTraversalFailure(
+    slice,
+    destinationInput,
+    "copy",
+  );
+  if (destinationAuthoredDenied !== undefined)
+    return unchanged(slice, destinationAuthoredDenied);
   const source = resolveVfsPath(sourceInput, slice.cwd, slice.identity.home);
   const authoredDestination = resolveVfsPath(
     destinationInput,
@@ -1076,6 +1151,8 @@ export function chmodVfs(
   input: string,
   mode: string,
 ): VfsMutation<{ readonly path: string; readonly mode: string }> {
+  const authoredDenied = authoredTraversalFailure(slice, input, "chmod");
+  if (authoredDenied !== undefined) return unchanged(slice, authoredDenied);
   const resolved = resolveVfsPath(input, slice.cwd, slice.identity.home);
   const invalid = invalidMutationPathFailure(resolved.path, "chmod");
   if (invalid !== undefined) return unchanged(slice, invalid);

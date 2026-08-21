@@ -1,6 +1,6 @@
 /** Stateful simulated test runs and their snapshot contract. */
 
-import { parseTimestamp } from "../clock/civil.js";
+import { formatTimestamp, parseTimestamp } from "../clock/civil.js";
 import { defineEventModule } from "../events/module.js";
 import { requirePayload } from "../events/payload.js";
 import { readSlice } from "../events/state.js";
@@ -63,8 +63,11 @@ function validateRun(value: unknown, where: string): TestRun {
   const startedAt = string(run["startedAt"], `${where}.startedAt`);
   const finishedAt = string(run["finishedAt"], `${where}.finishedAt`);
   try {
-    parseTimestamp(startedAt);
-    parseTimestamp(finishedAt);
+    if (
+      formatTimestamp(parseTimestamp(startedAt)) !== startedAt ||
+      formatTimestamp(parseTimestamp(finishedAt)) !== finishedAt
+    )
+      throw new Error("noncanonical timestamp");
   } catch {
     throw new Error(
       `${where}: timestamps must be real fixed-width UTC instants`,

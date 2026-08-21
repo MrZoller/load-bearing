@@ -163,9 +163,10 @@ questions); agents load the `factory-protocol` skill before factory work.
   the loaded cartridge and two spellings of one instant would produce
   different `state.json` bytes.
 - **Strict everywhere:** unknown cartridge fields are rejected (not ignored);
-  `story`/`presentation` and the git/process/service/log/test interiors are
-  declared-but-not-validated in v0 (deferred on purpose, owner named in the
-  schema); deferred subtrees cap at 64 levels of nesting.
+  `story`/`presentation` are declared-but-not-validated in v0 (deferred on
+  purpose, owner named in the schema); repository Git, process, service, log,
+  and test interiors are concrete and validated. Deferred subtrees cap at 64
+  levels of nesting.
 - **No lint tooling.** There is no ESLint. The closest to lint is the
   `tsc --noEmit` stage of typecheck plus the purity gate. `docs/` prose is
   hand-formatted and prettier-skipped — don't let Prettier churn it.

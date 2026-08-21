@@ -303,4 +303,28 @@ describe("post-event reactions", () => {
     ).toThrow(/reaction cascade exceeds the 1024 derived-event limit/);
     expect(snapshot(before)).toBe(bytes);
   });
+
+  it("does not count shell expansion source events against the cascade limit", () => {
+    const value = source();
+    const repo = repository(value);
+    repo["reactions"] = [
+      {
+        id: "one-result-reaction",
+        on: "shell.result",
+        predicates: [],
+        actions: [{ kind: "log-append", log: "events", entry: "complete" }],
+      },
+    ];
+    const before = bootstrap({
+      cartridge: loadCartridge(value),
+      seed: "reaction-source-events",
+    });
+    const after = step(
+      before,
+      createShellExecuteEvent(`touch ${"a ".repeat(1024)}`),
+    );
+    expect(
+      readWorldSlice(after).logs.find((log) => log.id === "events")?.entries,
+    ).toContain("complete");
+  });
 });

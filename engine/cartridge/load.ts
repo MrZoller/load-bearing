@@ -862,6 +862,10 @@ function checkCwd(repository: CartridgeRepository, report: Report): void {
     "/repository/files",
     Object.keys(repository.files),
   );
+  const usableDirectories = report.usableKeys(
+    "/repository/directories",
+    Object.keys(repository.directories),
+  );
 
   // With nothing readable, there is no answer — only an absence of one, and
   // "contains no files" would be a second complaint about the first mistake.
@@ -897,9 +901,9 @@ function checkCwd(repository: CartridgeRepository, report: Report): void {
   }
 
   const contained =
-    Object.hasOwn(repository.directories, repository.cwd) ||
+    usableDirectories.includes(repository.cwd) ||
     usable.some((path) => path.startsWith(prefix)) ||
-    Object.keys(repository.directories).some((path) => path.startsWith(prefix));
+    usableDirectories.some((path) => path.startsWith(prefix));
   if (!contained) {
     report.addPhrase(
       "/repository/cwd",
@@ -1122,6 +1126,15 @@ function checkGitHistory(
         );
         continue;
       }
+      const firstParent = commit.parents[0];
+      const parentFile =
+        firstParent === undefined
+          ? undefined
+          : byId.get(firstParent)?.commit.files[path];
+      const inherited = inheritedGitLines(
+        gitLines(parentFile?.contents ?? ""),
+        lines,
+      );
       file.blame.forEach((sourceId, lineIndex) => {
         const source = byId.get(sourceId)?.commit;
         const pointer = `${filePointer}/blame/${String(lineIndex)}`;
@@ -1133,15 +1146,6 @@ function checkGitHistory(
           );
           return;
         }
-        const firstParent = commit.parents[0];
-        const parentFile =
-          firstParent === undefined
-            ? undefined
-            : byId.get(firstParent)?.commit.files[path];
-        const inherited = inheritedGitLines(
-          gitLines(parentFile?.contents ?? ""),
-          lines,
-        );
         const parentLine = inherited.get(lineIndex);
         const expectedSource =
           parentLine === undefined ? commit.id : parentFile?.blame[parentLine];

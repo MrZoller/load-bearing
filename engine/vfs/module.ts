@@ -1,6 +1,6 @@
 /** Event registration and snapshot boundary for the virtual filesystem. */
 
-import { parseTimestamp } from "../clock/civil.js";
+import { formatTimestamp, parseTimestamp } from "../clock/civil.js";
 import {
   ABSOLUTE_PATH_PATTERN,
   ACCOUNT_NAME_PATTERN,
@@ -155,7 +155,8 @@ function validateMetadata(
   if (!ACCOUNT_NAME_PATTERN.test(group))
     throw new Error(`${where}.group: must be a POSIX group name`);
   try {
-    parseTimestamp(mtime);
+    if (formatTimestamp(parseTimestamp(mtime)) !== mtime)
+      throw new Error("noncanonical timestamp");
   } catch {
     throw new Error(`${where}.mtime: must be a real fixed-width UTC instant`);
   }
