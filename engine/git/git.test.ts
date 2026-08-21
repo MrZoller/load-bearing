@@ -14,8 +14,11 @@ import {
   checkoutGit,
   commitGit,
   createGitSlice,
+  currentGitHash,
+  currentGitHead,
   diffGit,
   gitAddCwdPaths,
+  inheritedLineSources,
   logGit,
   resolveGitRef,
   restoreGit,
@@ -41,6 +44,48 @@ const NOW = "2026-08-05T09:14:22.000Z";
 const FILE = "/production/service/src/index.ts";
 
 describe("the Git model", () => {
+  it("reports empty, missing, and no-op Git states without borrowing host behavior", () => {
+    const { git, vfs } = world();
+    const empty = { ...git, head: { kind: "detached", target: "" } as const };
+    expect(currentGitHash(empty)).toBeUndefined();
+    expect(currentGitHead(empty)).toEqual({ kind: "detached", target: "" });
+    expect(resolveGitRef(empty, "HEAD")).toMatchObject({
+      ok: false,
+      code: "NOT_FOUND",
+    });
+    expect(logGit(empty)).toEqual([]);
+    expect(blameGit(git, "/missing")).toMatchObject({
+      ok: false,
+      code: "NOT_FOUND",
+    });
+    expect(blameGit(git, FILE, "missing")).toMatchObject({
+      ok: false,
+      code: "NOT_FOUND",
+    });
+    expect(stageGit(git, vfs, ["/missing"]).result).toMatchObject({
+      ok: false,
+      code: "NOT_FOUND",
+    });
+    expect(branchGit(empty, "investigation").result).toMatchObject({
+      ok: false,
+      code: "INVALID",
+    });
+    expect(commitGit(git, " ", NOW).result).toMatchObject({
+      ok: false,
+      code: "INVALID",
+    });
+    expect(commitGit(git, "message", "bad").result).toMatchObject({
+      ok: false,
+      code: "INVALID",
+    });
+    expect(commitGit(git, "message", NOW).result).toMatchObject({
+      ok: false,
+      code: "INVALID",
+    });
+    expect(inheritedLineSources(undefined, "new\n", "created")).toEqual([
+      "created",
+    ]);
+  });
   it("derives identity from commit content rather than authored ids", () => {
     const original = world().git;
     const renamed = source();

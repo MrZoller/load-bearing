@@ -4,7 +4,15 @@ import { loadCartridge } from "../cartridge/load.js";
 import { reduce } from "../events/reduce.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { validateVfsSlice } from "./module.js";
-import { compareVfsNames, resolveVfsPath } from "./path.js";
+import {
+  baseName,
+  compareVfsNames,
+  isAtOrBelow,
+  isDescendant,
+  parentPath,
+  resolveVfsPath,
+  vfsTraversalPaths,
+} from "./path.js";
 import type { VfsEntry, VfsSlice } from "./types.js";
 import {
   chmodVfs,
@@ -15,6 +23,7 @@ import {
   listVfs,
   mkdirVfs,
   readVfs,
+  replaceVfsFiles,
   renameVfs,
   statVfs,
   touchVfs,
@@ -43,6 +52,30 @@ function successful<T>(mutation: {
 }
 
 describe("VFS construction and paths", () => {
+  it("keeps authored traversal, containment, and name ordering semantics explicit", () => {
+    expect(
+      vfsTraversalPaths("~/work/./child/../file", "/", "/home/me"),
+    ).toEqual([
+      "/home",
+      "/home/me",
+      "/home/me/work",
+      "/home/me/work",
+      "/home/me/work/child",
+      "/home/me/work/child",
+    ]);
+    expect(parentPath("/")).toBe("/");
+    expect(parentPath("/one")).toBe("/");
+    expect(baseName("/")).toBe("/");
+    expect(baseName("/one/two")).toBe("two");
+    expect(isDescendant("/a/b", "/a")).toBe(true);
+    expect(isDescendant("/a", "/")).toBe(true);
+    expect(isDescendant("/", "/")).toBe(false);
+    expect(isAtOrBelow("/a", "/a")).toBe(true);
+    expect(isAtOrBelow("/a", "/")).toBe(true);
+    expect(isAtOrBelow("/ab", "/a")).toBe(false);
+    expect(compareVfsNames("same", "same")).toBe(0);
+    expect(compareVfsNames("a", "ab")).toBeLessThan(0);
+  });
   it("hydrates root and implicit directories while retaining explicit metadata", () => {
     const slice = fresh();
     expect(slice.entries["/"]).toMatchObject({
@@ -171,6 +204,153 @@ describe("VFS construction and paths", () => {
 });
 
 describe("VFS permissions and mutations", () => {
+  it("returns precise failures for ordinary file, directory, and metadata operations", () => {
+    const slice = fresh();
+    expect(readVfs(slice, "src")).toMatchObject({ ok: false, code: "EISDIR" });
+    expect(readVfs(slice, "README.md/")).toMatchObject({
+      ok: false,
+      code: "ENOTDIR",
+    });
+    expect(statVfs(slice, "README.md/")).toMatchObject({
+      ok: false,
+      code: "ENOTDIR",
+    });
+    expect(listVfs(slice, "README.md")).toMatchObject({
+      ok: false,
+      code: "ENOTDIR",
+    });
+    expect(writeVfs(slice, "src/", "x", NOW).result).toMatchObject({
+      ok: false,
+      code: "EISDIR",
+    });
+    expect(writeVfs(slice, "src", "x", NOW).result).toMatchObject({
+      ok: false,
+      code: "EISDIR",
+    });
+    expect(touchVfs(slice, "README.md/", NOW).result).toMatchObject({
+      ok: false,
+      code: "ENOTDIR",
+    });
+    expect(chdirVfs(slice, "README.md").result).toMatchObject({
+      ok: false,
+      code: "ENOTDIR",
+    });
+    expect(chdirVfs(slice, "missing").result).toMatchObject({
+      ok: false,
+      code: "ENOENT",
+    });
+    expect(chdirVfs(slice, ".").slice).toBe(slice);
+    expect(mkdirVfs(slice, "/", NOW).result).toMatchObject({
+      ok: false,
+      code: "EEXIST",
+    });
+    expect(mkdirVfs(slice, "/", NOW, true).result).toEqual({
+      ok: true,
+      value: { paths: [] },
+    });
+    expect(mkdirVfs(slice, "README.md", NOW, true).result).toMatchObject({
+      ok: false,
+      code: "EEXIST",
+    });
+    expect(deleteVfs(slice, "missing", NOW).result).toMatchObject({
+      ok: false,
+      code: "ENOENT",
+    });
+    expect(deleteVfs(slice, "README.md/", NOW).result).toMatchObject({
+      ok: false,
+      code: "ENOTDIR",
+    });
+    expect(deleteVfs(slice, "/", NOW).result).toMatchObject({
+      ok: false,
+      code: "EBUSY",
+    });
+    expect(chmodVfs(slice, "missing", "0600").result).toMatchObject({
+      ok: false,
+      code: "ENOENT",
+    });
+    expect(chmodVfs(slice, "README.md", "bad").result).toMatchObject({
+      ok: false,
+      code: "EINVAL",
+    });
+    expect(chmodVfs(slice, "README.md/", "0600").result).toMatchObject({
+      ok: false,
+      code: "ENOTDIR",
+    });
+  });
+
+  it("makes recursive transfer and replacement reject unsafe paths without partial state", () => {
+    let slice = successful(mkdirVfs(fresh(), "tree/nested", NOW, true));
+    slice = successful(writeVfs(slice, "tree/nested/secret", "x", NOW));
+    expect(copyVfs(slice, "tree", "copy", NOW).result).toMatchObject({
+      ok: false,
+      code: "EISDIR",
+    });
+    expect(
+      copyVfs(slice, "tree", "tree/nested/copy", NOW, { recursive: true })
+        .result,
+    ).toMatchObject({ ok: false, code: "EINVAL" });
+    expect(
+      renameVfs(slice, "tree", "tree/nested/moved", NOW).result,
+    ).toMatchObject({ ok: false, code: "EINVAL" });
+    expect(copyVfs(slice, "missing", "copy", NOW).result).toMatchObject({
+      ok: false,
+      code: "ENOENT",
+    });
+    expect(renameVfs(slice, "missing", "moved", NOW).result).toMatchObject({
+      ok: false,
+      code: "ENOENT",
+    });
+    expect(copyVfs(slice, "README.md", "missing/", NOW).result).toMatchObject({
+      ok: false,
+      code: "ENOENT",
+    });
+    expect(renameVfs(slice, "README.md", "missing/", NOW).result).toMatchObject(
+      { ok: false, code: "ENOENT" },
+    );
+    expect(copyVfs(slice, "README.md", "README.md", NOW).result).toMatchObject({
+      ok: false,
+      code: "EEXIST",
+    });
+    expect(renameVfs(slice, "README.md", "README.md", NOW).result).toEqual({
+      ok: true,
+      value: {
+        from: "/production/service/README.md",
+        to: "/production/service/README.md",
+      },
+    });
+    const noRead = {
+      ...slice,
+      identity: { ...slice.identity, user: "nobody", group: "nobody" },
+      entries: {
+        ...slice.entries,
+        "/production/service/tree/nested/secret": {
+          ...slice.entries["/production/service/tree/nested/secret"]!,
+          mode: "0000",
+        },
+      },
+    };
+    expect(
+      copyVfs(noRead, "tree", "copy", NOW, { recursive: true }).result,
+    ).toMatchObject({ ok: false, code: "EACCES" });
+    const replacement = replaceVfsFiles(
+      slice,
+      ["/production/service/tree/nested/secret"],
+      {},
+      NOW,
+    );
+    expect(replacement.result).toEqual({
+      ok: true,
+      value: { removed: 1, written: 0 },
+    });
+    expect(
+      replaceVfsFiles(
+        replacement.slice,
+        ["/production/service/tree/nested/secret"],
+        {},
+        NOW,
+      ).result,
+    ).toEqual({ ok: true, value: { removed: 0, written: 0 } });
+  });
   it("uses owner, group, other, root, traversal, and parent permissions with structured failures", () => {
     const slice = fresh();
     expect(readVfs(slice, "/etc/motd")).toMatchObject({ ok: true });

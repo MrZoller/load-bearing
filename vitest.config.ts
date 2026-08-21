@@ -2,6 +2,22 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
+    coverage: {
+      provider: "v8",
+      all: true,
+      include: [
+        "engine/vfs/{path,vfs,module}.ts",
+        "engine/git/{git,module}.ts",
+      ],
+      thresholds: {
+        perFile: true,
+        branches: 100,
+        functions: 100,
+        lines: 100,
+        statements: 100,
+      },
+      reporter: ["text"],
+    },
     // Pinned, not defaulted. `jsdom` or `happy-dom` here would hand the engine
     // a `document` and quietly retire invariant 3 — the "no DOM in the
     // engine's environment" test in engine/index.test.ts only means something

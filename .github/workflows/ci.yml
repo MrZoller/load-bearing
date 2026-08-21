@@ -56,6 +56,13 @@ jobs:
       - name: Purity gate
         run: npm run gate:purity
 
+      # "Full unit coverage" is mechanical only when additions cannot lower
+      # it silently. The named VFS/Git semantics tests provide the meaning;
+      # this threshold makes every executable path in those models answer to
+      # one of them.
+      - name: Filesystem and Git coverage
+        run: npm run test:coverage
+
       # Includes the golden replay suite. A recorded fixture that differs by a
       # single byte fails here; CI never re-records.
       #

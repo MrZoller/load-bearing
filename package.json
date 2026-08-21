@@ -10,6 +10,7 @@
   },
   "scripts": {
     "test": "vitest run",
+    "test:coverage": "TZ=UTC vitest run --coverage",
     "test:watch": "vitest",
     "test:timezones": "TZ=UTC npm test && TZ=Asia/Tokyo npm test",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.engine.json --noEmit",
@@ -18,10 +19,11 @@
     "gate:purity": "node scripts/gate-purity.mjs",
     "fixtures:update": "vite-node scripts/update-fixtures.ts",
     "schema:update": "vite-node scripts/update-schema.ts",
-    "verify": "npm run typecheck && npm run format:check && npm run gate:purity && npm run test:timezones"
+    "verify": "npm run typecheck && npm run format:check && npm run gate:purity && npm run test:coverage && npm run test:timezones"
   },
   "devDependencies": {
     "@types/node": "^22.10.7",
+    "@vitest/coverage-v8": "^3.2.7",
     "prettier": "^3.4.2",
     "typescript": "^5.7.3",
     "vite-node": "^3.0.5",

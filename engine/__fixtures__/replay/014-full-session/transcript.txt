@@ -1,0 +1,30 @@
+0000  2026-08-05T09:14:22.000Z  world.history-append length=1
+0001  2026-08-05T09:14:22.000Z  tests.run exit=1
+      stdout> FAIL stale readiness sentinel is absent (750ms)
+      stdout> PASS worker source is intact (250ms)
+      stdout> Tests: 1 passed, 1 failed, 2 total
+      stdout> Time: 1000ms
+0002  2026-08-05T09:14:23.000Z  shell.result exit=1
+0003  2026-08-05T09:14:23.000Z  world.history-append length=2
+0004  2026-08-05T09:14:23.000Z  git.status paths=0
+0005  2026-08-05T09:14:23.000Z  shell.result exit=0
+0006  2026-08-05T09:14:23.000Z  world.history-append length=3
+0007  2026-08-05T09:14:23.000Z  vfs.delete path="/production/service/src/ready.stale" removed=1
+0008  2026-08-05T09:14:23.000Z  shell.result exit=0
+0009  2026-08-05T09:14:23.000Z  world.history-append length=4
+0010  2026-08-05T09:14:23.000Z  git.status paths=1
+      {"path":"/production/service/src/ready.stale","staged":null,"untracked":false,"working":"deleted"}
+0011  2026-08-05T09:14:23.000Z  shell.result exit=0
+      stdout>  D src/ready.stale
+0012  2026-08-05T09:14:23.000Z  world.history-append length=5
+0013  2026-08-05T09:14:23.000Z  tests.run exit=0
+      stdout> PASS stale readiness sentinel is absent (750ms)
+      stdout> PASS worker source is intact (250ms)
+      stdout> Tests: 2 passed, 0 failed, 2 total
+      stdout> Time: 1000ms
+0014  2026-08-05T09:14:24.000Z  shell.result exit=0
+0015  2026-08-05T09:14:24.000Z  world.history-append length=6
+0016  2026-08-05T09:14:24.000Z  git.restore path="/production/service/src/ready.stale" staged=false
+0017  2026-08-05T09:14:24.000Z  shell.result exit=0
+0018  2026-08-05T09:14:24.000Z  mind.permission-decision decision=always-allow
+0019  2026-08-05T09:14:24.000Z  mind.belief-set kind=service-health
