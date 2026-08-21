@@ -45,7 +45,7 @@ remains blocked until review findings are deliberately batched into it.
   - acceptance: cartridge test predicates produce stable output, exit codes, timestamps, and VFS-reactive results; data-defined reaction rules update services, processes, and logs in documented deterministic order; missing references and rule cycles fail cartridge load with useful errors; fixtures prove before/after-edit test output and byte-identical reactions without incident behavior in engine code
   - deps: T3, T5, T7
   - pr: 32
-- [!] T9 (standard) — Agent mind state: permission ledger and belief state (Fixes #13)
+- [~] T9 (standard) — Agent mind state: permission ledger and belief state (Fixes #13)
   - acceptance: engine mind-state modules record grant, deny, and standing permission decisions with simulated timestamps; belief state is separately serialized and exposes queryable divergence from world truth; isolation tests prove belief changes cannot mutate VFS/git/services and world changes cannot silently correct belief; a replay preserves induced divergence and purity passes
   - deps: T8
 - [ ] T10 (standard) — Phase 0 exit: end-to-end replay, coverage gate, DoD verification (Fixes #14)
