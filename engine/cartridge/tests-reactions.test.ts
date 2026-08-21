@@ -250,4 +250,29 @@ describe("test and reaction cartridge contracts", () => {
       ]),
     );
   });
+
+  it("bounds reaction rules and actions before they can amplify a cascade", () => {
+    const value = source();
+    const reaction = {
+      id: "bounded",
+      on: "vfs.write",
+      predicates: [],
+      actions: [],
+    };
+    repository(value)["reactions"] = new Array(129).fill(reaction);
+    expect(issues(value)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ pointer: "/repository/reactions" }),
+      ]),
+    );
+
+    repository(value)["reactions"] = [
+      { ...reaction, actions: new Array(33).fill({ kind: "log-append" }) },
+    ];
+    expect(issues(value)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ pointer: "/repository/reactions/0/actions" }),
+      ]),
+    );
+  });
 });

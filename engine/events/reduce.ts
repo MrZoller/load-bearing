@@ -448,6 +448,10 @@ function applyReactions(
   registry: EventRegistry,
   where: string,
 ): SessionState {
+  // An acyclic reaction graph still permits a wide cascade. Bound the total
+  // derived events so a valid cartridge cannot turn one visitor event into
+  // unbounded work or freeze a browser while staging state that never escapes.
+  const maxDerivedEvents = 1024;
   let state = initial;
   const queue = [...sourceTypes];
   for (let cursor = 0; cursor < queue.length; cursor += 1) {
@@ -475,6 +479,11 @@ function applyReactions(
           registry,
           `${where} reaction ${JSON.stringify(reaction.id)} action ${String(actionIndex)}`,
         );
+        if (queue.length >= maxDerivedEvents) {
+          throw new Error(
+            `${where}: reaction cascade exceeds the ${String(maxDerivedEvents)} derived-event limit`,
+          );
+        }
         queue.push(event.type);
       }
     }

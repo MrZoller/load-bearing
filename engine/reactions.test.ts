@@ -270,4 +270,37 @@ describe("post-event reactions", () => {
     expect(before.clock.elapsedMs).toBe(0);
     expect(before.eventCount).toBe(0);
   });
+
+  it("rejects a wide acyclic cascade before it monopolizes the reducer", () => {
+    const value = source();
+    const repo = repository(value);
+    repo["reactions"] = [
+      {
+        id: "fan-out",
+        on: "clock.tick",
+        predicates: [],
+        actions: new Array(32).fill(undefined).map(() => ({
+          kind: "service-state",
+          service: "api",
+          state: "running",
+        })),
+      },
+      ...new Array(32).fill(undefined).map((_, index) => ({
+        id: `record-${String(index)}`,
+        on: "world.service-start",
+        predicates: [],
+        actions: [{ kind: "log-append", log: "events", entry: "started" }],
+      })),
+    ];
+    const before = bootstrap({
+      cartridge: loadCartridge(value),
+      seed: "reaction-fan-out",
+    });
+    const bytes = snapshot(before);
+
+    expect(() =>
+      step(before, { type: "clock.tick", payload: { ms: 1 } }),
+    ).toThrow(/reaction cascade exceeds the 1024 derived-event limit/);
+    expect(snapshot(before)).toBe(bytes);
+  });
 });

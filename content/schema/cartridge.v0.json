@@ -891,6 +891,7 @@
                     }
                   ]
                 },
+                "maxItems": 32,
                 "type": "array"
               },
               "id": {
@@ -1075,6 +1076,7 @@
             ],
             "type": "object"
           },
+          "maxItems": 128,
           "type": "array"
         },
         "services": {

@@ -144,6 +144,16 @@ export const ENDPOINT_URL_PATTERN = pattern(
 /** Half the per-entry transcript line budget, once for each shell stream. */
 export const MAX_COMMAND_STREAM_LINES = 2048;
 
+/**
+ * Reaction rules are content, but their Cartesian product is runtime work.
+ *
+ * The reducer also has a total derived-event budget below: these local limits
+ * keep one source event from repeatedly scanning an unbounded rule list before
+ * that global budget gets a chance to stop a cascade.
+ */
+export const MAX_REACTION_RULES = 128;
+export const MAX_REACTION_ACTIONS = 32;
+
 /** A stable cartridge-local identifier that cannot disturb line-oriented output. */
 export const WORLD_ID_PATTERN = pattern(
   /^[^\u0000-\u001F\u007F-\u009F\u2028\u2029]+$/,
@@ -950,6 +960,7 @@ const REACTION = {
       kind: "array",
       description: "Owner-applied transitions in authored order.",
       items: REACTION_ACTION,
+      maxItems: MAX_REACTION_ACTIONS,
     }),
   },
 } satisfies ObjectNode;
@@ -1233,6 +1244,7 @@ const REPOSITORY = {
         kind: "array",
         description: "Post-event reaction rules in evaluation order.",
         items: REACTION,
+        maxItems: MAX_REACTION_RULES,
       },
       [],
     ),
