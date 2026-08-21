@@ -41,7 +41,7 @@ remains blocked until review findings are deliberately batched into it.
   - acceptance: system command modules implement the issue's command set over cartridge world state; golden fixtures cover every command and required error; simulated `curl` performs no network I/O, `date` uses only the simulated clock, and event-driven `kill`/`systemctl`/environment transitions remain visible to later commands and replay identically
   - deps: T3, T4
   - pr: 29
-- [R] T8 (standard) — Simulated test runner and cartridge-defined reactions (Fixes #12)
+- [x] T8 (standard) — Simulated test runner and cartridge-defined reactions (Fixes #12)
   - acceptance: cartridge test predicates produce stable output, exit codes, timestamps, and VFS-reactive results; data-defined reaction rules update services, processes, and logs in documented deterministic order; missing references and rule cycles fail cartridge load with useful errors; fixtures prove before/after-edit test output and byte-identical reactions without incident behavior in engine code
   - deps: T3, T5, T7
   - pr: 32
@@ -71,7 +71,7 @@ remains blocked until review findings are deliberately batched into it.
 
 ## Ad-hoc
 
-- [!] T11 (trivial) — parked review minors (batch)
+- [ ] T11 (trivial) — parked review minors (batch)
   - acceptance: confirmed non-blocking review findings parked during Phase 0 delivery are collected, fixed as one focused batch, and verified by the affected test and repository gates
   - PR #23: preserve `..` traversal semantics across a regular-file component until the shell/VFS contract is deliberately defined
   - PR #23: reject noncanonical fixed-width VFS snapshot mtime spellings
@@ -89,3 +89,8 @@ remains blocked until review findings are deliberately batched into it.
   - PR #28: render an extended unterminated final line as changed rather than shared diff context
   - PR #28: deduplicate no-final-newline markers on a shared diff context row
   - PR #29: make the `man <section> <name>` grammar reach schema-valid hyphen-prefixed sections, or deliberately narrow that section contract
+   - PR #32: update the root `AGENTS.md` deferred-validation wording for the now-concrete `repository.tests` interior
+   - PR #32: require a declared `file-exists` path to be a file rather than a directory
+   - PR #32: count only reaction-derived events against the reaction cascade limit
+   - PR #32: treat `ENOTDIR` as absence for `file-exists` predicates
+   - PR #32: enforce fixed-width canonical timestamps when restoring test-run snapshots
