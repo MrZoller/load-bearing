@@ -1,11 +1,11 @@
 {
   "project": "Load Bearing",
-  "phase": "build",
+  "phase": "idle",
   "spec_approved": true,
   "plan_approved": true,
   "current_task": null,
   "branch": null,
   "pr": null,
   "hold": false,
-  "updated": "2026-08-21T07:24:25Z"
+  "updated": "2026-08-21T07:25:28Z"
 }
