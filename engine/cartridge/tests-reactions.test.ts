@@ -98,7 +98,11 @@ describe("test and reaction cartridge contracts", () => {
           },
         ],
         actions: [
-          { kind: "service-state", service: "missing-service", state: "running" },
+          {
+            kind: "service-state",
+            service: "missing-service",
+            state: "running",
+          },
           {
             kind: "service-health",
             service: "missing-health-service",
