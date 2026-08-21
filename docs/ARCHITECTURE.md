@@ -274,11 +274,18 @@ facts. Determinism and replay must survive it (recorded, not re-generated).
 The agent's mind is engine state, distinct from machine truth:
 
 - **Permission ledger:** every grant, deny, and "always allow" is recorded;
-  cartridges can key consequences, callbacks, and endings off it
+  cartridges can key consequences, callbacks, and endings off it. Phase 0
+  capabilities are exact `{kind: "exact", action, resource}` triples: only an
+  exactly equal `always-allow` entry supplies standing coverage. One-time grants
+  and denials remain history, not implicit scopes.
 - **Belief state:** the agent's model of the world, tracked separately from
-  the world itself. `/compact` applies an authored, subtly wrong summary to
-  belief state while the world stays correct; the divergence is queryable
-  and can gate escalation and endings
+  the world itself. The closed Phase 0 vocabulary covers file existence, file
+  contents, Git HEAD, service state, and service health. Assertions upsert by
+  typed subject, preserving order. `/compact` replaces all current assertions
+  with an authored, subtly wrong summary's beliefs while the world stays
+  correct, and appends the timestamped summary to history. Divergence is
+  returned in belief order through typed VFS, Git, and service truth lookups,
+  never arbitrary object diffing, and can gate escalation and endings.
 - **Thinking blocks and todo items** are ordinary events — replayable,
   testable, and lintable like any authored response
 

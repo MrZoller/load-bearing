@@ -7,8 +7,8 @@ this document is *what exists today*, as opposed to what is designed.
 
 Status: **Phase 0 — headless state engine.** The determinism substrate,
 event registry, cartridge validation, VFS, Git model, environmental world
-state, command sets, test runner, and cartridge reactions are built; natural-
-language intent and agent state remain. See
+state, command sets, test runner, cartridge reactions, and agent mind state are
+built; natural-language intent remains. See
 [Implementation status vs Phase 0](#implementation-status-vs-phase-0).
 
 ---
@@ -55,6 +55,7 @@ compared byte-for-byte against committed golden fixtures.
 │   ├── world/                   processes/services/logs/env/man/history/tickets
 │   ├── commands/                tokenizer/options/registry/builtins/shell events
 │   ├── tests/                   authored predicates, runner plan + event module
+│   ├── mind/                    permission ledger + typed belief divergence
 │   ├── reactions.ts             predicates + owner-event action planning
 │   ├── cartridge/
 │   │   ├── schema.ts           descriptor-tree schema (the single authority)
@@ -98,6 +99,7 @@ compared byte-for-byte against committed golden fixtures.
 | `LoadedCartridge` | `engine/cartridge/types.ts` | The world after validation/normalization. Plain JSON, deep-copied, serializable. |
 | `CartridgeMeta/File/Model/Repository` | `engine/cartridge/types.ts` | Loaded shapes for meta, files, models, repository. |
 | `GitSlice` / `VfsSlice` / `WorldSlice` | `engine/git/types.ts`, `engine/vfs/types.ts`, `engine/world/types.ts` | Canonical plain-JSON machine state owned by each event module. |
+| `MindSlice` / `Belief` / `ExactCapability` | `engine/mind/types.ts` | Timestamped permission history and the agent's typed, separately serialized model of machine truth. |
 | `DeferredObject` | `engine/cartridge/types.ts` | A subtree v0 validates as "an object" but doesn't look inside (`story` and `presentation`). |
 | `SimulatedClock` / `ClockState` | `engine/clock/clock.ts` | `now() = startMs + elapsedMs`. Advances only via events. |
 | `CivilTime` / `CivilInput` | `engine/clock/civil.ts` | UTC calendar fields; hand-computed (no `Date`/`Intl`). |
@@ -217,6 +219,15 @@ use the same architecture: `npm test` plans output from the current VFS, emits
 `tests.run`, and that owner records timing/results while advancing only the
 simulated clock.
 
+The `mind` slice is intentionally downstream of machine truth, never coupled to
+its mutations. `mind.permission-decision` records exact action/resource grants,
+denials, and standing `always-allow` decisions at simulated time;
+`mind.belief-set` upserts one typed subject; and `mind.compact` replaces the
+whole assertion set while appending timestamped summary history.
+`beliefDivergence(state)` walks assertions in stored order and uses only the
+closed VFS/Git/service truth queries, so authored wrongness is explicit and no
+generic deep-diff contract leaks into later phases.
+
 ---
 
 ## The purity gate (`scripts/gate-purity.mjs`)
@@ -303,10 +314,9 @@ Phase 0 DoD (from `ROADMAP.md`), mapped to what exists:
 any rendering, any comedy writing, any real model calls.
 
 **What Phase 0 scope has NOT yet been built** (the gap a day-one agent will
-feel): the natural-language intent layer, escalation stage, metrics, and agent
-mind state (permission ledger, belief state, todo/thinking blocks). All
-are designed in `docs/ARCHITECTURE.md` and land behind the remaining Phase 0
-issues.
+feel): the natural-language intent layer, escalation stage, metrics, and the
+Phase 1 todo/thinking-block surfaces. All are designed in
+`docs/ARCHITECTURE.md` and land behind later issues.
 
 ---
 

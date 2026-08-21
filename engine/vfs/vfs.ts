@@ -28,6 +28,7 @@ import type {
   VfsResult,
   VfsSlice,
   VfsStatValue,
+  VfsTruth,
 } from "./types.js";
 
 type Permission = 1 | 2 | 4;
@@ -340,6 +341,15 @@ export function readVfs(
       "read permission is denied",
     );
   return frozenSuccess({ path: resolved.path, contents: entry.contents });
+}
+
+/** Narrow omniscient lookup for the mind's typed truth comparison. */
+export function queryVfsTruth(slice: VfsSlice, path: string): VfsTruth {
+  const entry = slice.entries[path];
+  if (entry === undefined) return Object.freeze({ kind: "missing" });
+  return entry.kind === "file"
+    ? Object.freeze({ kind: "file", contents: entry.contents })
+    : Object.freeze({ kind: "directory" });
 }
 
 /** Look up metadata after enforcing search permission on every ancestor. */
