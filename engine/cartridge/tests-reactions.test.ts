@@ -251,7 +251,7 @@ describe("test and reaction cartridge contracts", () => {
     );
   });
 
-  it("bounds reaction rules and actions before they can amplify a cascade", () => {
+  it("bounds reaction rules, predicates, and actions before they can amplify a cascade", () => {
     const value = source();
     const reaction = {
       id: "bounded",
@@ -272,6 +272,17 @@ describe("test and reaction cartridge contracts", () => {
     expect(issues(value)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ pointer: "/repository/reactions/0/actions" }),
+      ]),
+    );
+
+    repository(value)["reactions"] = [
+      { ...reaction, predicates: new Array(33).fill({ kind: "always" }) },
+    ];
+    expect(issues(value)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/repository/reactions/0/predicates",
+        }),
       ]),
     );
   });

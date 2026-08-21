@@ -153,6 +153,9 @@ export const MAX_COMMAND_STREAM_LINES = 2048;
  */
 export const MAX_REACTION_RULES = 128;
 export const MAX_REACTION_ACTIONS = 32;
+// Predicate evaluation happens before the derived-event cap, so it needs its
+// own authored-input bound rather than relying on cascade fan-out limits.
+export const MAX_REACTION_PREDICATES = 32;
 
 /** A stable cartridge-local identifier that cannot disturb line-oriented output. */
 export const WORLD_ID_PATTERN = pattern(
@@ -955,6 +958,7 @@ const REACTION = {
       kind: "array",
       description: "All-of staged-state conditions.",
       items: REACTION_PREDICATE,
+      maxItems: MAX_REACTION_PREDICATES,
     }),
     actions: required({
       kind: "array",
