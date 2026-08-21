@@ -1289,11 +1289,24 @@ function checkWorld(repository: CartridgeRepository, report: Report): void {
         `${JSON.stringify(ticket.service)}, which does not exist`,
       );
   });
+}
 
+/**
+ * Check each readable endpoint independently so one malformed endpoint does
+ * not hide a dangling service link in another. The service collection itself
+ * must be sound before its ids are a meaningful reference target.
+ */
+function checkEndpointServiceReferences(
+  repository: CartridgeRepository,
+  report: Report,
+): void {
+  const services = new Set(repository.services.map((service) => service.id));
   for (const [url, endpoint] of Object.entries(repository.endpoints)) {
+    const pointer = `/repository/endpoints/${pointerToken(url)}`;
+    if (issueWithin(report, pointer)) continue;
     if (!services.has(endpoint.service))
       report.addPhrase(
-        `/repository/endpoints/${pointerToken(url)}/service`,
+        `${pointer}/service`,
         "the id of a declared service",
         `${JSON.stringify(endpoint.service)}, which does not exist`,
       );
@@ -1394,10 +1407,16 @@ export function loadCartridge(value: unknown): LoadedCartridge {
     !issueWithin(report, "/repository/services") &&
     !issueWithin(report, "/repository/logs") &&
     !issueWithin(report, "/repository/manPages") &&
-    !issueWithin(report, "/repository/endpoints") &&
     !issueWithin(report, "/repository/tickets")
   ) {
     checkWorld(cartridge.repository, report);
+  }
+  if (
+    !issueAt(report, "/repository") &&
+    !issueAt(report, "/repository/endpoints") &&
+    !issueWithin(report, "/repository/services")
+  ) {
+    checkEndpointServiceReferences(cartridge.repository, report);
   }
 
   if (report.issues.length > 0)

@@ -194,6 +194,16 @@ describe("loadCartridge", () => {
     expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
       "/repository/endpoints/https:~1~1api.example.test~1health?full=1/service",
     ]);
+    endpoints["not an endpoint"] = {
+      service: "api",
+      running: { stdout: [], stderr: [], exitCode: 0 },
+      unavailable: { stdout: [], stderr: [], exitCode: 0 },
+    };
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
+      "/repository/endpoints/not an endpoint",
+      "/repository/endpoints/https:~1~1api.example.test~1health?full=1/service",
+    ]);
+    delete endpoints["not an endpoint"];
     valid["service"] = "api";
     delete (valid["unavailable"] as Record<string, unknown>)["stderr"];
     expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
