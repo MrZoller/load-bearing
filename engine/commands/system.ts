@@ -261,8 +261,12 @@ const KILL: CommandDefinition = {
     const entry = Number.isSafeInteger(pid)
       ? lookupProcessByPid(readWorldSlice(context.state), pid)
       : undefined;
-    if (entry === undefined || entry.state === "stopped")
+    if (entry === undefined)
       return result(EMPTY, [`kill: (${String(pid)}): No such process`], 1);
+    // A stopped entry is still present in the simulated process table. Like a
+    // real stopped process, signalling it succeeds; the transition is already
+    // represented, so repeating the command is an event-free no-op.
+    if (entry.state === "stopped") return result(EMPTY, EMPTY, 0);
     return result(EMPTY, EMPTY, 0, [
       {
         type: "world.process-transition",

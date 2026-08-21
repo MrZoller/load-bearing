@@ -162,6 +162,24 @@ describe("system commands", () => {
     expect(restoreSnapshot(snapshot(state))).toEqual(state);
   });
 
+  it("treats kill of a present stopped process as an event-free success", () => {
+    const state = run(["kill 1234", "kill 1234", "ps"]);
+    expect(output(results(state)[1])).toEqual({
+      stdout: [],
+      stderr: [],
+      exitCode: 0,
+    });
+    expect(
+      state.transcript.filter(
+        (entry) => entry.type === "world.process-transition",
+      ),
+    ).toHaveLength(1);
+    expect(output(results(state)[2]).stdout).toEqual([
+      "  PID USER     STAT COMMAND",
+      " 1234 deploy   T api --serve",
+    ]);
+  });
+
   it.each([
     ["start", "running"],
     ["stop", "stopped"],
@@ -186,6 +204,12 @@ describe("system commands", () => {
       "curl: (6) Could not resolve endpoint: https://missing.example.test/",
       6,
     ],
+    [
+      "curl ftp://example.test/",
+      "curl: (3) URL rejected: ftp://example.test/",
+      3,
+    ],
+    ["curl", "curl: usage: curl URL", 2],
     ["systemctl status missing", "Unit missing.service could not be found.", 4],
     ["kill 9999", "kill: (9999): No such process", 1],
     ["export 1BAD=value", "export: 1BAD=value: not a valid assignment", 2],
