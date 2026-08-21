@@ -133,7 +133,7 @@ Confirmed as asked, all as bounded POSIX-shaped behavior with no surface beyond 
 
 DELIBERATE DEVIATION to record in `docs/DESIGN.md` in this task's PR: `history` displays only prior entries and does not list itself. Real bash appends a command to history before executing it, so `history` shows itself as the final line. We accept the deviation because command output is computed before event expansion. Document it as a chosen simplification — history is a surface a curious visitor will poke.
 
-## Q5 (task T8, open) — How should reaction cascades cross event-module boundaries?
+## Q5 (task T8, consumed) — How should reaction cascades cross event-module boundaries?
 
 Context: Issue #12 requires post-event rules, deterministic cascades, and
 load-time rejection of rules that would fire in a cycle. The current reducer
