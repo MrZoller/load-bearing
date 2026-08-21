@@ -10,7 +10,7 @@ import type {
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { readWorldSlice } from "../world/module.js";
 
-function cartridge() {
+function cartridge(mutate?: (repository: Record<string, unknown>) => void) {
   const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
   const repository = source["repository"] as Record<string, unknown>;
   repository["files"] = {
@@ -51,6 +51,7 @@ function cartridge() {
       },
     },
   };
+  mutate?.(repository);
   return loadCartridge(source);
 }
 
@@ -65,6 +66,20 @@ function run(
       ...extra,
       ...inputs.map((input) => ({ type: "shell.execute", payload: { input } })),
     ],
+  });
+}
+
+function runWithCartridge(
+  inputs: readonly string[],
+  mutate: (repository: Record<string, unknown>) => void,
+): SessionState {
+  return reduce({
+    cartridge: cartridge(mutate),
+    seed: "system-commands",
+    events: inputs.map((input) => ({
+      type: "shell.execute",
+      payload: { input },
+    })),
   });
 }
 
@@ -166,6 +181,24 @@ describe("system commands", () => {
     ]);
   });
 
+  it("renders unsafe environment values without changing their raw state", () => {
+    const state = runWithCartridge(
+      ["export 'NEW=a\tb'", "env"],
+      (repository) => {
+        repository["env"] = { WEIRD: "a\nb" };
+      },
+    );
+    expect(output(results(state)[1])).toEqual({
+      stdout: ["NEW=a\\u0009b", "WEIRD=a\\u000ab"],
+      stderr: [],
+      exitCode: 0,
+    });
+    expect(readWorldSlice(state).env).toMatchObject({
+      NEW: "a\tb",
+      WEIRD: "a\nb",
+    });
+  });
+
   it("persists environment, service and process mutations through reducer events", () => {
     const state = run([
       "export BEAM=load=bearing",
@@ -234,6 +267,53 @@ describe("system commands", () => {
       expect(readWorldSlice(session).services[0]?.state).toBe(state);
     },
   );
+
+  it("accepts a hyphen-prefixed cartridge service ID as an operand", () => {
+    const state = runWithCartridge(["systemctl status -api"], (repository) => {
+      repository["services"] = [
+        {
+          id: "-api",
+          state: "running",
+          health: "healthy",
+          ports: [],
+          dependencies: [],
+        },
+      ];
+      repository["endpoints"] = {};
+    });
+    expect(output(results(state)[0])).toEqual({
+      stdout: [
+        "● -api.service - -api",
+        "   Active: active (running)",
+        "   Health: healthy",
+      ],
+      stderr: [],
+      exitCode: 0,
+    });
+  });
+
+  it("returns a schema-maximum astral endpoint response", () => {
+    const response = "😀".repeat(4096);
+    const state = runWithCartridge(
+      ["curl https://api.example.test/health"],
+      (repository) => {
+        const endpoints = repository["endpoints"] as Record<
+          string,
+          Record<string, unknown>
+        >;
+        const endpoint = endpoints["https://api.example.test/health"] as Record<
+          string,
+          unknown
+        >;
+        endpoint["running"] = { stdout: [response], stderr: [], exitCode: 0 };
+      },
+    );
+    expect(output(results(state)[0])).toEqual({
+      stdout: [response],
+      stderr: [],
+      exitCode: 0,
+    });
+  });
 
   it.each([
     ["man missing", "No manual entry for missing", 1],

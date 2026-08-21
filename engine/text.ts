@@ -49,3 +49,10 @@ export function describeUnwritableText(text: string): string | undefined {
   }
   return undefined;
 }
+
+/** Count Unicode characters, matching JSON Schema's `maxLength` unit. */
+export function countCodePoints(text: string): number {
+  let count = 0;
+  for (const _character of text) count += 1;
+  return count;
+}

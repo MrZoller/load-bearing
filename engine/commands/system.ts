@@ -16,7 +16,7 @@ import {
   MAX_TRANSCRIPT_DETAIL_LINES,
   MAX_TRANSCRIPT_LINE_LENGTH,
 } from "../events/transcript.js";
-import { describeUnwritableText } from "../text.js";
+import { countCodePoints, describeUnwritableText } from "../text.js";
 import { readWorldSlice } from "../world/module.js";
 import {
   listEnv,
@@ -46,7 +46,7 @@ function result(
     lines.length > MAX_TRANSCRIPT_DETAIL_LINES ||
     lines.some(
       (line) =>
-        line.length > MAX_TRANSCRIPT_LINE_LENGTH ||
+        countCodePoints(line) > MAX_TRANSCRIPT_LINE_LENGTH ||
         describeUnwritableText(line) !== undefined,
     )
   )
@@ -91,13 +91,13 @@ function commandName(binary: string, args: readonly string[]): string {
   return [binary.slice(slash + 1), ...args].join(" ");
 }
 
-/** Keep raw command history replayable while making its transcript rendering safe. */
-function displayHistoryCommand(command: string): string {
+/** Keep raw world strings replayable while making their transcript rendering safe. */
+function displayText(value: string): string {
   let displayed = "";
-  for (let index = 0; index < command.length; index += 1) {
-    const code = command.charCodeAt(index);
-    const previous = command.charCodeAt(index - 1);
-    const next = command.charCodeAt(index + 1);
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    const previous = value.charCodeAt(index - 1);
+    const next = value.charCodeAt(index + 1);
     const control =
       code <= 0x1f ||
       (code >= 0x7f && code <= 0x9f) ||
@@ -112,7 +112,7 @@ function displayHistoryCommand(command: string): string {
     displayed +=
       control || loneHigh || loneLow
         ? `\\u${code.toString(16).padStart(4, "0")}`
-        : (command[index] as string);
+        : (value[index] as string);
   }
   return displayed;
 }
@@ -137,7 +137,7 @@ const ENV: CommandDefinition = {
     if (rejected !== undefined) return rejected;
     return result(
       listEnv(readWorldSlice(context.state)).map(
-        ([name, value]) => `${name}=${value}`,
+        ([name, value]) => `${name}=${displayText(value)}`,
       ),
       EMPTY,
       0,
@@ -204,7 +204,7 @@ const HISTORY: CommandDefinition = {
     return result(
       readShellHistory(readWorldSlice(context.state)).map(
         (command, index) =>
-          `${String(index + 1).padStart(5)}  ${displayHistoryCommand(command)}`,
+          `${String(index + 1).padStart(5)}  ${displayText(command)}`,
       ),
       EMPTY,
       0,
@@ -244,7 +244,7 @@ const SYSTEMCTL: CommandDefinition = {
   name: "systemctl",
   execute(context) {
     const args = context.argv.slice(1);
-    const rejected = invalidOption("systemctl", args);
+    const rejected = invalidOption("systemctl", args.slice(0, 1));
     if (rejected !== undefined) return rejected;
     if (
       args.length !== 2 ||
