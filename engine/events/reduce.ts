@@ -62,6 +62,7 @@ import { assertEventEnvelope } from "./log.js";
 import type { EventContext, EventModule, EventOutcome } from "./module.js";
 import { ENGINE_EVENT_REGISTRY } from "./modules.js";
 import type { EventRegistry } from "./registry.js";
+import { reactionActionEvent, reactionPredicateMatches } from "../reactions.js";
 import { EVENT_SCHEMA_VERSION, readSlice } from "./state.js";
 import type {
   EngineEvent,
@@ -250,7 +251,7 @@ export function step(
   event: EngineEvent,
   registry: EventRegistry = ENGINE_EVENT_REGISTRY,
 ): SessionState {
-  return foldEvent(state, event, registry, true);
+  return foldEvent(state, event, registry, true, true);
 }
 
 function foldEvent(
@@ -258,6 +259,7 @@ function foldEvent(
   event: EngineEvent,
   registry: EventRegistry,
   expansionAllowed: boolean,
+  reactionsAllowed: boolean,
 ): SessionState {
   // Every field of `state` read exactly once, here, and the returned state
   // built from these locals rather than from `{...state}`. `state` is a
@@ -382,10 +384,23 @@ function foldEvent(
     }
 
     let expanded = before;
+    // The envelope remains the authored trigger even though it is unlogged.
+    // Queue it before its logged children, then evaluate the entire queue only
+    // after every child is staged. This lets a cartridge react to the visitor's
+    // `shell.execute` intent while predicates see the completed command, without
+    // losing the child event types needed for narrower rules.
+    const triggers: string[] = [envelope.type];
     for (const child of outcome.expansion) {
-      expanded = foldEvent(expanded, child, registry, false);
+      const count = expanded.transcript.length;
+      expanded = foldEvent(expanded, child, registry, false, false);
+      const entry = expanded.transcript[count];
+      if (entry === undefined)
+        throw new Error(`${where}: expansion child produced no logged entry`);
+      triggers.push(entry.type);
     }
-    return expanded;
+    return reactionsAllowed
+      ? applyReactions(expanded, triggers, registry, where)
+      : expanded;
   }
   const slices = applyEffects(
     before,
@@ -399,7 +414,7 @@ function foldEvent(
     where,
   );
 
-  return freezeState({
+  const logged = freezeState({
     engineVersion,
     eventSchemaVersion,
     seed,
@@ -412,6 +427,142 @@ function foldEvent(
       ...previousTranscript,
       makeEntry(index, at, envelope.type, outcome, where),
     ]),
+  });
+  return reactionsAllowed
+    ? applyReactions(logged, [envelope.type], registry, where)
+    : logged;
+}
+
+/**
+ * Evaluate cartridge rules after the logged transition is fully staged.
+ *
+ * Trigger types are queued in source order. Every matching rule and action is
+ * visited in authored order; action event types join the tail, making cascades
+ * FIFO. Predicates are deliberately re-read from the latest staged state for
+ * each rule, so an earlier action can make a later rule true. No intermediate
+ * state escapes this call: a later action failure throws before `step` returns.
+ */
+function applyReactions(
+  initial: SessionState,
+  sourceTypes: readonly string[],
+  registry: EventRegistry,
+  where: string,
+): SessionState {
+  // An acyclic reaction graph still permits a wide cascade. Bound the total
+  // derived events so a valid cartridge cannot turn one visitor event into
+  // unbounded work or freeze a browser while staging state that never escapes.
+  const maxDerivedEvents = 1024;
+  let state = initial;
+  const queue = [...sourceTypes];
+  for (let cursor = 0; cursor < queue.length; cursor += 1) {
+    const sourceType = queue[cursor];
+    if (sourceType === undefined) continue;
+    for (const reaction of state.cartridge.repository.reactions) {
+      if (reaction.on !== sourceType) continue;
+      if (
+        !reaction.predicates.every((predicate) =>
+          reactionPredicateMatches(predicate, state),
+        )
+      )
+        continue;
+      for (
+        let actionIndex = 0;
+        actionIndex < reaction.actions.length;
+        actionIndex += 1
+      ) {
+        const action = reaction.actions[actionIndex];
+        if (action === undefined) continue;
+        const event = reactionActionEvent(action);
+        state = applyReactionEvent(
+          state,
+          event,
+          registry,
+          `${where} reaction ${JSON.stringify(reaction.id)} action ${String(actionIndex)}`,
+        );
+        if (queue.length >= maxDerivedEvents) {
+          throw new Error(
+            `${where}: reaction cascade exceeds the ${String(maxDerivedEvents)} derived-event limit`,
+          );
+        }
+        queue.push(event.type);
+      }
+    }
+  }
+  return state;
+}
+
+/** Apply one reaction-derived event through its owner without logging it. */
+function applyReactionEvent(
+  state: SessionState,
+  event: EngineEvent,
+  registry: EventRegistry,
+  where: string,
+): SessionState {
+  const envelope = assertEventEnvelope(event, where);
+  const handler = registry.handler(envelope.type);
+  if (handler === undefined)
+    throw new UnknownEventTypeError(
+      envelope.type,
+      state.eventCount,
+      registry.namespaces,
+    );
+  if (envelope.version !== undefined && envelope.version !== handler.version)
+    throw new EventVersionError(
+      where,
+      envelope.type,
+      envelope.version,
+      handler.version,
+    );
+  const module = registry.module(handler.namespace) as EventModule;
+  const clock = restoreClock(state.clock);
+  const random = restoreRandom(state.random);
+  const context: EventContext = {
+    state,
+    cartridge: state.cartridge,
+    index: state.eventCount,
+    event: envelope,
+    clock,
+    random: random.fork(module.namespace),
+    where,
+  };
+  const slice = module.stateful
+    ? readSlice(state, module.namespace)
+    : undefined;
+  const clockBefore = clock.toState();
+  const randomBefore = random.toState();
+  const outcome = captureOutcome(handler.apply(context, slice), where);
+  if (outcome.hasExpansion)
+    throw new Error(
+      `${where}: reaction actions may not expand into logged events`,
+    );
+  if (
+    serialize(clock.toState()) !== serialize(clockBefore) ||
+    serialize(random.toState()) !== serialize(randomBefore)
+  )
+    throw new Error(
+      `${where}: reaction actions may not move time or randomness; only logged events own those positions`,
+    );
+  const slices = applyEffects(
+    state,
+    state.slices,
+    module.namespace,
+    module.stateful,
+    outcome,
+    clock,
+    random,
+    registry,
+    where,
+  );
+  return freezeState({
+    engineVersion: state.engineVersion,
+    eventSchemaVersion: state.eventSchemaVersion,
+    seed: state.seed,
+    cartridge: state.cartridge,
+    eventCount: state.eventCount,
+    clock: state.clock,
+    random: state.random,
+    slices,
+    transcript: state.transcript,
   });
 }
 

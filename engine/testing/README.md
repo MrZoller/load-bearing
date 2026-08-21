@@ -75,19 +75,20 @@ against the replay contract.
 
 ### The fixtures so far
 
-| fixture                   | what it pins                                                                                                                                                |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `001-engine-smoke`        | the loop itself: an input triple folds, records, and compares. The shared cartridge is written with unsorted keys, so a key-ordering regression fails here  |
-| `002-random-clock`        | the seed hash, the mulberry32 constants, `fork`'s path derivation, `int`'s rejection window, `weightedPick`'s distribution, and the UTC calendar arithmetic |
-| `003-cartridge-load`      | load to initial state with an empty event log — normalization alone, isolated from the fold                                                                 |
-| `004-reducer-core`        | the reducer's machinery at readable size: a stamped payload schema version, dispatch across two modules, a slice accumulating, transcript index and stamps  |
-| `005-vfs-lifecycle`       | VFS create, overwrite, chmod, delete, and persistence of deletion across a later event                                                                      |
-| `006-vfs-git`             | VFS edits reflected in Git status/diff, dirty checkout refusal, and atomic clean checkout across Git and VFS slices                                         |
-| `007-world-state`         | environmental hydration plus replayable process, service, log, environment, and history transitions                                                         |
-| `008-command-shell`       | unlogged shell expansion plus stable stream-tagged builtin, override, unknown, and blank command results                                                    |
-| `009-filesystem-commands` | shell-driven VFS creation, cwd persistence, deletion observed by later commands, and permission-denied output                                               |
-| `010-git-commands`        | bounded Git command rendering and coherent shell-driven branch, index, working-tree, commit, blame and checkout transitions                                 |
-| `011-system-commands`     | world inspection, raw shell history, exact endpoint responses, and persistent environment, service and process transitions                                  |
+| fixture                     | what it pins                                                                                                                                                |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `001-engine-smoke`          | the loop itself: an input triple folds, records, and compares. The shared cartridge is written with unsorted keys, so a key-ordering regression fails here  |
+| `002-random-clock`          | the seed hash, the mulberry32 constants, `fork`'s path derivation, `int`'s rejection window, `weightedPick`'s distribution, and the UTC calendar arithmetic |
+| `003-cartridge-load`        | load to initial state with an empty event log — normalization alone, isolated from the fold                                                                 |
+| `004-reducer-core`          | the reducer's machinery at readable size: a stamped payload schema version, dispatch across two modules, a slice accumulating, transcript index and stamps  |
+| `005-vfs-lifecycle`         | VFS create, overwrite, chmod, delete, and persistence of deletion across a later event                                                                      |
+| `006-vfs-git`               | VFS edits reflected in Git status/diff, dirty checkout refusal, and atomic clean checkout across Git and VFS slices                                         |
+| `007-world-state`           | environmental hydration plus replayable process, service, log, environment, and history transitions                                                         |
+| `008-command-shell`         | unlogged shell expansion plus stable stream-tagged builtin, override, unknown, and blank command results                                                    |
+| `009-filesystem-commands`   | shell-driven VFS creation, cwd persistence, deletion observed by later commands, and permission-denied output                                               |
+| `010-git-commands`          | bounded Git command rendering and coherent shell-driven branch, index, working-tree, commit, blame and checkout transitions                                 |
+| `011-system-commands`       | world inspection, raw shell history, exact endpoint responses, and persistent environment, service and process transitions                                  |
+| `012-test-runner-reactions` | authored test outcomes and durations before/after a shell edit, plus ordered persistent service, process, health and dual-log reactions                     |
 
 `002` records 1000 raw draws eight to a line with their index, so a divergence
 names the draw it started at rather than reporting that a file changed.
@@ -117,12 +118,14 @@ the two can never drift apart.
 `engine/__fixtures__/cartridges/` holds the worlds, not the sessions:
 
 ```
-minimal.json            the tests-only cartridge every replay fixture names
-invalid/*.json          one malformed cartridge per rejection worth asserting
+minimal.json                  baseline loader and reducer world
+reactive.json                 focused test-runner and reaction-cascade world
+commands/filesystem/git/world focused subsystem worlds
+invalid/*.json                one malformed cartridge per rejection worth asserting
 ```
 
-`minimal.json` lives here rather than under `content/incidents/` because it is
-not an incident and must never appear in the archive.
+These live here rather than under `content/incidents/` because they are not
+incidents and must never appear in the archive.
 
 The `invalid/` set is exercised by `engine/cartridge/load.test.ts`, which
 asserts each one's full issue list — pointer, expectation and what was found —

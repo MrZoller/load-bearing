@@ -133,7 +133,7 @@ Confirmed as asked, all as bounded POSIX-shaped behavior with no surface beyond 
 
 DELIBERATE DEVIATION to record in `docs/DESIGN.md` in this task's PR: `history` displays only prior entries and does not list itself. Real bash appends a command to history before executing it, so `history` shows itself as the final line. We accept the deviation because command output is computed before event expansion. Document it as a chosen simplification — history is a surface a curious visitor will poke.
 
-## Q5 (task T8, open) — How should reaction cascades cross event-module boundaries?
+## Q5 (task T8, consumed) — How should reaction cascades cross event-module boundaries?
 
 Context: Issue #12 requires post-event rules, deterministic cascades, and
 load-time rejection of rules that would fire in a cycle. The current reducer
@@ -155,6 +155,7 @@ without incident-specific behavior. Please confirm A or choose another model.
 **A:** Option A confirmed — a generic reducer-level post-event reaction phase.
 
 Pinned details, so the contract is explicit:
+
 - Reaction rules and actions are cartridge DATA evaluated by the generic
   engine; no incident behavior enters engine code (invariant 1, and issue #12's
   own requirement).
@@ -164,7 +165,7 @@ Pinned details, so the contract is explicit:
 - The trigger event plus ALL reaction-derived changes commit atomically as one
   replay step. Reactions are RE-DERIVED during replay from rules + trigger —
   never separately recorded in the event log — so `state = reduce(cartridge,
-  seed, eventLog)` remains literally true and nothing double-applies.
+seed, eventLog)` remains literally true and nothing double-applies.
 - Each reaction action is still an owned event applied by its owning module:
   the reaction phase orchestrates WHICH events fire and in what order; it
   never writes a slice itself. One-module-one-slice survives unchanged.

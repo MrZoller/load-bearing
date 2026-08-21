@@ -126,6 +126,18 @@ or randomness; empty and nested expansions are rejected. This keeps command
 orchestration out of every owning subsystem without creating a privileged module
 that can write all their slices.
 
+After a logged event, or after every child of an expansion has been staged, the
+reducer evaluates cartridge **reactions** against that completed state. Trigger
+types enter a FIFO queue in source order; matching rules and their actions run
+in authored order, and each action's owner event joins the queue tail. Predicates
+are re-evaluated before each rule, so an earlier action may deliberately enable
+a later one. Reaction-derived events are unlogged and cannot move time or
+randomness, but they still dispatch through the service, process, log, or VFS
+module that owns the affected slice. The full trigger plus cascade is atomic:
+if any action fails, no intermediate state escapes `step`. Cartridge loading
+rejects event-type cycles conservatively, so replay work is bounded by authored
+acyclic data rather than a runtime iteration limit.
+
 **An unregistered event type is refused, never ignored.** Treating it as a
 no-op would let a subsystem missing from the module list produce a session that
 looks complete and is missing part of its own history — with the golden fixture
@@ -185,8 +197,13 @@ renders the same entries differently without changing what was recorded.
   simulated clock. `repository.endpoints` maps exact HTTP(S) URL strings to a
   service plus complete running/unavailable responses; simulated `curl` is a
   pure lookup and has no network fallback.
-- **Test runner:** simulated `npm test`-style output defined per cartridge,
-  reactive to file state
+- **Test runner:** `repository.tests` is an authored ordered list of file
+  predicates and integer millisecond durations. `npm test` evaluates every case
+  against the current VFS, renders stable PASS/FAIL lines and totals, exits 0
+  only when every case passes, records the run in the `tests` slice, and advances
+  simulated time by the sum of case durations. Start/finish timestamps, output,
+  exit code and run history are therefore derived from cartridge + seed + event
+  log; a later VFS edit changes later outcomes without rewriting earlier runs.
 - **Logs, env, man pages, shell history, ticket archive:** cartridge-supplied,
   queryable environmental state. Stream log entries live in the world slice;
   file-log contents live only in VFS and append atomically through a VFS-owned

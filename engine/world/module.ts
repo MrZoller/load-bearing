@@ -29,6 +29,7 @@ import {
   setWorldEnv,
   transitionProcess,
   transitionService,
+  transitionServiceHealth,
   unsetWorldEnv,
 } from "./world.js";
 
@@ -61,6 +62,18 @@ function unitState(data: EventPayload, where: string): "running" | "stopped" {
   if (state !== "running" && state !== "stopped")
     throw new Error(`${where}: state must be running or stopped`);
   return state;
+}
+
+function serviceHealth(
+  data: EventPayload,
+  where: string,
+): "healthy" | "degraded" | "unhealthy" | "unknown" {
+  const health = readString(data, "health", where);
+  if (!["healthy", "degraded", "unhealthy", "unknown"].includes(health))
+    throw new Error(
+      `${where}: health must be healthy, degraded, unhealthy or unknown`,
+    );
+  return health as "healthy" | "degraded" | "unhealthy" | "unknown";
 }
 
 function requireRecord(
@@ -469,6 +482,19 @@ export const WORLD_MODULE = defineEventModule<WorldSlice>({
         return {
           slice: restartService(slice, id),
           summary: `id=${JSON.stringify(id)}`,
+        };
+      },
+    },
+    "world.service-health": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["id", "health"]);
+        const id = worldId(data, "id", context.where);
+        requireService(slice, id, context.where);
+        const health = serviceHealth(data, context.where);
+        return {
+          slice: transitionServiceHealth(slice, id, health),
+          summary: `id=${JSON.stringify(id)} health=${health}`,
         };
       },
     },

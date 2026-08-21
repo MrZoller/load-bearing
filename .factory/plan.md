@@ -41,7 +41,7 @@ remains blocked until review findings are deliberately batched into it.
   - acceptance: system command modules implement the issue's command set over cartridge world state; golden fixtures cover every command and required error; simulated `curl` performs no network I/O, `date` uses only the simulated clock, and event-driven `kill`/`systemctl`/environment transitions remain visible to later commands and replay identically
   - deps: T3, T4
   - pr: 29
-- [!] T8 (standard) — Simulated test runner and cartridge-defined reactions (Fixes #12)
+- [~] T8 (standard) — Simulated test runner and cartridge-defined reactions (Fixes #12)
   - acceptance: cartridge test predicates produce stable output, exit codes, timestamps, and VFS-reactive results; data-defined reaction rules update services, processes, and logs in documented deterministic order; missing references and rule cycles fail cartridge load with useful errors; fixtures prove before/after-edit test output and byte-identical reactions without incident behavior in engine code
   - deps: T3, T5, T7
 - [ ] T9 (standard) — Agent mind state: permission ledger and belief state (Fixes #13)
@@ -85,6 +85,6 @@ remains blocked until review findings are deliberately batched into it.
   - PR #26: return a deterministic shell result for control-character and lone-surrogate input
   - PR #27: reject empty authored filesystem operands rather than resolving them to the current working directory
   - PR #28: reject unwritable control characters and lone surrogates in authored Git email addresses
-   - PR #28: render an extended unterminated final line as changed rather than shared diff context
-   - PR #28: deduplicate no-final-newline markers on a shared diff context row
-   - PR #29: make the `man <section> <name>` grammar reach schema-valid hyphen-prefixed sections, or deliberately narrow that section contract
+  - PR #28: render an extended unterminated final line as changed rather than shared diff context
+  - PR #28: deduplicate no-final-newline markers on a shared diff context row
+  - PR #29: make the `man <section> <name>` grammar reach schema-valid hyphen-prefixed sections, or deliberately narrow that section contract

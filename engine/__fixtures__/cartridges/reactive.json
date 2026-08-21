@@ -1,0 +1,185 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 12,
+    "date": "2026-08-05",
+    "title": "Test Runner Reactions Fixture",
+    "assignment": "Remove the stale readiness sentinel and observe the machine agree.",
+    "startedAt": "2026-08-05T09:14:22.000Z"
+  },
+  "repository": {
+    "cwd": "/production/service",
+    "identity": {
+      "user": "root",
+      "group": "root",
+      "home": "/root"
+    },
+    "gitIdentity": { "name": "Visitor", "email": "visitor@example.test" },
+    "system": {
+      "hostname": "reaction-runner",
+      "operatingSystem": "Linux",
+      "kernelRelease": "6.1.0-load-bearing",
+      "architecture": "x86_64",
+      "bootedAt": "2025-07-01T06:10:00.000Z"
+    },
+    "files": {
+      "/production/service/src/ready.stale": { "contents": "remove me\n" },
+      "/production/service/src/worker.ts": {
+        "contents": "export const load = 2;\n"
+      },
+      "/var/log/reactions.log": { "contents": "booted\n" }
+    },
+    "processes": [
+      {
+        "id": "worker",
+        "pid": 1200,
+        "user": "root",
+        "command": {
+          "binary": "/production/service/src/worker.ts",
+          "args": []
+        },
+        "startedAt": "2026-08-05T09:00:00.000Z",
+        "state": "stopped"
+      }
+    ],
+    "services": [
+      {
+        "id": "api",
+        "state": "stopped",
+        "health": "unknown",
+        "ports": [8080],
+        "dependencies": []
+      }
+    ],
+    "logs": [
+      { "id": "events", "kind": "stream", "entries": ["booted"] },
+      {
+        "id": "reactions-file",
+        "kind": "file",
+        "path": "/var/log/reactions.log"
+      }
+    ],
+    "tests": [
+      {
+        "id": "stale-sentinel",
+        "name": "stale readiness sentinel is absent",
+        "durationMs": 750,
+        "predicate": {
+          "kind": "file-exists",
+          "path": "/production/service/src/ready.stale",
+          "exists": false
+        }
+      },
+      {
+        "id": "worker-source",
+        "name": "worker source is intact",
+        "durationMs": 250,
+        "predicate": {
+          "kind": "file-contents",
+          "path": "/production/service/src/worker.ts",
+          "equals": "export const load = 2;\n"
+        }
+      }
+    ],
+    "reactions": [
+      {
+        "id": "start-units-after-edit",
+        "on": "vfs.delete",
+        "predicates": [
+          {
+            "kind": "file-exists",
+            "path": "/production/service/src/ready.stale",
+            "exists": false
+          }
+        ],
+        "actions": [
+          { "kind": "service-state", "service": "api", "state": "running" },
+          {
+            "kind": "process-state",
+            "process": "worker",
+            "state": "running"
+          }
+        ]
+      },
+      {
+        "id": "mark-healthy-after-units",
+        "on": "vfs.delete",
+        "predicates": [
+          { "kind": "service-state", "service": "api", "state": "running" },
+          {
+            "kind": "process-state",
+            "process": "worker",
+            "state": "running"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "service-health",
+            "service": "api",
+            "health": "healthy"
+          }
+        ]
+      },
+      {
+        "id": "record-service-start",
+        "on": "world.service-start",
+        "predicates": [],
+        "actions": [
+          {
+            "kind": "log-append",
+            "log": "events",
+            "entry": "1 service running"
+          },
+          {
+            "kind": "log-append",
+            "log": "reactions-file",
+            "entry": "1 service running"
+          }
+        ]
+      },
+      {
+        "id": "record-process-start",
+        "on": "world.process-transition",
+        "predicates": [],
+        "actions": [
+          {
+            "kind": "log-append",
+            "log": "events",
+            "entry": "2 worker running"
+          },
+          {
+            "kind": "log-append",
+            "log": "reactions-file",
+            "entry": "2 worker running"
+          }
+        ]
+      },
+      {
+        "id": "record-service-health",
+        "on": "world.service-health",
+        "predicates": [],
+        "actions": [
+          {
+            "kind": "log-append",
+            "log": "events",
+            "entry": "3 service healthy"
+          },
+          {
+            "kind": "log-append",
+            "log": "reactions-file",
+            "entry": "3 service healthy"
+          }
+        ]
+      }
+    ]
+  },
+  "models": [
+    {
+      "id": "deep-foundation",
+      "name": "Deep Foundation",
+      "archetype": "paranoid",
+      "description": "Thorough. Expensive. Excavation permit required.",
+      "costMultiplier": 48000
+    }
+  ]
+}

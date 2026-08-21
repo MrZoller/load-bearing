@@ -86,6 +86,9 @@ function emitNode(node: SchemaNode): Record<string, unknown> {
         enum: [...node.values],
       };
 
+    case "boolean":
+      return { type: "boolean", description: node.description };
+
     case "object": {
       const properties: Record<string, unknown> = {};
       const required: string[] = [];
@@ -144,6 +147,12 @@ function emitNode(node: SchemaNode): Record<string, unknown> {
         ...(node.minEntries !== undefined
           ? { minProperties: node.minEntries }
           : {}),
+      };
+
+    case "union":
+      return {
+        description: node.description,
+        oneOf: Object.values(node.variants).map(emitNode),
       };
 
     case "deferred":

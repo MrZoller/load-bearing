@@ -13,6 +13,7 @@ import {
 } from "./schema.js";
 import type {
   EnumNode,
+  BooleanNode,
   IntegerNode,
   ObjectNode,
   SchemaNode,
@@ -37,6 +38,7 @@ import type {
   CartridgeService,
   CartridgeSystem,
   CartridgeTicket,
+  CartridgeTest,
 } from "./types.js";
 
 const PUBLISHED = fileURLToPath(
@@ -107,7 +109,7 @@ describe("the published schema", () => {
     // The gap is a decision, not an oversight — and a reader should be able to
     // see that without noticing an absence.
     const rendered = serialize(emitJsonSchema());
-    for (const owner of ["issue #12", "Phase 4"]) {
+    for (const owner of ["Phase 4"]) {
       expect(rendered).toContain(owner);
     }
   });
@@ -184,6 +186,9 @@ describe("the descriptor tree", () => {
       }
       if (node.kind === "array") walk(node.items, `${path}/[]`);
       if (node.kind === "record") walk(node.values, `${path}/{}`);
+      if (node.kind === "union")
+        for (const [key, variant] of Object.entries(node.variants))
+          walk(variant, `${path}/<${key}>`);
     }
 
     walk(CARTRIDGE_SCHEMA, "");
@@ -223,6 +228,10 @@ describe("the descriptor tree", () => {
         case "record":
           walk(node.values, `${path}/{}`);
           return;
+        case "union":
+          for (const [key, variant] of Object.entries(node.variants))
+            walk(variant, `${path}/<${key}>`);
+          return;
         default:
           return;
       }
@@ -254,6 +263,9 @@ describe("the descriptor tree", () => {
       }
       if (node.kind === "array") walk(node.items, `${path}/[]`);
       if (node.kind === "record") walk(node.values, `${path}/{}`);
+      if (node.kind === "union")
+        for (const [key, variant] of Object.entries(node.variants))
+          walk(variant, `${path}/<${key}>`);
     }
 
     walk(CARTRIDGE_SCHEMA, "");
@@ -297,9 +309,11 @@ describe("descriptor and type lockstep", () => {
    */
   type NodeFor<T> = [T] extends [number]
     ? IntegerNode
-    : [T] extends [string]
-      ? StringNode | EnumNode
-      : never;
+    : [T] extends [boolean]
+      ? BooleanNode
+      : [T] extends [string]
+        ? StringNode | EnumNode
+        : never;
 
   /** Asserts at compile time; the runtime body is only here to name it. */
   function agrees<Declared>(_node: NodeFor<Declared>): void {}
@@ -394,6 +408,10 @@ describe("descriptor and type lockstep", () => {
     agrees<CartridgeTicket["title"]>(ticket.fields.title.node);
     agrees<CartridgeTicket["body"]>(ticket.fields.body.node);
     agrees<CartridgeTicket["service"]>(ticket.fields.service.node);
+    const test = repository.fields.tests.node.items;
+    agrees<CartridgeTest["id"]>(test.fields.id.node);
+    agrees<CartridgeTest["name"]>(test.fields.name.node);
+    agrees<CartridgeTest["durationMs"]>(test.fields.durationMs.node);
 
     const history = repository.fields.gitHistory.node;
     const commit = history.fields.commits.node.items;

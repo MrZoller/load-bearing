@@ -1,6 +1,10 @@
 /** Pure immutable mechanics for the simulated machine's environmental layer. */
 
-import type { LoadedCartridge, WorldUnitState } from "../cartridge/types.js";
+import type {
+  LoadedCartridge,
+  ServiceHealth,
+  WorldUnitState,
+} from "../cartridge/types.js";
 import type { RandomStream } from "../random/stream.js";
 import { compareVfsNames } from "../vfs/path.js";
 import { readVfs } from "../vfs/vfs.js";
@@ -288,6 +292,21 @@ export function transitionService(
     ...slice,
     services: slice.services.map((entry) =>
       entry.id === id ? { ...entry, state } : entry,
+    ),
+  };
+}
+
+export function transitionServiceHealth(
+  slice: WorldSlice,
+  id: string,
+  health: ServiceHealth,
+): WorldSlice {
+  if (lookupService(slice, id) === undefined)
+    throw new Error(`world: unknown service ${JSON.stringify(id)}`);
+  return {
+    ...slice,
+    services: slice.services.map((entry) =>
+      entry.id === id ? { ...entry, health } : entry,
     ),
   };
 }

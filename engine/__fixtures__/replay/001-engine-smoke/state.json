@@ -88,6 +88,7 @@
         }
       ],
       "processes": [],
+      "reactions": [],
       "services": [],
       "shellHistory": [
         "cd /production/service",
@@ -136,6 +137,9 @@
     "probe": {
       "events": 0,
       "values": 0
+    },
+    "tests": {
+      "runs": []
     },
     "vfs": {
       "cwd": "/production/service",

@@ -47,6 +47,7 @@ import { VFS_MODULE } from "../vfs/module.js";
 import { GIT_MODULE } from "../git/module.js";
 import { WORLD_MODULE } from "../world/module.js";
 import { SHELL_MODULE } from "../commands/module.js";
+import { TESTS_MODULE } from "../tests/module.js";
 import type { EventRegistry } from "./registry.js";
 import type { EventModule } from "./module.js";
 
@@ -57,6 +58,7 @@ export const ENGINE_EVENT_MODULES: readonly EventModule[] = Object.freeze([
   GIT_MODULE,
   WORLD_MODULE,
   SHELL_MODULE,
+  TESTS_MODULE,
 ]);
 
 /**
