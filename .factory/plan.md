@@ -33,11 +33,11 @@ remains blocked until review findings are deliberately batched into it.
   - acceptance: filesystem command modules implement the issue's command and flag set over the VFS with exact deterministic output and exit codes; per-command golden tests cover success, missing-target, and permission-denied paths; `ls -la` preserves declared metadata; a replay proves multi-command mutation and persistent deletion across timezones
   - deps: T1, T4
   - pr: 27
-- [R] T6 (standard) — Git commands (Fixes #10)
+- [x] T6 (standard) — Git commands (Fixes #10)
   - acceptance: git command modules render and mutate only through the git/VFS models for the issue's command set; golden tests cover exact output, errors, deterministic hashes, log/blame coherence, and full command semantics; a replay proves tracked deletion → status → checkout restoration with byte-identical output across platforms and timezones
   - deps: T2, T4, T5
   - pr: 28
-- [ ] T7 (standard) — System and world-inspection commands (Fixes #11)
+- [~] T7 (standard) — System and world-inspection commands (Fixes #11)
   - acceptance: system command modules implement the issue's command set over cartridge world state; golden fixtures cover every command and required error; simulated `curl` performs no network I/O, `date` uses only the simulated clock, and event-driven `kill`/`systemctl`/environment transitions remain visible to later commands and replay identically
   - deps: T3, T4
 - [ ] T8 (standard) — Simulated test runner and cartridge-defined reactions (Fixes #12)
@@ -83,3 +83,6 @@ remains blocked until review findings are deliberately batched into it.
   - PR #26: return a deterministic shell result for oversized command input
   - PR #26: return a deterministic shell result for control-character and lone-surrogate input
   - PR #27: reject empty authored filesystem operands rather than resolving them to the current working directory
+  - PR #28: reject unwritable control characters and lone surrogates in authored Git email addresses
+  - PR #28: render an extended unterminated final line as changed rather than shared diff context
+  - PR #28: deduplicate no-final-newline markers on a shared diff context row

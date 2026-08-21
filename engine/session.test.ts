@@ -28,6 +28,13 @@ const CARTRIDGE: LoadedCartridge = loadCartridge({
     cwd: "/srv/app",
     identity: { user: "root", group: "root", home: "/root" },
     gitIdentity: { name: "Visitor", email: "visitor@example.test" },
+    system: {
+      hostname: "session",
+      operatingSystem: "Linux",
+      kernelRelease: "6.1.0",
+      architecture: "x86_64",
+      bootedAt: "2026-08-01T00:00:00.000Z",
+    },
     files: { "/srv/app/main.ts": { contents: "export const load = 1;\n" } },
   },
   models: [

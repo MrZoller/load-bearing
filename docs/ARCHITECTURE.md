@@ -179,6 +179,12 @@ renders the same entries differently without changing what was recorded.
   id; service and ticket listings sort by code-point id, with no locale
   collation. Service transitions change only running/stopped state; health
   remains cartridge- and reaction-owned.
+- **Machine identity and endpoints:** required `repository.system` metadata
+  supplies hostname, operating system, kernel release, architecture and boot
+  instant. Uptime is the difference between that authored instant and the
+  simulated clock. `repository.endpoints` maps exact HTTP(S) URL strings to a
+  service plus complete running/unavailable responses; simulated `curl` is a
+  pure lookup and has no network fallback.
 - **Test runner:** simulated `npm test`-style output defined per cartridge,
   reactive to file state
 - **Logs, env, man pages, shell history, ticket archive:** cartridge-supplied,
@@ -207,6 +213,10 @@ renders the same entries differently without changing what was recorded.
   builtin with the same name, and its stdout lines precede stderr lines
 - unknown names return straight shell-register stderr and exit 127; blank input
   records a successful empty result
+- every nonblank raw shell input, including one that fails tokenization, expands
+  first to `world.history-append`, then command-owned events, then
+  `shell.result`. Output is computed before expansion, so `history` deliberately
+  displays prior entries rather than itself.
 - The TUI passes `!`-prefixed input straight to the shell layer; both views
   are thin renderers over the same engine session
 

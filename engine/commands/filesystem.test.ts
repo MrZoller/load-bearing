@@ -277,7 +277,10 @@ describe("filesystem commands", () => {
         seed: "filesystem-escaped-path",
         events: [{ type: "shell.execute", payload: { input } }],
       });
-      expect(replayed.transcript[0]?.summary).toContain("3020 chars");
+      expect(
+        replayed.transcript.find((entry) => entry.type.startsWith("vfs."))
+          ?.summary,
+      ).toContain("3020 chars");
       expect(replayed.transcript.at(-1)?.exitCode).toBe(0);
     }
   });
@@ -294,7 +297,10 @@ describe("filesystem commands", () => {
         { type: "shell.execute", payload: { input: `touch '${path}'` } },
       ],
     });
-    expect(replayed.transcript[0]?.summary).toContain("…");
+    expect(
+      replayed.transcript.find((entry) => entry.type.startsWith("vfs."))
+        ?.summary,
+    ).toContain("…");
     expect(replayed.transcript.at(-1)?.exitCode).toBe(0);
   });
 
@@ -353,11 +359,9 @@ describe("filesystem commands", () => {
     expect(vfs.cwd).toBe("/production/service/work/cache");
     expect(vfs.entries["/production/service/work/cache/keep"]).toBeUndefined();
     expect(
-      replayed.transcript.map((entry) => [
-        entry.type,
-        entry.exitCode,
-        entry.output,
-      ]),
+      replayed.transcript
+        .filter((entry) => entry.type !== "world.history-append")
+        .map((entry) => [entry.type, entry.exitCode, entry.output]),
     ).toEqual([
       ["vfs.mkdir", undefined, undefined],
       ["shell.result", 0, []],

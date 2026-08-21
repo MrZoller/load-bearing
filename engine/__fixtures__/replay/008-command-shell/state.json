@@ -33,6 +33,7 @@
       },
       "cwd": "/production/service",
       "directories": {},
+      "endpoints": {},
       "env": {},
       "files": {
         "/production/service/README.md": {
@@ -66,6 +67,13 @@
       "processes": [],
       "services": [],
       "shellHistory": [],
+      "system": {
+        "architecture": "x86_64",
+        "bootedAt": "2025-07-01T06:10:00.000Z",
+        "hostname": "production",
+        "kernelRelease": "6.1.0-load-bearing",
+        "operatingSystem": "Linux"
+      },
       "tests": [],
       "tickets": []
     },
@@ -76,7 +84,7 @@
     "startMs": 1785921262000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 5,
+  "eventCount": 9,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {},
@@ -148,7 +156,12 @@
       "manPages": [],
       "processes": [],
       "services": [],
-      "shellHistory": [],
+      "shellHistory": [
+        "echo 'one two' three",
+        "pwd ignored",
+        "missing",
+        "true"
+      ],
       "tickets": []
     }
   },
@@ -156,8 +169,15 @@
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
-      "exitCode": 0,
       "index": 0,
+      "summary": "length=1",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 1,
       "output": [
         {
           "stream": "stdout",
@@ -170,8 +190,15 @@
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
+      "index": 2,
+      "summary": "length=2",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
       "exitCode": 7,
-      "index": 1,
+      "index": 3,
       "output": [
         {
           "stream": "stdout",
@@ -188,8 +215,15 @@
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
+      "index": 4,
+      "summary": "length=3",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
       "exitCode": 127,
-      "index": 2,
+      "index": 5,
       "output": [
         {
           "stream": "stderr",
@@ -203,7 +237,7 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 3,
+      "index": 6,
       "output": [],
       "summary": "",
       "type": "shell.result"
@@ -211,8 +245,15 @@
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
+      "index": 7,
+      "summary": "length=4",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
       "exitCode": 0,
-      "index": 4,
+      "index": 8,
       "output": [],
       "summary": "",
       "type": "shell.result"

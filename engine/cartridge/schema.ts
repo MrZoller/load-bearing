@@ -136,6 +136,11 @@ export const MAN_PAGE_PATTERN = pattern(/^[a-z0-9][a-z0-9._-]*$/);
 /** Runtime and cartridge command names share this lookup spelling. */
 export const COMMAND_NAME_PATTERN = pattern(/^[A-Za-z0-9][A-Za-z0-9._+-]*$/);
 
+/** Absolute HTTP(S) URL used as an exact, inert endpoint lookup key. */
+export const ENDPOINT_URL_PATTERN = pattern(
+  /^https?:\/\/[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?(?::(?:[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]))?(?:[/?][^\s\u0000-\u001F\u007F-\u009F\u2028\u2029#]*)?$/,
+);
+
 /** Half the per-entry transcript line budget, once for each shell stream. */
 export const MAX_COMMAND_STREAM_LINES = 2048;
 
@@ -793,6 +798,60 @@ const COMMAND = {
   },
 } satisfies ObjectNode;
 
+const SYSTEM = {
+  kind: "object",
+  description:
+    "Cartridge-owned machine identity and boot instant used by uname and uptime.",
+  fields: {
+    hostname: required({
+      kind: "string",
+      description: "Machine hostname.",
+      pattern: MAN_PAGE_PATTERN,
+      patternLabel: "a lowercase hostname",
+    }),
+    operatingSystem: required({
+      kind: "string",
+      description: "Operating-system name rendered by uname.",
+      pattern: SINGLE_LINE_PATTERN,
+      patternLabel: "a single-line string",
+      minLength: 1,
+      maxLength: 80,
+    }),
+    kernelRelease: required({
+      kind: "string",
+      description: "Kernel release rendered by uname -a.",
+      pattern: SINGLE_LINE_PATTERN,
+      patternLabel: "a single-line string",
+      minLength: 1,
+      maxLength: 120,
+    }),
+    architecture: required({
+      kind: "string",
+      description: "Machine architecture rendered by uname -a.",
+      pattern: SINGLE_LINE_PATTERN,
+      patternLabel: "a single-line string",
+      minLength: 1,
+      maxLength: 80,
+    }),
+    bootedAt: required({
+      ...TIMESTAMP,
+      description:
+        "UTC boot instant. Must not be later than meta.startedAt; uptime derives from this and the simulated clock.",
+    }),
+  },
+} satisfies ObjectNode;
+
+const ENDPOINT = {
+  kind: "object",
+  description:
+    "One inert simulated HTTP endpoint. Its linked service state selects one of two fully declared responses.",
+  fields: {
+    service: required(WORLD_ID),
+    running: required(COMMAND),
+    unavailable: required(COMMAND),
+  },
+} satisfies ObjectNode;
+
 const MODEL = {
   kind: "object",
   description: "One selectable model persona.",
@@ -859,6 +918,7 @@ const REPOSITORY = {
       description:
         "Authorship for commits created during the session. This is world content, not derived from the POSIX identity.",
     }),
+    system: required(SYSTEM),
     files: required({
       kind: "record",
       description: "The simulated filesystem, keyed by absolute path.",
@@ -922,6 +982,17 @@ const REPOSITORY = {
         keyPattern: COMMAND_NAME_PATTERN,
         keyLabel: "a shell command name",
         values: COMMAND,
+      },
+      {},
+    ),
+    endpoints: optional(
+      {
+        kind: "record",
+        description:
+          "Static simulated curl responses keyed by exact absolute HTTP(S) URL. Lookup is byte-for-byte and never performs network I/O.",
+        keyPattern: ENDPOINT_URL_PATTERN,
+        keyLabel: "an absolute HTTP(S) URL without a fragment",
+        values: ENDPOINT,
       },
       {},
     ),

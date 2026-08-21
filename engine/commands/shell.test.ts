@@ -19,6 +19,10 @@ function fold(input: string, commands?: Record<string, unknown>): SessionState {
   });
 }
 
+function shellResult(state: SessionState) {
+  return state.transcript.at(-1);
+}
+
 describe("shell execution", () => {
   it.each([
     ["pwd", ["/production/service"]],
@@ -26,18 +30,21 @@ describe("shell execution", () => {
     ["true", []],
   ])("runs the %s builtin through an unlogged expansion", (input, stdout) => {
     const state = fold(input);
-    expect(state.eventCount).toBe(1);
+    expect(state.eventCount).toBe(2);
     expect(state.transcript.map((entry) => entry.type)).toEqual([
+      "world.history-append",
       "shell.result",
     ]);
-    expect(state.transcript[0]).toMatchObject({
+    expect(shellResult(state)).toMatchObject({
       output: stdout.map((text) => ({ stream: "stdout", text })),
       exitCode: 0,
     });
   });
 
   it("returns a successful empty result for blank input", () => {
-    expect(fold("  \t ").transcript[0]).toMatchObject({
+    const state = fold("  \t ");
+    expect(state.eventCount).toBe(1);
+    expect(shellResult(state)).toMatchObject({
       output: [],
       exitCode: 0,
     });
@@ -45,22 +52,22 @@ describe("shell execution", () => {
 
   it("stamps the shell envelope and its expanded result", () => {
     expect(createShellExecuteEvent("true")).toMatchObject({ version: 0 });
-    expect(fold("true").transcript).toHaveLength(1);
+    expect(fold("true").transcript).toHaveLength(2);
   });
 
   it("returns plausible exit-127 stderr for an unknown command", () => {
-    expect(fold("missing").transcript[0]).toMatchObject({
+    expect(shellResult(fold("missing"))).toMatchObject({
       output: [{ stream: "stderr", text: "missing: command not found" }],
       exitCode: 127,
     });
   });
 
   it("uses the generic option parser at builtin dispatch", () => {
-    expect(fold("pwd -LP --").transcript[0]).toMatchObject({
+    expect(shellResult(fold("pwd -LP --"))).toMatchObject({
       output: [{ stream: "stdout", text: "/production/service" }],
       exitCode: 0,
     });
-    expect(fold("pwd -z").transcript[0]).toMatchObject({
+    expect(shellResult(fold("pwd -z"))).toMatchObject({
       output: [{ stream: "stderr", text: "pwd: invalid option: -z" }],
       exitCode: 2,
     });
@@ -69,7 +76,7 @@ describe("shell execution", () => {
   it("records stdout before stderr for a static cartridge override", () => {
     const entry = fold("pwd ignored", {
       pwd: { stdout: ["authored out"], stderr: ["authored err"], exitCode: 9 },
-    }).transcript[0];
+    }).transcript.at(-1);
     expect(entry).toMatchObject({
       output: [
         { stream: "stdout", text: "authored out" },
@@ -80,18 +87,27 @@ describe("shell execution", () => {
   });
 
   it("turns tokenizer errors into deterministic shell results", () => {
-    expect(fold("echo '").transcript[0]).toMatchObject({
+    const state = fold("echo '");
+    expect(shellResult(state)).toMatchObject({
       output: [{ stream: "stderr", text: "shell: unterminated single quote" }],
       exitCode: 2,
+    });
+    expect(state.slices["world"]).toMatchObject({
+      shellHistory: [
+        "cd /production/service",
+        "git status",
+        "npm test",
+        "echo '",
+      ],
     });
   });
 
   it("accepts the shell input limit exactly and throws its bare limit error over it", () => {
-    expect(
-      fold("x".repeat(MAX_SHELL_INPUT_LENGTH)).transcript[0],
-    ).toMatchObject({
-      exitCode: 127,
-    });
+    expect(shellResult(fold("x".repeat(MAX_SHELL_INPUT_LENGTH)))).toMatchObject(
+      {
+        exitCode: 127,
+      },
+    );
     expect(() => fold("x".repeat(MAX_SHELL_INPUT_LENGTH + 1))).toThrow(
       `shell input is ${String(MAX_SHELL_INPUT_LENGTH + 1)} characters, over the ${String(MAX_SHELL_INPUT_LENGTH)} command limit`,
     );
@@ -128,7 +144,8 @@ describe("shell execution", () => {
         }).transcript,
       ),
     ).toEqual([
-      "0000  2026-08-05T09:14:22.000Z  shell.result exit=4",
+      "0000  2026-08-05T09:14:22.000Z  world.history-append length=4",
+      "0001  2026-08-05T09:14:22.000Z  shell.result exit=4",
       "      stdout> out",
       "      stderr> err",
     ]);

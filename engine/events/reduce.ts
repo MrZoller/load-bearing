@@ -53,7 +53,7 @@ import {
 } from "../random/stream.js";
 import type { RandomState } from "../random/stream.js";
 import { deserialize, serialize } from "../serialize/canonical.js";
-import { describeUnwritableText } from "../text.js";
+import { countCodePoints, describeUnwritableText } from "../text.js";
 import {
   MAX_TRANSCRIPT_DETAIL_LINES,
   MAX_TRANSCRIPT_LINE_LENGTH,
@@ -612,9 +612,10 @@ function captureOutcome(raw: unknown, where: string): CapturedOutcome {
           `${where}: structured transcript output[${String(offset)}].text must be a string`,
         );
       }
-      if (text.length > MAX_TRANSCRIPT_LINE_LENGTH) {
+      const characterCount = countCodePoints(text);
+      if (characterCount > MAX_TRANSCRIPT_LINE_LENGTH) {
         throw new Error(
-          `${where}: structured transcript output[${String(offset)}].text is ${String(text.length)} characters, over the ` +
+          `${where}: structured transcript output[${String(offset)}].text is ${String(characterCount)} characters, over the ` +
             `${String(MAX_TRANSCRIPT_LINE_LENGTH)} a single line may hold.`,
         );
       }

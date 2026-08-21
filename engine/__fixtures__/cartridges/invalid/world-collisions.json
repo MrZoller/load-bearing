@@ -11,6 +11,13 @@
     "cwd": "/srv",
     "identity": { "user": "root", "group": "root", "home": "/root" },
     "gitIdentity": { "name": "Visitor", "email": "visitor@example.test" },
+    "system": {
+      "hostname": "production",
+      "operatingSystem": "Linux",
+      "kernelRelease": "6.1.0",
+      "architecture": "x86_64",
+      "bootedAt": "2025-07-01T06:10:00.000Z"
+    },
     "files": { "/srv/app": { "contents": "binary" } },
     "services": [
       {

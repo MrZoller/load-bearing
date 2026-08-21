@@ -11,6 +11,13 @@
     "cwd": "/production/service",
     "identity": { "user": "root", "group": "root", "home": "/root" },
     "gitIdentity": { "name": "Visitor", "email": "visitor@example.test" },
+    "system": {
+      "hostname": "load-bearing-01",
+      "operatingSystem": "Linux",
+      "kernelRelease": "6.1.0-structural-amd64",
+      "architecture": "x86_64",
+      "bootedAt": "2025-07-01T06:10:00.000Z"
+    },
     "files": {
       "/production/service/app": { "contents": "binary" },
       "/var/log/api.log": { "contents": "booted\n" }
@@ -37,6 +44,17 @@
         "command": { "binary": "/production/service/app", "args": [] },
         "startedAt": "2026-08-05T08:00:00.000Z",
         "state": "stopped"
+      },
+      {
+        "id": "killable",
+        "pid": 1300,
+        "user": "deploy",
+        "command": {
+          "binary": "/production/service/app",
+          "args": ["--inspect"]
+        },
+        "startedAt": "2026-08-05T08:30:00.000Z",
+        "state": "running"
       }
     ],
     "services": [
@@ -55,6 +73,30 @@
         "dependencies": ["api"]
       }
     ],
+    "endpoints": {
+      "https://api.example.test/health": {
+        "service": "api",
+        "running": {
+          "stdout": ["HTTP/1.1 200 OK", "healthy"],
+          "stderr": [],
+          "exitCode": 0
+        },
+        "unavailable": {
+          "stdout": [],
+          "stderr": ["curl: (7) Failed to connect to api.example.test"],
+          "exitCode": 7
+        }
+      },
+      "https://worker.example.test/status?full=1": {
+        "service": "worker",
+        "running": { "stdout": ["working"], "stderr": [], "exitCode": 0 },
+        "unavailable": {
+          "stdout": [],
+          "stderr": ["curl: (7) Failed to connect to worker.example.test"],
+          "exitCode": 7
+        }
+      }
+    },
     "logs": [
       { "id": "api-file", "kind": "file", "path": "/var/log/api.log" },
       { "id": "events", "kind": "stream", "entries": ["seeded"] }

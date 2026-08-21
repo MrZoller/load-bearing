@@ -34,6 +34,7 @@
  */
 
 import { deepFreeze } from "../freeze.js";
+import { parseTimestamp } from "../clock/civil.js";
 import { detectBrand } from "../serialize/canonical.js";
 import {
   CARTRIDGE_SCHEMA,
@@ -1291,6 +1292,28 @@ function checkWorld(repository: CartridgeRepository, report: Report): void {
 }
 
 /**
+ * Check each readable endpoint independently so one malformed endpoint does
+ * not hide a dangling service link in another. The service collection itself
+ * must be sound before its ids are a meaningful reference target.
+ */
+function checkEndpointServiceReferences(
+  repository: CartridgeRepository,
+  report: Report,
+): void {
+  const services = new Set(repository.services.map((service) => service.id));
+  for (const [url, endpoint] of Object.entries(repository.endpoints)) {
+    const pointer = `/repository/endpoints/${pointerToken(url)}`;
+    if (issueWithin(report, pointer)) continue;
+    if (!services.has(endpoint.service))
+      report.addPhrase(
+        `${pointer}/service`,
+        "the id of a declared service",
+        `${JSON.stringify(endpoint.service)}, which does not exist`,
+      );
+  }
+}
+
+/**
  * Validate and normalize a parsed cartridge.
  *
  * @throws CartridgeValidationError with every issue found, never just the first.
@@ -1365,6 +1388,20 @@ export function loadCartridge(value: unknown): LoadedCartridge {
   }
   if (
     !issueAt(report, "/repository") &&
+    !issueAt(report, "/meta/startedAt") &&
+    !issueAt(report, "/repository/system") &&
+    !issueAt(report, "/repository/system/bootedAt") &&
+    parseTimestamp(cartridge.repository.system.bootedAt) >
+      parseTimestamp(cartridge.meta.startedAt)
+  ) {
+    report.addPhrase(
+      "/repository/system/bootedAt",
+      "a UTC instant at or before meta.startedAt",
+      `${JSON.stringify(cartridge.repository.system.bootedAt)}, which is later than ${JSON.stringify(cartridge.meta.startedAt)}`,
+    );
+  }
+  if (
+    !issueAt(report, "/repository") &&
     !issueAt(report, "/repository/files") &&
     !issueWithin(report, "/repository/processes") &&
     !issueWithin(report, "/repository/services") &&
@@ -1373,6 +1410,13 @@ export function loadCartridge(value: unknown): LoadedCartridge {
     !issueWithin(report, "/repository/tickets")
   ) {
     checkWorld(cartridge.repository, report);
+  }
+  if (
+    !issueAt(report, "/repository") &&
+    !issueAt(report, "/repository/endpoints") &&
+    !issueWithin(report, "/repository/services")
+  ) {
+    checkEndpointServiceReferences(cartridge.repository, report);
   }
 
   if (report.issues.length > 0)

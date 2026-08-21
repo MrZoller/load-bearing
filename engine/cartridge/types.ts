@@ -72,6 +72,22 @@ export interface CartridgeCommand {
   readonly exitCode: number;
 }
 
+export interface CartridgeSystem {
+  readonly hostname: string;
+  readonly operatingSystem: string;
+  readonly kernelRelease: string;
+  readonly architecture: string;
+  /** UTC instant at or before the session start. */
+  readonly bootedAt: string;
+}
+
+export interface CartridgeEndpoint {
+  /** Service whose current running state selects the response. */
+  readonly service: string;
+  readonly running: CartridgeCommand;
+  readonly unavailable: CartridgeCommand;
+}
+
 export interface CartridgeModel {
   readonly id: string;
   readonly name: string;
@@ -167,6 +183,8 @@ export interface CartridgeRepository {
   readonly identity: CartridgeIdentity;
   /** Authorship used by visitor-created commits. */
   readonly gitIdentity: CartridgeGitAuthor;
+  /** Cartridge-owned identity and boot time for the simulated machine. */
+  readonly system: CartridgeSystem;
   /** The simulated filesystem, keyed by absolute path. */
   readonly files: Readonly<Record<string, CartridgeFile>>;
   /** Explicit directory metadata. Missing ancestors are synthesized by the VFS. */
@@ -176,6 +194,8 @@ export interface CartridgeRepository {
   readonly shellHistory: readonly string[];
   /** Static hidden commands and explicit overrides of runtime builtins. */
   readonly commands: Readonly<Record<string, CartridgeCommand>>;
+  /** Static responses keyed by the exact URL accepted by simulated curl. */
+  readonly endpoints: Readonly<Record<string, CartridgeEndpoint>>;
   readonly gitHistory: CartridgeGitHistory;
   readonly processes: readonly CartridgeProcess[];
   readonly services: readonly CartridgeService[];

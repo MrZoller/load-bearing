@@ -34,7 +34,10 @@ function execute(state: SessionState, input: string): SessionState {
 }
 
 function commandEvents(state: SessionState, input: string) {
-  return executeShell(state, input).slice(0, -1);
+  return executeShell(state, input).filter(
+    (event) =>
+      event.type !== "world.history-append" && event.type !== "shell.result",
+  );
 }
 
 describe("Git commands", () => {
@@ -98,8 +101,8 @@ describe("Git commands", () => {
   });
 
   it("treats explicit HEAD exactly like the default show operand", () => {
-    expect(executeShell(initial(), "git show HEAD")).toEqual(
-      executeShell(initial(), "git show"),
+    expect(executeShell(initial(), "git show HEAD").slice(1)).toEqual(
+      executeShell(initial(), "git show").slice(1),
     );
   });
 

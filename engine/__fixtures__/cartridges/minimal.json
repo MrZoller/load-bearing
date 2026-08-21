@@ -15,6 +15,13 @@
       "home": "/root"
     },
     "gitIdentity": { "name": "Visitor", "email": "visitor@example.test" },
+    "system": {
+      "hostname": "production",
+      "operatingSystem": "Linux",
+      "kernelRelease": "6.1.0-load-bearing",
+      "architecture": "x86_64",
+      "bootedAt": "2025-07-01T06:10:00.000Z"
+    },
     "files": {
       "/production/service/src/index.ts": {
         "contents": "export const load = 1;\n",

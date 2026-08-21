@@ -1,0 +1,84 @@
+0000  2026-08-05T09:14:22.000Z  world.history-append length=2
+0001  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout>   PID USER     STAT COMMAND
+      stdout>  1200 root     T app
+      stdout>  1300 deploy   R app --inspect
+      stdout> 31981 root     R app --serve
+0002  2026-08-05T09:14:22.000Z  world.history-append length=3
+0003  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> SERVICE_TIER=critical
+0004  2026-08-05T09:14:22.000Z  world.history-append length=4
+0005  2026-08-05T09:14:22.000Z  world.env-set name="BEAM"
+0006  2026-08-05T09:14:22.000Z  shell.result exit=0
+0007  2026-08-05T09:14:22.000Z  world.history-append length=5
+0008  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> SERVICE(1)
+0009  2026-08-05T09:14:22.000Z  world.history-append length=6
+0010  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout>     1  git status
+      stdout>     2  ps
+      stdout>     3  env
+      stdout>     4  export BEAM=load=bearing
+      stdout>     5  man service
+0011  2026-08-05T09:14:22.000Z  world.history-append length=7
+0012  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> HTTP/1.1 200 OK
+      stdout> healthy
+0013  2026-08-05T09:14:22.000Z  world.history-append length=8
+0014  2026-08-05T09:14:22.000Z  world.service-stop id="api"
+0015  2026-08-05T09:14:22.000Z  shell.result exit=0
+0016  2026-08-05T09:14:22.000Z  world.history-append length=9
+0017  2026-08-05T09:14:22.000Z  shell.result exit=3
+      stdout> ● api.service - api
+      stdout>    Active: inactive (dead)
+      stdout>    Health: healthy
+0018  2026-08-05T09:14:22.000Z  world.history-append length=10
+0019  2026-08-05T09:14:22.000Z  shell.result exit=7
+      stderr> curl: (7) Failed to connect to api.example.test
+0020  2026-08-05T09:14:22.000Z  world.history-append length=11
+0021  2026-08-05T09:14:22.000Z  world.service-restart id="api"
+0022  2026-08-05T09:14:22.000Z  shell.result exit=0
+0023  2026-08-05T09:14:22.000Z  world.history-append length=12
+0024  2026-08-05T09:14:22.000Z  world.process-transition id="killable" state=stopped
+0025  2026-08-05T09:14:22.000Z  shell.result exit=0
+0026  2026-08-05T09:14:22.000Z  world.history-append length=13
+0027  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout>   PID USER     STAT COMMAND
+      stdout>  1200 root     T app
+      stdout>  1300 deploy   T app --inspect
+      stdout> 31981 root     R app --serve
+0028  2026-08-05T09:14:22.000Z  world.history-append length=14
+0029  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> root
+0030  2026-08-05T09:14:22.000Z  world.history-append length=15
+0031  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> Linux load-bearing-01 6.1.0-structural-amd64 x86_64
+0032  2026-08-05T09:14:22.000Z  world.history-append length=16
+0033  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout>  09:14:22 up 400 days, 03:04
+0034  2026-08-05T09:14:22.000Z  world.history-append length=17
+0035  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> Wed Aug  5 09:14:22 UTC 2026
+0036  2026-08-05T09:14:22.000Z  world.history-append length=18
+0037  2026-08-05T09:14:22.000Z  shell.result exit=2
+      stderr> shell: unterminated single quote
+0038  2026-08-05T09:14:22.000Z  world.history-append length=19
+0039  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout>     1  git status
+      stdout>     2  ps
+      stdout>     3  env
+      stdout>     4  export BEAM=load=bearing
+      stdout>     5  man service
+      stdout>     6  history
+      stdout>     7  curl https://api.example.test/health
+      stdout>     8  systemctl stop api
+      stdout>     9  systemctl status api
+      stdout>    10  curl https://api.example.test/health
+      stdout>    11  systemctl restart api
+      stdout>    12  kill 1300
+      stdout>    13  ps
+      stdout>    14  whoami
+      stdout>    15  uname -a
+      stdout>    16  uptime
+      stdout>    17  date
+      stdout>    18  echo '

@@ -23,6 +23,43 @@
       "commands": {},
       "cwd": "/production/service",
       "directories": {},
+      "endpoints": {
+        "https://api.example.test/health": {
+          "running": {
+            "exitCode": 0,
+            "stderr": [],
+            "stdout": [
+              "HTTP/1.1 200 OK",
+              "healthy"
+            ]
+          },
+          "service": "api",
+          "unavailable": {
+            "exitCode": 7,
+            "stderr": [
+              "curl: (7) Failed to connect to api.example.test"
+            ],
+            "stdout": []
+          }
+        },
+        "https://worker.example.test/status?full=1": {
+          "running": {
+            "exitCode": 0,
+            "stderr": [],
+            "stdout": [
+              "working"
+            ]
+          },
+          "service": "worker",
+          "unavailable": {
+            "exitCode": 7,
+            "stderr": [
+              "curl: (7) Failed to connect to worker.example.test"
+            ],
+            "stdout": []
+          }
+        }
+      },
       "env": {
         "SERVICE_TIER": "critical"
       },
@@ -112,6 +149,19 @@
           "startedAt": "2026-08-05T08:00:00.000Z",
           "state": "stopped",
           "user": "root"
+        },
+        {
+          "command": {
+            "args": [
+              "--inspect"
+            ],
+            "binary": "/production/service/app"
+          },
+          "id": "killable",
+          "pid": 1300,
+          "startedAt": "2026-08-05T08:30:00.000Z",
+          "state": "running",
+          "user": "deploy"
         }
       ],
       "services": [
@@ -140,6 +190,13 @@
       "shellHistory": [
         "git status"
       ],
+      "system": {
+        "architecture": "x86_64",
+        "bootedAt": "2025-07-01T06:10:00.000Z",
+        "hostname": "load-bearing-01",
+        "kernelRelease": "6.1.0-structural-amd64",
+        "operatingSystem": "Linux"
+      },
       "tests": [],
       "tickets": [
         {
@@ -313,6 +370,19 @@
           "startedAt": "2026-08-05T08:00:00.000Z",
           "state": "running",
           "user": "root"
+        },
+        {
+          "command": {
+            "args": [
+              "--inspect"
+            ],
+            "binary": "/production/service/app"
+          },
+          "id": "killable",
+          "pid": 1300,
+          "startedAt": "2026-08-05T08:30:00.000Z",
+          "state": "running",
+          "user": "deploy"
         }
       ],
       "services": [
