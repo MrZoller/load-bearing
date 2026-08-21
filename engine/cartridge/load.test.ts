@@ -1565,6 +1565,29 @@ describe("rejection", () => {
     ]);
   });
 
+  it("rejects transcript-breaking controls in authored filesystem paths", () => {
+    // Paths reach command-event summaries as well as VFS lookups. Accepting a
+    // JavaScript line terminator here would let a successful restore create a
+    // transcript entry the reducer cannot serialize, after its effect applies.
+    for (const character of [
+      String.fromCharCode(0x85),
+      String.fromCharCode(0x2028),
+      String.fromCharCode(0x2029),
+    ]) {
+      const source = minimal();
+      const repository = source["repository"] as Record<string, unknown>;
+      repository["files"] = {
+        [`/production/service/${character}unsafe`]: { contents: "x\n" },
+      };
+
+      expect(issuesOf(source)[0]).toMatchObject({
+        pointer: expect.stringContaining("/repository/files/"),
+        expected:
+          "a key that is an absolute POSIX path naming a file, not the root directory",
+      });
+    }
+  });
+
   it("checks cwd against the keys that validated, ignoring one that did not", () => {
     // One typo among a hundred file paths used to switch off the world's only
     // filesystem coherence check. It says nothing about whether the session

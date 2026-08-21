@@ -74,7 +74,7 @@ export const ARCHETYPES = Object.freeze([
 
 /**
  * Absolute POSIX path: a leading slash, then non-empty segments that are not
- * `.` or `..`, and no backslashes anywhere.
+ * `.` or `..`, and no backslashes or transcript-breaking controls anywhere.
  *
  * Absolute, not relative to `cwd`. The world is a filesystem, not a project
  * folder — `cat /etc/motd` and `ls /var/log` are part of the joke surface — so
@@ -82,7 +82,7 @@ export const ARCHETYPES = Object.freeze([
  * to be checked against.
  */
 export const ABSOLUTE_PATH_PATTERN = pattern(
-  /^\/$|^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F]+)+$/,
+  /^\/$|^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F-\u009F\u2028\u2029]+)+$/,
 );
 
 /**
@@ -101,7 +101,7 @@ export const ABSOLUTE_PATH_PATTERN = pattern(
  * session at the root is legitimate.
  */
 export const FILE_PATH_PATTERN = pattern(
-  /^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F]+)+$/,
+  /^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F-\u009F\u2028\u2029]+)+$/,
 );
 
 /**
