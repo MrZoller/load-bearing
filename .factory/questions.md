@@ -197,4 +197,24 @@ which the approved plan prohibits. Recommendation: A as the smallest explicit
 Phase 0 contract. Please also confirm that applying an authored `/compact`
 summary replaces current belief assertions (while preserving a timestamped
 summary history) rather than patching them.
-**A:**
+**A:** Option A — exact capabilities and the closed typed belief union.
+
+- Capabilities: `{ kind: "exact", action, resource }` only; standing-grant
+  coverage is exact field equality. No subtree or command-family scopes in
+  Phase 0.
+- Beliefs: the closed union as proposed (file existence/contents, Git HEAD,
+  service state/health); each kind compares through its owning subsystem's
+  typed truth query. No object diffing anywhere.
+- B is rejected under standing decision 4: broader scopes and a resolver
+  registry commit Phase 1/2 to public contract surface issue #13 does not
+  imply. The closed union widens compatibly later — adding kinds is
+  non-breaking — so extensibility costs nothing to defer until a Phase 1/2
+  issue actually demands it. C is prohibited by the plan outright.
+- Confirmed: applying an authored `/compact` summary REPLACES the current
+  belief assertions wholesale, preserving the timestamped summary history.
+  Replacement is the load-bearing semantic: post-compact belief derives only
+  from the summary, so authored summaries can induce divergence and
+  `beliefDivergence` reports it faithfully; patching would let pre-compact
+  truth leak through and dampen the exact effect the mechanism exists to
+  create. Document the replace semantics in the module's public API docs
+  (already required by the task's acceptance).
