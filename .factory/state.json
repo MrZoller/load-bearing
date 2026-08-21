@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T6",
-  "branch": "factory/t6-git-commands",
-  "pr": 28,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-20T12:53:39Z"
+  "updated": "2026-08-21T01:18:00Z"
 }
