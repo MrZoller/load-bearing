@@ -1,0 +1,367 @@
+import { describe, expect, it } from "vitest";
+
+import { loadCartridge } from "../cartridge/load.js";
+import { readGitSlice } from "../git/module.js";
+import { serialize } from "../serialize/canonical.js";
+import { loadCartridgeFixture } from "../testing/fixtures.js";
+import { readVfsSlice } from "../vfs/module.js";
+import { readVfs } from "../vfs/vfs.js";
+import { readWorldSlice } from "../world/module.js";
+import { reduce, restoreSnapshot, snapshot } from "../events/reduce.js";
+import type { EngineEvent, SessionState } from "../events/state.js";
+import {
+  beliefDivergence,
+  hasStandingPermission,
+  readMindSlice,
+  validateMindSlice,
+} from "./mind.js";
+
+const SEED = "2026-08-05/13/deep-foundation";
+const STARTED_AT = "2026-08-05T09:14:22.000Z";
+const CARTRIDGE = loadCartridge(loadCartridgeFixture("minimal"));
+
+function fold(events: readonly EngineEvent[]): SessionState {
+  return reduce({ cartridge: CARTRIDGE, seed: SEED, events });
+}
+
+const CAPABILITY = {
+  kind: "exact" as const,
+  action: "write",
+  resource: "/etc/motd",
+};
+
+describe("mind events", () => {
+  it("timestamps every permission decision at its simulated instant", () => {
+    const state = fold([
+      {
+        type: "mind.permission-decision",
+        payload: { capability: CAPABILITY, decision: "grant" },
+      },
+      { type: "clock.tick", payload: { ms: 1 } },
+      {
+        type: "mind.permission-decision",
+        payload: { capability: CAPABILITY, decision: "deny" },
+      },
+      { type: "clock.tick", payload: { ms: 1 } },
+      {
+        type: "mind.permission-decision",
+        payload: { capability: CAPABILITY, decision: "always-allow" },
+      },
+    ]);
+
+    expect(
+      readMindSlice(state).permissions.map(({ decision, at }) => ({
+        decision,
+        at,
+      })),
+    ).toEqual([
+      { decision: "grant", at: STARTED_AT },
+      { decision: "deny", at: "2026-08-05T09:14:22.001Z" },
+      { decision: "always-allow", at: "2026-08-05T09:14:22.002Z" },
+    ]);
+  });
+
+  it("grants standing permission only for an exact always-allow capability", () => {
+    const slice = readMindSlice(
+      fold([
+        {
+          type: "mind.permission-decision",
+          payload: { capability: CAPABILITY, decision: "grant" },
+        },
+        {
+          type: "mind.permission-decision",
+          payload: { capability: CAPABILITY, decision: "always-allow" },
+        },
+      ]),
+    );
+
+    expect(hasStandingPermission(slice, CAPABILITY)).toBe(true);
+    expect(
+      hasStandingPermission(slice, { ...CAPABILITY, action: "read" }),
+    ).toBe(false);
+    expect(
+      hasStandingPermission(slice, {
+        ...CAPABILITY,
+        resource: "/etc/motd.bak",
+      }),
+    ).toBe(false);
+  });
+
+  it("upserts beliefs by typed subject without moving their position", () => {
+    const state = fold([
+      {
+        type: "mind.belief-set",
+        payload: {
+          belief: { kind: "file-exists", path: "/etc/motd", exists: true },
+        },
+      },
+      {
+        type: "mind.belief-set",
+        payload: {
+          belief: {
+            kind: "git-head",
+            head: { kind: "branch", target: "main" },
+          },
+        },
+      },
+      {
+        type: "mind.belief-set",
+        payload: {
+          belief: { kind: "file-exists", path: "/etc/motd", exists: false },
+        },
+      },
+    ]);
+
+    expect(readMindSlice(state).beliefs).toEqual([
+      { kind: "file-exists", path: "/etc/motd", exists: false },
+      { kind: "git-head", head: { kind: "branch", target: "main" } },
+    ]);
+  });
+
+  it("compacts by replacing beliefs wholesale and retaining timestamped summaries", () => {
+    const state = fold([
+      {
+        type: "mind.belief-set",
+        payload: {
+          belief: { kind: "file-exists", path: "/etc/motd", exists: true },
+        },
+      },
+      { type: "clock.tick", payload: { ms: 7 } },
+      {
+        type: "mind.compact",
+        payload: {
+          summary: "forgot the filesystem",
+          beliefs: [
+            { kind: "service-state", service: "missing", state: "running" },
+          ],
+        },
+      },
+      { type: "clock.tick", payload: { ms: 3 } },
+      {
+        type: "mind.compact",
+        payload: { summary: "forgot the service", beliefs: [] },
+      },
+    ]);
+
+    expect(readMindSlice(state)).toEqual({
+      permissions: [],
+      beliefs: [],
+      compactHistory: [
+        {
+          summary: "forgot the filesystem",
+          at: "2026-08-05T09:14:22.007Z",
+        },
+        { summary: "forgot the service", at: "2026-08-05T09:14:22.010Z" },
+      ],
+    });
+  });
+
+  it("rejects malformed event payloads and malformed mind snapshots", () => {
+    expect(() =>
+      fold([
+        {
+          type: "mind.permission-decision",
+          payload: { capability: CAPABILITY, decision: "always" },
+        },
+      ]),
+    ).toThrow(/decision must be grant, deny or always-allow/);
+    expect(() =>
+      fold([
+        {
+          type: "mind.compact",
+          payload: {
+            summary: "x",
+            beliefs: [{ kind: "file-exists", path: "relative", exists: true }],
+          },
+        },
+      ]),
+    ).toThrow(/canonical absolute POSIX path/);
+    expect(() =>
+      validateMindSlice(
+        { permissions: [], beliefs: [], compactHistory: [], extra: true },
+        "snapshot: slices.mind",
+      ),
+    ).toThrow(/unexpected field/);
+
+    const parsed = JSON.parse(snapshot(fold([]))) as Record<string, unknown>;
+    (parsed["slices"] as Record<string, unknown>)["mind"] = {
+      permissions: [],
+      beliefs: [],
+      compactHistory: [{ summary: "x", at: "not-time" }],
+    };
+    expect(() => restoreSnapshot(serialize(parsed))).toThrow(
+      /real fixed-width UTC instant/,
+    );
+  });
+});
+
+describe("mind truth comparison and ownership", () => {
+  it("reports all five typed divergences, including missing service truth", () => {
+    const state = fold([
+      {
+        type: "mind.belief-set",
+        payload: {
+          belief: { kind: "file-exists", path: "/missing", exists: true },
+        },
+      },
+      {
+        type: "mind.belief-set",
+        payload: {
+          belief: {
+            kind: "file-contents",
+            path: "/etc/motd",
+            contents: "wrong",
+          },
+        },
+      },
+      {
+        type: "mind.belief-set",
+        payload: {
+          belief: {
+            kind: "git-head",
+            head: {
+              kind: "detached",
+              target: "0000000000000000000000000000000000000000",
+            },
+          },
+        },
+      },
+      {
+        type: "mind.belief-set",
+        payload: {
+          belief: {
+            kind: "service-state",
+            service: "missing",
+            state: "running",
+          },
+        },
+      },
+      {
+        type: "mind.belief-set",
+        payload: {
+          belief: {
+            kind: "service-health",
+            service: "missing",
+            health: "healthy",
+          },
+        },
+      },
+    ]);
+
+    expect(beliefDivergence(state)).toEqual([
+      { kind: "file-exists", path: "/missing", believed: true, actual: false },
+      {
+        kind: "file-contents",
+        path: "/etc/motd",
+        believed: "wrong",
+        actual: "This system is load-bearing.\n",
+      },
+      {
+        kind: "git-head",
+        believed: {
+          kind: "detached",
+          target: "0000000000000000000000000000000000000000",
+        },
+        actual: readGitSlice(state).head,
+      },
+      {
+        kind: "service-state",
+        service: "missing",
+        believed: "running",
+        actual: null,
+      },
+      {
+        kind: "service-health",
+        service: "missing",
+        believed: "healthy",
+        actual: null,
+      },
+    ]);
+  });
+
+  it("queries unreadable VFS truth without making it readable to the shell", () => {
+    const raw = loadCartridgeFixture("minimal") as Record<string, unknown>;
+    const repository = raw["repository"] as Record<string, unknown>;
+    const files = repository["files"] as Record<string, unknown>;
+    const cartridge = loadCartridge({
+      ...raw,
+      repository: {
+        ...repository,
+        identity: {
+          user: "greg",
+          group: "departed",
+          home: "/home/greg",
+          umask: "0022",
+        },
+        files: {
+          ...files,
+          "/etc/motd": {
+            ...(files["/etc/motd"] as Record<string, unknown>),
+            mode: "0400",
+          },
+        },
+      },
+    });
+    const state = reduce({
+      cartridge,
+      seed: SEED,
+      events: [
+        {
+          type: "mind.belief-set",
+          payload: {
+            belief: {
+              kind: "file-contents",
+              path: "/etc/motd",
+              contents: "wrong",
+            },
+          },
+        },
+      ],
+    });
+
+    expect(readVfs(readVfsSlice(state), "/etc/motd")).toMatchObject({
+      ok: false,
+      code: "EACCES",
+    });
+    expect(beliefDivergence(state)).toEqual([
+      {
+        kind: "file-contents",
+        path: "/etc/motd",
+        believed: "wrong",
+        actual: "This system is load-bearing.\n",
+      },
+    ]);
+  });
+
+  it("keeps mind events out of VFS, Git, and world, and foreign events out of mind", () => {
+    const base = fold([]);
+    const minded = fold([
+      {
+        type: "mind.belief-set",
+        payload: {
+          belief: { kind: "file-exists", path: "/etc/motd", exists: true },
+        },
+      },
+    ]);
+    const foreign = fold([
+      {
+        type: "mind.belief-set",
+        payload: {
+          belief: { kind: "file-exists", path: "/etc/motd", exists: true },
+        },
+      },
+      {
+        type: "vfs.write",
+        payload: { path: "/production/service/new.txt", contents: "x" },
+      },
+      { type: "world.env-set", payload: { name: "MIND_TEST", value: "x" } },
+    ]);
+
+    expect(serialize(readVfsSlice(minded))).toBe(serialize(readVfsSlice(base)));
+    expect(serialize(readGitSlice(minded))).toBe(serialize(readGitSlice(base)));
+    expect(serialize(readWorldSlice(minded))).toBe(
+      serialize(readWorldSlice(base)),
+    );
+    expect(readMindSlice(foreign)).toEqual(readMindSlice(minded));
+  });
+});

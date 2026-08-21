@@ -140,6 +140,11 @@
       "index": {},
       "root": "/production/service"
     },
+    "mind": {
+      "beliefs": [],
+      "compactHistory": [],
+      "permissions": []
+    },
     "probe": {
       "events": 6,
       "values": 16024
