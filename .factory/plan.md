@@ -71,7 +71,7 @@ remains blocked until review findings are deliberately batched into it.
 
 ## Ad-hoc
 
-- [ ] T11 (trivial) — parked review minors (batch)
+- [~] T11 (standard) — parked review minors (batch)
   - acceptance: confirmed non-blocking review findings parked during Phase 0 delivery are collected, fixed as one focused batch, and verified by the affected test and repository gates
   - PR #23: preserve `..` traversal semantics across a regular-file component until the shell/VFS contract is deliberately defined
   - PR #23: reject noncanonical fixed-width VFS snapshot mtime spellings
