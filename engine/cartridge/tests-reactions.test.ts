@@ -97,7 +97,20 @@ describe("test and reaction cartridge contracts", () => {
             exists: true,
           },
         ],
-        actions: [{ kind: "log-append", log: "missing-log", entry: "x" }],
+        actions: [
+          { kind: "service-state", service: "missing-service", state: "running" },
+          {
+            kind: "service-health",
+            service: "missing-health-service",
+            health: "healthy",
+          },
+          {
+            kind: "process-state",
+            process: "missing-action-process",
+            state: "running",
+          },
+          { kind: "log-append", log: "missing-log", entry: "x" },
+        ],
       },
     ];
     expect(issues(value).map((issue) => issue.pointer)).toEqual(
@@ -107,7 +120,10 @@ describe("test and reaction cartridge contracts", () => {
         "/repository/reactions/0/predicates/0/service",
         "/repository/reactions/0/predicates/1/process",
         "/repository/reactions/0/predicates/2/path",
-        "/repository/reactions/0/actions/0/log",
+        "/repository/reactions/0/actions/0/service",
+        "/repository/reactions/0/actions/1/service",
+        "/repository/reactions/0/actions/2/process",
+        "/repository/reactions/0/actions/3/log",
       ]),
     );
   });
