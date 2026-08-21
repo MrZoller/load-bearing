@@ -23,6 +23,7 @@
       "commands": {},
       "cwd": "/production/service",
       "directories": {},
+      "endpoints": {},
       "env": {},
       "files": {
         "/etc/motd": {
@@ -124,6 +125,13 @@
       "processes": [],
       "services": [],
       "shellHistory": [],
+      "system": {
+        "architecture": "x86_64",
+        "bootedAt": "2025-07-01T06:10:00.000Z",
+        "hostname": "production",
+        "kernelRelease": "6.1.0-load-bearing",
+        "operatingSystem": "Linux"
+      },
       "tests": [],
       "tickets": []
     },
@@ -134,7 +142,7 @@
     "startMs": 1785921262000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 48,
+  "eventCount": 72,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {},
@@ -327,18 +335,50 @@
       "manPages": [],
       "processes": [],
       "services": [],
-      "shellHistory": [],
+      "shellHistory": [
+        "git log --oneline",
+        "git diff",
+        "git blame src/index.ts",
+        "git branch",
+        "git branch investigation",
+        "git show HEAD",
+        "rm src/index.ts",
+        "git status --short",
+        "git diff",
+        "git checkout -- src/index.ts",
+        "rm src/index.ts",
+        "git add src/index.ts",
+        "git diff --staged",
+        "touch src/index.ts",
+        "git status --short",
+        "git restore --staged src/index.ts",
+        "git restore src/index.ts",
+        "touch load.txt",
+        "git add load.txt",
+        "git commit -m 'record load'",
+        "git log --oneline",
+        "git blame src/index.ts",
+        "git checkout before-load",
+        "git status --short"
+      ],
       "tickets": []
     }
   },
   "transcript": [
     {
       "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 0,
+      "summary": "length=1",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
       "detail": [
         "ec8411560e51cbb72c92dc14430df6b52a836e92",
         "1371060ac7908e038722ae38887e2d71004f7aae"
       ],
-      "index": 0,
+      "index": 1,
       "summary": "commits=2",
       "type": "git.log"
     },
@@ -346,7 +386,7 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 1,
+      "index": 2,
       "output": [
         {
           "stream": "stdout",
@@ -363,7 +403,14 @@
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
-      "index": 2,
+      "index": 3,
+      "summary": "length=2",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 4,
       "summary": "comparison=working-index files=0",
       "type": "git.diff"
     },
@@ -371,17 +418,24 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 3,
+      "index": 5,
       "output": [],
       "summary": "",
       "type": "shell.result"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 6,
+      "summary": "length=3",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
       "detail": [
         "{\"author\":{\"email\":\"greg@example.test\",\"name\":\"Greg Formerly\"},\"committedAt\":\"2026-07-31T02:11:09.000Z\",\"hash\":\"ec8411560e51cbb72c92dc14430df6b52a836e92\",\"line\":1}"
       ],
-      "index": 4,
+      "index": 7,
       "summary": "lines=1",
       "type": "git.blame"
     },
@@ -389,7 +443,7 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 5,
+      "index": 8,
       "output": [
         {
           "stream": "stdout",
@@ -401,11 +455,18 @@
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 9,
+      "summary": "length=4",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
       "detail": [
         "before-load",
         "main"
       ],
-      "index": 6,
+      "index": 10,
       "summary": "branches=2",
       "type": "git.branches"
     },
@@ -413,7 +474,7 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 7,
+      "index": 11,
       "output": [
         {
           "stream": "stdout",
@@ -430,7 +491,14 @@
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
-      "index": 8,
+      "index": 12,
+      "summary": "length=5",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 13,
       "summary": "created=investigation hash=ec8411560e51cbb72c92dc14430df6b52a836e92",
       "type": "git.branch"
     },
@@ -438,7 +506,7 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 9,
+      "index": 14,
       "output": [],
       "summary": "",
       "type": "shell.result"
@@ -446,7 +514,14 @@
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
-      "index": 10,
+      "index": 15,
+      "summary": "length=6",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 16,
       "summary": "hash=ec8411560e51cbb72c92dc14430df6b52a836e92 files=1",
       "type": "git.show"
     },
@@ -454,7 +529,7 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 11,
+      "index": 17,
       "output": [
         {
           "stream": "stdout",
@@ -511,7 +586,14 @@
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
-      "index": 12,
+      "index": 18,
+      "summary": "length=7",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 19,
       "summary": "path=\"/production/service/src/index.ts\" removed=1",
       "type": "vfs.delete"
     },
@@ -519,17 +601,24 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 13,
+      "index": 20,
       "output": [],
       "summary": "",
       "type": "shell.result"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 21,
+      "summary": "length=8",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
       "detail": [
         "{\"path\":\"/production/service/src/index.ts\",\"staged\":null,\"untracked\":false,\"working\":\"deleted\"}"
       ],
-      "index": 14,
+      "index": 22,
       "summary": "paths=1",
       "type": "git.status"
     },
@@ -537,7 +626,7 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 15,
+      "index": 23,
       "output": [
         {
           "stream": "stdout",
@@ -549,10 +638,17 @@
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 24,
+      "summary": "length=9",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
       "detail": [
         "{\"lines\":1,\"newLength\":null,\"oldLength\":23,\"path\":\"/production/service/src/index.ts\"}"
       ],
-      "index": 16,
+      "index": 25,
       "summary": "comparison=working-index files=1",
       "type": "git.diff"
     },
@@ -560,7 +656,7 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 17,
+      "index": 26,
       "output": [
         {
           "stream": "stdout",
@@ -593,7 +689,14 @@
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
-      "index": 18,
+      "index": 27,
+      "summary": "length=10",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 28,
       "summary": "path=\"/production/service/src/index.ts\" staged=false",
       "type": "git.restore"
     },
@@ -601,122 +704,8 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 19,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-05T09:14:22.000Z",
-      "detail": [],
-      "index": 20,
-      "summary": "path=\"/production/service/src/index.ts\" removed=1",
-      "type": "vfs.delete"
-    },
-    {
-      "at": "2026-08-05T09:14:22.000Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 21,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-05T09:14:22.000Z",
-      "detail": [],
-      "index": 22,
-      "summary": "paths=1",
-      "type": "git.stage"
-    },
-    {
-      "at": "2026-08-05T09:14:22.000Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 23,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-05T09:14:22.000Z",
-      "detail": [
-        "{\"lines\":1,\"newLength\":null,\"oldLength\":23,\"path\":\"/production/service/src/index.ts\"}"
-      ],
-      "index": 24,
-      "summary": "comparison=index-head files=1",
-      "type": "git.diff"
-    },
-    {
-      "at": "2026-08-05T09:14:22.000Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 25,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "diff --git a/src/index.ts b/src/index.ts"
-        },
-        {
-          "stream": "stdout",
-          "text": "deleted file mode 100644"
-        },
-        {
-          "stream": "stdout",
-          "text": "--- a/src/index.ts"
-        },
-        {
-          "stream": "stdout",
-          "text": "+++ /dev/null"
-        },
-        {
-          "stream": "stdout",
-          "text": "@@ -1 +0,0 @@"
-        },
-        {
-          "stream": "stdout",
-          "text": "-export const load = 1;"
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-05T09:14:22.000Z",
-      "detail": [],
-      "index": 26,
-      "summary": "path=\"/production/service/src/index.ts\" created=true",
-      "type": "vfs.touch"
-    },
-    {
-      "at": "2026-08-05T09:14:22.000Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 27,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-05T09:14:22.000Z",
-      "detail": [
-        "{\"path\":\"/production/service/src/index.ts\",\"staged\":\"deleted\",\"untracked\":true,\"working\":null}"
-      ],
-      "index": 28,
-      "summary": "paths=1",
-      "type": "git.status"
-    },
-    {
-      "at": "2026-08-05T09:14:22.000Z",
-      "detail": [],
-      "exitCode": 0,
       "index": 29,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "D? src/index.ts"
-        }
-      ],
+      "output": [],
       "summary": "",
       "type": "shell.result"
     },
@@ -724,40 +713,38 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "index": 30,
-      "summary": "path=\"/production/service/src/index.ts\" staged=true",
-      "type": "git.restore"
+      "summary": "length=11",
+      "type": "world.history-append"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
-      "exitCode": 0,
       "index": 31,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-05T09:14:22.000Z",
-      "detail": [],
-      "index": 32,
-      "summary": "path=\"/production/service/src/index.ts\" staged=false",
-      "type": "git.restore"
+      "summary": "path=\"/production/service/src/index.ts\" removed=1",
+      "type": "vfs.delete"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 33,
+      "index": 32,
       "output": [],
       "summary": "",
       "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 33,
+      "summary": "length=12",
+      "type": "world.history-append"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "index": 34,
-      "summary": "path=\"/production/service/load.txt\" created=true",
-      "type": "vfs.touch"
+      "summary": "paths=1",
+      "type": "git.stage"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
@@ -772,14 +759,71 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "index": 36,
-      "summary": "paths=1",
-      "type": "git.stage"
+      "summary": "length=13",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [
+        "{\"lines\":1,\"newLength\":null,\"oldLength\":23,\"path\":\"/production/service/src/index.ts\"}"
+      ],
+      "index": 37,
+      "summary": "comparison=index-head files=1",
+      "type": "git.diff"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 37,
+      "index": 38,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "diff --git a/src/index.ts b/src/index.ts"
+        },
+        {
+          "stream": "stdout",
+          "text": "deleted file mode 100644"
+        },
+        {
+          "stream": "stdout",
+          "text": "--- a/src/index.ts"
+        },
+        {
+          "stream": "stdout",
+          "text": "+++ /dev/null"
+        },
+        {
+          "stream": "stdout",
+          "text": "@@ -1 +0,0 @@"
+        },
+        {
+          "stream": "stdout",
+          "text": "-export const load = 1;"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 39,
+      "summary": "length=14",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 40,
+      "summary": "path=\"/production/service/src/index.ts\" created=true",
+      "type": "vfs.touch"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 41,
       "output": [],
       "summary": "",
       "type": "shell.result"
@@ -787,7 +831,136 @@
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
-      "index": 38,
+      "index": 42,
+      "summary": "length=15",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [
+        "{\"path\":\"/production/service/src/index.ts\",\"staged\":\"deleted\",\"untracked\":true,\"working\":null}"
+      ],
+      "index": 43,
+      "summary": "paths=1",
+      "type": "git.status"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 44,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "D? src/index.ts"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 45,
+      "summary": "length=16",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 46,
+      "summary": "path=\"/production/service/src/index.ts\" staged=true",
+      "type": "git.restore"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 47,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 48,
+      "summary": "length=17",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 49,
+      "summary": "path=\"/production/service/src/index.ts\" staged=false",
+      "type": "git.restore"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 50,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 51,
+      "summary": "length=18",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 52,
+      "summary": "path=\"/production/service/load.txt\" created=true",
+      "type": "vfs.touch"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 53,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 54,
+      "summary": "length=19",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 55,
+      "summary": "paths=1",
+      "type": "git.stage"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 56,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 57,
+      "summary": "length=20",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 58,
       "summary": "hash=0a39687e86f9652f2ed2a75c87b17d4d86067d7a",
       "type": "git.commit"
     },
@@ -795,7 +968,7 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 39,
+      "index": 59,
       "output": [
         {
           "stream": "stdout",
@@ -807,12 +980,19 @@
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 60,
+      "summary": "length=21",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
       "detail": [
         "0a39687e86f9652f2ed2a75c87b17d4d86067d7a",
         "ec8411560e51cbb72c92dc14430df6b52a836e92",
         "1371060ac7908e038722ae38887e2d71004f7aae"
       ],
-      "index": 40,
+      "index": 61,
       "summary": "commits=3",
       "type": "git.log"
     },
@@ -820,7 +1000,7 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 41,
+      "index": 62,
       "output": [
         {
           "stream": "stdout",
@@ -840,10 +1020,17 @@
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 63,
+      "summary": "length=22",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
       "detail": [
         "{\"author\":{\"email\":\"greg@example.test\",\"name\":\"Greg Formerly\"},\"committedAt\":\"2026-07-31T02:11:09.000Z\",\"hash\":\"ec8411560e51cbb72c92dc14430df6b52a836e92\",\"line\":1}"
       ],
-      "index": 42,
+      "index": 64,
       "summary": "lines=1",
       "type": "git.blame"
     },
@@ -851,7 +1038,7 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 43,
+      "index": 65,
       "output": [
         {
           "stream": "stdout",
@@ -864,7 +1051,14 @@
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
-      "index": 44,
+      "index": 66,
+      "summary": "length=23",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 67,
       "summary": "head=branch:before-load hash=1371060ac7908e038722ae38887e2d71004f7aae",
       "type": "git.checkout"
     },
@@ -872,7 +1066,7 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 45,
+      "index": 68,
       "output": [
         {
           "stream": "stdout",
@@ -885,7 +1079,14 @@
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
-      "index": 46,
+      "index": 69,
+      "summary": "length=24",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 70,
       "summary": "paths=0",
       "type": "git.status"
     },
@@ -893,7 +1094,7 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 47,
+      "index": 71,
       "output": [],
       "summary": "",
       "type": "shell.result"

@@ -1,9 +1,13 @@
-0000  2026-08-05T09:14:22.000Z  shell.result exit=0
+0000  2026-08-05T09:14:22.000Z  world.history-append length=1
+0001  2026-08-05T09:14:22.000Z  shell.result exit=0
       stdout> one two three
-0001  2026-08-05T09:14:22.000Z  shell.result exit=7
+0002  2026-08-05T09:14:22.000Z  world.history-append length=2
+0003  2026-08-05T09:14:22.000Z  shell.result exit=7
       stdout> /authored/override
       stderr> pwd: structural survey attached
-0002  2026-08-05T09:14:22.000Z  shell.result exit=127
+0004  2026-08-05T09:14:22.000Z  world.history-append length=3
+0005  2026-08-05T09:14:22.000Z  shell.result exit=127
       stderr> missing: command not found
-0003  2026-08-05T09:14:22.000Z  shell.result exit=0
-0004  2026-08-05T09:14:22.000Z  shell.result exit=0
+0006  2026-08-05T09:14:22.000Z  shell.result exit=0
+0007  2026-08-05T09:14:22.000Z  world.history-append length=4
+0008  2026-08-05T09:14:22.000Z  shell.result exit=0

@@ -86,6 +86,8 @@ against the replay contract.
 | `007-world-state`         | environmental hydration plus replayable process, service, log, environment, and history transitions                                                         |
 | `008-command-shell`       | unlogged shell expansion plus stable stream-tagged builtin, override, unknown, and blank command results                                                    |
 | `009-filesystem-commands` | shell-driven VFS creation, cwd persistence, deletion observed by later commands, and permission-denied output                                               |
+| `010-git-commands`        | bounded Git command rendering and coherent shell-driven branch, index, working-tree, commit, blame and checkout transitions                                 |
+| `011-system-commands`     | world inspection, raw shell history, exact endpoint responses, and persistent environment, service and process transitions                                  |
 
 `002` records 1000 raw draws eight to a line with their index, so a divergence
 names the draw it started at rather than reporting that a file changed.

@@ -1,0 +1,66 @@
+{
+  "name": "011-system-commands",
+  "description": "Every bounded system command renders from cartridge world data; exact endpoint lookup, raw history, environment, service and process transitions persist through shell expansion.",
+  "seed": "2026-08-05/11/deep-foundation",
+  "cartridge": "world",
+  "events": [
+    { "type": "shell.execute", "payload": { "input": "ps" }, "version": 0 },
+    { "type": "shell.execute", "payload": { "input": "env" }, "version": 0 },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "export BEAM=load=bearing" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "man service" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "history" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "curl https://api.example.test/health" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "systemctl stop api" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "systemctl status api" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "curl https://api.example.test/health" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "systemctl restart api" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "kill 1300" },
+      "version": 0
+    },
+    { "type": "shell.execute", "payload": { "input": "ps" }, "version": 0 },
+    { "type": "shell.execute", "payload": { "input": "whoami" }, "version": 0 },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "uname -a" },
+      "version": 0
+    },
+    { "type": "shell.execute", "payload": { "input": "uptime" }, "version": 0 },
+    { "type": "shell.execute", "payload": { "input": "date" }, "version": 0 },
+    { "type": "shell.execute", "payload": { "input": "echo '" }, "version": 0 },
+    { "type": "shell.execute", "payload": { "input": "history" }, "version": 0 }
+  ]
+}

@@ -33,6 +33,7 @@
       "commands": {},
       "cwd": "/production/service",
       "directories": {},
+      "endpoints": {},
       "env": {
         "PATH": "/usr/local/bin:/usr/bin:/bin",
         "SERVICE_TIER": "critical"
@@ -93,6 +94,13 @@
         "git status",
         "npm test"
       ],
+      "system": {
+        "architecture": "x86_64",
+        "bootedAt": "2025-07-01T06:10:00.000Z",
+        "hostname": "production",
+        "kernelRelease": "6.1.0-load-bearing",
+        "operatingSystem": "Linux"
+      },
       "tests": [],
       "tickets": []
     },

@@ -1,0 +1,958 @@
+{
+  "cartridge": {
+    "meta": {
+      "assignment": "Exercise every environmental surface.",
+      "date": "2026-08-05",
+      "number": 7,
+      "schemaVersion": 0,
+      "startedAt": "2026-08-05T09:14:22.000Z",
+      "title": "World State Fixture"
+    },
+    "models": [
+      {
+        "archetype": "paranoid",
+        "costMultiplier": 48000,
+        "description": "Thorough. Expensive. Excavation permit required.",
+        "id": "deep-foundation",
+        "name": "Deep Foundation",
+        "quirks": []
+      }
+    ],
+    "presentation": {},
+    "repository": {
+      "commands": {},
+      "cwd": "/production/service",
+      "directories": {},
+      "endpoints": {
+        "https://api.example.test/health": {
+          "running": {
+            "exitCode": 0,
+            "stderr": [],
+            "stdout": [
+              "HTTP/1.1 200 OK",
+              "healthy"
+            ]
+          },
+          "service": "api",
+          "unavailable": {
+            "exitCode": 7,
+            "stderr": [
+              "curl: (7) Failed to connect to api.example.test"
+            ],
+            "stdout": []
+          }
+        },
+        "https://worker.example.test/status?full=1": {
+          "running": {
+            "exitCode": 0,
+            "stderr": [],
+            "stdout": [
+              "working"
+            ]
+          },
+          "service": "worker",
+          "unavailable": {
+            "exitCode": 7,
+            "stderr": [
+              "curl: (7) Failed to connect to worker.example.test"
+            ],
+            "stdout": []
+          }
+        }
+      },
+      "env": {
+        "SERVICE_TIER": "critical"
+      },
+      "files": {
+        "/production/service/app": {
+          "contents": "binary",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var/log/api.log": {
+          "contents": "booted\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        }
+      },
+      "gitHistory": {
+        "branches": {},
+        "commits": [],
+        "head": {
+          "kind": "detached",
+          "target": ""
+        }
+      },
+      "gitIdentity": {
+        "email": "visitor@example.test",
+        "name": "Visitor"
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      },
+      "logs": [
+        {
+          "entries": [],
+          "id": "api-file",
+          "kind": "file",
+          "path": "/var/log/api.log"
+        },
+        {
+          "entries": [
+            "seeded"
+          ],
+          "id": "events",
+          "kind": "stream",
+          "path": ""
+        }
+      ],
+      "manPages": [
+        {
+          "contents": "SERVICE(8)\n",
+          "name": "service",
+          "section": "8"
+        },
+        {
+          "contents": "SERVICE(1)\n",
+          "name": "service",
+          "section": "1"
+        }
+      ],
+      "processes": [
+        {
+          "command": {
+            "args": [
+              "--serve"
+            ],
+            "binary": "/production/service/app"
+          },
+          "id": "worker",
+          "pid": 0,
+          "startedAt": "2026-08-05T09:00:00.000Z",
+          "state": "running",
+          "user": "root"
+        },
+        {
+          "command": {
+            "args": [],
+            "binary": "/production/service/app"
+          },
+          "id": "fixed",
+          "pid": 1200,
+          "startedAt": "2026-08-05T08:00:00.000Z",
+          "state": "stopped",
+          "user": "root"
+        },
+        {
+          "command": {
+            "args": [
+              "--inspect"
+            ],
+            "binary": "/production/service/app"
+          },
+          "id": "killable",
+          "pid": 1300,
+          "startedAt": "2026-08-05T08:30:00.000Z",
+          "state": "running",
+          "user": "deploy"
+        }
+      ],
+      "services": [
+        {
+          "dependencies": [],
+          "health": "healthy",
+          "id": "api",
+          "ports": [
+            443,
+            0
+          ],
+          "state": "running"
+        },
+        {
+          "dependencies": [
+            "api"
+          ],
+          "health": "degraded",
+          "id": "worker",
+          "ports": [
+            0
+          ],
+          "state": "stopped"
+        }
+      ],
+      "shellHistory": [
+        "git status"
+      ],
+      "system": {
+        "architecture": "x86_64",
+        "bootedAt": "2025-07-01T06:10:00.000Z",
+        "hostname": "load-bearing-01",
+        "kernelRelease": "6.1.0-structural-amd64",
+        "operatingSystem": "Linux"
+      },
+      "tests": [],
+      "tickets": [
+        {
+          "body": "It leans.",
+          "id": "T-1",
+          "service": "api",
+          "status": "open",
+          "title": "API tilted"
+        },
+        {
+          "body": "Expected.",
+          "id": "T-2",
+          "service": "",
+          "status": "closed",
+          "title": "Floor"
+        }
+      ]
+    },
+    "story": {}
+  },
+  "clock": {
+    "elapsedMs": 0,
+    "startMs": 1785921262000
+  },
+  "engineVersion": "0.0.0",
+  "eventCount": 40,
+  "eventSchemaVersion": 0,
+  "random": {
+    "cursors": {
+      "root/world/pids": 3696214131,
+      "root/world/ports": 4202661180
+    },
+    "seed": 535619252
+  },
+  "seed": "2026-08-05/11/deep-foundation",
+  "slices": {
+    "git": {
+      "branches": {},
+      "commits": {},
+      "head": {
+        "kind": "detached",
+        "target": ""
+      },
+      "identity": {
+        "email": "visitor@example.test",
+        "name": "Visitor"
+      },
+      "index": {},
+      "root": "/production/service"
+    },
+    "probe": {
+      "events": 0,
+      "values": 0
+    },
+    "vfs": {
+      "cwd": "/production/service",
+      "entries": {
+        "/": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/app": {
+          "contents": "binary",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var/log": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var/log/api.log": {
+          "contents": "booted\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        }
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      }
+    },
+    "world": {
+      "env": {
+        "BEAM": "load=bearing",
+        "SERVICE_TIER": "critical"
+      },
+      "logs": [
+        {
+          "entries": [],
+          "id": "api-file",
+          "kind": "file",
+          "path": "/var/log/api.log"
+        },
+        {
+          "entries": [
+            "seeded"
+          ],
+          "id": "events",
+          "kind": "stream",
+          "path": ""
+        }
+      ],
+      "manPages": [
+        {
+          "contents": "SERVICE(8)\n",
+          "name": "service",
+          "section": "8"
+        },
+        {
+          "contents": "SERVICE(1)\n",
+          "name": "service",
+          "section": "1"
+        }
+      ],
+      "processes": [
+        {
+          "command": {
+            "args": [
+              "--serve"
+            ],
+            "binary": "/production/service/app"
+          },
+          "id": "worker",
+          "pid": 31981,
+          "startedAt": "2026-08-05T09:00:00.000Z",
+          "state": "running",
+          "user": "root"
+        },
+        {
+          "command": {
+            "args": [],
+            "binary": "/production/service/app"
+          },
+          "id": "fixed",
+          "pid": 1200,
+          "startedAt": "2026-08-05T08:00:00.000Z",
+          "state": "stopped",
+          "user": "root"
+        },
+        {
+          "command": {
+            "args": [
+              "--inspect"
+            ],
+            "binary": "/production/service/app"
+          },
+          "id": "killable",
+          "pid": 1300,
+          "startedAt": "2026-08-05T08:30:00.000Z",
+          "state": "stopped",
+          "user": "deploy"
+        }
+      ],
+      "services": [
+        {
+          "dependencies": [],
+          "health": "healthy",
+          "id": "api",
+          "ports": [
+            443,
+            41843
+          ],
+          "state": "running"
+        },
+        {
+          "dependencies": [
+            "api"
+          ],
+          "health": "degraded",
+          "id": "worker",
+          "ports": [
+            18044
+          ],
+          "state": "stopped"
+        }
+      ],
+      "shellHistory": [
+        "git status",
+        "ps",
+        "env",
+        "export BEAM=load=bearing",
+        "man service",
+        "history",
+        "curl https://api.example.test/health",
+        "systemctl stop api",
+        "systemctl status api",
+        "curl https://api.example.test/health",
+        "systemctl restart api",
+        "kill 1300",
+        "ps",
+        "whoami",
+        "uname -a",
+        "uptime",
+        "date",
+        "echo '",
+        "history"
+      ],
+      "tickets": [
+        {
+          "body": "It leans.",
+          "id": "T-1",
+          "service": "api",
+          "status": "open",
+          "title": "API tilted"
+        },
+        {
+          "body": "Expected.",
+          "id": "T-2",
+          "service": "",
+          "status": "closed",
+          "title": "Floor"
+        }
+      ]
+    }
+  },
+  "transcript": [
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 0,
+      "summary": "length=2",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 1,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "  PID USER     STAT COMMAND"
+        },
+        {
+          "stream": "stdout",
+          "text": " 1200 root     T app"
+        },
+        {
+          "stream": "stdout",
+          "text": " 1300 deploy   R app --inspect"
+        },
+        {
+          "stream": "stdout",
+          "text": "31981 root     R app --serve"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 2,
+      "summary": "length=3",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 3,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "SERVICE_TIER=critical"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 4,
+      "summary": "length=4",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 5,
+      "summary": "name=\"BEAM\"",
+      "type": "world.env-set"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 6,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 7,
+      "summary": "length=5",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 8,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "SERVICE(1)"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 9,
+      "summary": "length=6",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 10,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "    1  git status"
+        },
+        {
+          "stream": "stdout",
+          "text": "    2  ps"
+        },
+        {
+          "stream": "stdout",
+          "text": "    3  env"
+        },
+        {
+          "stream": "stdout",
+          "text": "    4  export BEAM=load=bearing"
+        },
+        {
+          "stream": "stdout",
+          "text": "    5  man service"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 11,
+      "summary": "length=7",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 12,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "HTTP/1.1 200 OK"
+        },
+        {
+          "stream": "stdout",
+          "text": "healthy"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 13,
+      "summary": "length=8",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 14,
+      "summary": "id=\"api\"",
+      "type": "world.service-stop"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 15,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 16,
+      "summary": "length=9",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 3,
+      "index": 17,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "● api.service - api"
+        },
+        {
+          "stream": "stdout",
+          "text": "   Active: inactive (dead)"
+        },
+        {
+          "stream": "stdout",
+          "text": "   Health: healthy"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 18,
+      "summary": "length=10",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 7,
+      "index": 19,
+      "output": [
+        {
+          "stream": "stderr",
+          "text": "curl: (7) Failed to connect to api.example.test"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 20,
+      "summary": "length=11",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 21,
+      "summary": "id=\"api\"",
+      "type": "world.service-restart"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 22,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 23,
+      "summary": "length=12",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 24,
+      "summary": "id=\"killable\" state=stopped",
+      "type": "world.process-transition"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 25,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 26,
+      "summary": "length=13",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 27,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "  PID USER     STAT COMMAND"
+        },
+        {
+          "stream": "stdout",
+          "text": " 1200 root     T app"
+        },
+        {
+          "stream": "stdout",
+          "text": " 1300 deploy   T app --inspect"
+        },
+        {
+          "stream": "stdout",
+          "text": "31981 root     R app --serve"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 28,
+      "summary": "length=14",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 29,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "root"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 30,
+      "summary": "length=15",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 31,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "Linux load-bearing-01 6.1.0-structural-amd64 x86_64"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 32,
+      "summary": "length=16",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 33,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": " 09:14:22 up 400 days, 03:04"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 34,
+      "summary": "length=17",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 35,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "Wed Aug  5 09:14:22 UTC 2026"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 36,
+      "summary": "length=18",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 2,
+      "index": 37,
+      "output": [
+        {
+          "stream": "stderr",
+          "text": "shell: unterminated single quote"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 38,
+      "summary": "length=19",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 39,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "    1  git status"
+        },
+        {
+          "stream": "stdout",
+          "text": "    2  ps"
+        },
+        {
+          "stream": "stdout",
+          "text": "    3  env"
+        },
+        {
+          "stream": "stdout",
+          "text": "    4  export BEAM=load=bearing"
+        },
+        {
+          "stream": "stdout",
+          "text": "    5  man service"
+        },
+        {
+          "stream": "stdout",
+          "text": "    6  history"
+        },
+        {
+          "stream": "stdout",
+          "text": "    7  curl https://api.example.test/health"
+        },
+        {
+          "stream": "stdout",
+          "text": "    8  systemctl stop api"
+        },
+        {
+          "stream": "stdout",
+          "text": "    9  systemctl status api"
+        },
+        {
+          "stream": "stdout",
+          "text": "   10  curl https://api.example.test/health"
+        },
+        {
+          "stream": "stdout",
+          "text": "   11  systemctl restart api"
+        },
+        {
+          "stream": "stdout",
+          "text": "   12  kill 1300"
+        },
+        {
+          "stream": "stdout",
+          "text": "   13  ps"
+        },
+        {
+          "stream": "stdout",
+          "text": "   14  whoami"
+        },
+        {
+          "stream": "stdout",
+          "text": "   15  uname -a"
+        },
+        {
+          "stream": "stdout",
+          "text": "   16  uptime"
+        },
+        {
+          "stream": "stdout",
+          "text": "   17  date"
+        },
+        {
+          "stream": "stdout",
+          "text": "   18  echo '"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    }
+  ]
+}
