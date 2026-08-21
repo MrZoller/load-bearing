@@ -279,6 +279,22 @@ describe("mind truth comparison and ownership", () => {
     ]);
   });
 
+  it("can agree with the empty detached HEAD of an unborn repository", () => {
+    const state = fold([
+      {
+        type: "mind.belief-set",
+        payload: {
+          belief: {
+            kind: "git-head",
+            head: { kind: "detached", target: "" },
+          },
+        },
+      },
+    ]);
+
+    expect(beliefDivergence(state)).toEqual([]);
+  });
+
   it("queries unreadable VFS truth without making it readable to the shell", () => {
     const raw = loadCartridgeFixture("minimal") as Record<string, unknown>;
     const repository = raw["repository"] as Record<string, unknown>;

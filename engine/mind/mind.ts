@@ -99,7 +99,8 @@ function head(value: unknown, where: string): GitHead {
   const target = string(item, "target", where);
   if (kind === "branch" && GIT_BRANCH_PATTERN.test(target))
     return value as GitHead;
-  if (kind === "detached" && HASH_PATTERN.test(target)) return value as GitHead;
+  if (kind === "detached" && (target === "" || HASH_PATTERN.test(target)))
+    return value as GitHead;
   throw new Error(
     `${where}: must be a branch HEAD with a valid branch or a detached HEAD with a 40-digit hash`,
   );
