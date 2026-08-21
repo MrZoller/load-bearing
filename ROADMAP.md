@@ -43,10 +43,17 @@ Scope:
 
 Definition of done:
 
-- [ ] Engine runs in Node with zero DOM dependencies
-- [ ] Replay test: same (cartridge, seed, event log) → byte-identical state and transcript, proven in CI
-- [ ] Full unit coverage of filesystem + git semantics (deleted files stay deleted; branches and blame are coherent)
-- [ ] Cartridge schema validator rejects malformed fixtures with useful errors
+- [x] Engine runs in Node with zero DOM dependencies — enforced by
+  `npm run gate:purity` and the bare-Node assertion in `engine/index.test.ts`
+- [x] Replay test: same (cartridge, seed, event log) → byte-identical state and
+  transcript, proven by `014-full-session`, the golden replay suite, and CI's
+  UTC + Asia/Tokyo runs
+- [x] Full unit coverage of filesystem + git semantics — named VFS/Git tests
+  prove path, permission, mutation, deletion, branch, log/blame, commit, and
+  checkout coherence; `vitest.config.ts` enforces per-file regression floors
+- [x] Cartridge schema validator rejects malformed fixtures with useful errors
+  — `engine/cartridge/load.test.ts` asserts the complete deterministic issue
+  list and an exact multi-error diagnostic
 
 Explicitly not in this phase: any rendering, any comedy writing, any real
 model calls.

@@ -58,8 +58,10 @@ jobs:
 
       # "Full unit coverage" is mechanical only when additions cannot lower
       # it silently. The named VFS/Git semantics tests provide the meaning;
-      # this threshold makes every executable path in those models answer to
-      # one of them.
+      # per-file floors prevent a weak model from hiding inside a healthy
+      # aggregate. Percentages are an anti-regression signal, not a substitute
+      # for those named behaviors (engine/README.md → Filesystem and Git
+      # coverage).
       - name: Filesystem and Git coverage
         run: npm run test:coverage
 

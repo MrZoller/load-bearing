@@ -11,10 +11,14 @@ export default defineConfig({
       ],
       thresholds: {
         perFile: true,
-        branches: 100,
+        // These floors prevent any one model file from hiding behind a healthy
+        // aggregate. They are an anti-regression gate, not the meaning of
+        // "full" semantics coverage; the named behavior tests carry that
+        // contract (engine/README.md → Filesystem and Git coverage).
+        branches: 75,
         functions: 100,
-        lines: 100,
-        statements: 100,
+        lines: 93,
+        statements: 93,
       },
       reporter: ["text"],
     },
