@@ -148,6 +148,24 @@ describe("system commands", () => {
     ]);
   });
 
+  it("preserves paired surrogates while rendering history", () => {
+    const state = run(["echo 😀", "history"]);
+    expect(output(results(state)[1])).toEqual({
+      stdout: [
+        "    1  cd /production/service",
+        "    2  git status",
+        "    3  npm test",
+        "    4  echo 😀",
+      ],
+      stderr: [],
+      exitCode: 0,
+    });
+    expect(readWorldSlice(state).shellHistory.slice(-2)).toEqual([
+      "echo 😀",
+      "history",
+    ]);
+  });
+
   it("persists environment, service and process mutations through reducer events", () => {
     const state = run([
       "export BEAM=load=bearing",

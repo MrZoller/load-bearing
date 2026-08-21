@@ -96,6 +96,7 @@ function displayHistoryCommand(command: string): string {
   let displayed = "";
   for (let index = 0; index < command.length; index += 1) {
     const code = command.charCodeAt(index);
+    const previous = command.charCodeAt(index - 1);
     const next = command.charCodeAt(index + 1);
     const control =
       code <= 0x1f ||
@@ -104,7 +105,10 @@ function displayHistoryCommand(command: string): string {
       code === 0x2029;
     const loneHigh =
       code >= 0xd800 && code <= 0xdbff && !(next >= 0xdc00 && next <= 0xdfff);
-    const loneLow = code >= 0xdc00 && code <= 0xdfff;
+    const loneLow =
+      code >= 0xdc00 &&
+      code <= 0xdfff &&
+      !(previous >= 0xd800 && previous <= 0xdbff);
     displayed +=
       control || loneHigh || loneLow
         ? `\\u${code.toString(16).padStart(4, "0")}`
