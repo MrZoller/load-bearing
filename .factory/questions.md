@@ -132,3 +132,24 @@ Rationale: same standing decision — world facts are cartridge content. Option 
 Confirmed as asked, all as bounded POSIX-shaped behavior with no surface beyond what issue #11 requires: no options except `uname -a`; `export NAME=value`; `man [section] name`; `systemctl status|start|stop|restart <service>`; one PID for `kill`; UTC and C-locale formats for `date` and `uptime`.
 
 DELIBERATE DEVIATION to record in `docs/DESIGN.md` in this task's PR: `history` displays only prior entries and does not list itself. Real bash appends a command to history before executing it, so `history` shows itself as the final line. We accept the deviation because command output is computed before event expansion. Document it as a chosen simplification — history is a surface a curious visitor will poke.
+
+## Q5 (task T8, open) — How should reaction cascades cross event-module boundaries?
+
+Context: Issue #12 requires post-event rules, deterministic cascades, and
+load-time rejection of rules that would fire in a cycle. The current reducer
+forbids nested expansion and nested effects: a `shell.execute` child cannot
+expand reaction action events, and a reaction effect cannot use
+`world.log-append` because file-backed logs themselves emit a VFS effect. The
+approved plan explicitly says to stop if ordered expansion cannot preserve
+atomic replay semantics. Parked branch: `factory/t8-test-runner-reactions`.
+Options considered: A — add a generic reducer-level post-event reaction phase
+that evaluates the staged post-event state, applies cartridge rules/actions in
+authored order, permits acyclic cascades, and commits the trigger plus all
+reaction changes atomically; B — make every reactive module plan a flat effect
+batch, which duplicates orchestration across VFS/world/tests and either loses
+recursive event semantics or relaxes nested-effect isolation; C — add one
+privileged reaction module that rewrites several slices, weakening the existing
+one-module-one-slice ownership invariant. Recommendation: A; it changes the
+central reducer but preserves ownership, atomicity, and the cycle requirement
+without incident-specific behavior. Please confirm A or choose another model.
+**A:**
