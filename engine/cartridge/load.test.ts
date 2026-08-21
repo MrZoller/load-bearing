@@ -74,6 +74,10 @@ describe("loadCartridge", () => {
       home: "/root",
       umask: "0022",
     });
+    expect(cartridge.repository.gitIdentity).toEqual({
+      name: "Visitor",
+      email: "visitor@example.test",
+    });
   });
 
   it("validates static cartridge command records", () => {
@@ -240,6 +244,22 @@ describe("loadCartridge", () => {
       owner: "deploy",
       group: "operators",
     });
+  });
+
+  it("requires and validates commit identity independently of POSIX identity", () => {
+    const missing = minimal();
+    delete (missing["repository"] as Record<string, unknown>)["gitIdentity"];
+    expect(issuesOf(missing)[0]?.pointer).toBe("/repository/gitIdentity");
+
+    const invalid = minimal();
+    (invalid["repository"] as Record<string, unknown>)["gitIdentity"] = {
+      name: "Visitor\nElsewhere",
+      email: "not-an-email",
+    };
+    expect(issuesOf(invalid).map((issue) => issue.pointer)).toEqual([
+      "/repository/gitIdentity/name",
+      "/repository/gitIdentity/email",
+    ]);
   });
 
   it("rejects paths that collide with files or place a child below one", () => {
@@ -1064,6 +1084,19 @@ describe("deferred sections", () => {
 });
 
 describe("Git history coherence", () => {
+  it("rejects HEAD as an authored branch name", () => {
+    const source = loadCartridgeFixture("git") as Record<string, unknown>;
+    const repository = source["repository"] as Record<string, unknown>;
+    const history = repository["gitHistory"] as Record<string, unknown>;
+    (history["branches"] as Record<string, unknown>)["HEAD"] = "current";
+
+    expect(issuesOf(source)).toContainEqual({
+      pointer: "/repository/gitHistory/branches/HEAD",
+      expected: "a key that is a valid local branch name other than HEAD",
+      found: '"HEAD"',
+    });
+  });
+
   it("accepts tracked files when the repository cwd is root", () => {
     const source = loadCartridgeFixture("git") as Record<string, unknown>;
     const repository = source["repository"] as Record<string, unknown>;
@@ -1530,6 +1563,29 @@ describe("rejection", () => {
     expect(issuesOf(badKey).map((issue) => issue.pointer)).toEqual([
       "/repository/files/relative~1file",
     ]);
+  });
+
+  it("rejects transcript-breaking controls in authored filesystem paths", () => {
+    // Paths reach command-event summaries as well as VFS lookups. Accepting a
+    // JavaScript line terminator here would let a successful restore create a
+    // transcript entry the reducer cannot serialize, after its effect applies.
+    for (const character of [
+      String.fromCharCode(0x85),
+      String.fromCharCode(0x2028),
+      String.fromCharCode(0x2029),
+    ]) {
+      const source = minimal();
+      const repository = source["repository"] as Record<string, unknown>;
+      repository["files"] = {
+        [`/production/service/${character}unsafe`]: { contents: "x\n" },
+      };
+
+      expect(issuesOf(source)[0]).toMatchObject({
+        pointer: expect.stringContaining("/repository/files/"),
+        expected:
+          "a key that is an absolute POSIX path naming a file, not the root directory",
+      });
+    }
   });
 
   it("checks cwd against the keys that validated, ignoring one that did not", () => {

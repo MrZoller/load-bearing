@@ -78,7 +78,8 @@ export function renderEntry(entry: TranscriptEntry): string[] {
     result === "" ? header : `${header} ${result}`,
     ...entry.detail.map((line) => `${DETAIL_INDENT}${line}`),
     ...(entry.output ?? []).map(
-      (line) => `${DETAIL_INDENT}${line.stream}> ${line.text}`,
+      (line) =>
+        `${DETAIL_INDENT}${line.stream}>${line.text === "" ? "" : ` ${line.text}`}`,
     ),
   ];
 }

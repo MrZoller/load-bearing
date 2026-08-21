@@ -1,0 +1,902 @@
+{
+  "cartridge": {
+    "meta": {
+      "assignment": "Keep the repository consistent.",
+      "date": "2026-08-05",
+      "number": 6,
+      "schemaVersion": 0,
+      "startedAt": "2026-08-05T09:14:22.000Z",
+      "title": "Git Fixture World"
+    },
+    "models": [
+      {
+        "archetype": "paranoid",
+        "costMultiplier": 48000,
+        "description": "Thorough. Expensive. Excavation permit required.",
+        "id": "deep-foundation",
+        "name": "Deep Foundation",
+        "quirks": []
+      }
+    ],
+    "presentation": {},
+    "repository": {
+      "commands": {},
+      "cwd": "/production/service",
+      "directories": {},
+      "env": {},
+      "files": {
+        "/etc/motd": {
+          "contents": "This system is load-bearing.\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/README.md": {
+          "contents": "# service\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src/index.ts": {
+          "contents": "export const load = 1;\n",
+          "group": "departed",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "greg"
+        }
+      },
+      "gitHistory": {
+        "branches": {
+          "before-load": "initial",
+          "main": "current"
+        },
+        "commits": [
+          {
+            "author": {
+              "email": "greg@example.test",
+              "name": "Greg Formerly"
+            },
+            "committedAt": "2026-07-30T10:00:00.000Z",
+            "files": {
+              "/production/service/README.md": {
+                "blame": [
+                  "initial"
+                ],
+                "contents": "# service\n"
+              },
+              "/production/service/src/index.ts": {
+                "blame": [
+                  "initial"
+                ],
+                "contents": "export const load = 0;\n"
+              }
+            },
+            "id": "initial",
+            "message": "establish the service\n",
+            "parents": []
+          },
+          {
+            "author": {
+              "email": "greg@example.test",
+              "name": "Greg Formerly"
+            },
+            "committedAt": "2026-07-31T02:11:09.000Z",
+            "files": {
+              "/production/service/README.md": {
+                "blame": [
+                  "initial"
+                ],
+                "contents": "# service\n"
+              },
+              "/production/service/src/index.ts": {
+                "blame": [
+                  "current"
+                ],
+                "contents": "export const load = 1;\n"
+              }
+            },
+            "id": "current",
+            "message": "increase structural load\n",
+            "parents": [
+              "initial"
+            ]
+          }
+        ],
+        "head": {
+          "kind": "branch",
+          "target": "main"
+        }
+      },
+      "gitIdentity": {
+        "email": "visitor@example.test",
+        "name": "Visitor"
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      },
+      "logs": [],
+      "manPages": [],
+      "processes": [],
+      "services": [],
+      "shellHistory": [],
+      "tests": [],
+      "tickets": []
+    },
+    "story": {}
+  },
+  "clock": {
+    "elapsedMs": 0,
+    "startMs": 1785921262000
+  },
+  "engineVersion": "0.0.0",
+  "eventCount": 48,
+  "eventSchemaVersion": 0,
+  "random": {
+    "cursors": {},
+    "seed": 2489588989
+  },
+  "seed": "2026-08-05/10/deep-foundation",
+  "slices": {
+    "git": {
+      "branches": {
+        "before-load": "1371060ac7908e038722ae38887e2d71004f7aae",
+        "investigation": "ec8411560e51cbb72c92dc14430df6b52a836e92",
+        "main": "0a39687e86f9652f2ed2a75c87b17d4d86067d7a"
+      },
+      "commits": {
+        "0a39687e86f9652f2ed2a75c87b17d4d86067d7a": {
+          "author": {
+            "email": "visitor@example.test",
+            "name": "Visitor"
+          },
+          "committedAt": "2026-08-05T09:14:22.000Z",
+          "files": {
+            "/production/service/README.md": {
+              "blame": [
+                "1371060ac7908e038722ae38887e2d71004f7aae"
+              ],
+              "contents": "# service\n"
+            },
+            "/production/service/load.txt": {
+              "blame": [],
+              "contents": ""
+            },
+            "/production/service/src/index.ts": {
+              "blame": [
+                "ec8411560e51cbb72c92dc14430df6b52a836e92"
+              ],
+              "contents": "export const load = 1;\n"
+            }
+          },
+          "hash": "0a39687e86f9652f2ed2a75c87b17d4d86067d7a",
+          "id": "0a39687e86f9652f2ed2a75c87b17d4d86067d7a",
+          "message": "record load",
+          "parents": [
+            "ec8411560e51cbb72c92dc14430df6b52a836e92"
+          ]
+        },
+        "1371060ac7908e038722ae38887e2d71004f7aae": {
+          "author": {
+            "email": "greg@example.test",
+            "name": "Greg Formerly"
+          },
+          "committedAt": "2026-07-30T10:00:00.000Z",
+          "files": {
+            "/production/service/README.md": {
+              "blame": [
+                "1371060ac7908e038722ae38887e2d71004f7aae"
+              ],
+              "contents": "# service\n"
+            },
+            "/production/service/src/index.ts": {
+              "blame": [
+                "1371060ac7908e038722ae38887e2d71004f7aae"
+              ],
+              "contents": "export const load = 0;\n"
+            }
+          },
+          "hash": "1371060ac7908e038722ae38887e2d71004f7aae",
+          "id": "initial",
+          "message": "establish the service\n",
+          "parents": []
+        },
+        "ec8411560e51cbb72c92dc14430df6b52a836e92": {
+          "author": {
+            "email": "greg@example.test",
+            "name": "Greg Formerly"
+          },
+          "committedAt": "2026-07-31T02:11:09.000Z",
+          "files": {
+            "/production/service/README.md": {
+              "blame": [
+                "1371060ac7908e038722ae38887e2d71004f7aae"
+              ],
+              "contents": "# service\n"
+            },
+            "/production/service/src/index.ts": {
+              "blame": [
+                "ec8411560e51cbb72c92dc14430df6b52a836e92"
+              ],
+              "contents": "export const load = 1;\n"
+            }
+          },
+          "hash": "ec8411560e51cbb72c92dc14430df6b52a836e92",
+          "id": "current",
+          "message": "increase structural load\n",
+          "parents": [
+            "1371060ac7908e038722ae38887e2d71004f7aae"
+          ]
+        }
+      },
+      "head": {
+        "kind": "branch",
+        "target": "before-load"
+      },
+      "identity": {
+        "email": "visitor@example.test",
+        "name": "Visitor"
+      },
+      "index": {
+        "/production/service/README.md": "# service\n",
+        "/production/service/src/index.ts": "export const load = 0;\n"
+      },
+      "root": "/production/service"
+    },
+    "probe": {
+      "events": 0,
+      "values": 0
+    },
+    "vfs": {
+      "cwd": "/production/service",
+      "entries": {
+        "/": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/etc": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/etc/motd": {
+          "contents": "This system is load-bearing.\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/README.md": {
+          "contents": "# service\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src/index.ts": {
+          "contents": "export const load = 0;\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        }
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      }
+    },
+    "world": {
+      "env": {},
+      "logs": [],
+      "manPages": [],
+      "processes": [],
+      "services": [],
+      "shellHistory": [],
+      "tickets": []
+    }
+  },
+  "transcript": [
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [
+        "ec8411560e51cbb72c92dc14430df6b52a836e92",
+        "1371060ac7908e038722ae38887e2d71004f7aae"
+      ],
+      "index": 0,
+      "summary": "commits=2",
+      "type": "git.log"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 1,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "ec84115 increase structural load"
+        },
+        {
+          "stream": "stdout",
+          "text": "1371060 establish the service"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 2,
+      "summary": "comparison=working-index files=0",
+      "type": "git.diff"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 3,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [
+        "{\"author\":{\"email\":\"greg@example.test\",\"name\":\"Greg Formerly\"},\"committedAt\":\"2026-07-31T02:11:09.000Z\",\"hash\":\"ec8411560e51cbb72c92dc14430df6b52a836e92\",\"line\":1}"
+      ],
+      "index": 4,
+      "summary": "lines=1",
+      "type": "git.blame"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 5,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "ec84115 (Greg Formerly 2026-07-31 02:11:09 +0000    1) export const load = 1;"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [
+        "before-load",
+        "main"
+      ],
+      "index": 6,
+      "summary": "branches=2",
+      "type": "git.branches"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 7,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "  before-load"
+        },
+        {
+          "stream": "stdout",
+          "text": "* main"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 8,
+      "summary": "created=investigation hash=ec8411560e51cbb72c92dc14430df6b52a836e92",
+      "type": "git.branch"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 9,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 10,
+      "summary": "hash=ec8411560e51cbb72c92dc14430df6b52a836e92 files=1",
+      "type": "git.show"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 11,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "commit ec8411560e51cbb72c92dc14430df6b52a836e92"
+        },
+        {
+          "stream": "stdout",
+          "text": "Author: Greg Formerly <greg@example.test>"
+        },
+        {
+          "stream": "stdout",
+          "text": "Date:   Fri Jul 31 02:11:09 2026 +0000"
+        },
+        {
+          "stream": "stdout",
+          "text": ""
+        },
+        {
+          "stream": "stdout",
+          "text": "    increase structural load"
+        },
+        {
+          "stream": "stdout",
+          "text": ""
+        },
+        {
+          "stream": "stdout",
+          "text": "diff --git a/src/index.ts b/src/index.ts"
+        },
+        {
+          "stream": "stdout",
+          "text": "--- a/src/index.ts"
+        },
+        {
+          "stream": "stdout",
+          "text": "+++ b/src/index.ts"
+        },
+        {
+          "stream": "stdout",
+          "text": "@@ -1 +1 @@"
+        },
+        {
+          "stream": "stdout",
+          "text": "-export const load = 0;"
+        },
+        {
+          "stream": "stdout",
+          "text": "+export const load = 1;"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 12,
+      "summary": "path=\"/production/service/src/index.ts\" removed=1",
+      "type": "vfs.delete"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 13,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [
+        "{\"path\":\"/production/service/src/index.ts\",\"staged\":null,\"untracked\":false,\"working\":\"deleted\"}"
+      ],
+      "index": 14,
+      "summary": "paths=1",
+      "type": "git.status"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 15,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": " D src/index.ts"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [
+        "{\"lines\":1,\"newLength\":null,\"oldLength\":23,\"path\":\"/production/service/src/index.ts\"}"
+      ],
+      "index": 16,
+      "summary": "comparison=working-index files=1",
+      "type": "git.diff"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 17,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "diff --git a/src/index.ts b/src/index.ts"
+        },
+        {
+          "stream": "stdout",
+          "text": "deleted file mode 100644"
+        },
+        {
+          "stream": "stdout",
+          "text": "--- a/src/index.ts"
+        },
+        {
+          "stream": "stdout",
+          "text": "+++ /dev/null"
+        },
+        {
+          "stream": "stdout",
+          "text": "@@ -1 +0,0 @@"
+        },
+        {
+          "stream": "stdout",
+          "text": "-export const load = 1;"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 18,
+      "summary": "path=\"/production/service/src/index.ts\" staged=false",
+      "type": "git.restore"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 19,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 20,
+      "summary": "path=\"/production/service/src/index.ts\" removed=1",
+      "type": "vfs.delete"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 21,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 22,
+      "summary": "paths=1",
+      "type": "git.stage"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 23,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [
+        "{\"lines\":1,\"newLength\":null,\"oldLength\":23,\"path\":\"/production/service/src/index.ts\"}"
+      ],
+      "index": 24,
+      "summary": "comparison=index-head files=1",
+      "type": "git.diff"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 25,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "diff --git a/src/index.ts b/src/index.ts"
+        },
+        {
+          "stream": "stdout",
+          "text": "deleted file mode 100644"
+        },
+        {
+          "stream": "stdout",
+          "text": "--- a/src/index.ts"
+        },
+        {
+          "stream": "stdout",
+          "text": "+++ /dev/null"
+        },
+        {
+          "stream": "stdout",
+          "text": "@@ -1 +0,0 @@"
+        },
+        {
+          "stream": "stdout",
+          "text": "-export const load = 1;"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 26,
+      "summary": "path=\"/production/service/src/index.ts\" created=true",
+      "type": "vfs.touch"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 27,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [
+        "{\"path\":\"/production/service/src/index.ts\",\"staged\":\"deleted\",\"untracked\":true,\"working\":null}"
+      ],
+      "index": 28,
+      "summary": "paths=1",
+      "type": "git.status"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 29,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "D? src/index.ts"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 30,
+      "summary": "path=\"/production/service/src/index.ts\" staged=true",
+      "type": "git.restore"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 31,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 32,
+      "summary": "path=\"/production/service/src/index.ts\" staged=false",
+      "type": "git.restore"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 33,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 34,
+      "summary": "path=\"/production/service/load.txt\" created=true",
+      "type": "vfs.touch"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 35,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 36,
+      "summary": "paths=1",
+      "type": "git.stage"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 37,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 38,
+      "summary": "hash=0a39687e86f9652f2ed2a75c87b17d4d86067d7a",
+      "type": "git.commit"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 39,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "[main 0a39687] record load"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [
+        "0a39687e86f9652f2ed2a75c87b17d4d86067d7a",
+        "ec8411560e51cbb72c92dc14430df6b52a836e92",
+        "1371060ac7908e038722ae38887e2d71004f7aae"
+      ],
+      "index": 40,
+      "summary": "commits=3",
+      "type": "git.log"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 41,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "0a39687 record load"
+        },
+        {
+          "stream": "stdout",
+          "text": "ec84115 increase structural load"
+        },
+        {
+          "stream": "stdout",
+          "text": "1371060 establish the service"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [
+        "{\"author\":{\"email\":\"greg@example.test\",\"name\":\"Greg Formerly\"},\"committedAt\":\"2026-07-31T02:11:09.000Z\",\"hash\":\"ec8411560e51cbb72c92dc14430df6b52a836e92\",\"line\":1}"
+      ],
+      "index": 42,
+      "summary": "lines=1",
+      "type": "git.blame"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 43,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "ec84115 (Greg Formerly 2026-07-31 02:11:09 +0000    1) export const load = 1;"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 44,
+      "summary": "head=branch:before-load hash=1371060ac7908e038722ae38887e2d71004f7aae",
+      "type": "git.checkout"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 45,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "Switched to branch 'before-load'"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 46,
+      "summary": "paths=0",
+      "type": "git.status"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 47,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    }
+  ]
+}

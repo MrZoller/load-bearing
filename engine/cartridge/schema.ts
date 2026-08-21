@@ -74,7 +74,7 @@ export const ARCHETYPES = Object.freeze([
 
 /**
  * Absolute POSIX path: a leading slash, then non-empty segments that are not
- * `.` or `..`, and no backslashes anywhere.
+ * `.` or `..`, and no backslashes or transcript-breaking controls anywhere.
  *
  * Absolute, not relative to `cwd`. The world is a filesystem, not a project
  * folder — `cat /etc/motd` and `ls /var/log` are part of the joke surface — so
@@ -82,7 +82,7 @@ export const ARCHETYPES = Object.freeze([
  * to be checked against.
  */
 export const ABSOLUTE_PATH_PATTERN = pattern(
-  /^\/$|^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F]+)+$/,
+  /^\/$|^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F-\u009F\u2028\u2029]+)+$/,
 );
 
 /**
@@ -101,7 +101,7 @@ export const ABSOLUTE_PATH_PATTERN = pattern(
  * session at the root is legitimate.
  */
 export const FILE_PATH_PATTERN = pattern(
-  /^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F]+)+$/,
+  /^(?:\/(?!\.{1,2}(?:\/|$))[^/\\\u0000-\u001F\u007F-\u009F\u2028\u2029]+)+$/,
 );
 
 /**
@@ -147,9 +147,12 @@ export const WORLD_ID_PATTERN = pattern(
 /** Stable cartridge-local commit name, used before content hashes are derived. */
 export const GIT_COMMIT_ID_PATTERN = pattern(/^[a-z][a-z0-9-]*$/);
 
-/** Git ref component spelling; slashes separate non-empty components. */
+/** Authored commit email; displayed locally and never contacted. */
+export const GIT_EMAIL_PATTERN = pattern(/^[^\s<>@]+@[^\s<>@]+$/);
+
+/** Git branch spelling; exact `HEAD` remains reserved as the current-head ref. */
 export const GIT_BRANCH_PATTERN = pattern(
-  /^(?!\/|.*(?:\/\/|\.\.|@\{|\\|\s|[~^:?*\[]))[A-Za-z0-9._/-]+(?<![/.])$/,
+  /^(?!HEAD$)(?!\/|.*(?:\/\/|\.\.|@\{|\\|\s|[~^:?*\[]))[A-Za-z0-9._/-]+(?<![/.])$/,
 );
 
 export type { Pattern };
@@ -476,7 +479,7 @@ const GIT_AUTHOR = {
     email: required({
       kind: "string",
       description: "Author email, displayed as authored rather than contacted.",
-      pattern: pattern(/^[^\s<>@]+@[^\s<>@]+$/),
+      pattern: GIT_EMAIL_PATTERN,
       patternLabel: "a single-line email address",
       maxLength: 254,
     }),
@@ -561,9 +564,10 @@ const GIT_HISTORY = {
     branches: optional(
       {
         kind: "record",
-        description: "Local branch names mapped to authored commit ids.",
+        description:
+          "Local branch names mapped to authored commit ids. Exact HEAD is reserved for the current-head ref.",
         keyPattern: GIT_BRANCH_PATTERN,
-        keyLabel: "a valid local branch name",
+        keyLabel: "a valid local branch name other than HEAD",
         values: {
           kind: "string",
           description: "Authored id of the branch tip.",
@@ -850,6 +854,11 @@ const REPOSITORY = {
       patternLabel: "an absolute POSIX path",
     }),
     identity: required(IDENTITY),
+    gitIdentity: required({
+      ...GIT_AUTHOR,
+      description:
+        "Authorship for commits created during the session. This is world content, not derived from the POSIX identity.",
+    }),
     files: required({
       kind: "record",
       description: "The simulated filesystem, keyed by absolute path.",

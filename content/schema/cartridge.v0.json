@@ -180,7 +180,7 @@
         },
         "cwd": {
           "description": "Where the session opens. Must be a directory some declared file lives under.",
-          "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$",
+          "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
           "type": "string"
         },
         "directories": {
@@ -219,7 +219,7 @@
           "description": "Optional explicit directory metadata keyed by absolute path. Undeclared ancestors inherit owner/group from the nearest declared ancestor, otherwise root:root; their mode is 0755 and mtime is meta.startedAt.",
           "propertyNames": {
             "description": "Each key is an absolute POSIX path naming a directory.",
-            "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$"
+            "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$"
           },
           "type": "object"
         },
@@ -279,7 +279,7 @@
           "minProperties": 1,
           "propertyNames": {
             "description": "Each key is an absolute POSIX path naming a file, not the root directory.",
-            "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$"
+            "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$"
           },
           "type": "object"
         },
@@ -302,10 +302,10 @@
                 "type": "string"
               },
               "default": {},
-              "description": "Local branch names mapped to authored commit ids.",
+              "description": "Local branch names mapped to authored commit ids. Exact HEAD is reserved for the current-head ref.",
               "propertyNames": {
-                "description": "Each key is a valid local branch name.",
-                "pattern": "^(?!\\/|.*(?:\\/\\/|\\.\\.|@\\{|\\\\|\\s|[~^:?*\\[]))[A-Za-z0-9._/-]+(?<![/.])$"
+                "description": "Each key is a valid local branch name other than HEAD.",
+                "pattern": "^(?!HEAD$)(?!\\/|.*(?:\\/\\/|\\.\\.|@\\{|\\\\|\\s|[~^:?*\\[]))[A-Za-z0-9._/-]+(?<![/.])$"
               },
               "type": "object"
             },
@@ -374,7 +374,7 @@
                     "description": "Complete tracked tree, keyed by absolute VFS file path.",
                     "propertyNames": {
                       "description": "Each key is an absolute POSIX path naming a tracked file.",
-                      "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$"
+                      "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$"
                     },
                     "type": "object"
                   },
@@ -440,6 +440,30 @@
           },
           "type": "object"
         },
+        "gitIdentity": {
+          "additionalProperties": false,
+          "description": "Authorship for commits created during the session. This is world content, not derived from the POSIX identity.",
+          "properties": {
+            "email": {
+              "description": "Author email, displayed as authored rather than contacted.",
+              "maxLength": 254,
+              "pattern": "^[^\\s<>@]+@[^\\s<>@]+$",
+              "type": "string"
+            },
+            "name": {
+              "description": "Author display name.",
+              "maxLength": 120,
+              "minLength": 1,
+              "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "email"
+          ],
+          "type": "object"
+        },
         "identity": {
           "additionalProperties": false,
           "description": "The acting POSIX identity. Root bypasses permission checks; all other operations use these user and group names.",
@@ -451,7 +475,7 @@
             },
             "home": {
               "description": "Absolute home directory. Only bare `~` and `~/...` expand to it; `~user` remains a literal path segment.",
-              "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$",
+              "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
               "type": "string"
             },
             "umask": {
@@ -569,7 +593,7 @@
                   },
                   "binary": {
                     "description": "Absolute executable path naming a repository file.",
-                    "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$",
+                    "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
                     "type": "string"
                   }
                 },
@@ -748,6 +772,7 @@
       "required": [
         "cwd",
         "identity",
+        "gitIdentity",
         "files"
       ],
       "type": "object"

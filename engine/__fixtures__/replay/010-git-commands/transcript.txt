@@ -1,0 +1,98 @@
+0000  2026-08-05T09:14:22.000Z  git.log commits=2
+      ec8411560e51cbb72c92dc14430df6b52a836e92
+      1371060ac7908e038722ae38887e2d71004f7aae
+0001  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> ec84115 increase structural load
+      stdout> 1371060 establish the service
+0002  2026-08-05T09:14:22.000Z  git.diff comparison=working-index files=0
+0003  2026-08-05T09:14:22.000Z  shell.result exit=0
+0004  2026-08-05T09:14:22.000Z  git.blame lines=1
+      {"author":{"email":"greg@example.test","name":"Greg Formerly"},"committedAt":"2026-07-31T02:11:09.000Z","hash":"ec8411560e51cbb72c92dc14430df6b52a836e92","line":1}
+0005  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> ec84115 (Greg Formerly 2026-07-31 02:11:09 +0000    1) export const load = 1;
+0006  2026-08-05T09:14:22.000Z  git.branches branches=2
+      before-load
+      main
+0007  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout>   before-load
+      stdout> * main
+0008  2026-08-05T09:14:22.000Z  git.branch created=investigation hash=ec8411560e51cbb72c92dc14430df6b52a836e92
+0009  2026-08-05T09:14:22.000Z  shell.result exit=0
+0010  2026-08-05T09:14:22.000Z  git.show hash=ec8411560e51cbb72c92dc14430df6b52a836e92 files=1
+0011  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> commit ec8411560e51cbb72c92dc14430df6b52a836e92
+      stdout> Author: Greg Formerly <greg@example.test>
+      stdout> Date:   Fri Jul 31 02:11:09 2026 +0000
+      stdout>
+      stdout>     increase structural load
+      stdout>
+      stdout> diff --git a/src/index.ts b/src/index.ts
+      stdout> --- a/src/index.ts
+      stdout> +++ b/src/index.ts
+      stdout> @@ -1 +1 @@
+      stdout> -export const load = 0;
+      stdout> +export const load = 1;
+0012  2026-08-05T09:14:22.000Z  vfs.delete path="/production/service/src/index.ts" removed=1
+0013  2026-08-05T09:14:22.000Z  shell.result exit=0
+0014  2026-08-05T09:14:22.000Z  git.status paths=1
+      {"path":"/production/service/src/index.ts","staged":null,"untracked":false,"working":"deleted"}
+0015  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout>  D src/index.ts
+0016  2026-08-05T09:14:22.000Z  git.diff comparison=working-index files=1
+      {"lines":1,"newLength":null,"oldLength":23,"path":"/production/service/src/index.ts"}
+0017  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> diff --git a/src/index.ts b/src/index.ts
+      stdout> deleted file mode 100644
+      stdout> --- a/src/index.ts
+      stdout> +++ /dev/null
+      stdout> @@ -1 +0,0 @@
+      stdout> -export const load = 1;
+0018  2026-08-05T09:14:22.000Z  git.restore path="/production/service/src/index.ts" staged=false
+0019  2026-08-05T09:14:22.000Z  shell.result exit=0
+0020  2026-08-05T09:14:22.000Z  vfs.delete path="/production/service/src/index.ts" removed=1
+0021  2026-08-05T09:14:22.000Z  shell.result exit=0
+0022  2026-08-05T09:14:22.000Z  git.stage paths=1
+0023  2026-08-05T09:14:22.000Z  shell.result exit=0
+0024  2026-08-05T09:14:22.000Z  git.diff comparison=index-head files=1
+      {"lines":1,"newLength":null,"oldLength":23,"path":"/production/service/src/index.ts"}
+0025  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> diff --git a/src/index.ts b/src/index.ts
+      stdout> deleted file mode 100644
+      stdout> --- a/src/index.ts
+      stdout> +++ /dev/null
+      stdout> @@ -1 +0,0 @@
+      stdout> -export const load = 1;
+0026  2026-08-05T09:14:22.000Z  vfs.touch path="/production/service/src/index.ts" created=true
+0027  2026-08-05T09:14:22.000Z  shell.result exit=0
+0028  2026-08-05T09:14:22.000Z  git.status paths=1
+      {"path":"/production/service/src/index.ts","staged":"deleted","untracked":true,"working":null}
+0029  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> D? src/index.ts
+0030  2026-08-05T09:14:22.000Z  git.restore path="/production/service/src/index.ts" staged=true
+0031  2026-08-05T09:14:22.000Z  shell.result exit=0
+0032  2026-08-05T09:14:22.000Z  git.restore path="/production/service/src/index.ts" staged=false
+0033  2026-08-05T09:14:22.000Z  shell.result exit=0
+0034  2026-08-05T09:14:22.000Z  vfs.touch path="/production/service/load.txt" created=true
+0035  2026-08-05T09:14:22.000Z  shell.result exit=0
+0036  2026-08-05T09:14:22.000Z  git.stage paths=1
+0037  2026-08-05T09:14:22.000Z  shell.result exit=0
+0038  2026-08-05T09:14:22.000Z  git.commit hash=0a39687e86f9652f2ed2a75c87b17d4d86067d7a
+0039  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> [main 0a39687] record load
+0040  2026-08-05T09:14:22.000Z  git.log commits=3
+      0a39687e86f9652f2ed2a75c87b17d4d86067d7a
+      ec8411560e51cbb72c92dc14430df6b52a836e92
+      1371060ac7908e038722ae38887e2d71004f7aae
+0041  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> 0a39687 record load
+      stdout> ec84115 increase structural load
+      stdout> 1371060 establish the service
+0042  2026-08-05T09:14:22.000Z  git.blame lines=1
+      {"author":{"email":"greg@example.test","name":"Greg Formerly"},"committedAt":"2026-07-31T02:11:09.000Z","hash":"ec8411560e51cbb72c92dc14430df6b52a836e92","line":1}
+0043  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> ec84115 (Greg Formerly 2026-07-31 02:11:09 +0000    1) export const load = 1;
+0044  2026-08-05T09:14:22.000Z  git.checkout head=branch:before-load hash=1371060ac7908e038722ae38887e2d71004f7aae
+0045  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> Switched to branch 'before-load'
+0046  2026-08-05T09:14:22.000Z  git.status paths=0
+0047  2026-08-05T09:14:22.000Z  shell.result exit=0

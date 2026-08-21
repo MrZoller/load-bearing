@@ -46,6 +46,11 @@ export function isDescendant(path: string, ancestor: string): boolean {
   return ancestor === "/" ? path !== "/" : path.startsWith(`${ancestor}/`);
 }
 
+/** Segment-safe containment including the root itself; `/` contains every path. */
+export function isAtOrBelow(path: string, root: string): boolean {
+  return path === root || isDescendant(path, root);
+}
+
 /**
  * Unicode code-point order, independent of locale and UTF-16 surrogate width.
  * The shorter string sorts first when one is a prefix of the other.

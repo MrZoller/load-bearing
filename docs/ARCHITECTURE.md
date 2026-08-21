@@ -197,6 +197,10 @@ renders the same entries differently without changing what was recorded.
 - runtime commands are implemented generically against the VFS/git/process
   models; `pwd`, `echo`, and `true` establish the frame before the remaining
   Phase 0 command sets land
+- Git commands render model queries and express every mutation as a versioned
+  `git.*` event. Ref abbreviations begin at seven characters and extend until
+  unique; dates are UTC in the C locale. Path checkout and restore cross into
+  the VFS only through transactional `vfs.replace-files` effects.
 - cartridge-defined hidden commands and overrides are static
   `{stdout, stderr, exitCode}` records under `repository.commands`, never
   executable behavior; a cartridge record explicitly wins over a runtime
@@ -270,7 +274,9 @@ shape:
   "repository": {
     "cwd": "/production/availability-service",
     "identity": { "user": "visitor", "group": "visitor",
-                  "home": "/home/visitor", "umask": "0022" },
+                   "home": "/home/visitor", "umask": "0022" },
+    "gitIdentity": { "name": "Incident Visitor",
+                     "email": "visitor@example.test" },
     "directories": {
       "/production/availability-service": {
         "owner": "greg", "group": "departed", "mode": "0755"
@@ -328,6 +334,9 @@ Three things worth noting, because each is a decision rather than a detail:
   ancestors inherit owner/group from their nearest declared ancestor (otherwise
   `root:root`) and default to mode `0755` at `meta.startedAt`. New entries use
   the acting identity and umask. Root alone bypasses permissions.
+- **Commit identity is separate world content.** Required
+  `repository.gitIdentity` supplies the name and email for visitor-created
+  commits; it is never inferred from the POSIX account.
 - **`meta.startedAt` is required.** A cartridge that does not say when its
   session begins is a generation bug, and Phase 5 has no human in the loop to
   notice a plausible-looking wrong date. Invariant 7 says a pipeline failure

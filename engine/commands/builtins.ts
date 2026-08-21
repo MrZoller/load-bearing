@@ -3,6 +3,7 @@ import { CommandOptionError, parseCommandOptions } from "./options.js";
 import type { CommandContext, CommandDefinition } from "./types.js";
 import { readVfsSlice } from "../vfs/module.js";
 import { FILESYSTEM_COMMANDS } from "./filesystem.js";
+import { GIT_COMMANDS } from "./git.js";
 
 const PWD: CommandDefinition = Object.freeze({
   name: "pwd",
@@ -64,5 +65,6 @@ export const BUILTIN_COMMANDS = Object.freeze([
   ECHO,
   TRUE,
   ...FILESYSTEM_COMMANDS,
+  ...GIT_COMMANDS,
 ]);
 export const BUILTIN_COMMAND_REGISTRY = createCommandRegistry(BUILTIN_COMMANDS);

@@ -527,6 +527,16 @@ capable" bit and part of the professional story:
 
 ---
 
+## Chosen simulation simplifications
+
+- `git blame` always annotates the committed tree. Real Git includes working
+  tree edits and attributes uncommitted lines to `Not Committed Yet` under a
+  zero hash. The simulation deliberately omits that pseudo-commit so `git log`
+  and blame share one coherent authored history; working edits remain visible
+  through `git status` and `git diff`.
+
+---
+
 ## Open decisions
 
 - Visual identity: how close to terminal-genre defaults vs. a distinctive

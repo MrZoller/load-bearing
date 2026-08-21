@@ -10,6 +10,7 @@
   "repository": {
     "cwd": "/production/service",
     "identity": { "user": "root", "group": "root", "home": "/root" },
+    "gitIdentity": { "name": "Visitor", "email": "visitor@example.test" },
     "files": {
       "/production/service/README.md": { "contents": "# service\n" },
       "/production/service/src/index.ts": {
