@@ -180,7 +180,7 @@
         },
         "cwd": {
           "description": "Where the session opens. Must be a directory some declared file lives under.",
-          "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$",
+          "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
           "type": "string"
         },
         "directories": {
@@ -219,7 +219,7 @@
           "description": "Optional explicit directory metadata keyed by absolute path. Undeclared ancestors inherit owner/group from the nearest declared ancestor, otherwise root:root; their mode is 0755 and mtime is meta.startedAt.",
           "propertyNames": {
             "description": "Each key is an absolute POSIX path naming a directory.",
-            "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$"
+            "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$"
           },
           "type": "object"
         },
@@ -279,7 +279,7 @@
           "minProperties": 1,
           "propertyNames": {
             "description": "Each key is an absolute POSIX path naming a file, not the root directory.",
-            "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$"
+            "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$"
           },
           "type": "object"
         },
@@ -374,7 +374,7 @@
                     "description": "Complete tracked tree, keyed by absolute VFS file path.",
                     "propertyNames": {
                       "description": "Each key is an absolute POSIX path naming a tracked file.",
-                      "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$"
+                      "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$"
                     },
                     "type": "object"
                   },
@@ -475,7 +475,7 @@
             },
             "home": {
               "description": "Absolute home directory. Only bare `~` and `~/...` expand to it; `~user` remains a literal path segment.",
-              "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$",
+              "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
               "type": "string"
             },
             "umask": {
@@ -593,7 +593,7 @@
                   },
                   "binary": {
                     "description": "Absolute executable path naming a repository file.",
-                    "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F]+)+$",
+                    "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
                     "type": "string"
                   }
                 },
