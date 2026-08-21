@@ -71,7 +71,7 @@ remains blocked until review findings are deliberately batched into it.
 
 ## Ad-hoc
 
-- [~] T11 (standard) — parked review minors (batch)
+- [R] T11 (standard) — parked review minors (batch)
   - acceptance: confirmed non-blocking review findings parked during Phase 0 delivery are collected, fixed as one focused batch, and verified by the affected test and repository gates
   - PR #23: preserve `..` traversal semantics across a regular-file component until the shell/VFS contract is deliberately defined
   - PR #23: reject noncanonical fixed-width VFS snapshot mtime spellings
@@ -94,3 +94,4 @@ remains blocked until review findings are deliberately batched into it.
   - PR #32: count only reaction-derived events against the reaction cascade limit
   - PR #32: treat `ENOTDIR` as absence for `file-exists` predicates
   - PR #32: enforce fixed-width canonical timestamps when restoring test-run snapshots
+  - pr: 33
