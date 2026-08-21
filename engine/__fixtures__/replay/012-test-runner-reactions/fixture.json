@@ -1,0 +1,23 @@
+{
+  "name": "012-test-runner-reactions",
+  "description": "Authored tests fail before a shell edit and pass after it; test time and a cartridge-owned service, process, health and dual-log reaction cascade persist in deterministic order.",
+  "seed": "2026-08-05/12/deep-foundation",
+  "cartridge": "reactive",
+  "events": [
+    {
+      "type": "shell.execute",
+      "payload": { "input": "npm test" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm src/ready.stale" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "npm test" },
+      "version": 0
+    }
+  ]
+}

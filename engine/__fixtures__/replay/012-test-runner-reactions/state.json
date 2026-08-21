@@ -1,0 +1,584 @@
+{
+  "cartridge": {
+    "meta": {
+      "assignment": "Remove the stale readiness sentinel and observe the machine agree.",
+      "date": "2026-08-05",
+      "number": 12,
+      "schemaVersion": 0,
+      "startedAt": "2026-08-05T09:14:22.000Z",
+      "title": "Test Runner Reactions Fixture"
+    },
+    "models": [
+      {
+        "archetype": "paranoid",
+        "costMultiplier": 48000,
+        "description": "Thorough. Expensive. Excavation permit required.",
+        "id": "deep-foundation",
+        "name": "Deep Foundation",
+        "quirks": []
+      }
+    ],
+    "presentation": {},
+    "repository": {
+      "commands": {},
+      "cwd": "/production/service",
+      "directories": {},
+      "endpoints": {},
+      "env": {},
+      "files": {
+        "/production/service/src/ready.stale": {
+          "contents": "remove me\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src/worker.ts": {
+          "contents": "export const load = 2;\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var/log/reactions.log": {
+          "contents": "booted\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        }
+      },
+      "gitHistory": {
+        "branches": {},
+        "commits": [],
+        "head": {
+          "kind": "detached",
+          "target": ""
+        }
+      },
+      "gitIdentity": {
+        "email": "visitor@example.test",
+        "name": "Visitor"
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      },
+      "logs": [
+        {
+          "entries": [
+            "booted"
+          ],
+          "id": "events",
+          "kind": "stream",
+          "path": ""
+        },
+        {
+          "entries": [],
+          "id": "reactions-file",
+          "kind": "file",
+          "path": "/var/log/reactions.log"
+        }
+      ],
+      "manPages": [],
+      "processes": [
+        {
+          "command": {
+            "args": [],
+            "binary": "/production/service/src/worker.ts"
+          },
+          "id": "worker",
+          "pid": 1200,
+          "startedAt": "2026-08-05T09:00:00.000Z",
+          "state": "stopped",
+          "user": "root"
+        }
+      ],
+      "reactions": [
+        {
+          "actions": [
+            {
+              "kind": "service-state",
+              "service": "api",
+              "state": "running"
+            },
+            {
+              "kind": "process-state",
+              "process": "worker",
+              "state": "running"
+            }
+          ],
+          "id": "start-units-after-edit",
+          "on": "vfs.delete",
+          "predicates": [
+            {
+              "exists": false,
+              "kind": "file-exists",
+              "path": "/production/service/src/ready.stale"
+            }
+          ]
+        },
+        {
+          "actions": [
+            {
+              "health": "healthy",
+              "kind": "service-health",
+              "service": "api"
+            }
+          ],
+          "id": "mark-healthy-after-units",
+          "on": "vfs.delete",
+          "predicates": [
+            {
+              "kind": "service-state",
+              "service": "api",
+              "state": "running"
+            },
+            {
+              "kind": "process-state",
+              "process": "worker",
+              "state": "running"
+            }
+          ]
+        },
+        {
+          "actions": [
+            {
+              "entry": "1 service running",
+              "kind": "log-append",
+              "log": "events"
+            },
+            {
+              "entry": "1 service running",
+              "kind": "log-append",
+              "log": "reactions-file"
+            }
+          ],
+          "id": "record-service-start",
+          "on": "world.service-start",
+          "predicates": []
+        },
+        {
+          "actions": [
+            {
+              "entry": "2 worker running",
+              "kind": "log-append",
+              "log": "events"
+            },
+            {
+              "entry": "2 worker running",
+              "kind": "log-append",
+              "log": "reactions-file"
+            }
+          ],
+          "id": "record-process-start",
+          "on": "world.process-transition",
+          "predicates": []
+        },
+        {
+          "actions": [
+            {
+              "entry": "3 service healthy",
+              "kind": "log-append",
+              "log": "events"
+            },
+            {
+              "entry": "3 service healthy",
+              "kind": "log-append",
+              "log": "reactions-file"
+            }
+          ],
+          "id": "record-service-health",
+          "on": "world.service-health",
+          "predicates": []
+        }
+      ],
+      "services": [
+        {
+          "dependencies": [],
+          "health": "unknown",
+          "id": "api",
+          "ports": [
+            8080
+          ],
+          "state": "stopped"
+        }
+      ],
+      "shellHistory": [],
+      "system": {
+        "architecture": "x86_64",
+        "bootedAt": "2025-07-01T06:10:00.000Z",
+        "hostname": "reaction-runner",
+        "kernelRelease": "6.1.0-load-bearing",
+        "operatingSystem": "Linux"
+      },
+      "tests": [
+        {
+          "durationMs": 750,
+          "id": "stale-sentinel",
+          "name": "stale readiness sentinel is absent",
+          "predicate": {
+            "exists": false,
+            "kind": "file-exists",
+            "path": "/production/service/src/ready.stale"
+          }
+        },
+        {
+          "durationMs": 250,
+          "id": "worker-source",
+          "name": "worker source is intact",
+          "predicate": {
+            "equals": "export const load = 2;\n",
+            "kind": "file-contents",
+            "path": "/production/service/src/worker.ts"
+          }
+        }
+      ],
+      "tickets": []
+    },
+    "story": {}
+  },
+  "clock": {
+    "elapsedMs": 2000,
+    "startMs": 1785921262000
+  },
+  "engineVersion": "0.0.0",
+  "eventCount": 9,
+  "eventSchemaVersion": 0,
+  "random": {
+    "cursors": {},
+    "seed": 2711796559
+  },
+  "seed": "2026-08-05/12/deep-foundation",
+  "slices": {
+    "git": {
+      "branches": {},
+      "commits": {},
+      "head": {
+        "kind": "detached",
+        "target": ""
+      },
+      "identity": {
+        "email": "visitor@example.test",
+        "name": "Visitor"
+      },
+      "index": {},
+      "root": "/production/service"
+    },
+    "probe": {
+      "events": 0,
+      "values": 0
+    },
+    "tests": {
+      "runs": [
+        {
+          "cases": [
+            {
+              "durationMs": 750,
+              "id": "stale-sentinel",
+              "name": "stale readiness sentinel is absent",
+              "passed": false
+            },
+            {
+              "durationMs": 250,
+              "id": "worker-source",
+              "name": "worker source is intact",
+              "passed": true
+            }
+          ],
+          "durationMs": 1000,
+          "exitCode": 1,
+          "finishedAt": "2026-08-05T09:14:23.000Z",
+          "startedAt": "2026-08-05T09:14:22.000Z"
+        },
+        {
+          "cases": [
+            {
+              "durationMs": 750,
+              "id": "stale-sentinel",
+              "name": "stale readiness sentinel is absent",
+              "passed": true
+            },
+            {
+              "durationMs": 250,
+              "id": "worker-source",
+              "name": "worker source is intact",
+              "passed": true
+            }
+          ],
+          "durationMs": 1000,
+          "exitCode": 0,
+          "finishedAt": "2026-08-05T09:14:24.000Z",
+          "startedAt": "2026-08-05T09:14:23.000Z"
+        }
+      ]
+    },
+    "vfs": {
+      "cwd": "/production/service",
+      "entries": {
+        "/": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:23.000Z",
+          "owner": "root"
+        },
+        "/production/service/src/worker.ts": {
+          "contents": "export const load = 2;\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var/log": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var/log/reactions.log": {
+          "contents": "booted\n1 service running\n2 worker running\n3 service healthy\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:23.000Z",
+          "owner": "root"
+        }
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      }
+    },
+    "world": {
+      "env": {},
+      "logs": [
+        {
+          "entries": [
+            "booted",
+            "1 service running",
+            "2 worker running",
+            "3 service healthy"
+          ],
+          "id": "events",
+          "kind": "stream",
+          "path": ""
+        },
+        {
+          "entries": [],
+          "id": "reactions-file",
+          "kind": "file",
+          "path": "/var/log/reactions.log"
+        }
+      ],
+      "manPages": [],
+      "processes": [
+        {
+          "command": {
+            "args": [],
+            "binary": "/production/service/src/worker.ts"
+          },
+          "id": "worker",
+          "pid": 1200,
+          "startedAt": "2026-08-05T09:00:00.000Z",
+          "state": "running",
+          "user": "root"
+        }
+      ],
+      "services": [
+        {
+          "dependencies": [],
+          "health": "healthy",
+          "id": "api",
+          "ports": [
+            8080
+          ],
+          "state": "running"
+        }
+      ],
+      "shellHistory": [
+        "npm test",
+        "rm src/ready.stale",
+        "npm test"
+      ],
+      "tickets": []
+    }
+  },
+  "transcript": [
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 0,
+      "summary": "length=1",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 1,
+      "index": 1,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "FAIL stale readiness sentinel is absent (750ms)"
+        },
+        {
+          "stream": "stdout",
+          "text": "PASS worker source is intact (250ms)"
+        },
+        {
+          "stream": "stdout",
+          "text": "Tests: 1 passed, 1 failed, 2 total"
+        },
+        {
+          "stream": "stdout",
+          "text": "Time: 1000ms"
+        }
+      ],
+      "summary": "",
+      "type": "tests.run"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [],
+      "exitCode": 1,
+      "index": 2,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "FAIL stale readiness sentinel is absent (750ms)"
+        },
+        {
+          "stream": "stdout",
+          "text": "PASS worker source is intact (250ms)"
+        },
+        {
+          "stream": "stdout",
+          "text": "Tests: 1 passed, 1 failed, 2 total"
+        },
+        {
+          "stream": "stdout",
+          "text": "Time: 1000ms"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [],
+      "index": 3,
+      "summary": "length=2",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [],
+      "index": 4,
+      "summary": "path=\"/production/service/src/ready.stale\" removed=1",
+      "type": "vfs.delete"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 5,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [],
+      "index": 6,
+      "summary": "length=3",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:23.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 7,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "PASS stale readiness sentinel is absent (750ms)"
+        },
+        {
+          "stream": "stdout",
+          "text": "PASS worker source is intact (250ms)"
+        },
+        {
+          "stream": "stdout",
+          "text": "Tests: 2 passed, 0 failed, 2 total"
+        },
+        {
+          "stream": "stdout",
+          "text": "Time: 1000ms"
+        }
+      ],
+      "summary": "",
+      "type": "tests.run"
+    },
+    {
+      "at": "2026-08-05T09:14:24.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 8,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "PASS stale readiness sentinel is absent (750ms)"
+        },
+        {
+          "stream": "stdout",
+          "text": "PASS worker source is intact (250ms)"
+        },
+        {
+          "stream": "stdout",
+          "text": "Tests: 2 passed, 0 failed, 2 total"
+        },
+        {
+          "stream": "stdout",
+          "text": "Time: 1000ms"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    }
+  ]
+}

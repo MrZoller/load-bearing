@@ -751,6 +751,332 @@
           },
           "type": "array"
         },
+        "reactions": {
+          "default": [],
+          "description": "Post-event reaction rules in evaluation order.",
+          "items": {
+            "additionalProperties": false,
+            "description": "A post-event all-of rule with ordered actions.",
+            "properties": {
+              "actions": {
+                "description": "Owner-applied transitions in authored order.",
+                "items": {
+                  "description": "One registered owner-applied transition produced by a reaction.",
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "description": "A service-state predicate or action.",
+                      "properties": {
+                        "kind": {
+                          "description": "The rule kind.",
+                          "enum": [
+                            "service-state"
+                          ],
+                          "type": "string"
+                        },
+                        "service": {
+                          "description": "A stable, non-empty single-line cartridge-local identifier.",
+                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                          "type": "string"
+                        },
+                        "state": {
+                          "description": "A unit state.",
+                          "enum": [
+                            "running",
+                            "stopped"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "service",
+                        "state"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "description": "A service-health predicate or action.",
+                      "properties": {
+                        "health": {
+                          "description": "A service health.",
+                          "enum": [
+                            "healthy",
+                            "degraded",
+                            "unhealthy",
+                            "unknown"
+                          ],
+                          "type": "string"
+                        },
+                        "kind": {
+                          "description": "The rule kind.",
+                          "enum": [
+                            "service-health"
+                          ],
+                          "type": "string"
+                        },
+                        "service": {
+                          "description": "A stable, non-empty single-line cartridge-local identifier.",
+                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "service",
+                        "health"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "description": "A process-state predicate or action.",
+                      "properties": {
+                        "kind": {
+                          "description": "The rule kind.",
+                          "enum": [
+                            "process-state"
+                          ],
+                          "type": "string"
+                        },
+                        "process": {
+                          "description": "A stable, non-empty single-line cartridge-local identifier.",
+                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                          "type": "string"
+                        },
+                        "state": {
+                          "description": "A unit state.",
+                          "enum": [
+                            "running",
+                            "stopped"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "process",
+                        "state"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "description": "Append one entry to a declared log.",
+                      "properties": {
+                        "entry": {
+                          "description": "The complete appended entry.",
+                          "type": "string"
+                        },
+                        "kind": {
+                          "description": "The rule kind.",
+                          "enum": [
+                            "log-append"
+                          ],
+                          "type": "string"
+                        },
+                        "log": {
+                          "description": "A stable, non-empty single-line cartridge-local identifier.",
+                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "log",
+                        "entry"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "type": "array"
+              },
+              "id": {
+                "description": "A stable, non-empty single-line cartridge-local identifier.",
+                "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                "type": "string"
+              },
+              "on": {
+                "description": "Exact triggering event type.",
+                "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)*$",
+                "type": "string"
+              },
+              "predicates": {
+                "description": "All-of staged-state conditions.",
+                "items": {
+                  "description": "One all-of condition evaluated against staged session state.",
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "description": "A predicate comparing whether a declared file currently exists.",
+                      "properties": {
+                        "exists": {
+                          "description": "Whether the file must exist.",
+                          "type": "boolean"
+                        },
+                        "kind": {
+                          "description": "The file-existence predicate kind.",
+                          "enum": [
+                            "file-exists"
+                          ],
+                          "type": "string"
+                        },
+                        "path": {
+                          "description": "A declared absolute file path.",
+                          "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "path",
+                        "exists"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "description": "A predicate comparing a declared file's complete contents.",
+                      "properties": {
+                        "equals": {
+                          "description": "The exact expected contents.",
+                          "type": "string"
+                        },
+                        "kind": {
+                          "description": "The predicate kind.",
+                          "enum": [
+                            "file-contents"
+                          ],
+                          "type": "string"
+                        },
+                        "path": {
+                          "description": "A declared absolute file path.",
+                          "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "path",
+                        "equals"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "description": "A service-state predicate or action.",
+                      "properties": {
+                        "kind": {
+                          "description": "The rule kind.",
+                          "enum": [
+                            "service-state"
+                          ],
+                          "type": "string"
+                        },
+                        "service": {
+                          "description": "A stable, non-empty single-line cartridge-local identifier.",
+                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                          "type": "string"
+                        },
+                        "state": {
+                          "description": "A unit state.",
+                          "enum": [
+                            "running",
+                            "stopped"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "service",
+                        "state"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "description": "A service-health predicate or action.",
+                      "properties": {
+                        "health": {
+                          "description": "A service health.",
+                          "enum": [
+                            "healthy",
+                            "degraded",
+                            "unhealthy",
+                            "unknown"
+                          ],
+                          "type": "string"
+                        },
+                        "kind": {
+                          "description": "The rule kind.",
+                          "enum": [
+                            "service-health"
+                          ],
+                          "type": "string"
+                        },
+                        "service": {
+                          "description": "A stable, non-empty single-line cartridge-local identifier.",
+                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "service",
+                        "health"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "description": "A process-state predicate or action.",
+                      "properties": {
+                        "kind": {
+                          "description": "The rule kind.",
+                          "enum": [
+                            "process-state"
+                          ],
+                          "type": "string"
+                        },
+                        "process": {
+                          "description": "A stable, non-empty single-line cartridge-local identifier.",
+                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                          "type": "string"
+                        },
+                        "state": {
+                          "description": "A unit state.",
+                          "enum": [
+                            "running",
+                            "stopped"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "process",
+                        "state"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "id",
+              "on",
+              "predicates",
+              "actions"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
         "services": {
           "default": [],
           "description": "Service units, with states, health and ports.",
@@ -869,12 +1195,100 @@
         },
         "tests": {
           "default": [],
-          "description": "Simulated test-runner cases and their reactions.",
+          "description": "Simulated test-runner cases in execution order.",
           "items": {
-            "$comment": "Declared but not validated in schema v0. Tightened by: issue #12. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
-            "description": "One entry. Simulated test-runner cases and their reactions.",
+            "additionalProperties": false,
+            "description": "One simulated test case, evaluated in authored order.",
+            "properties": {
+              "durationMs": {
+                "description": "Simulated duration in milliseconds.",
+                "maximum": 600000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "id": {
+                "description": "A stable, non-empty single-line cartridge-local identifier.",
+                "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                "type": "string"
+              },
+              "name": {
+                "description": "Single-line test name rendered in output.",
+                "maxLength": 4000,
+                "minLength": 1,
+                "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                "type": "string"
+              },
+              "predicate": {
+                "description": "A predicate over the current virtual filesystem.",
+                "oneOf": [
+                  {
+                    "additionalProperties": false,
+                    "description": "A predicate comparing whether a declared file currently exists.",
+                    "properties": {
+                      "exists": {
+                        "description": "Whether the file must exist.",
+                        "type": "boolean"
+                      },
+                      "kind": {
+                        "description": "The file-existence predicate kind.",
+                        "enum": [
+                          "file-exists"
+                        ],
+                        "type": "string"
+                      },
+                      "path": {
+                        "description": "A declared absolute file path.",
+                        "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "path",
+                      "exists"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "description": "A predicate comparing a declared file's complete contents.",
+                    "properties": {
+                      "equals": {
+                        "description": "The exact expected contents.",
+                        "type": "string"
+                      },
+                      "kind": {
+                        "description": "The predicate kind.",
+                        "enum": [
+                          "file-contents"
+                        ],
+                        "type": "string"
+                      },
+                      "path": {
+                        "description": "A declared absolute file path.",
+                        "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "path",
+                      "equals"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "durationMs",
+              "predicate"
+            ],
             "type": "object"
           },
+          "maxItems": 2046,
           "type": "array"
         },
         "tickets": {

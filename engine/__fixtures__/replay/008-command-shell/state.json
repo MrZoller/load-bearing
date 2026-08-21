@@ -65,6 +65,7 @@
       "logs": [],
       "manPages": [],
       "processes": [],
+      "reactions": [],
       "services": [],
       "shellHistory": [],
       "system": {
@@ -109,6 +110,9 @@
     "probe": {
       "events": 0,
       "values": 0
+    },
+    "tests": {
+      "runs": []
     },
     "vfs": {
       "cwd": "/production/service",
