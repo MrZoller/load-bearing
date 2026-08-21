@@ -21,6 +21,7 @@ import type {
 import type {
   CartridgeFile,
   CartridgeCommand,
+  CartridgeEndpoint,
   CartridgeGitAuthor,
   CartridgeGitCommit,
   CartridgeGitFile,
@@ -34,6 +35,7 @@ import type {
   CartridgeProcess,
   CartridgeRepository,
   CartridgeService,
+  CartridgeSystem,
   CartridgeTicket,
 } from "./types.js";
 
@@ -329,6 +331,14 @@ describe("descriptor and type lockstep", () => {
     const gitIdentity = repository.fields.gitIdentity.node;
     agrees<CartridgeGitAuthor["name"]>(gitIdentity.fields.name.node);
     agrees<CartridgeGitAuthor["email"]>(gitIdentity.fields.email.node);
+    const system = repository.fields.system.node;
+    agrees<CartridgeSystem["hostname"]>(system.fields.hostname.node);
+    agrees<CartridgeSystem["operatingSystem"]>(
+      system.fields.operatingSystem.node,
+    );
+    agrees<CartridgeSystem["kernelRelease"]>(system.fields.kernelRelease.node);
+    agrees<CartridgeSystem["architecture"]>(system.fields.architecture.node);
+    agrees<CartridgeSystem["bootedAt"]>(system.fields.bootedAt.node);
     agrees<CartridgeRepository["env"][string]>(
       repository.fields.env.node.values,
     );
@@ -347,6 +357,11 @@ describe("descriptor and type lockstep", () => {
       command.fields.stderr.node.items,
     );
     agrees<CartridgeCommand["exitCode"]>(command.fields.exitCode.node);
+    const endpoint = repository.fields.endpoints.node.values;
+    agrees<CartridgeEndpoint["service"]>(endpoint.fields.service.node);
+    agrees<CartridgeEndpoint["running"]["exitCode"]>(
+      endpoint.fields.running.node.fields.exitCode.node,
+    );
 
     const proc = repository.fields.processes.node.items;
     agrees<CartridgeProcess["id"]>(proc.fields.id.node);

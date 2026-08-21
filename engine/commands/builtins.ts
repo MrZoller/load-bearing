@@ -4,6 +4,7 @@ import type { CommandContext, CommandDefinition } from "./types.js";
 import { readVfsSlice } from "../vfs/module.js";
 import { FILESYSTEM_COMMANDS } from "./filesystem.js";
 import { GIT_COMMANDS } from "./git.js";
+import { SYSTEM_COMMANDS } from "./system.js";
 
 const PWD: CommandDefinition = Object.freeze({
   name: "pwd",
@@ -66,5 +67,6 @@ export const BUILTIN_COMMANDS = Object.freeze([
   TRUE,
   ...FILESYSTEM_COMMANDS,
   ...GIT_COMMANDS,
+  ...SYSTEM_COMMANDS,
 ]);
 export const BUILTIN_COMMAND_REGISTRY = createCommandRegistry(BUILTIN_COMMANDS);

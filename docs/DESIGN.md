@@ -534,6 +534,12 @@ capable" bit and part of the professional story:
   zero hash. The simulation deliberately omits that pseudo-commit so `git log`
   and blame share one coherent authored history; working edits remain visible
   through `git status` and `git diff`.
+- `history` displays only entries that existed before the `history` command
+  began. Real Bash inserts a command before executing it and therefore lists
+  `history` itself as the final row. The simulation computes command output
+  before expanding the visitor action into reducer events, then appends the raw
+  nonblank input first; keeping that ordering preserves one event path for every
+  command mutation without granting the shell privileged state writes.
 
 ---
 

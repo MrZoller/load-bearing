@@ -102,6 +102,95 @@ describe("loadCartridge", () => {
     );
   });
 
+  it("requires cartridge-owned system metadata and bounds boot time", () => {
+    const missing = minimal();
+    delete (missing["repository"] as Record<string, unknown>)["system"];
+    expect(issuesOf(missing)).toEqual([
+      {
+        pointer: "/repository/system",
+        expected: "an object (required)",
+        found: "nothing",
+      },
+    ]);
+
+    const future = minimal();
+    const repository = future["repository"] as Record<string, unknown>;
+    (repository["system"] as Record<string, unknown>)["bootedAt"] =
+      "2026-08-05T09:14:22.001Z";
+    expect(issuesOf(future)).toEqual([
+      {
+        pointer: "/repository/system/bootedAt",
+        expected: "a UTC instant at or before meta.startedAt",
+        found:
+          '"2026-08-05T09:14:22.001Z", which is later than "2026-08-05T09:14:22.000Z"',
+      },
+    ]);
+  });
+
+  it("validates exact endpoint URLs, response records and service links", () => {
+    const source = minimal();
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["services"] = [
+      {
+        id: "api",
+        state: "running",
+        health: "healthy",
+        ports: [],
+        dependencies: [],
+      },
+    ];
+    repository["endpoints"] = {
+      "https://api.example.test/health?full=1": {
+        service: "api",
+        running: { stdout: ["ok"], stderr: [], exitCode: 0 },
+        unavailable: { stdout: [], stderr: ["down"], exitCode: 7 },
+      },
+    };
+    expect(
+      loadCartridge(source).repository.endpoints[
+        "https://api.example.test/health?full=1"
+      ],
+    ).toEqual({
+      service: "api",
+      running: { stdout: ["ok"], stderr: [], exitCode: 0 },
+      unavailable: { stdout: [], stderr: ["down"], exitCode: 7 },
+    });
+
+    const endpoints = repository["endpoints"] as Record<string, unknown>;
+    endpoints["api.example.test/health"] = {
+      service: "missing",
+      running: { stdout: [], stderr: [], exitCode: 0 },
+      unavailable: { stdout: [], stderr: [], exitCode: 0 },
+    };
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
+      "/repository/endpoints/api.example.test~1health",
+    ]);
+
+    delete endpoints["api.example.test/health"];
+    endpoints["https://api.example.test:65536/health"] = {
+      service: "api",
+      running: { stdout: [], stderr: [], exitCode: 0 },
+      unavailable: { stdout: [], stderr: [], exitCode: 0 },
+    };
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
+      "/repository/endpoints/https:~1~1api.example.test:65536~1health",
+    ]);
+    delete endpoints["https://api.example.test:65536/health"];
+    const valid = endpoints["https://api.example.test/health?full=1"] as Record<
+      string,
+      unknown
+    >;
+    valid["service"] = "missing";
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
+      "/repository/endpoints/https:~1~1api.example.test~1health?full=1/service",
+    ]);
+    valid["service"] = "api";
+    delete (valid["unavailable"] as Record<string, unknown>)["stderr"];
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual([
+      "/repository/endpoints/https:~1~1api.example.test~1health?full=1/unavailable/stderr",
+    ]);
+  });
+
   it.each([
     [
       "missing stdout",

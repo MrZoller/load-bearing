@@ -33,6 +33,15 @@ export function executeShell(
       `shell input is ${String(input.length)} characters, over the ${String(MAX_SHELL_INPUT_LENGTH)} command limit`,
     );
   }
+  const history =
+    input.trim() === ""
+      ? []
+      : [
+          stampEvent(
+            { type: "world.history-append", payload: { command: input } },
+            "shell history",
+          ),
+        ];
   let argv: readonly string[];
   try {
     argv = tokenizeShell(input);
@@ -45,10 +54,14 @@ export function executeShell(
       exitCode: 2,
       events: [],
     };
-    return Object.freeze([resultEvent(result)]);
+    return Object.freeze([...history, resultEvent(result)]);
   }
   const execution = executeCommand(state, argv, registry);
-  return Object.freeze([...execution.events, resultEvent(execution)]);
+  return Object.freeze([
+    ...history,
+    ...execution.events,
+    resultEvent(execution),
+  ]);
 }
 
 /** The event Phase 1 views append for a visitor shell command. */

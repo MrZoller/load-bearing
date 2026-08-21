@@ -199,6 +199,7 @@ export {
   BUILTIN_COMMAND_REGISTRY,
 } from "./commands/builtins.js";
 export { GIT_COMMANDS } from "./commands/git.js";
+export { SYSTEM_COMMANDS } from "./commands/system.js";
 export {
   createShellExecuteEvent,
   executeShell,
@@ -280,6 +281,7 @@ export {
   CARTRIDGE_SCHEMA,
   CARTRIDGE_SCHEMA_VERSION,
   COMMAND_NAME_PATTERN,
+  ENDPOINT_URL_PATTERN,
   GIT_BRANCH_PATTERN,
   GIT_COMMIT_ID_PATTERN,
   GIT_EMAIL_PATTERN,
@@ -290,6 +292,7 @@ export type {
   Archetype,
   CartridgeDirectory,
   CartridgeCommand,
+  CartridgeEndpoint,
   CartridgeFile,
   CartridgeIdentity,
   CartridgeGitAuthor,
@@ -304,6 +307,7 @@ export type {
   CartridgeManPage,
   CartridgeProcess,
   CartridgeService,
+  CartridgeSystem,
   CartridgeTicket,
   DeferredObject,
   LoadedCartridge,

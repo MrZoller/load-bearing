@@ -15,6 +15,13 @@
       "home": "/home/visitor"
     },
     "gitIdentity": { "name": "Visitor", "email": "visitor@example.test" },
+    "system": {
+      "hostname": "production",
+      "operatingSystem": "Linux",
+      "kernelRelease": "6.1.0-load-bearing",
+      "architecture": "x86_64",
+      "bootedAt": "2025-07-01T06:10:00.000Z"
+    },
     "files": {
       "/production/service/README.md": { "contents": "# service\n" },
       "/production/service/src/index.ts": {

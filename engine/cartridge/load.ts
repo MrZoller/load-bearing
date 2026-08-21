@@ -34,6 +34,7 @@
  */
 
 import { deepFreeze } from "../freeze.js";
+import { parseTimestamp } from "../clock/civil.js";
 import { detectBrand } from "../serialize/canonical.js";
 import {
   CARTRIDGE_SCHEMA,
@@ -1288,6 +1289,15 @@ function checkWorld(repository: CartridgeRepository, report: Report): void {
         `${JSON.stringify(ticket.service)}, which does not exist`,
       );
   });
+
+  for (const [url, endpoint] of Object.entries(repository.endpoints)) {
+    if (!services.has(endpoint.service))
+      report.addPhrase(
+        `/repository/endpoints/${pointerToken(url)}/service`,
+        "the id of a declared service",
+        `${JSON.stringify(endpoint.service)}, which does not exist`,
+      );
+  }
 }
 
 /**
@@ -1364,12 +1374,26 @@ export function loadCartridge(value: unknown): LoadedCartridge {
     checkModelIds(cartridge.models, report);
   }
   if (
+    !issueAt(report, "/meta/startedAt") &&
+    !issueAt(report, "/repository/system") &&
+    !issueAt(report, "/repository/system/bootedAt") &&
+    parseTimestamp(cartridge.repository.system.bootedAt) >
+      parseTimestamp(cartridge.meta.startedAt)
+  ) {
+    report.addPhrase(
+      "/repository/system/bootedAt",
+      "a UTC instant at or before meta.startedAt",
+      `${JSON.stringify(cartridge.repository.system.bootedAt)}, which is later than ${JSON.stringify(cartridge.meta.startedAt)}`,
+    );
+  }
+  if (
     !issueAt(report, "/repository") &&
     !issueAt(report, "/repository/files") &&
     !issueWithin(report, "/repository/processes") &&
     !issueWithin(report, "/repository/services") &&
     !issueWithin(report, "/repository/logs") &&
     !issueWithin(report, "/repository/manPages") &&
+    !issueWithin(report, "/repository/endpoints") &&
     !issueWithin(report, "/repository/tickets")
   ) {
     checkWorld(cartridge.repository, report);
