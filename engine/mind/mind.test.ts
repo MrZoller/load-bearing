@@ -24,6 +24,16 @@ function fold(events: readonly EngineEvent[]): SessionState {
   return reduce({ cartridge: CARTRIDGE, seed: SEED, events });
 }
 
+function mindEvent(type: string, payload: unknown): EngineEvent {
+  return { type, payload } as EngineEvent;
+}
+
+function restoreWithMind(mind: unknown): SessionState {
+  const parsed = JSON.parse(snapshot(fold([]))) as Record<string, unknown>;
+  (parsed["slices"] as Record<string, unknown>)["mind"] = mind;
+  return restoreSnapshot(serialize(parsed));
+}
+
 const CAPABILITY = {
   kind: "exact" as const,
   action: "write",
@@ -85,6 +95,22 @@ describe("mind events", () => {
         resource: "/etc/motd.bak",
       }),
     ).toBe(false);
+
+    for (const decision of ["grant", "deny"] as const) {
+      expect(
+        hasStandingPermission(
+          readMindSlice(
+            fold([
+              mindEvent("mind.permission-decision", {
+                capability: CAPABILITY,
+                decision,
+              }),
+            ]),
+          ),
+          CAPABILITY,
+        ),
+      ).toBe(false);
+    }
   });
 
   it("upserts beliefs by typed subject without moving their position", () => {
@@ -156,6 +182,40 @@ describe("mind events", () => {
     });
   });
 
+  it("rejects hostile values before JSON serialization can hide them", () => {
+    const accessor = { beliefs: [], compactHistory: [] };
+    Object.defineProperty(accessor, "permissions", {
+      enumerable: true,
+      get: () => [],
+    });
+    const symbolKey = { permissions: [], beliefs: [], compactHistory: [] };
+    Object.defineProperty(symbolKey, Symbol("hostile"), { value: true });
+    const nonstandardPrototype = Object.assign(Object.create({}), {
+      permissions: [],
+      beliefs: [],
+      compactHistory: [],
+    });
+    const nonEnumerable = { beliefs: [], compactHistory: [] };
+    Object.defineProperty(nonEnumerable, "permissions", {
+      enumerable: false,
+      value: [],
+    });
+
+    for (const [value, message] of [
+      [accessor, /accessors are not inert JSON data/],
+      [symbolKey, /must not contain symbol-keyed fields/],
+      [nonstandardPrototype, /must be a plain JSON object/],
+      [nonEnumerable, /non-enumerable fields are not JSON data/],
+      [
+        { permissions: new Array(1), beliefs: [], compactHistory: [] },
+        /must be a dense array without extra fields/,
+      ],
+    ] as const)
+      expect(() => validateMindSlice(value, "snapshot: slices.mind")).toThrow(
+        message,
+      );
+  });
+
   it("rejects malformed event payloads and malformed mind snapshots", () => {
     expect(() =>
       fold([
@@ -177,21 +237,83 @@ describe("mind events", () => {
       ]),
     ).toThrow(/canonical absolute POSIX path/);
     expect(() =>
+      fold([
+        mindEvent("mind.permission-decision", {
+          capability: { ...CAPABILITY, kind: "prefix" },
+          decision: "grant",
+        }),
+      ]),
+    ).toThrow(/kind: must be exact/);
+    for (const [payload, message] of [
+      [
+        {
+          belief: {
+            kind: "git-head",
+            head: { kind: "detached", target: "not-a-hash" },
+          },
+        },
+        /valid branch or a detached HEAD with a 40-digit hash/,
+      ],
+      [
+        {
+          belief: { kind: "service-state", service: "api", state: "paused" },
+        },
+        /state: must be running or stopped/,
+      ],
+      [
+        {
+          belief: {
+            kind: "service-health",
+            service: "api",
+            health: "excellent",
+          },
+        },
+        /health: must be a service health value/,
+      ],
+      [{ belief: { kind: "intuition" } }, /unknown belief kind/],
+    ] as const)
+      expect(() => fold([mindEvent("mind.belief-set", payload)])).toThrow(
+        message,
+      );
+
+    const duplicateBeliefs = [
+      { kind: "file-exists", path: "/etc/motd", exists: true },
+      { kind: "file-exists", path: "/etc/motd", exists: false },
+    ];
+    expect(() =>
+      fold([
+        mindEvent("mind.compact", {
+          summary: "duplicate assertion",
+          beliefs: duplicateBeliefs,
+        }),
+      ]),
+    ).toThrow(/duplicate typed belief subject/);
+
+    const duplicateSlice = {
+      permissions: [],
+      beliefs: duplicateBeliefs,
+      compactHistory: [],
+    };
+    expect(() =>
+      validateMindSlice(duplicateSlice, "snapshot: slices.mind"),
+    ).toThrow(/duplicate typed subject/);
+    expect(() => restoreWithMind(duplicateSlice)).toThrow(
+      /duplicate typed subject/,
+    );
+    expect(() =>
       validateMindSlice(
         { permissions: [], beliefs: [], compactHistory: [], extra: true },
         "snapshot: slices.mind",
       ),
     ).toThrow(/unexpected field/);
 
-    const parsed = JSON.parse(snapshot(fold([]))) as Record<string, unknown>;
-    (parsed["slices"] as Record<string, unknown>)["mind"] = {
-      permissions: [],
-      beliefs: [],
-      compactHistory: [{ summary: "x", at: "not-time" }],
-    };
-    expect(() => restoreSnapshot(serialize(parsed))).toThrow(
-      /real fixed-width UTC instant/,
-    );
+    expect(() =>
+      restoreWithMind({
+        permissions: [],
+        beliefs: [],
+        compactHistory: [{ summary: "x", at: "not-time" }],
+      }),
+    ).toThrow(/real fixed-width UTC instant/);
   });
 });
 
