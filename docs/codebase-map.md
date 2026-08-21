@@ -7,8 +7,8 @@ this document is *what exists today*, as opposed to what is designed.
 
 Status: **Phase 0 — headless state engine.** The determinism substrate,
 event registry, cartridge validation, VFS, Git model, environmental world
-state, and command interpreter core are built; command sets, reactions, and
-agent state remain. See
+state, command sets, test runner, and cartridge reactions are built; natural-
+language intent and agent state remain. See
 [Implementation status vs Phase 0](#implementation-status-vs-phase-0).
 
 ---
@@ -54,6 +54,8 @@ compared byte-for-byte against committed golden fixtures.
 │   ├── git/                     DAG/index/status/blame/diff + event module
 │   ├── world/                   processes/services/logs/env/man/history/tickets
 │   ├── commands/                tokenizer/options/registry/builtins/shell events
+│   ├── tests/                   authored predicates, runner plan + event module
+│   ├── reactions.ts             predicates + owner-event action planning
 │   ├── cartridge/
 │   │   ├── schema.ts           descriptor-tree schema (the single authority)
 │   │   ├── load.ts             validate + normalize → LoadedCartridge
@@ -66,8 +68,8 @@ compared byte-for-byte against committed golden fixtures.
 │   │   ├── diff.ts, text.ts    diff + writable-text validation
 │   │   └── README.md           source of truth for fixtures + the gate
 │   └── __fixtures__/
-│       ├── replay/{001-008}/      fixture.json + state.json + transcript.txt
-│       └── cartridges/            minimal.json + invalid/*.json
+│       ├── replay/{001-012}/      fixture.json + state.json + transcript.txt
+│       └── cartridges/            focused worlds + invalid/*.json
 ├── content/schema/cartridge.v0.json  published schema (emitted, contract)
 ├── scripts/
 │   ├── gate-purity.mjs         the purity gate (+ gate-purity.test.mjs)
@@ -91,10 +93,12 @@ compared byte-for-byte against committed golden fixtures.
 | `EngineEvent` | `engine/events/state.ts` | Versionable `{ type, payload, version }` envelope dispatched by exact registered type. |
 | `CommandExecution` / `CommandResult` | `engine/commands/types.ts` | Owning events followed by deterministic stdout, stderr, and exit status. |
 | `CommandRegistry` | `engine/commands/types.ts` | Duplicate-safe runtime command lookup; cartridge records take explicit precedence at dispatch. |
+| `TestRun` / `TestsSlice` | `engine/tests/types.ts` | Authored-duration case results and persistent simulated test history. |
+| `CartridgeTest` / `CartridgeReaction` | `engine/cartridge/types.ts` | Typed file predicates and acyclic post-event rules that plan owner events. |
 | `LoadedCartridge` | `engine/cartridge/types.ts` | The world after validation/normalization. Plain JSON, deep-copied, serializable. |
 | `CartridgeMeta/File/Model/Repository` | `engine/cartridge/types.ts` | Loaded shapes for meta, files, models, repository. |
 | `GitSlice` / `VfsSlice` / `WorldSlice` | `engine/git/types.ts`, `engine/vfs/types.ts`, `engine/world/types.ts` | Canonical plain-JSON machine state owned by each event module. |
-| `DeferredObject` | `engine/cartridge/types.ts` | A subtree v0 validates as "an object" but doesn't look inside (`story`, `presentation`, and test interiors). |
+| `DeferredObject` | `engine/cartridge/types.ts` | A subtree v0 validates as "an object" but doesn't look inside (`story` and `presentation`). |
 | `SimulatedClock` / `ClockState` | `engine/clock/clock.ts` | `now() = startMs + elapsedMs`. Advances only via events. |
 | `CivilTime` / `CivilInput` | `engine/clock/civil.ts` | UTC calendar fields; hand-computed (no `Date`/`Intl`). |
 | `RandomStream` / `RandomState` | `engine/random/stream.ts` | A named mulberry32 stream in the shared registry. `fork(label)` derives a child from seed+path, not position. |
@@ -119,6 +123,7 @@ cartridge JSON (authored / Phase-5 generated)
         ▼  reduce()  [engine/events/reduce.ts]
         │   bootstrap registered slices + clock + named PRNG streams
         │   fold events: expand envelopes → dispatch owners/effects → transcript
+        │   → evaluate authored FIFO reaction cascades against staged state
         ▼
    SessionState + transcript:string[]
         │
@@ -200,6 +205,17 @@ unlogged visitor-action envelope; its expander cannot mutate time, randomness,
 slices, or transcript, and empty/nested expansion is refused. Generated owning
 events plus the final `shell.result` are normal logged entries, so future
 filesystem, Git, and world commands retain one-module-one-slice ownership.
+
+Cartridge reactions run only after a logged transition, or a shell expansion's
+complete child sequence, is staged. Source trigger types, authored rules and
+authored actions form a FIFO cascade; each action is converted by
+`engine/reactions.ts` into an unlogged event and dispatched to its registered
+owner. Predicates read the latest staged state, event-type cycles are rejected
+at load, derived actions cannot move the clock/PRNG or expand again, and a
+failure prevents the whole `step` result from being published. Simulated tests
+use the same architecture: `npm test` plans output from the current VFS, emits
+`tests.run`, and that owner records timing/results while advancing only the
+simulated clock.
 
 ---
 
@@ -287,9 +303,8 @@ Phase 0 DoD (from `ROADMAP.md`), mapped to what exists:
 any rendering, any comedy writing, any real model calls.
 
 **What Phase 0 scope has NOT yet been built** (the gap a day-one agent will
-feel): the remaining filesystem/Git/system command implementations, the test
-runner and reactions, the natural-language intent layer, escalation stage,
-metrics, and agent mind state (permission ledger, belief state, todo/thinking blocks). All
+feel): the natural-language intent layer, escalation stage, metrics, and agent
+mind state (permission ledger, belief state, todo/thinking blocks). All
 are designed in `docs/ARCHITECTURE.md` and land behind the remaining Phase 0
 issues.
 
@@ -305,9 +320,8 @@ issues.
    schema and the loader follow automatically (three-way agreement: validator /
    emitted JSON Schema / hand-written types, one source of truth). Deferred
    sections name who tightens them and when: `story`/`presentation` (Phase 2
-   shapes, Phase 4 hardens), `processes`/`services`/
-    `tests` (issue #12). Processes, services, logs, tickets, env, man pages, and
-    history are concrete and validated in `engine/world/`.
+   shapes, Phase 4 hardens). Processes, services, logs, tickets, env, man pages,
+   history, tests, and reactions are concrete and validated.
 3. **New golden fixtures** — every Phase 0 subsystem PR adds at least one
    (`engine/__fixtures__/replay/NNN-…/`). A subsystem with unit tests and no
    fixture is tested against its own idea of correct.

@@ -155,6 +155,7 @@ without incident-specific behavior. Please confirm A or choose another model.
 **A:** Option A confirmed — a generic reducer-level post-event reaction phase.
 
 Pinned details, so the contract is explicit:
+
 - Reaction rules and actions are cartridge DATA evaluated by the generic
   engine; no incident behavior enters engine code (invariant 1, and issue #12's
   own requirement).
@@ -164,7 +165,7 @@ Pinned details, so the contract is explicit:
 - The trigger event plus ALL reaction-derived changes commit atomically as one
   replay step. Reactions are RE-DERIVED during replay from rules + trigger —
   never separately recorded in the event log — so `state = reduce(cartridge,
-  seed, eventLog)` remains literally true and nothing double-applies.
+seed, eventLog)` remains literally true and nothing double-applies.
 - Each reaction action is still an owned event applied by its owning module:
   the reaction phase orchestrates WHICH events fire and in what order; it
   never writes a slice itself. One-module-one-slice survives unchanged.

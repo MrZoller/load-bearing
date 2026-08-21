@@ -85,6 +85,6 @@ remains blocked until review findings are deliberately batched into it.
   - PR #26: return a deterministic shell result for control-character and lone-surrogate input
   - PR #27: reject empty authored filesystem operands rather than resolving them to the current working directory
   - PR #28: reject unwritable control characters and lone surrogates in authored Git email addresses
-   - PR #28: render an extended unterminated final line as changed rather than shared diff context
-   - PR #28: deduplicate no-final-newline markers on a shared diff context row
-   - PR #29: make the `man <section> <name>` grammar reach schema-valid hyphen-prefixed sections, or deliberately narrow that section contract
+  - PR #28: render an extended unterminated final line as changed rather than shared diff context
+  - PR #28: deduplicate no-final-newline markers on a shared diff context row
+  - PR #29: make the `man <section> <name>` grammar reach schema-valid hyphen-prefixed sections, or deliberately narrow that section contract
