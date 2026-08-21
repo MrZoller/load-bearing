@@ -176,3 +176,25 @@ seed, eventLog)` remains literally true and nothing double-applies.
 This is the T2/T4/T6/T8 orchestration risk the plan named; resolving it in the
 reducer core with ownership preserved is the same resolution as Q2, applied to
 reactions. Standing decisions in `.factory/spec.md` continue to apply.
+
+## Q6 (task T9, open) — What explicit capability and typed belief vocabulary should mind state expose?
+
+Context: Issue #13 requires standing permissions to answer whether a later
+action is covered and `beliefDivergence(state)` to compare belief with world
+truth, but it does not define either public vocabulary. The approved plan
+explicitly rejects implicit permission scope and arbitrary object diffing, so
+choosing these contracts would be a user-visible engine/API decision rather
+than an implementation detail. Parked branch:
+`factory/t9-agent-mind-state`.
+Options considered: A — exact capabilities only (`{ kind: "exact", action,
+resource }`) plus a closed typed belief union for file existence/contents, Git
+HEAD, and service state/health; exact field equality checks standing grants and
+each belief kind uses its subsystem's typed truth query. B — add broader typed
+capability scopes (such as VFS subtree or command family) and a subsystem truth
+resolver registry now, which is more extensible but commits Phase 1/2 to a
+larger public contract. C — opaque strings and arbitrary paths/deep diffs,
+which the approved plan prohibits. Recommendation: A as the smallest explicit
+Phase 0 contract. Please also confirm that applying an authored `/compact`
+summary replaces current belief assertions (while preserving a timestamped
+summary history) rather than patching them.
+**A:**
