@@ -110,6 +110,27 @@ describe("simulated tests", () => {
     });
   });
 
+  it("checks file existence without requiring permission to read its contents", () => {
+    const state = reduce({
+      cartridge: cartridge(),
+      seed: "unreadable-exists",
+      events: [
+        {
+          type: "vfs.chmod",
+          payload: { path: "/production/service/README.md", mode: "0000" },
+        },
+        { type: "tests.run", payload: {} },
+      ],
+    });
+    const run = readTestsSlice(state).runs[0];
+    if (run === undefined) throw new Error("test run was not recorded");
+    expect(run.cases).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "readme", passed: true }),
+      ]),
+    );
+  });
+
   it("rejects test history snapshots whose derived timing is incoherent", () => {
     const state = step(
       bootstrap({ cartridge: cartridge(), seed: "snapshot" }),

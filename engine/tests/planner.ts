@@ -4,7 +4,7 @@ import { formatTimestamp } from "../clock/civil.js";
 import type { FilePredicate } from "../cartridge/types.js";
 import type { SessionState } from "../events/state.js";
 import { readVfsSlice } from "../vfs/module.js";
-import { readVfs } from "../vfs/vfs.js";
+import { readVfs, statVfs } from "../vfs/vfs.js";
 import type { VfsSlice } from "../vfs/types.js";
 import type { TestRunPlan } from "./types.js";
 
@@ -12,8 +12,9 @@ export function evaluateFilePredicate(
   predicate: FilePredicate,
   vfs: VfsSlice,
 ): boolean {
+  if (predicate.kind === "file-exists")
+    return statVfs(vfs, predicate.path).ok === predicate.exists;
   const result = readVfs(vfs, predicate.path);
-  if (predicate.kind === "file-exists") return result.ok === predicate.exists;
   return result.ok && result.value.contents === predicate.equals;
 }
 
