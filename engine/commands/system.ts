@@ -180,8 +180,8 @@ const MAN: CommandDefinition = {
     const name = args.at(-1) as string;
     const section = args.length === 2 ? args[0] : undefined;
     const page = lookupManPage(readWorldSlice(context.state), name, section);
-    if (page === undefined && section?.startsWith("-"))
-      return result(EMPTY, [`man: invalid option: ${section}`], 2);
+    const rejected = invalidOption("man", args);
+    if (page === undefined && rejected !== undefined) return rejected;
     if (page === undefined)
       return result(
         EMPTY,

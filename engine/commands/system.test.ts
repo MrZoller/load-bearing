@@ -356,6 +356,7 @@ describe("system commands", () => {
     "ps -x",
     "env --null",
     "export -p",
+    "man -h",
     "man -a service",
     "history -c",
     "curl -I https://api.example.test/health",

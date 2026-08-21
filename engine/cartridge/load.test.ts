@@ -383,6 +383,16 @@ describe("loadCartridge", () => {
     },
   );
 
+  it("accepts writable supplementary characters in Git emails", () => {
+    const source = minimal();
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["gitIdentity"] = {
+      name: "Visitor",
+      email: "visitor😀@example.test",
+    };
+    expect(() => loadCartridge(source)).not.toThrow();
+  });
+
   it("rejects paths that collide with files or place a child below one", () => {
     const collision = minimal();
     (collision["repository"] as Record<string, unknown>)["directories"] = {

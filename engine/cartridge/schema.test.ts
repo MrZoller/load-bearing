@@ -83,6 +83,24 @@ describe("the published schema", () => {
     );
   });
 
+  it("keeps Git email Unicode semantics aligned with the loader", () => {
+    const emitted = emitJsonSchema();
+    const repository = (emitted["properties"] as Record<string, unknown>)[
+      "repository"
+    ] as Record<string, unknown>;
+    const properties = repository["properties"] as Record<string, unknown>;
+    const identity = properties["gitIdentity"] as Record<string, unknown>;
+    const identityProperties = identity["properties"] as Record<
+      string,
+      unknown
+    >;
+    const email = identityProperties["email"] as Record<string, unknown>;
+    const publishedPattern = new RegExp(email["pattern"] as string);
+
+    expect(publishedPattern.test("visitor😀@example.test")).toBe(true);
+    expect(publishedPattern.test("visitor\ud800@example.test")).toBe(false);
+  });
+
   it("closes every object, so a typo is a rejection rather than a shrug", () => {
     function walk(node: unknown, path: string): void {
       if (typeof node !== "object" || node === null) return;

@@ -172,7 +172,7 @@ export const GIT_COMMIT_ID_PATTERN = pattern(/^[a-z][a-z0-9-]*$/);
 
 /** Authored commit email; displayed locally and never contacted. */
 export const GIT_EMAIL_PATTERN = pattern(
-  /^(?!.*[\u0000-\u001F\u007F-\u009F\u2028\u2029\uD800-\uDFFF])[^\s<>@]+@[^\s<>@]+$/u,
+  /^(?!.*[\u0000-\u001F\u007F-\u009F\u2028\u2029])(?!.*(?:[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]))[^\s<>@]+@[^\s<>@]+$/,
 );
 
 /** Git branch spelling; exact `HEAD` remains reserved as the current-head ref. */
