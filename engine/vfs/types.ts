@@ -31,6 +31,12 @@ export interface VfsSlice {
   readonly entries: Readonly<Record<string, VfsEntry>>;
 }
 
+/** Permission-free machine truth used only for typed belief comparison. */
+export type VfsTruth =
+  | { readonly kind: "missing" }
+  | { readonly kind: "directory" }
+  | { readonly kind: "file"; readonly contents: string };
+
 export type VfsErrorCode =
   | "EACCES"
   | "EBUSY"

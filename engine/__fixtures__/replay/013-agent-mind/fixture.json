@@ -1,0 +1,42 @@
+{
+  "name": "013-agent-mind",
+  "description": "An agent records a standing exact permission and deliberately false beliefs; replay preserves the induced file and missing-service divergences.",
+  "seed": "2026-08-05/13/deep-foundation",
+  "cartridge": "minimal",
+  "events": [
+    {
+      "type": "mind.permission-decision",
+      "payload": {
+        "capability": {
+          "kind": "exact",
+          "action": "write",
+          "resource": "/etc/motd"
+        },
+        "decision": "always-allow"
+      },
+      "version": 0
+    },
+    {
+      "type": "mind.belief-set",
+      "payload": {
+        "belief": {
+          "kind": "file-contents",
+          "path": "/etc/motd",
+          "contents": "all clear"
+        }
+      },
+      "version": 0
+    },
+    {
+      "type": "mind.belief-set",
+      "payload": {
+        "belief": {
+          "kind": "service-health",
+          "service": "missing",
+          "health": "healthy"
+        }
+      },
+      "version": 0
+    }
+  ]
+}

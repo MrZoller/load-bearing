@@ -112,13 +112,13 @@
     "startMs": 1785921262000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 0,
+  "eventCount": 3,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {},
-    "seed": 1023437636
+    "seed": 52817862
   },
-  "seed": "2026-08-05/0/deep-foundation",
+  "seed": "2026-08-05/13/deep-foundation",
   "slices": {
     "git": {
       "branches": {},
@@ -135,9 +135,30 @@
       "root": "/production/service"
     },
     "mind": {
-      "beliefs": [],
+      "beliefs": [
+        {
+          "contents": "all clear",
+          "kind": "file-contents",
+          "path": "/etc/motd"
+        },
+        {
+          "health": "healthy",
+          "kind": "service-health",
+          "service": "missing"
+        }
+      ],
       "compactHistory": [],
-      "permissions": []
+      "permissions": [
+        {
+          "at": "2026-08-05T09:14:22.000Z",
+          "capability": {
+            "action": "write",
+            "kind": "exact",
+            "resource": "/etc/motd"
+          },
+          "decision": "always-allow"
+        }
+      ]
     },
     "probe": {
       "events": 0,
@@ -239,5 +260,27 @@
       "tickets": []
     }
   },
-  "transcript": []
+  "transcript": [
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 0,
+      "summary": "decision=always-allow",
+      "type": "mind.permission-decision"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 1,
+      "summary": "kind=file-contents",
+      "type": "mind.belief-set"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 2,
+      "summary": "kind=service-health",
+      "type": "mind.belief-set"
+    }
+  ]
 }

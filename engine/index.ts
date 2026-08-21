@@ -81,6 +81,7 @@ export {
   listVfs,
   mkdirVfs,
   readVfs,
+  queryVfsTruth,
   renameVfs,
   replaceVfsFiles,
   statVfs,
@@ -100,8 +101,9 @@ export type {
   VfsReadValue,
   VfsResult,
   VfsSlice,
-  VfsSuccess,
   VfsStatValue,
+  VfsSuccess,
+  VfsTruth,
 } from "./vfs/types.js";
 
 export { GIT_MODULE, readGitSlice, validateGitSlice } from "./git/module.js";
@@ -113,6 +115,7 @@ export {
   commitGit,
   createGitSlice,
   currentGitHash,
+  currentGitHead,
   diffGit,
   gitAddCwdPaths,
   logGit,
@@ -232,6 +235,34 @@ export type {
   TestsSlice,
 } from "./tests/types.js";
 export { reactionActionEvent, reactionPredicateMatches } from "./reactions.js";
+
+export { MIND_MODULE } from "./mind/module.js";
+export {
+  beliefDivergence,
+  compactBeliefs,
+  createMindSlice,
+  hasStandingPermission,
+  readMindSlice,
+  recordPermissionDecision,
+  setBelief,
+  validateBelief,
+  validateCapability,
+  validateMindSlice,
+} from "./mind/mind.js";
+export type {
+  Belief,
+  BeliefMismatch,
+  CompactSummary,
+  ExactCapability,
+  FileContentsBelief,
+  FileExistsBelief,
+  GitHeadBelief,
+  MindSlice,
+  PermissionDecision,
+  PermissionLedgerEntry,
+  ServiceHealthBelief,
+  ServiceStateBelief,
+} from "./mind/types.js";
 
 export { deepFreeze } from "./freeze.js";
 export {

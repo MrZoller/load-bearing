@@ -198,6 +198,11 @@ export function currentGitHash(slice: GitSlice): string | undefined {
   return headHash(slice);
 }
 
+/** The exact symbolic or detached HEAD identity, copied as plain JSON truth. */
+export function currentGitHead(slice: GitSlice): GitHead {
+  return Object.freeze({ ...slice.head });
+}
+
 export function resolveGitRef(slice: GitSlice, ref: string): GitResult<string> {
   if (ref === "HEAD") {
     const hash = headHash(slice);

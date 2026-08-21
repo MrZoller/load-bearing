@@ -177,7 +177,7 @@ This is the T2/T4/T6/T8 orchestration risk the plan named; resolving it in the
 reducer core with ownership preserved is the same resolution as Q2, applied to
 reactions. Standing decisions in `.factory/spec.md` continue to apply.
 
-## Q6 (task T9, open) — What explicit capability and typed belief vocabulary should mind state expose?
+## Q6 (task T9, consumed) — What explicit capability and typed belief vocabulary should mind state expose?
 
 Context: Issue #13 requires standing permissions to answer whether a later
 action is covered and `beliefDivergence(state)` to compare belief with world

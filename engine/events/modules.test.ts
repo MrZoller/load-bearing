@@ -52,6 +52,9 @@ describe("the engine's module list", () => {
       "git.show",
       "git.stage",
       "git.status",
+      "mind.belief-set",
+      "mind.compact",
+      "mind.permission-decision",
       "probe.int",
       "probe.random",
       "probe.weighted",
@@ -94,6 +97,10 @@ describe("the engine's module list", () => {
     expect(CLOCK_MODULE.validateSlice).toBeUndefined();
     expect(PROBE_MODULE.stateful).toBe(true);
     expect(PROBE_MODULE.validateSlice).toBeTypeOf("function");
+    expect(ENGINE_EVENT_REGISTRY.module("mind")?.stateful).toBe(true);
+    expect(ENGINE_EVENT_REGISTRY.module("mind")?.validateSlice).toBeTypeOf(
+      "function",
+    );
   });
 });
 
