@@ -152,4 +152,26 @@ privileged reaction module that rewrites several slices, weakening the existing
 one-module-one-slice ownership invariant. Recommendation: A; it changes the
 central reducer but preserves ownership, atomicity, and the cycle requirement
 without incident-specific behavior. Please confirm A or choose another model.
-**A:**
+**A:** Option A confirmed — a generic reducer-level post-event reaction phase.
+
+Pinned details, so the contract is explicit:
+- Reaction rules and actions are cartridge DATA evaluated by the generic
+  engine; no incident behavior enters engine code (invariant 1, and issue #12's
+  own requirement).
+- Evaluation order is authored order; cascade order is documented and
+  fixture-pinned. Cascades must be acyclic, with cycles and dangling
+  references rejected at cartridge load with useful errors.
+- The trigger event plus ALL reaction-derived changes commit atomically as one
+  replay step. Reactions are RE-DERIVED during replay from rules + trigger —
+  never separately recorded in the event log — so `state = reduce(cartridge,
+  seed, eventLog)` remains literally true and nothing double-applies.
+- Each reaction action is still an owned event applied by its owning module:
+  the reaction phase orchestrates WHICH events fire and in what order; it
+  never writes a slice itself. One-module-one-slice survives unchanged.
+- T4's ordered-expansion contract stays intact; the reaction phase runs on the
+  staged post-expansion state. The before/after-edit reaction fixture required
+  by issue #12 must prove byte-identical cascades.
+
+This is the T2/T4/T6/T8 orchestration risk the plan named; resolving it in the
+reducer core with ownership preserved is the same resolution as Q2, applied to
+reactions. Standing decisions in `.factory/spec.md` continue to apply.
