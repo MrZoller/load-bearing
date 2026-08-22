@@ -167,17 +167,23 @@ describe("agent replay state", () => {
       /no matching agent message/,
     );
 
-    for (const [field, property, expectation] of [
-      ["toolCalls", "title", /no matching tool call/],
-      ["thinkingBlocks", "text", /no matching thinking block/],
-      ["todos", "text", /no matching todo/],
+    for (const [field, property, value, expectation] of [
+      ["toolCalls", "title", "tampered artifact", /no matching tool call/],
+      [
+        "thinkingBlocks",
+        "text",
+        "tampered artifact",
+        /no matching thinking block/,
+      ],
+      ["thinkingBlocks", "status", "complete", /no matching thinking block/],
+      ["todos", "text", "tampered artifact", /no matching todo/],
     ] as const) {
       const tampered = deserialize(snapshot(state)) as Record<string, unknown>;
       const tamperedSlices = tampered["slices"] as Record<string, unknown>;
       const tamperedAgent = tamperedSlices["agent"] as Record<string, unknown>;
       const artifact = (tamperedAgent[field] as Record<string, unknown>[])[0];
       if (artifact === undefined) throw new Error(`missing ${field}`);
-      artifact[property] = "tampered artifact";
+      artifact[property] = value;
       expect(() => restoreSnapshot(serialize(tampered))).toThrow(expectation);
     }
 

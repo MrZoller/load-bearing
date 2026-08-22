@@ -358,7 +358,11 @@ export function validateAgentSlice(
             candidate.id ===
             instanceArtifactId(response.instanceId, "thinking", expected.id),
         );
-        if (actual === undefined || actual.text !== expected.text)
+        if (
+          actual === undefined ||
+          actual.text !== expected.text ||
+          actual.status !== expected.status
+        )
           throw new Error(
             `${where}.responses: instance ${JSON.stringify(response.instanceId)} has no matching thinking block ${JSON.stringify(expected.id)}`,
           );
