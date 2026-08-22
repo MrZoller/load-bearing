@@ -75,10 +75,16 @@ jobs:
       - name: Test (UTC and Asia/Tokyo)
         run: npm run test:timezones
 
-      # The browser smoke test serves Vite's production output, not its dev
+      # Browser acceptance serves Vite's production output, not its dev
       # transform path, so missing assets and bundle-only failures are visible.
       - name: Install pinned Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Browser production smoke
-        run: npm run test:browser
+      - name: Browser production build
+        run: npm run build
+
+      - name: Browser interactions (desktop and 390×844)
+        run: npm run test:browser:interactions
+
+      - name: Lighthouse accessibility 100
+        run: npm run test:lighthouse

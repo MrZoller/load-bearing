@@ -99,10 +99,10 @@ Scope:
 
 Definition of done:
 
-- [ ] Both views verifiably share one state (delete a file in the shell, the TUI knows)
-- [ ] Keyboard-only session possible end to end
-- [ ] Lighthouse accessibility pass on the terminal page
-- [ ] Renders acceptably on a phone
+- [x] Both views verifiably share one state (delete a file in the shell, the TUI knows)
+- [x] Keyboard-only session possible end to end
+- [x] Lighthouse accessibility pass on the terminal page
+- [x] Renders acceptably on a phone
 
 ---
 

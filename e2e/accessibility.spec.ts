@@ -1,5 +1,25 @@
 import { expect, test } from "@playwright/test";
 
+const FOCUSABLE = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "summary",
+  '[tabindex]:not([tabindex="-1"])',
+].join(", ");
+
+async function expectVisibleControlsNamed(
+  page: import("@playwright/test").Page,
+): Promise<void> {
+  const controls = page.locator(`main :is(${FOCUSABLE}):visible`);
+  const count = await controls.count();
+  expect(count).toBeGreaterThan(0);
+  for (let index = 0; index < count; index += 1)
+    await expect(controls.nth(index)).toHaveAccessibleName(/\S/);
+}
+
 test("keeps the stable terminal surface semantic, named, and visibly focused", async ({
   page,
 }) => {
@@ -59,6 +79,42 @@ test("keeps the stable terminal surface semantic, named, and visibly focused", a
       search.evaluate((element) => getComputedStyle(element).outlineStyle),
     )
     .not.toBe("none");
+});
+
+test("gives every visible interactive control a name and a non-trapping Tab cycle", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  await expectVisibleControlsNamed(page);
+  await expect(prompt).toBeFocused();
+
+  const visibleFocusableCount = await page
+    .locator(`main :is(${FOCUSABLE}):visible`)
+    .count();
+  let returnedToPrompt = false;
+  for (let index = 0; index < visibleFocusableCount + 2; index += 1) {
+    await page.keyboard.press("Tab");
+    if (
+      await prompt.evaluate((element) => document.activeElement === element)
+    ) {
+      returnedToPrompt = true;
+      break;
+    }
+  }
+  // Native Tab navigation is allowed to pass through the document boundary,
+  // but it must re-enter the terminal instead of stranding focus at one control.
+  expect(returnedToPrompt).toBe(true);
+
+  // Dynamic controls have the same contract when they become visible.
+  await page.keyboard.type("/model");
+  await page.keyboard.press("Enter");
+  await expectVisibleControlsNamed(page);
+  await page.keyboard.press("Escape");
+  await page.keyboard.type("remove it");
+  await page.keyboard.press("Enter");
+  await expectVisibleControlsNamed(page);
 });
 
 test("announces only newly rendered agent and shell output", async ({
