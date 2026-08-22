@@ -1614,7 +1614,16 @@
           ],
           "response": "default-response"
         },
-        "phase2": {},
+        "phase2": {
+          "beats": [
+            {
+              "ending": "",
+              "id": "start"
+            }
+          ],
+          "endings": [],
+          "initialBeat": "start"
+        },
         "responses": [
           {
             "id": "default-response",
@@ -1868,9 +1877,9 @@
           "properties": {
             "actions": {
               "default": [],
-              "description": "Ordered closed Phase 1 actions.",
+              "description": "Ordered closed cartridge actions.",
               "items": {
-                "description": "A closed Phase 1 cartridge action, dispatched through normal mechanics.",
+                "description": "A closed cartridge action, dispatched through normal mechanics.",
                 "oneOf": [
                   {
                     "additionalProperties": false,
@@ -1934,6 +1943,30 @@
                       "resource"
                     ],
                     "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "description": "Reach one authored shared story beat.",
+                    "properties": {
+                      "beat": {
+                        "description": "A stable lowercase Phase 1 content identifier.",
+                        "maxLength": 64,
+                        "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                        "type": "string"
+                      },
+                      "kind": {
+                        "description": "The action kind.",
+                        "enum": [
+                          "story-reach"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "beat"
+                    ],
+                    "type": "object"
                   }
                 ]
               },
@@ -1980,9 +2013,9 @@
             "properties": {
               "actions": {
                 "default": [],
-                "description": "Ordered closed Phase 1 actions.",
+                "description": "Ordered closed cartridge actions.",
                 "items": {
-                  "description": "A closed Phase 1 cartridge action, dispatched through normal mechanics.",
+                  "description": "A closed cartridge action, dispatched through normal mechanics.",
                   "oneOf": [
                     {
                       "additionalProperties": false,
@@ -2044,6 +2077,30 @@
                         "id",
                         "action",
                         "resource"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "description": "Reach one authored shared story beat.",
+                      "properties": {
+                        "beat": {
+                          "description": "A stable lowercase Phase 1 content identifier.",
+                          "maxLength": 64,
+                          "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                          "type": "string"
+                        },
+                        "kind": {
+                          "description": "The action kind.",
+                          "enum": [
+                            "story-reach"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "beat"
                       ],
                       "type": "object"
                     }
@@ -2333,9 +2390,89 @@
           "type": "object"
         },
         "phase2": {
-          "$comment": "Declared but not validated in schema v0. Tightened by: Phase 2 defines this interior; Phase 4 hardens it. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
-          "default": {},
-          "description": "Story graph, escalation, callbacks and endings.",
+          "additionalProperties": false,
+          "default": {
+            "beats": [
+              {
+                "ending": "",
+                "id": "start"
+              }
+            ],
+            "endings": [],
+            "initialBeat": "start"
+          },
+          "description": "The bounded shared-beat and non-terminal ending skeleton. Later Phase 2 work adds routing, conditions and callbacks without replacing this graph.",
+          "properties": {
+            "beats": {
+              "description": "Shared story beats in authored order.",
+              "items": {
+                "additionalProperties": false,
+                "description": "One shared beat and its optional discovered ending.",
+                "properties": {
+                  "ending": {
+                    "description": "An optional stable lowercase Phase 1 content identifier.",
+                    "maxLength": 64,
+                    "pattern": "^(?:|[a-z][a-z0-9-]{0,63})$",
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "A stable lowercase Phase 1 content identifier.",
+                    "maxLength": 64,
+                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "ending"
+                ],
+                "type": "object"
+              },
+              "maxItems": 128,
+              "minItems": 1,
+              "type": "array"
+            },
+            "endings": {
+              "description": "Unranked collectible endings in authored order.",
+              "items": {
+                "additionalProperties": false,
+                "description": "One ending identity and display name.",
+                "properties": {
+                  "id": {
+                    "description": "A stable lowercase Phase 1 content identifier.",
+                    "maxLength": 64,
+                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "Non-empty bounded single-line authored text.",
+                    "maxLength": 240,
+                    "minLength": 1,
+                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "type": "object"
+              },
+              "maxItems": 32,
+              "type": "array"
+            },
+            "initialBeat": {
+              "description": "A stable lowercase Phase 1 content identifier.",
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]{0,63}$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "initialBeat",
+            "beats",
+            "endings"
+          ],
           "type": "object"
         },
         "responses": {

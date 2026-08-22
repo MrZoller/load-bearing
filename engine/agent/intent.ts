@@ -10,6 +10,7 @@ import { createShellExecuteEvent } from "../commands/shell.js";
 import type { EngineEvent, SessionState } from "../events/state.js";
 import { createMindPermissionRequestedEvent } from "../mind/module.js";
 import { hasStandingPermission, readMindSlice } from "../mind/mind.js";
+import { createStoryBeatReachedEvent } from "../story/module.js";
 import { countCodePoints } from "../text.js";
 import {
   MAX_AGENT_MESSAGES,
@@ -143,6 +144,8 @@ export function createAgentInputEvents(
     ...selection.actions.flatMap((action) => {
       if (action.kind === "shell-execute")
         return [createShellExecuteEvent(action.input)];
+      if (action.kind === "story-reach")
+        return [createStoryBeatReachedEvent(action.beat)];
       const capability = {
         kind: "exact" as const,
         action: action.action,

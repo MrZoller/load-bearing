@@ -18,7 +18,7 @@ calls and no server-side state: deterministic simulation is authoritative.
 │                          ▼                                  │
 │               Simulation engine (headless TS)               │
 │   VFS · git · processes · services · tests · env · man      │
-│   intents · escalation · metrics · event log · seeded PRNG  │
+│   intents · story beats · endings · event log · seeded PRNG │
 │                          ▲                                  │
 │                          │ loads + validates                │
 │               Incident cartridge (JSON, dated)              │
@@ -216,6 +216,10 @@ renders the same entries differently without changing what was recorded.
 
 ### Command layer
 
+- `engine/story/` owns the current shared beat and first-discovery order of
+  unranked endings. Its one v0 event, `story.beat-reached`, carries only an
+  authored beat id; reaching a beat discovers that beat's ending idempotently
+  and never terminates the session.
 - `engine/commands/` owns POSIX-ish word tokenization, generic short/long option
   parsing, duplicate-safe command registration, and the one shell execution API
   used by both terminal views
@@ -354,10 +358,13 @@ shape:
       "costMultiplier": 48000, "quirks": ["..."] }
   ],
   "story": {
-    "premise": "the inverted load balancer",
-    "reveals": ["..."], "intents": ["..."], "consequences": ["..."],
-    "callbacks": ["Where is Europe?"], "rareEvents": ["HTTP 418 may be a warning"],
-    "endings": ["stabilized", "deployed", "structural evacuation"]
+    "phase2": {
+      "initialBeat": "incident-open",
+      "beats": [{ "id": "incident-open", "ending": "" },
+                  { "id": "declaration", "ending": "load-bearing-response" }],
+      "endings": [{ "id": "load-bearing-response",
+                    "name": "The Load-Bearing Response" }]
+    }
   },
   "presentation": { "statusCurves": "...", "shareLines": ["..."],
                     "spinnerVerbs": { "byArchetypeAndStage": "..." },
@@ -393,19 +400,21 @@ The Phase 1 portions of `story` and `presentation` are concrete and bounded in
 v0: opening copy, authored response records and artifacts, minimal intents and
 fallback, help/idle-nudge/compact/resume references, rotating placeholders,
 slash autocomplete descriptions, archetype-stage spinner pools, and integer
-metric parameters. Cartridge actions are a closed
-`shell-execute` union rather than arbitrary engine events. Loading rejects
-duplicate/dangling response and intent identities, duplicate spinner keys, and
-missing stage-0 pools for model archetypes. Each section has an explicit
-`phase2` interior that remains deferred, depth-limited, and marked in the emitted
-schema with its future owner.
+metric parameters. `story.phase2` is now a concrete bounded skeleton: one
+initial beat, an authored-order beat list with optional ending ids, and an
+authored-order ending identity list. Cartridge actions are a closed
+`shell-execute` / `permission-request` / `story-reach` union rather than
+arbitrary engine events. Loading rejects duplicate or dangling response, intent,
+beat, ending, and action references, duplicate spinner keys, and missing stage-0
+pools for model archetypes. Only `presentation.phase2` remains deferred,
+depth-limited, and marked in the emitted schema with its future owner.
 
 **Cartridge owns:** world (scene, repo, files with ownership metadata, git,
 processes, services, logs, env, man pages, shell history), models (names,
 archetypes, multipliers, quirks), authored responses/actions and Phase 1 teaching
-copy, spinner pools and metric parameters. Phase 2 adds the shared story graph,
-reveals, callbacks, endings, status curves, sharing copy, and disturbances inside
-the explicitly deferred interiors.
+copy, spinner pools and metric parameters, plus the bounded shared beat and ending
+skeleton. Later Phase 2 work adds conditions, reveals, callbacks, status curves,
+sharing copy, and disturbances without giving models parallel graphs.
 
 **Runtime owns:** rendering, parsing, state transitions, animation, search,
 keyboard and mobile behavior, accessibility, replay, archive navigation, and
@@ -424,6 +433,12 @@ would crush the nightly pipeline — this structure is the difference between
 a Phase 5 that works and one that drowns. The dialogue layer is therefore
 (beat × archetype × stage) → response, with archetype-pair handoff
 templates covering mid-session model switches.
+
+The first Phase 2 slice deliberately treats ending discovery as session state,
+not terminal state. `StorySlice.currentBeat` names the latest reached authored
+beat and `discoveredEndings` records ending ids once, in discovery order. Free
+play, Bash, and model switching continue after discovery; Phase 3 may project
+that state into a report, but it does not own or reinterpret the discovery.
 
 ---
 

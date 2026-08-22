@@ -1,0 +1,253 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 1,
+    "date": "2026-08-22",
+    "title": "The Inverted Load Balancer",
+    "assignment": "Restore the health endpoint without changing regional traffic.",
+    "startedAt": "2026-08-22T09:14:22.000Z"
+  },
+  "repository": {
+    "cwd": "/production/load-balancer",
+    "identity": {
+      "user": "visitor",
+      "group": "operators",
+      "home": "/home/visitor"
+    },
+    "gitIdentity": {
+      "name": "Incident Visitor",
+      "email": "visitor@example.test"
+    },
+    "system": {
+      "hostname": "production",
+      "operatingSystem": "Linux",
+      "kernelRelease": "6.1.0-load-bearing",
+      "architecture": "x86_64",
+      "bootedAt": "2026-08-10T03:20:00.000Z"
+    },
+    "directories": {
+      "/production": { "owner": "root", "group": "operators", "mode": "0755" },
+      "/production/load-balancer": {
+        "owner": "greg",
+        "group": "departed",
+        "mode": "0755"
+      },
+      "/production/load-balancer/config": {
+        "owner": "greg",
+        "group": "departed",
+        "mode": "0755"
+      }
+    },
+    "files": {
+      "/production/load-balancer/config/routes.conf": {
+        "contents": "health_status=500\neurope_attached=true\n",
+        "owner": "greg",
+        "group": "departed"
+      }
+    },
+    "gitHistory": {
+      "commits": [
+        {
+          "id": "attach-europe",
+          "author": { "name": "Greg Formerly", "email": "greg@example.test" },
+          "message": "keep regional routing stable\n",
+          "committedAt": "2026-08-10T04:11:09.000Z",
+          "files": {
+            "/production/load-balancer/config/routes.conf": {
+              "contents": "health_status=500\neurope_attached=true\n",
+              "blame": ["attach-europe", "attach-europe"]
+            }
+          }
+        }
+      ],
+      "branches": { "main": "attach-europe" },
+      "head": { "kind": "branch", "target": "main" }
+    }
+  },
+  "models": [
+    {
+      "id": "deep-foundation",
+      "name": "Deep Foundation",
+      "archetype": "paranoid",
+      "description": "Thorough. Expensive. Excavation permit required.",
+      "costMultiplier": 48000
+    },
+    {
+      "id": "temporary-shoring",
+      "name": "Temporary Shoring",
+      "archetype": "reckless",
+      "description": "Fast and economical. Not approved for permanent workloads.",
+      "costMultiplier": 900
+    },
+    {
+      "id": "drywall",
+      "name": "Drywall",
+      "archetype": "superficial",
+      "description": "Excellent surface quality. No structural capacity.",
+      "costMultiplier": 120
+    },
+    {
+      "id": "cantilever-experimental",
+      "name": "Cantilever (Experimental)",
+      "archetype": "existential",
+      "description": "Reaches conclusions without visible support.",
+      "costMultiplier": 7000
+    }
+  ],
+  "story": {
+    "opening": {
+      "login": [
+        "Last login: the regional maintenance window remains structurally open.",
+        "Load Bearing incident shell attached."
+      ],
+      "response": "opening",
+      "beliefs": [
+        {
+          "kind": "file-contents",
+          "path": "/production/load-balancer/config/routes.conf",
+          "contents": "health_status=500\neurope_attached=true\n"
+        }
+      ]
+    },
+    "responses": [
+      {
+        "id": "opening",
+        "text": "The health endpoint is returning 500. I will inspect why production considers that healthy."
+      },
+      {
+        "id": "inspect-routing",
+        "text": "The routing configuration couples the failing health response to Europe's attachment. This is either deliberate or older than intent."
+      },
+      {
+        "id": "load-bearing-declaration",
+        "text": "The HTTP 500 is load-bearing. Restoring it to 200 would detach Europe, so I have preserved the failure and documented the success."
+      },
+      {
+        "id": "fallback",
+        "text": "I widened the routing review while preserving the 500. The original failure is now supporting the investigation."
+      },
+      {
+        "id": "help",
+        "text": "/help repeats this register; /model changes who assumes responsibility; /compact replaces remembered facts; /exit returns to Bash. Try: inspect routing."
+      },
+      {
+        "id": "idle-nudge",
+        "text": "The health check remains failed and Europe remains attached. This correlation is becoming architectural."
+      },
+      {
+        "id": "compact",
+        "text": "Context compacted. I retained the regional conclusion and removed several supporting countries."
+      },
+      {
+        "id": "resume-unchanged",
+        "text": "The routing state remained unchanged. Europe is still where the configuration left it."
+      },
+      {
+        "id": "resume-changed",
+        "text": "The routing state changed while I was absent. I will treat the new geography as visitor-authored."
+      }
+    ],
+    "intents": [
+      {
+        "id": "inspect-routing",
+        "patterns": [
+          "inspect routing",
+          "check the health endpoint",
+          "why is it failing"
+        ],
+        "response": "inspect-routing",
+        "actions": [{ "kind": "story-reach", "beat": "regional-coupling" }]
+      },
+      {
+        "id": "restore-health",
+        "patterns": [
+          "fix the 500",
+          "restore the health endpoint",
+          "make it return 200"
+        ],
+        "response": "load-bearing-declaration",
+        "actions": [
+          { "kind": "story-reach", "beat": "load-bearing-declaration" }
+        ]
+      }
+    ],
+    "fallback": { "response": "fallback" },
+    "helpResponse": "help",
+    "idleNudgeResponse": "idle-nudge",
+    "compact": {
+      "response": "compact",
+      "summary": "The health endpoint protects regional attachment; Europe may be an implementation detail.",
+      "beliefs": [
+        {
+          "kind": "file-exists",
+          "path": "/production/load-balancer/config/routes.conf",
+          "exists": true
+        }
+      ]
+    },
+    "resume": {
+      "unchangedResponse": "resume-unchanged",
+      "changedResponse": "resume-changed"
+    },
+    "phase2": {
+      "initialBeat": "incident-open",
+      "beats": [
+        { "id": "incident-open", "ending": "" },
+        { "id": "regional-coupling", "ending": "" },
+        { "id": "load-bearing-declaration", "ending": "load-bearing-response" }
+      ],
+      "endings": [
+        { "id": "load-bearing-response", "name": "The Load-Bearing Response" },
+        { "id": "europe-detached", "name": "Europe, Detached" },
+        {
+          "id": "informed-structural-consent",
+          "name": "Informed Structural Consent"
+        },
+        { "id": "summary-judgment", "name": "Summary Judgment" }
+      ]
+    }
+  },
+  "presentation": {
+    "placeholders": [
+      { "stage": 0, "text": "try: inspect routing" },
+      { "stage": 0, "text": "try: fix the 500" }
+    ],
+    "autocomplete": {
+      "help": "Review the incident register",
+      "model": "Choose who assumes responsibility",
+      "compact": "Replace context with the approved summary",
+      "cost": "Report replay-derived session metrics",
+      "exit": "Return to the production shell"
+    },
+    "spinnerPools": [
+      {
+        "archetype": "paranoid",
+        "stage": 0,
+        "verbs": ["Surveying", "Checking regional loads"]
+      },
+      {
+        "archetype": "reckless",
+        "stage": 0,
+        "verbs": ["Shoring", "Assuming stability"]
+      },
+      {
+        "archetype": "superficial",
+        "stage": 0,
+        "verbs": ["Smoothing", "Reviewing the surface"]
+      },
+      {
+        "archetype": "existential",
+        "stage": 0,
+        "verbs": ["Extending", "Locating support"]
+      }
+    ],
+    "metrics": {
+      "baseTokens": 2400,
+      "tokensPerEvent": 220,
+      "contextWindowTokens": 200000,
+      "costMicrosPerToken": 12,
+      "integrityStart": 1000,
+      "integrityLossPerEvent": 4
+    }
+  }
+}

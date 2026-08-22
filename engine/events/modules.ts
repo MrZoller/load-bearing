@@ -51,6 +51,7 @@ import { TESTS_MODULE } from "../tests/module.js";
 import { MIND_MODULE } from "../mind/module.js";
 import { TERMINAL_MODULE } from "../terminal/module.js";
 import { AGENT_MODULE } from "../agent/module.js";
+import { STORY_MODULE } from "../story/module.js";
 import type { EventRegistry } from "./registry.js";
 import type { EventModule } from "./module.js";
 
@@ -65,6 +66,7 @@ export const ENGINE_EVENT_MODULES: readonly EventModule[] = Object.freeze([
   MIND_MODULE,
   TERMINAL_MODULE,
   AGENT_MODULE,
+  STORY_MODULE,
 ]);
 
 /**

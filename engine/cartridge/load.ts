@@ -235,9 +235,9 @@ function objectFromEntries(
 /**
  * How deep a `deferred` subtree may nest.
  *
- * The validated sections are bounded by the schema itself, but `story` and
- * `presentation` are explicitly unconstrained — so their depth is whatever a
- * cartridge says, and the clone below is recursive. `JSON.parse` happily
+ * The validated sections are bounded by the schema itself, but the deferred
+ * `presentation.phase2` interior is explicitly unconstrained — so its depth is
+ * whatever a cartridge says, and the clone below is recursive. `JSON.parse` happily
  * accepts a few thousand levels; the clone
  * then exhausts the stack and `loadCartridge` escapes with a bare `RangeError`
  * instead of a validation issue, which is the validation boundary failing open
@@ -1296,7 +1296,58 @@ function checkStoryAndPresentation(
         `${String(permissionRequests.length)} permission-request actions`,
       );
   };
+
+  const beats = new Map<string, number>();
+  story.phase2.beats.forEach((beat, index) => {
+    const first = beats.get(beat.id);
+    if (first === undefined) beats.set(beat.id, index);
+    else
+      report.addPhrase(
+        `/story/phase2/beats/${String(index)}/id`,
+        "an id no other story beat uses",
+        `${JSON.stringify(beat.id)}, already used by /story/phase2/beats/${String(first)}`,
+      );
+  });
+  const endings = new Map<string, number>();
+  story.phase2.endings.forEach((ending, index) => {
+    const first = endings.get(ending.id);
+    if (first === undefined) endings.set(ending.id, index);
+    else
+      report.addPhrase(
+        `/story/phase2/endings/${String(index)}/id`,
+        "an id no other ending uses",
+        `${JSON.stringify(ending.id)}, already used by /story/phase2/endings/${String(first)}`,
+      );
+  });
+  if (!beats.has(story.phase2.initialBeat))
+    report.addPhrase(
+      "/story/phase2/initialBeat",
+      "the id of a declared story beat",
+      `${JSON.stringify(story.phase2.initialBeat)}, which does not exist`,
+    );
+  story.phase2.beats.forEach((beat, index) => {
+    if (beat.ending !== "" && !endings.has(beat.ending))
+      report.addPhrase(
+        `/story/phase2/beats/${String(index)}/ending`,
+        "an empty string or the id of a declared ending",
+        `${JSON.stringify(beat.ending)}, which does not exist`,
+      );
+  });
+  const checkStoryActions = (
+    actions: readonly CartridgeAgentAction[],
+    pointer: string,
+  ): void => {
+    actions.forEach((action, index) => {
+      if (action.kind === "story-reach" && !beats.has(action.beat))
+        report.addPhrase(
+          `${pointer}/${String(index)}/beat`,
+          "the id of a declared story beat",
+          `${JSON.stringify(action.beat)}, which does not exist`,
+        );
+    });
+  };
   checkPermissionRequests(story.fallback.actions, "/story/fallback/actions");
+  checkStoryActions(story.fallback.actions, "/story/fallback/actions");
 
   const intents = new Map<string, number>();
   const patterns = new Map<string, string>();
@@ -1328,6 +1379,10 @@ function checkStoryAndPresentation(
         );
     });
     checkPermissionRequests(
+      intent.actions,
+      `/story/intents/${String(index)}/actions`,
+    );
+    checkStoryActions(
       intent.actions,
       `/story/intents/${String(index)}/actions`,
     );

@@ -292,6 +292,15 @@ export {
 export type { TerminalMode, TerminalSlice } from "./terminal/types.js";
 export { TERMINAL_COMMANDS } from "./commands/terminal.js";
 
+export { STORY_MODULE, createStoryBeatReachedEvent } from "./story/module.js";
+export {
+  createStorySlice,
+  readStorySlice,
+  reachStoryBeat,
+  validateStorySlice,
+} from "./story/story.js";
+export type { StorySlice } from "./story/types.js";
+
 export {
   AGENT_MODULE,
   createAgentActivityEvent,
@@ -445,9 +454,13 @@ export {
   MAX_RESPONSE_ARTIFACTS,
   MAX_STORY_ACTIONS,
   MAX_STORY_BELIEFS,
+  MAX_STORY_BEATS,
+  MAX_STORY_ENDINGS,
+  MAX_STORY_ID_LENGTH,
   MAX_STORY_INTENTS,
   MAX_STORY_RESPONSES,
   MAX_STORY_TEXT_LENGTH,
+  STORY_ID_PATTERN,
 } from "./cartridge/schema.js";
 export { CARTRIDGE_SCHEMA_ID, emitJsonSchema } from "./cartridge/jsonSchema.js";
 export type {
@@ -477,6 +490,9 @@ export type {
   CartridgeResponseToolCall,
   CartridgeSpinnerPool,
   CartridgeStory,
+  CartridgeStoryBeat,
+  CartridgeStoryPhase2,
+  CartridgeEnding,
   CartridgeRepository,
   CartridgeLog,
   CartridgeManPage,

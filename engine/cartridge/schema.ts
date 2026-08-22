@@ -29,9 +29,8 @@
  * visible in the emitted schema rather than being an absence a reader has to
  * notice:
  *
- * - the Phase 1 `story` and `presentation` shells are concrete and bounded;
- *   only their explicitly named `phase2` interiors remain deferred until the
- *   vertical slice defines them and Phase 4 hardens them.
+ * - the Phase 1 shells and the Phase 2 story skeleton are concrete and bounded;
+ *   only `presentation.phase2` remains deferred until its vertical slice.
  *
  * The machine surfaces, including tests and reactions, are concrete.
  *
@@ -168,6 +167,11 @@ export const MAX_PRESENTATION_ENTRIES = 64;
 export const MAX_PRESENTATION_VERBS = 32;
 export const MAX_STORY_TEXT_LENGTH = 16000;
 export const MAX_PERMISSION_REQUEST_ID_LENGTH = 64;
+/** Shared story graphs stay small enough to review and replay exhaustively. */
+export const MAX_STORY_BEATS = 128;
+export const MAX_STORY_ENDINGS = 32;
+export const MAX_STORY_ID_LENGTH = 64;
+export const STORY_ID_PATTERN = pattern(/^[a-z][a-z0-9-]{0,63}$/);
 
 /** A stable cartridge-local identifier that cannot disturb line-oriented output. */
 export const WORLD_ID_PATTERN = pattern(
@@ -1119,9 +1123,9 @@ const MODEL = {
 const PHASE_ONE_ID = {
   kind: "string",
   description: "A stable lowercase Phase 1 content identifier.",
-  pattern: pattern(/^[a-z][a-z0-9-]{0,63}$/),
+  pattern: STORY_ID_PATTERN,
   patternLabel: "a lowercase id slug of at most 64 characters",
-  maxLength: 64,
+  maxLength: MAX_STORY_ID_LENGTH,
 } satisfies StringNode;
 
 // An absent authorized response is normalized to the empty value, while an
@@ -1133,7 +1137,7 @@ const OPTIONAL_PHASE_ONE_ID = {
   pattern: pattern(/^(?:|[a-z][a-z0-9-]{0,63})$/),
   patternLabel:
     "an empty value or a lowercase id slug of at most 64 characters",
-  maxLength: 64,
+  maxLength: MAX_STORY_ID_LENGTH,
 } satisfies StringNode;
 
 const BOUNDED_TEXT = {
@@ -1240,7 +1244,7 @@ const AUTHORED_RESPONSE = {
 const AGENT_ACTION = {
   kind: "union",
   description:
-    "A closed Phase 1 cartridge action, dispatched through normal mechanics.",
+    "A closed cartridge action, dispatched through normal mechanics.",
   discriminator: "kind",
   variants: {
     "shell-execute": {
@@ -1275,12 +1279,24 @@ const AGENT_ACTION = {
         resource: required({ ...BOUNDED_LINE, minLength: 1 }),
       },
     },
+    "story-reach": {
+      kind: "object",
+      description: "Reach one authored shared story beat.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "The action kind.",
+          values: ["story-reach"],
+        }),
+        beat: required(PHASE_ONE_ID),
+      },
+    },
   },
 } satisfies UnionNode;
 
 const ACTIONS = {
   kind: "array",
-  description: "Ordered closed Phase 1 actions.",
+  description: "Ordered closed cartridge actions.",
   items: AGENT_ACTION,
   maxItems: MAX_STORY_ACTIONS,
 } satisfies ArrayNode;
@@ -1511,11 +1527,46 @@ const STORY = {
     }),
     phase2: optional(
       {
-        kind: "deferred",
-        description: "Story graph, escalation, callbacks and endings.",
-        owner: "Phase 2 defines this interior; Phase 4 hardens it",
+        kind: "object",
+        description:
+          "The bounded shared-beat and non-terminal ending skeleton. Later Phase 2 work adds routing, conditions and callbacks without replacing this graph.",
+        fields: {
+          initialBeat: required(PHASE_ONE_ID),
+          beats: required({
+            kind: "array",
+            description: "Shared story beats in authored order.",
+            minItems: 1,
+            maxItems: MAX_STORY_BEATS,
+            items: {
+              kind: "object",
+              description:
+                "One shared beat and its optional discovered ending.",
+              fields: {
+                id: required(PHASE_ONE_ID),
+                ending: required(OPTIONAL_PHASE_ONE_ID),
+              },
+            },
+          }),
+          endings: required({
+            kind: "array",
+            description: "Unranked collectible endings in authored order.",
+            maxItems: MAX_STORY_ENDINGS,
+            items: {
+              kind: "object",
+              description: "One ending identity and display name.",
+              fields: {
+                id: required(PHASE_ONE_ID),
+                name: required(NONEMPTY_BOUNDED_LINE),
+              },
+            },
+          }),
+        },
       },
-      {},
+      {
+        initialBeat: "start",
+        beats: [{ id: "start", ending: "" }],
+        endings: [],
+      },
     ),
   },
 } satisfies ObjectNode;
@@ -1684,7 +1735,11 @@ const PHASE_ONE_STORY_DEFAULT = {
     unchangedResponse: "default-response",
     changedResponse: "default-response",
   },
-  phase2: {},
+  phase2: {
+    initialBeat: "start",
+    beats: [{ id: "start", ending: "" }],
+    endings: [],
+  },
 };
 
 const PHASE_ONE_PRESENTATION_DEFAULT = {
