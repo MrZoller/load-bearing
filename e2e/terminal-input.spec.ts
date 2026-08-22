@@ -6,7 +6,7 @@ test("keeps terminal controls mode-specific and presentation-only", async ({
   await page.goto("/");
 
   const transcript = page.getByRole("list", { name: "Session transcript" });
-  const agentPrompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
   const bashPrompt = page.getByRole("textbox", { name: "Bash command" });
 
   // TUI slash, shell builtin, and live VFS completion all operate at the
@@ -101,7 +101,7 @@ test("serializes working turns and lets Escape finish the authored sequence", as
   await page.clock.install();
   await page.goto("/");
 
-  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
   await prompt.fill("inspect it");
   await prompt.press("Enter");
@@ -127,7 +127,7 @@ test("restores a draft after navigating through a submitted slash command", asyn
 }) => {
   await page.goto("/");
 
-  const agentPrompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
   await agentPrompt.fill("/help");
   await agentPrompt.press("Enter");
   await agentPrompt.fill("draft after slash command");

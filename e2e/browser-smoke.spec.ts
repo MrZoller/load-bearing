@@ -13,7 +13,7 @@ test("cold-opens and round-trips between the TUI and Bash with the keyboard", as
 
   const terminal = page.getByRole("main", { name: "Load Bearing terminal" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
-  const agentPrompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
   const bashPrompt = page.getByRole("textbox", { name: "Bash command" });
 
   await expect(terminal).toBeVisible();
@@ -86,7 +86,7 @@ test("projects replayed engine metrics into the visible session status", async (
   await page.goto("/");
 
   const status = page.getByRole("region", { name: "Session status" });
-  const agentPrompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
   const tokens = status.getByText(/^tokens /);
   const cost = status.getByText(/^cost /);
   const context = status.getByText(/^context /);
@@ -123,7 +123,7 @@ test("renders recognized and fallback TUI turns and dispatches ! shell work", as
   await page.goto("/");
 
   const transcript = page.getByRole("list", { name: "Session transcript" });
-  const agentPrompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
 
   await agentPrompt.fill("inspect it");
   await agentPrompt.press("Enter");
@@ -177,7 +177,7 @@ test("opens artifact disclosures with the keyboard and retains replayed work acr
   await page.goto("/");
 
   const transcript = page.getByRole("list", { name: "Session transcript" });
-  const agentPrompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
   const bashPrompt = page.getByRole("textbox", { name: "Bash command" });
   const thinking = transcript.locator("details.artifact--thinking").first();
   const thinkingSummary = thinking.locator("summary");
@@ -223,7 +223,7 @@ async function resolvePendingPermission(
 ): Promise<void> {
   await page.goto("/");
 
-  const agentPrompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
   await expect(agentPrompt).toBeFocused();
   await page.keyboard.type("remove it");
   await page.keyboard.press("Enter");

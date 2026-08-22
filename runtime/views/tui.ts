@@ -63,6 +63,7 @@ export function renderTuiView(
   input.autocomplete = "off";
   input.autocapitalize = "off";
   input.spellcheck = false;
+  input.setAttribute("role", "combobox");
   input.setAttribute("aria-label", "Agent prompt");
   input.setAttribute("aria-autocomplete", "list");
   input.setAttribute("aria-controls", "slash-completions");

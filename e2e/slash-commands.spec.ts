@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("slash commands are keyboard-operable", async ({ page }) => {
   await page.goto("/");
 
-  const agentPrompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
   const completions = page.getByRole("listbox", { name: "Slash commands" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
 
@@ -91,7 +91,7 @@ test("teaches only cartridge-authored surface controls without a tutorial layer"
   await page.goto("/");
 
   const terminal = page.getByRole("main", { name: "Load Bearing terminal" });
-  const agentPrompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
   const completions = page.getByRole("listbox", { name: "Slash commands" });
 
@@ -146,7 +146,7 @@ test("teaches only cartridge-authored surface controls without a tutorial layer"
 test("model selection persists across mode switches", async ({ page }) => {
   await page.goto("/");
 
-  const agentPrompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
   const bashPrompt = page.getByRole("textbox", { name: "Bash command" });
   const status = page.getByRole("region", { name: "Session status" });
 
