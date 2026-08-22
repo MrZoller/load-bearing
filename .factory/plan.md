@@ -100,7 +100,7 @@ and runtime model calls are deliberately excluded.
 
 ## Ad-hoc
 
-- [R] T12 (standard) — parked review minors (batch)
+- [x] T12 (standard) — parked review minors (batch)
   - acceptance: confirmed non-blocking review findings are collected and fixed as one focused batch with affected-test and repository-gate verification
   - released 2026-08-21 at plan approval (Chris, via operator): planning-skill drain trigger — drains before new Phase 1 feature work
   - PR #33: reject unrenderable shell input before tokenization errors so malformed syntax cannot enter shell history
