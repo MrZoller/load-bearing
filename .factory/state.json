@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T14",
-  "branch": "factory/t14-terminal-mode-model",
+  "current_task": "T15",
+  "branch": "factory/t15-cold-open-terminal",
   "pr": null,
   "hold": false,
-  "updated": "2026-08-22T03:26:23Z"
+  "updated": "2026-08-22T04:01:11Z"
 }
