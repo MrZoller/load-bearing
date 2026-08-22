@@ -27,7 +27,7 @@ and runtime model calls are deliberately excluded.
   - acceptance: `engine/terminal/` registers a validated plain-JSON slice and events for `tui`/`bash` mode and active-model changes; `engine/commands/terminal.ts` implements `loadbearing --resume` and an authored bare-`exit` refusal; `/exit` and TUI `Ctrl+D` share one mode event; model switches retain the original `SessionState.seed` and isolate model-specific named substreams; unit, snapshot, and golden replay tests cover every transition (criteria 2, 6; approved decision 2A)
   - deps: none
   - pr: 38
-- [ ] T15 (standard) — Cold open and two-view terminal skeleton
+- [~] T15 (standard) — Cold open and two-view terminal skeleton
   - acceptance: `runtime/app.ts`, `runtime/views/bash.ts`, `runtime/views/tui.ts`, and the shared terminal renderer visibly present the authored login/prompt and `loadbearing --resume incident-NNN` sequence before a focused `❯` prompt; keyboard-only `/exit` and `Ctrl+D` enter Bash, resume returns to the same engine session, and bare `exit` refuses without ending it; Playwright covers the complete mode round trip with no pointer actions (criteria 1, 2)
   - deps: T13, T14
 - [ ] T16 (major) — Bounded Phase 1 agent and cartridge contract
