@@ -40,6 +40,11 @@
       }
     },
     "files": {
+      "/etc/motd": {
+        "contents": "Last login: maintenance window still open.\nLoad Bearing incident shell attached.\n",
+        "owner": "root",
+        "group": "root"
+      },
       "/production/service/src/ready.stale": {
         "contents": "remove me\n",
         "owner": "visitor",

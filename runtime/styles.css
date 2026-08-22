@@ -80,6 +80,10 @@ body {
   line-height: 1.6;
 }
 
+.terminal__view {
+  display: block;
+}
+
 .transcript {
   min-height: 12rem;
   margin: 2rem 0;
@@ -91,9 +95,30 @@ body {
   margin-block: 1rem;
 }
 
-.transcript__heading {
-  color: #7f8876;
-  font-size: 0.78rem;
+.transcript__login,
+.transcript__prompt,
+.transcript__command {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.transcript__login {
+  color: #aeb5a4;
+  line-height: 1.55;
+}
+
+.transcript__prompt,
+.transcript__command {
+  color: #e7eadf;
+}
+
+.transcript__prompt::after,
+.transcript__command::before {
+  color: #c3cc45;
+}
+
+.transcript__command::before {
+  content: "$ ";
 }
 
 .transcript__detail,
@@ -120,6 +145,12 @@ body {
 .prompt__label {
   color: #c3cc45;
   font-weight: 700;
+}
+
+.prompt__label--bash {
+  color: #aeb5a4;
+  font-size: 0.82rem;
+  font-weight: 400;
 }
 
 .prompt input {
