@@ -997,6 +997,7 @@ describe("purity gate", () => {
       "engine/vfs/generated.d.ts",
       "engine/vfs/types.ts",
       "engine/git/types.ts",
+      "engine/vfs/nested/types.ts",
     ]) {
       expect(excluded(name), `${name}: coverage excludes it`).toBe(true);
     }

@@ -12,7 +12,7 @@ export default defineConfig({
         "engine/{vfs,git}/**/*.{test,spec}.?(c|m)[jt]s?(x)",
         "engine/{vfs,git}/**/*.d.ts",
         // These modules contain types only and emit no runtime behavior.
-        "engine/{vfs,git}/types.ts",
+        "engine/{vfs,git}/**/types.ts",
       ],
       thresholds: {
         perFile: true,
