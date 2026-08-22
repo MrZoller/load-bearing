@@ -13,6 +13,8 @@ import { renderStatus } from "./components/status.js";
 import { updateAgentActivity } from "./components/activity.js";
 import { renderTerminalTranscript } from "./terminal/renderer.js";
 import { createTerminalInputController } from "./terminal/input.js";
+import { createTranscriptSearch } from "./terminal/search.js";
+import { createTranscriptScroll } from "./terminal/scroll.js";
 import { renderBashView } from "./views/bash.js";
 import { renderTuiView } from "./views/tui.js";
 
@@ -57,7 +59,28 @@ export function mountApp(
   view.setAttribute("aria-label", "Active terminal view");
 
   const status = document.createElement("div");
-  terminal.append(beam, assignment, transcript, view, status);
+  const focusPrompt = (): void => {
+    view.querySelector<HTMLElement>("[data-initial-focus], input")?.focus();
+  };
+  const transcriptSearch = createTranscriptSearch(
+    document,
+    transcript,
+    focusPrompt,
+  );
+  const transcriptScroll = createTranscriptScroll(
+    document,
+    transcript,
+    focusPrompt,
+  );
+  terminal.append(
+    beam,
+    assignment,
+    transcriptSearch.element,
+    transcript,
+    transcriptScroll.newOutputButton,
+    view,
+    status,
+  );
   mount.replaceChildren(terminal);
 
   const browser = document.defaultView;
@@ -81,7 +104,7 @@ export function mountApp(
       ).length;
       // Keep the live prompt and its draft in place. The cutoff is consulted
       // on later renders, while this immediate clear touches presentation only.
-      transcript.replaceChildren();
+      transcriptScroll.clear();
     },
     enterBash() {
       dispatch(createTerminalModeEvent("bash"));
@@ -217,9 +240,9 @@ export function mountApp(
       session.cartridge,
       snapshot,
     );
-    transcript.replaceChildren(
-      ...transcriptEntries.slice(hiddenTranscriptEntries),
-    );
+    transcriptScroll.render(transcriptEntries.slice(hiddenTranscriptEntries));
+    transcriptSearch.refresh();
+    transcriptScroll.afterSearchRefresh();
 
     const activeView =
       readTerminalSlice(snapshot.state).mode === "bash"
@@ -239,9 +262,7 @@ export function mountApp(
     status.replaceChildren(
       renderStatus(document, snapshot.state, session.cartridge.meta.number),
     );
-    activeView
-      .querySelector<HTMLElement>("[data-initial-focus], input")
-      ?.focus();
+    if (transcriptSearch.element.hidden) focusPrompt();
     scheduleActivityFrame();
     resetIdleTimer();
   }

@@ -26,6 +26,10 @@ class FakeInput {
   value = "";
   selectionStart: number | null = 0;
   selectionEnd: number | null = 0;
+  selectedDocumentText = "";
+  readonly ownerDocument = {
+    getSelection: () => ({ toString: () => this.selectedDocumentText }),
+  };
   private readonly listeners = new Map<string, Listener>();
 
   addEventListener(type: string, listener: Listener): void {
@@ -123,12 +127,21 @@ describe("createTerminalInputController", () => {
     ).toBe(false);
 
     tui.input.setSelectionRange(8, 8);
+    tui.input.selectedDocumentText = "transcript selection";
+    const transcriptCopy = tui.input.dispatch(
+      "keydown",
+      new FakeEvent("c", true),
+    );
+    expect(transcriptCopy.defaultPrevented).toBe(false);
+    expect(tui.input.value).toBe("selected");
+
+    tui.input.selectedDocumentText = "";
     const cancel = tui.input.dispatch("keydown", new FakeEvent("c", true));
     expect(cancel.defaultPrevented).toBe(true);
     expect(tui.input.value).toBe("");
   });
 
-  it("consumes Tab when a Bash completion cannot extend an ambiguous prefix", () => {
+  it("consumes Tab for Bash completion even when transcript text remains selected", () => {
     const controller = createTerminalInputController({
       clearTranscript() {},
       enterBash() {},
@@ -137,6 +150,7 @@ describe("createTerminalInputController", () => {
 
     bash.input.value = "c";
     bash.input.setSelectionRange(1, 1);
+    bash.input.selectedDocumentText = "stale transcript selection";
     const completion = bash.input.dispatch("keydown", new FakeEvent("Tab"));
 
     expect(completion.defaultPrevented).toBe(true);
