@@ -201,24 +201,62 @@
     "startMs": 1785921262000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 0,
+  "eventCount": 8,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {},
-    "seed": 1023437636
+    "seed": 3809901853
   },
-  "seed": "2026-08-05/0/deep-foundation",
+  "seed": "2026-08-21/16/deep-foundation",
   "slices": {
     "agent": {
       "activity": {
-        "status": "idle",
-        "verb": ""
+        "status": "working",
+        "verb": "Surveying"
       },
-      "messages": [],
-      "responses": [],
-      "thinkingBlocks": [],
-      "todos": [],
-      "toolCalls": []
+      "messages": [
+        {
+          "id": "visitor-one",
+          "responseId": null,
+          "role": "visitor",
+          "text": "Inspect the fixture."
+        },
+        {
+          "id": "turn-one/message",
+          "responseId": "fixture-response",
+          "role": "agent",
+          "text": "Fixture response."
+        }
+      ],
+      "responses": [
+        {
+          "instanceId": "turn-one",
+          "responseId": "fixture-response"
+        }
+      ],
+      "thinkingBlocks": [
+        {
+          "id": "turn-one/thinking/reason",
+          "status": "complete",
+          "text": "Okay, the fixture is stable."
+        }
+      ],
+      "todos": [
+        {
+          "id": "turn-one/todo/inspect",
+          "status": "completed",
+          "text": "Inspect fixture"
+        }
+      ],
+      "toolCalls": [
+        {
+          "id": "turn-one/tool/read",
+          "input": "cat README.md",
+          "output": "# service",
+          "status": "succeeded",
+          "title": "Read fixture"
+        }
+      ]
     },
     "git": {
       "branches": {},
@@ -343,5 +381,62 @@
       "tickets": []
     }
   },
-  "transcript": []
+  "transcript": [
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 0,
+      "summary": "message=visitor-one",
+      "type": "agent.message-added"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 1,
+      "summary": "response=fixture-response instance=turn-one",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 2,
+      "summary": "tool=turn-one/tool/read status=running",
+      "type": "agent.tool-call-updated"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 3,
+      "summary": "tool=turn-one/tool/read status=succeeded",
+      "type": "agent.tool-call-updated"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 4,
+      "summary": "thinking=turn-one/thinking/reason status=complete",
+      "type": "agent.thinking-updated"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 5,
+      "summary": "todo=turn-one/todo/inspect status=in-progress",
+      "type": "agent.todo-updated"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 6,
+      "summary": "todo=turn-one/todo/inspect status=completed",
+      "type": "agent.todo-updated"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 7,
+      "summary": "activity=working",
+      "type": "agent.activity-set"
+    }
+  ]
 }

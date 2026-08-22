@@ -29,8 +29,9 @@
  * visible in the emitted schema rather than being an absence a reader has to
  * notice:
  *
- * - `story` and `presentation` carry Phase 2 content and are hardened in
- *   Phase 4. v0 requires them to be objects and looks no further.
+ * - the Phase 1 `story` and `presentation` shells are concrete and bounded;
+ *   only their explicitly named `phase2` interiors remain deferred until the
+ *   vertical slice defines them and Phase 4 hardens them.
  *
  * The machine surfaces, including tests and reactions, are concrete.
  *
@@ -156,6 +157,15 @@ export const MAX_REACTION_ACTIONS = 32;
 // Predicate evaluation happens before the derived-event cap, so it needs its
 // own authored-input bound rather than relying on cascade fan-out limits.
 export const MAX_REACTION_PREDICATES = 32;
+
+/** Conservative Phase 1 authoring and replay-work bounds. */
+export const MAX_STORY_RESPONSES = 256;
+export const MAX_STORY_INTENTS = 128;
+export const MAX_RESPONSE_ARTIFACTS = 64;
+export const MAX_STORY_ACTIONS = 16;
+export const MAX_PRESENTATION_ENTRIES = 64;
+export const MAX_PRESENTATION_VERBS = 32;
+export const MAX_STORY_TEXT_LENGTH = 16000;
 
 /** A stable cartridge-local identifier that cannot disturb line-oriented output. */
 export const WORLD_ID_PATTERN = pattern(
@@ -1104,6 +1114,365 @@ const MODEL = {
   },
 } satisfies ObjectNode;
 
+const PHASE_ONE_ID = {
+  kind: "string",
+  description: "A stable lowercase Phase 1 content identifier.",
+  pattern: pattern(/^[a-z][a-z0-9-]{0,63}$/),
+  patternLabel: "a lowercase id slug of at most 64 characters",
+  maxLength: 64,
+} satisfies StringNode;
+
+const BOUNDED_TEXT = {
+  kind: "string",
+  description: "Bounded authored text.",
+  maxLength: MAX_STORY_TEXT_LENGTH,
+} satisfies StringNode;
+
+const BOUNDED_LINE = {
+  kind: "string",
+  description: "Bounded single-line authored text.",
+  pattern: SINGLE_LINE_PATTERN,
+  patternLabel: "a single-line string",
+  maxLength: 240,
+} satisfies StringNode;
+
+const RESPONSE_TOOL_CALL = {
+  kind: "object",
+  description: "One authored tool-call artifact instantiated by a response.",
+  fields: {
+    id: required(PHASE_ONE_ID),
+    title: required(BOUNDED_LINE),
+    input: required(BOUNDED_TEXT),
+    output: required(BOUNDED_TEXT),
+    status: required({
+      kind: "enum",
+      description: "Initial replayable tool-call status.",
+      values: ["pending", "running", "succeeded", "failed"],
+    }),
+  },
+} satisfies ObjectNode;
+
+const RESPONSE_THINKING = {
+  kind: "object",
+  description: "One authored thinking artifact instantiated by a response.",
+  fields: {
+    id: required(PHASE_ONE_ID),
+    text: required(BOUNDED_TEXT),
+    status: required({
+      kind: "enum",
+      description: "Initial replayable thinking status.",
+      values: ["active", "complete"],
+    }),
+  },
+} satisfies ObjectNode;
+
+const RESPONSE_TODO = {
+  kind: "object",
+  description: "One authored todo artifact instantiated by a response.",
+  fields: {
+    id: required(PHASE_ONE_ID),
+    text: required(BOUNDED_LINE),
+    status: required({
+      kind: "enum",
+      description: "Initial replayable todo status.",
+      values: ["pending", "in-progress", "completed", "cancelled"],
+    }),
+  },
+} satisfies ObjectNode;
+
+const AUTHORED_RESPONSE = {
+  kind: "object",
+  description:
+    "A cartridge-owned response and its deterministic TUI artifacts.",
+  fields: {
+    id: required(PHASE_ONE_ID),
+    text: required(BOUNDED_TEXT),
+    toolCalls: optional(
+      {
+        kind: "array",
+        description: "Tool artifacts.",
+        items: RESPONSE_TOOL_CALL,
+        maxItems: MAX_RESPONSE_ARTIFACTS,
+      },
+      [],
+    ),
+    thinkingBlocks: optional(
+      {
+        kind: "array",
+        description: "Thinking artifacts.",
+        items: RESPONSE_THINKING,
+        maxItems: MAX_RESPONSE_ARTIFACTS,
+      },
+      [],
+    ),
+    todos: optional(
+      {
+        kind: "array",
+        description: "Todo artifacts.",
+        items: RESPONSE_TODO,
+        maxItems: MAX_RESPONSE_ARTIFACTS,
+      },
+      [],
+    ),
+  },
+} satisfies ObjectNode;
+
+const AGENT_ACTION = {
+  kind: "union",
+  description:
+    "A closed Phase 1 cartridge action, dispatched through normal mechanics.",
+  discriminator: "kind",
+  variants: {
+    "shell-execute": {
+      kind: "object",
+      description: "Execute one bounded shell input through shell.execute.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "The action kind.",
+          values: ["shell-execute"],
+        }),
+        input: required({ ...BOUNDED_TEXT, maxLength: 4096 }),
+      },
+    },
+  },
+} satisfies UnionNode;
+
+const ACTIONS = {
+  kind: "array",
+  description: "Ordered closed Phase 1 actions.",
+  items: AGENT_ACTION,
+  maxItems: MAX_STORY_ACTIONS,
+} satisfies ArrayNode;
+
+const STORY = {
+  kind: "object",
+  description: "Concrete bounded Phase 1 dialogue and command content.",
+  fields: {
+    opening: required({
+      kind: "object",
+      description: "Cold-open shell copy and first agent response.",
+      fields: {
+        login: required({
+          kind: "array",
+          description: "Login banner lines.",
+          items: BOUNDED_LINE,
+          minItems: 1,
+          maxItems: 8,
+        }),
+        response: required(PHASE_ONE_ID),
+      },
+    }),
+    responses: required({
+      kind: "array",
+      description: "Authored response records.",
+      items: AUTHORED_RESPONSE,
+      minItems: 1,
+      maxItems: MAX_STORY_RESPONSES,
+    }),
+    intents: required({
+      kind: "array",
+      description: "Minimal Phase 1 recognized natural-language intents.",
+      maxItems: MAX_STORY_INTENTS,
+      items: {
+        kind: "object",
+        description:
+          "One intent's bounded match phrases, response and actions.",
+        fields: {
+          id: required(PHASE_ONE_ID),
+          patterns: required({
+            kind: "array",
+            description: "Literal normalized match phrases.",
+            items: BOUNDED_LINE,
+            minItems: 1,
+            maxItems: 16,
+          }),
+          response: required(PHASE_ONE_ID),
+          actions: optional(ACTIONS, []),
+        },
+      },
+    }),
+    fallback: required({
+      kind: "object",
+      description: "Confident authored fallback for unmatched input.",
+      fields: {
+        response: required(PHASE_ONE_ID),
+        actions: optional(ACTIONS, []),
+      },
+    }),
+    helpResponse: required(PHASE_ONE_ID),
+    compactResponse: required(PHASE_ONE_ID),
+    resume: required({
+      kind: "object",
+      description:
+        "Responses for unchanged and externally changed machine state.",
+      fields: {
+        unchangedResponse: required(PHASE_ONE_ID),
+        changedResponse: required(PHASE_ONE_ID),
+      },
+    }),
+    phase2: optional(
+      {
+        kind: "deferred",
+        description: "Story graph, escalation, callbacks and endings.",
+        owner: "Phase 2 defines this interior; Phase 4 hardens it",
+      },
+      {},
+    ),
+  },
+} satisfies ObjectNode;
+
+const PRESENTATION = {
+  kind: "object",
+  description:
+    "Concrete bounded Phase 1 teaching, spinner and metric parameters.",
+  fields: {
+    placeholders: required({
+      kind: "array",
+      description: "Stage-keyed input placeholder copy.",
+      minItems: 1,
+      maxItems: MAX_PRESENTATION_ENTRIES,
+      items: {
+        kind: "object",
+        description: "One stage-keyed placeholder.",
+        fields: {
+          stage: required({
+            kind: "integer",
+            description: "Escalation stage.",
+            minimum: 0,
+            maximum: 4,
+          }),
+          text: required(BOUNDED_LINE),
+        },
+      },
+    }),
+    spinnerPools: required({
+      kind: "array",
+      description:
+        "Archetype and stage keyed deterministic spinner verb pools.",
+      minItems: 1,
+      maxItems: MAX_PRESENTATION_ENTRIES,
+      items: {
+        kind: "object",
+        description: "One archetype-stage spinner pool.",
+        fields: {
+          archetype: required({
+            kind: "enum",
+            description: "Behavioral archetype.",
+            values: ARCHETYPES,
+          }),
+          stage: required({
+            kind: "integer",
+            description: "Escalation stage.",
+            minimum: 0,
+            maximum: 4,
+          }),
+          verbs: required({
+            kind: "array",
+            description: "Candidate spinner verbs.",
+            items: BOUNDED_LINE,
+            minItems: 1,
+            maxItems: MAX_PRESENTATION_VERBS,
+          }),
+        },
+      },
+    }),
+    metrics: required({
+      kind: "object",
+      description: "Integer-only Phase 1 metric parameters.",
+      fields: {
+        baseTokens: required({
+          kind: "integer",
+          description: "Initial token count.",
+          minimum: 0,
+          maximum: 1000000000,
+        }),
+        tokensPerEvent: required({
+          kind: "integer",
+          description: "Tokens added per event.",
+          minimum: 0,
+          maximum: 10000000,
+        }),
+        contextWindowTokens: required({
+          kind: "integer",
+          description: "Context capacity.",
+          minimum: 1,
+          maximum: 1000000000,
+        }),
+        costMicrosPerToken: required({
+          kind: "integer",
+          description: "Cost in millionths of currency per token.",
+          minimum: 0,
+          maximum: 1000000000,
+        }),
+        integrityStart: required({
+          kind: "integer",
+          description: "Initial structural integrity.",
+          minimum: 0,
+          maximum: 1000000,
+        }),
+        integrityLossPerEvent: required({
+          kind: "integer",
+          description: "Integrity loss per event.",
+          minimum: 0,
+          maximum: 1000000,
+        }),
+      },
+    }),
+    phase2: optional(
+      {
+        kind: "deferred",
+        description: "Status curves, sharing and UI disturbances.",
+        owner: "Phase 2 defines this interior; Phase 4 hardens it",
+      },
+      {},
+    ),
+  },
+} satisfies ObjectNode;
+
+// Existing v0 machine-only cartridges predate Phase 1. They normalize to one
+// inert contract rather than becoming unreadable; authored incidents should
+// declare these sections, as the demo does.
+const PHASE_ONE_STORY_DEFAULT = {
+  opening: { login: ["Session ready."], response: "default-response" },
+  responses: [
+    {
+      id: "default-response",
+      text: "Session ready.",
+      toolCalls: [],
+      thinkingBlocks: [],
+      todos: [],
+    },
+  ],
+  intents: [],
+  fallback: { response: "default-response", actions: [] },
+  helpResponse: "default-response",
+  compactResponse: "default-response",
+  resume: {
+    unchangedResponse: "default-response",
+    changedResponse: "default-response",
+  },
+  phase2: {},
+};
+
+const PHASE_ONE_PRESENTATION_DEFAULT = {
+  placeholders: [{ stage: 0, text: "Enter a request" }],
+  spinnerPools: ARCHETYPES.map((archetype) => ({
+    archetype,
+    stage: 0,
+    verbs: ["Working"],
+  })),
+  metrics: {
+    baseTokens: 0,
+    tokensPerEvent: 0,
+    contextWindowTokens: 1,
+    costMicrosPerToken: 0,
+    integrityStart: 0,
+    integrityLossPerEvent: 0,
+  },
+  phase2: {},
+};
+
 const REPOSITORY = {
   kind: "object",
   description: "The world: a filesystem and everything queryable from a shell.",
@@ -1324,25 +1693,7 @@ export const CARTRIDGE_SCHEMA = deepFreeze({
       items: MODEL,
       minItems: 1,
     }),
-    story: {
-      node: {
-        kind: "deferred",
-        description:
-          "Premise, reveals, intents, consequences, callbacks, rare events, endings.",
-        owner: "Phase 2 shapes it, Phase 4 hardens it",
-      },
-      required: false,
-      fill: {},
-    },
-    presentation: {
-      node: {
-        kind: "deferred",
-        description:
-          "Status curves, share lines, spinner verb pools, preview card, UI disturbances.",
-        owner: "Phase 2 shapes it, Phase 4 hardens it",
-      },
-      required: false,
-      fill: {},
-    },
+    story: optional(STORY, PHASE_ONE_STORY_DEFAULT),
+    presentation: optional(PRESENTATION, PHASE_ONE_PRESENTATION_DEFAULT),
   },
 } satisfies ObjectNode);

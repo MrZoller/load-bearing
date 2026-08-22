@@ -120,9 +120,194 @@
       "type": "array"
     },
     "presentation": {
-      "$comment": "Declared but not validated in schema v0. Tightened by: Phase 2 shapes it, Phase 4 hardens it. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
-      "default": {},
-      "description": "Status curves, share lines, spinner verb pools, preview card, UI disturbances.",
+      "additionalProperties": false,
+      "default": {
+        "metrics": {
+          "baseTokens": 0,
+          "contextWindowTokens": 1,
+          "costMicrosPerToken": 0,
+          "integrityLossPerEvent": 0,
+          "integrityStart": 0,
+          "tokensPerEvent": 0
+        },
+        "phase2": {},
+        "placeholders": [
+          {
+            "stage": 0,
+            "text": "Enter a request"
+          }
+        ],
+        "spinnerPools": [
+          {
+            "archetype": "paranoid",
+            "stage": 0,
+            "verbs": [
+              "Working"
+            ]
+          },
+          {
+            "archetype": "reckless",
+            "stage": 0,
+            "verbs": [
+              "Working"
+            ]
+          },
+          {
+            "archetype": "superficial",
+            "stage": 0,
+            "verbs": [
+              "Working"
+            ]
+          },
+          {
+            "archetype": "existential",
+            "stage": 0,
+            "verbs": [
+              "Working"
+            ]
+          }
+        ]
+      },
+      "description": "Concrete bounded Phase 1 teaching, spinner and metric parameters.",
+      "properties": {
+        "metrics": {
+          "additionalProperties": false,
+          "description": "Integer-only Phase 1 metric parameters.",
+          "properties": {
+            "baseTokens": {
+              "description": "Initial token count.",
+              "maximum": 1000000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "contextWindowTokens": {
+              "description": "Context capacity.",
+              "maximum": 1000000000,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "costMicrosPerToken": {
+              "description": "Cost in millionths of currency per token.",
+              "maximum": 1000000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "integrityLossPerEvent": {
+              "description": "Integrity loss per event.",
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "integrityStart": {
+              "description": "Initial structural integrity.",
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "tokensPerEvent": {
+              "description": "Tokens added per event.",
+              "maximum": 10000000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "baseTokens",
+            "tokensPerEvent",
+            "contextWindowTokens",
+            "costMicrosPerToken",
+            "integrityStart",
+            "integrityLossPerEvent"
+          ],
+          "type": "object"
+        },
+        "phase2": {
+          "$comment": "Declared but not validated in schema v0. Tightened by: Phase 2 defines this interior; Phase 4 hardens it. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
+          "default": {},
+          "description": "Status curves, sharing and UI disturbances.",
+          "type": "object"
+        },
+        "placeholders": {
+          "description": "Stage-keyed input placeholder copy.",
+          "items": {
+            "additionalProperties": false,
+            "description": "One stage-keyed placeholder.",
+            "properties": {
+              "stage": {
+                "description": "Escalation stage.",
+                "maximum": 4,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "text": {
+                "description": "Bounded single-line authored text.",
+                "maxLength": 240,
+                "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "stage",
+              "text"
+            ],
+            "type": "object"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "type": "array"
+        },
+        "spinnerPools": {
+          "description": "Archetype and stage keyed deterministic spinner verb pools.",
+          "items": {
+            "additionalProperties": false,
+            "description": "One archetype-stage spinner pool.",
+            "properties": {
+              "archetype": {
+                "description": "Behavioral archetype.",
+                "enum": [
+                  "paranoid",
+                  "reckless",
+                  "superficial",
+                  "existential"
+                ],
+                "type": "string"
+              },
+              "stage": {
+                "description": "Escalation stage.",
+                "maximum": 4,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "verbs": {
+                "description": "Candidate spinner verbs.",
+                "items": {
+                  "description": "Bounded single-line authored text.",
+                  "maxLength": 240,
+                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                  "type": "string"
+                },
+                "maxItems": 32,
+                "minItems": 1,
+                "type": "array"
+              }
+            },
+            "required": [
+              "archetype",
+              "stage",
+              "verbs"
+            ],
+            "type": "object"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "placeholders",
+        "spinnerPools",
+        "metrics"
+      ],
       "type": "object"
     },
     "repository": {
@@ -1348,9 +1533,400 @@
       "type": "object"
     },
     "story": {
-      "$comment": "Declared but not validated in schema v0. Tightened by: Phase 2 shapes it, Phase 4 hardens it. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
-      "default": {},
-      "description": "Premise, reveals, intents, consequences, callbacks, rare events, endings.",
+      "additionalProperties": false,
+      "default": {
+        "compactResponse": "default-response",
+        "fallback": {
+          "actions": [],
+          "response": "default-response"
+        },
+        "helpResponse": "default-response",
+        "intents": [],
+        "opening": {
+          "login": [
+            "Session ready."
+          ],
+          "response": "default-response"
+        },
+        "phase2": {},
+        "responses": [
+          {
+            "id": "default-response",
+            "text": "Session ready.",
+            "thinkingBlocks": [],
+            "todos": [],
+            "toolCalls": []
+          }
+        ],
+        "resume": {
+          "changedResponse": "default-response",
+          "unchangedResponse": "default-response"
+        }
+      },
+      "description": "Concrete bounded Phase 1 dialogue and command content.",
+      "properties": {
+        "compactResponse": {
+          "description": "A stable lowercase Phase 1 content identifier.",
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z0-9-]{0,63}$",
+          "type": "string"
+        },
+        "fallback": {
+          "additionalProperties": false,
+          "description": "Confident authored fallback for unmatched input.",
+          "properties": {
+            "actions": {
+              "default": [],
+              "description": "Ordered closed Phase 1 actions.",
+              "items": {
+                "description": "A closed Phase 1 cartridge action, dispatched through normal mechanics.",
+                "oneOf": [
+                  {
+                    "additionalProperties": false,
+                    "description": "Execute one bounded shell input through shell.execute.",
+                    "properties": {
+                      "input": {
+                        "description": "Bounded authored text.",
+                        "maxLength": 4096,
+                        "type": "string"
+                      },
+                      "kind": {
+                        "description": "The action kind.",
+                        "enum": [
+                          "shell-execute"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "input"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "maxItems": 16,
+              "type": "array"
+            },
+            "response": {
+              "description": "A stable lowercase Phase 1 content identifier.",
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]{0,63}$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "response"
+          ],
+          "type": "object"
+        },
+        "helpResponse": {
+          "description": "A stable lowercase Phase 1 content identifier.",
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z0-9-]{0,63}$",
+          "type": "string"
+        },
+        "intents": {
+          "description": "Minimal Phase 1 recognized natural-language intents.",
+          "items": {
+            "additionalProperties": false,
+            "description": "One intent's bounded match phrases, response and actions.",
+            "properties": {
+              "actions": {
+                "default": [],
+                "description": "Ordered closed Phase 1 actions.",
+                "items": {
+                  "description": "A closed Phase 1 cartridge action, dispatched through normal mechanics.",
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "description": "Execute one bounded shell input through shell.execute.",
+                      "properties": {
+                        "input": {
+                          "description": "Bounded authored text.",
+                          "maxLength": 4096,
+                          "type": "string"
+                        },
+                        "kind": {
+                          "description": "The action kind.",
+                          "enum": [
+                            "shell-execute"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "input"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "maxItems": 16,
+                "type": "array"
+              },
+              "id": {
+                "description": "A stable lowercase Phase 1 content identifier.",
+                "maxLength": 64,
+                "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                "type": "string"
+              },
+              "patterns": {
+                "description": "Literal normalized match phrases.",
+                "items": {
+                  "description": "Bounded single-line authored text.",
+                  "maxLength": 240,
+                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                  "type": "string"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "type": "array"
+              },
+              "response": {
+                "description": "A stable lowercase Phase 1 content identifier.",
+                "maxLength": 64,
+                "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "patterns",
+              "response"
+            ],
+            "type": "object"
+          },
+          "maxItems": 128,
+          "type": "array"
+        },
+        "opening": {
+          "additionalProperties": false,
+          "description": "Cold-open shell copy and first agent response.",
+          "properties": {
+            "login": {
+              "description": "Login banner lines.",
+              "items": {
+                "description": "Bounded single-line authored text.",
+                "maxLength": 240,
+                "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                "type": "string"
+              },
+              "maxItems": 8,
+              "minItems": 1,
+              "type": "array"
+            },
+            "response": {
+              "description": "A stable lowercase Phase 1 content identifier.",
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]{0,63}$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "login",
+            "response"
+          ],
+          "type": "object"
+        },
+        "phase2": {
+          "$comment": "Declared but not validated in schema v0. Tightened by: Phase 2 defines this interior; Phase 4 hardens it. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
+          "default": {},
+          "description": "Story graph, escalation, callbacks and endings.",
+          "type": "object"
+        },
+        "responses": {
+          "description": "Authored response records.",
+          "items": {
+            "additionalProperties": false,
+            "description": "A cartridge-owned response and its deterministic TUI artifacts.",
+            "properties": {
+              "id": {
+                "description": "A stable lowercase Phase 1 content identifier.",
+                "maxLength": 64,
+                "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                "type": "string"
+              },
+              "text": {
+                "description": "Bounded authored text.",
+                "maxLength": 16000,
+                "type": "string"
+              },
+              "thinkingBlocks": {
+                "default": [],
+                "description": "Thinking artifacts.",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "One authored thinking artifact instantiated by a response.",
+                  "properties": {
+                    "id": {
+                      "description": "A stable lowercase Phase 1 content identifier.",
+                      "maxLength": 64,
+                      "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                      "type": "string"
+                    },
+                    "status": {
+                      "description": "Initial replayable thinking status.",
+                      "enum": [
+                        "active",
+                        "complete"
+                      ],
+                      "type": "string"
+                    },
+                    "text": {
+                      "description": "Bounded authored text.",
+                      "maxLength": 16000,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "text",
+                    "status"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 64,
+                "type": "array"
+              },
+              "todos": {
+                "default": [],
+                "description": "Todo artifacts.",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "One authored todo artifact instantiated by a response.",
+                  "properties": {
+                    "id": {
+                      "description": "A stable lowercase Phase 1 content identifier.",
+                      "maxLength": 64,
+                      "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                      "type": "string"
+                    },
+                    "status": {
+                      "description": "Initial replayable todo status.",
+                      "enum": [
+                        "pending",
+                        "in-progress",
+                        "completed",
+                        "cancelled"
+                      ],
+                      "type": "string"
+                    },
+                    "text": {
+                      "description": "Bounded single-line authored text.",
+                      "maxLength": 240,
+                      "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "text",
+                    "status"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 64,
+                "type": "array"
+              },
+              "toolCalls": {
+                "default": [],
+                "description": "Tool artifacts.",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "One authored tool-call artifact instantiated by a response.",
+                  "properties": {
+                    "id": {
+                      "description": "A stable lowercase Phase 1 content identifier.",
+                      "maxLength": 64,
+                      "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                      "type": "string"
+                    },
+                    "input": {
+                      "description": "Bounded authored text.",
+                      "maxLength": 16000,
+                      "type": "string"
+                    },
+                    "output": {
+                      "description": "Bounded authored text.",
+                      "maxLength": 16000,
+                      "type": "string"
+                    },
+                    "status": {
+                      "description": "Initial replayable tool-call status.",
+                      "enum": [
+                        "pending",
+                        "running",
+                        "succeeded",
+                        "failed"
+                      ],
+                      "type": "string"
+                    },
+                    "title": {
+                      "description": "Bounded single-line authored text.",
+                      "maxLength": 240,
+                      "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "input",
+                    "output",
+                    "status"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 64,
+                "type": "array"
+              }
+            },
+            "required": [
+              "id",
+              "text"
+            ],
+            "type": "object"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "type": "array"
+        },
+        "resume": {
+          "additionalProperties": false,
+          "description": "Responses for unchanged and externally changed machine state.",
+          "properties": {
+            "changedResponse": {
+              "description": "A stable lowercase Phase 1 content identifier.",
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]{0,63}$",
+              "type": "string"
+            },
+            "unchangedResponse": {
+              "description": "A stable lowercase Phase 1 content identifier.",
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]{0,63}$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "unchangedResponse",
+            "changedResponse"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "opening",
+        "responses",
+        "intents",
+        "fallback",
+        "helpResponse",
+        "compactResponse",
+        "resume"
+      ],
       "type": "object"
     }
   },

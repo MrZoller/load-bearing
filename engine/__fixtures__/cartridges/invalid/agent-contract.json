@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 1,
+    "date": "2026-08-05",
+    "title": "Malformed Agent Contract",
+    "assignment": "Reject dangling Phase 1 references.",
+    "startedAt": "2026-08-05T09:14:22.000Z"
+  },
+  "repository": {
+    "cwd": "/srv/app",
+    "identity": { "user": "root", "group": "root", "home": "/root" },
+    "gitIdentity": { "name": "Visitor", "email": "visitor@example.test" },
+    "system": {
+      "hostname": "production",
+      "operatingSystem": "Linux",
+      "kernelRelease": "6.1.0",
+      "architecture": "x86_64",
+      "bootedAt": "2025-07-01T06:10:00.000Z"
+    },
+    "files": { "/srv/app/main.ts": { "contents": "export const load = 1;\n" } }
+  },
+  "models": [
+    {
+      "id": "deep-foundation",
+      "name": "Deep Foundation",
+      "archetype": "paranoid",
+      "description": "Thorough.",
+      "costMultiplier": 1
+    }
+  ],
+  "story": {
+    "opening": { "login": ["Ready."], "response": "missing" },
+    "responses": [
+      { "id": "only", "text": "Only response." },
+      { "id": "only", "text": "Duplicate response." }
+    ],
+    "intents": [
+      { "id": "inspect", "patterns": ["inspect"], "response": "missing" },
+      { "id": "inspect", "patterns": ["again"], "response": "only" }
+    ],
+    "fallback": { "response": "only" },
+    "helpResponse": "only",
+    "compactResponse": "only",
+    "resume": { "unchangedResponse": "only", "changedResponse": "only" }
+  },
+  "presentation": {
+    "placeholders": [{ "stage": 0, "text": "inspect" }],
+    "spinnerPools": [
+      { "archetype": "reckless", "stage": 0, "verbs": ["Assuming"] },
+      { "archetype": "reckless", "stage": 0, "verbs": ["Shipping"] }
+    ],
+    "metrics": {
+      "baseTokens": 0,
+      "tokensPerEvent": 1,
+      "contextWindowTokens": 1000,
+      "costMicrosPerToken": 1,
+      "integrityStart": 100,
+      "integrityLossPerEvent": 1
+    }
+  }
+}

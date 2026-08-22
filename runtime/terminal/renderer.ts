@@ -1,4 +1,3 @@
-import { readVfs, readVfsSlice } from "../../engine/index.js";
 import type { LoadedCartridge, TranscriptEntry } from "../../engine/index.js";
 import type { RuntimeSessionSnapshot } from "../session.js";
 
@@ -39,12 +38,10 @@ function renderLogin(
 ): HTMLLIElement {
   const item = document.createElement("li");
   item.className = "transcript__entry transcript__entry--login";
-  const motd = readVfs(readVfsSlice(snapshot.state), "/etc/motd");
-  if (!motd.ok) {
-    throw new Error(`The authored login banner is unavailable: ${motd.code}.`);
-  }
   item.append(
-    paragraph(document, "transcript__login", motd.value.contents.trimEnd()),
+    ...cartridge.story.opening.login.map((line) =>
+      paragraph(document, "transcript__login", line),
+    ),
     paragraph(
       document,
       "transcript__prompt",

@@ -40,6 +40,15 @@ describe("the engine's module list", () => {
       [...ENGINE_EVENT_MODULES].map((module) => module.namespace).sort(),
     );
     expect(ENGINE_EVENT_REGISTRY.types).toEqual([
+      "agent.activity-set",
+      "agent.message-added",
+      "agent.response-recorded",
+      "agent.thinking-added",
+      "agent.thinking-updated",
+      "agent.todo-added",
+      "agent.todo-updated",
+      "agent.tool-call-added",
+      "agent.tool-call-updated",
       "clock.tick",
       "git.blame",
       "git.branch",
@@ -105,6 +114,9 @@ describe("the engine's module list", () => {
     );
     expect(ENGINE_EVENT_REGISTRY.module("terminal")?.stateful).toBe(true);
     expect(ENGINE_EVENT_REGISTRY.module("terminal")?.validateSlice).toBeTypeOf(
+      "function",
+    );
+    expect(ENGINE_EVENT_REGISTRY.module("agent")?.validateSlice).toBeTypeOf(
       "function",
     );
   });

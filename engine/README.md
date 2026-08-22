@@ -28,6 +28,19 @@ Import the public surface from `engine/index.ts`.
 isolated engine tests and extensions; production session code should not swap
 one during a fold.
 
+## Agent state
+
+`engine/agent/` registers the replayable Phase 1 agent slice. It stores bounded
+plain-JSON messages, tool calls, thinking blocks, todos, activity, and authored
+response instance records. `agent.response-recorded` references cartridge
+content by response id and derives artifact ids from its stable instance id;
+runtime code does not copy authored behavior. Status updates follow closed
+forward-only transitions, and hostile snapshots are checked for exact fields,
+bounds, unique ids, response references, and matching response messages.
+
+Disclosure state, focused controls, animation frames, and wall-time spinner
+progress are presentation concerns and do not belong in this slice.
+
 ## Replay and purity contracts
 
 Golden fixtures under `engine/__fixtures__/replay/` record canonical

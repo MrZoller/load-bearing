@@ -48,10 +48,11 @@ import type {
   CartridgeGitHistory,
   CartridgeMeta,
   CartridgeModel,
+  CartridgePresentation,
   CartridgeReaction,
   CartridgeRepository,
+  CartridgeStory,
   ReactionAction,
-  DeferredObject,
   LoadedCartridge,
 } from "./types.js";
 
@@ -1192,6 +1193,106 @@ function checkModelIds(
   });
 }
 
+/** Phase 1 content references and identities that descriptor nodes cannot express. */
+function checkStoryAndPresentation(
+  story: CartridgeStory,
+  presentation: CartridgePresentation,
+  models: readonly CartridgeModel[],
+  report: Report,
+): void {
+  const responses = new Map<string, number>();
+  story.responses.forEach((response, index) => {
+    const first = responses.get(response.id);
+    if (first === undefined) responses.set(response.id, index);
+    else
+      report.addPhrase(
+        `/story/responses/${String(index)}/id`,
+        "an id no other authored response uses",
+        `${JSON.stringify(response.id)}, already used by /story/responses/${String(first)}`,
+      );
+
+    for (const [field, artifacts] of [
+      ["toolCalls", response.toolCalls],
+      ["thinkingBlocks", response.thinkingBlocks],
+      ["todos", response.todos],
+    ] as const) {
+      const local = new Map<string, number>();
+      artifacts.forEach((artifact, artifactIndex) => {
+        const prior = local.get(artifact.id);
+        if (prior === undefined) local.set(artifact.id, artifactIndex);
+        else
+          report.addPhrase(
+            `/story/responses/${String(index)}/${field}/${String(artifactIndex)}/id`,
+            `an id no other ${field} artifact in this response uses`,
+            `${JSON.stringify(artifact.id)}, already used at index ${String(prior)}`,
+          );
+      });
+    }
+  });
+
+  const reference = (id: string, pointer: string): void => {
+    if (!responses.has(id))
+      report.addPhrase(
+        pointer,
+        "the id of a declared authored response",
+        `${JSON.stringify(id)}, which does not exist`,
+      );
+  };
+  reference(story.opening.response, "/story/opening/response");
+  reference(story.fallback.response, "/story/fallback/response");
+  reference(story.helpResponse, "/story/helpResponse");
+  reference(story.compactResponse, "/story/compactResponse");
+  reference(story.resume.unchangedResponse, "/story/resume/unchangedResponse");
+  reference(story.resume.changedResponse, "/story/resume/changedResponse");
+
+  const intents = new Map<string, number>();
+  const patterns = new Map<string, string>();
+  story.intents.forEach((intent, index) => {
+    const first = intents.get(intent.id);
+    if (first === undefined) intents.set(intent.id, index);
+    else
+      report.addPhrase(
+        `/story/intents/${String(index)}/id`,
+        "an id no other intent uses",
+        `${JSON.stringify(intent.id)}, already used by /story/intents/${String(first)}`,
+      );
+    reference(intent.response, `/story/intents/${String(index)}/response`);
+    intent.patterns.forEach((value, patternIndex) => {
+      const first = patterns.get(value);
+      const pointer = `/story/intents/${String(index)}/patterns/${String(patternIndex)}`;
+      if (first === undefined) patterns.set(value, pointer);
+      else
+        report.addPhrase(
+          pointer,
+          "a pattern no other intent uses",
+          `${JSON.stringify(value)}, already used by ${first}`,
+        );
+    });
+  });
+
+  const pools = new Map<string, number>();
+  presentation.spinnerPools.forEach((pool, index) => {
+    const key = `${pool.archetype}:${String(pool.stage)}`;
+    const first = pools.get(key);
+    if (first === undefined) pools.set(key, index);
+    else
+      report.addPhrase(
+        `/presentation/spinnerPools/${String(index)}/stage`,
+        "an archetype and stage pair no other spinner pool uses",
+        `${JSON.stringify(key)}, already used by /presentation/spinnerPools/${String(first)}`,
+      );
+  });
+  const requiredArchetypes = new Set(models.map((model) => model.archetype));
+  for (const archetype of [...requiredArchetypes].sort()) {
+    if (!pools.has(`${archetype}:0`))
+      report.addPhrase(
+        "/presentation/spinnerPools",
+        `a stage-0 spinner pool for model archetype ${archetype}`,
+        "no matching pool",
+      );
+  }
+}
+
 /** Cross-references and uniqueness that descriptor nodes cannot express. */
 function checkWorld(repository: CartridgeRepository, report: Report): void {
   const uniqueIds = <T extends { readonly id: string }>(
@@ -1551,8 +1652,8 @@ export function loadCartridge(value: unknown): LoadedCartridge {
     meta: normalized["meta"] as CartridgeMeta,
     repository: normalized["repository"] as CartridgeRepository,
     models: normalized["models"] as readonly CartridgeModel[],
-    story: normalized["story"] as DeferredObject,
-    presentation: normalized["presentation"] as DeferredObject,
+    story: normalized["story"] as CartridgeStory,
+    presentation: normalized["presentation"] as CartridgePresentation,
   };
 
   // Each cross-field check is gated on the fields it actually reads. Anything
@@ -1595,6 +1696,18 @@ export function loadCartridge(value: unknown): LoadedCartridge {
   // `checkModelIds` gates per model, so it only needs the array to exist.
   if (!issueAt(report, "/models")) {
     checkModelIds(cartridge.models, report);
+  }
+  if (
+    !issueWithin(report, "/story") &&
+    !issueWithin(report, "/presentation") &&
+    !issueWithin(report, "/models")
+  ) {
+    checkStoryAndPresentation(
+      cartridge.story,
+      cartridge.presentation,
+      cartridge.models,
+      report,
+    );
   }
   if (
     !issueAt(report, "/repository") &&

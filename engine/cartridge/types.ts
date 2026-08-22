@@ -26,6 +26,96 @@ export type Archetype = (typeof ARCHETYPES)[number];
  */
 export type DeferredObject = Readonly<Record<string, unknown>>;
 
+export interface CartridgeResponseToolCall {
+  readonly id: string;
+  readonly title: string;
+  readonly input: string;
+  readonly output: string;
+  readonly status: "pending" | "running" | "succeeded" | "failed";
+}
+
+export interface CartridgeResponseThinkingBlock {
+  readonly id: string;
+  readonly text: string;
+  readonly status: "active" | "complete";
+}
+
+export interface CartridgeResponseTodo {
+  readonly id: string;
+  readonly text: string;
+  readonly status: "pending" | "in-progress" | "completed" | "cancelled";
+}
+
+export interface CartridgeAuthoredResponse {
+  readonly id: string;
+  readonly text: string;
+  readonly toolCalls: readonly CartridgeResponseToolCall[];
+  readonly thinkingBlocks: readonly CartridgeResponseThinkingBlock[];
+  readonly todos: readonly CartridgeResponseTodo[];
+}
+
+/** The closed Phase 1 action surface. Arbitrary engine events are not content. */
+export type CartridgeAgentAction = {
+  readonly kind: "shell-execute";
+  readonly input: string;
+};
+
+export interface CartridgeIntent {
+  readonly id: string;
+  readonly patterns: readonly string[];
+  readonly response: string;
+  readonly actions: readonly CartridgeAgentAction[];
+}
+
+export interface CartridgeStory {
+  readonly opening: {
+    readonly login: readonly string[];
+    readonly response: string;
+  };
+  readonly responses: readonly CartridgeAuthoredResponse[];
+  readonly intents: readonly CartridgeIntent[];
+  readonly fallback: {
+    readonly response: string;
+    readonly actions: readonly CartridgeAgentAction[];
+  };
+  readonly helpResponse: string;
+  readonly compactResponse: string;
+  readonly resume: {
+    readonly unchangedResponse: string;
+    readonly changedResponse: string;
+  };
+  /** Phase 2 story graph, escalation and endings remain explicitly deferred. */
+  readonly phase2: DeferredObject;
+}
+
+export interface CartridgePlaceholder {
+  readonly stage: number;
+  readonly text: string;
+}
+
+export interface CartridgeSpinnerPool {
+  readonly archetype: Archetype;
+  readonly stage: number;
+  readonly verbs: readonly string[];
+}
+
+export interface CartridgeMetricParameters {
+  readonly baseTokens: number;
+  readonly tokensPerEvent: number;
+  readonly contextWindowTokens: number;
+  readonly costMicrosPerToken: number;
+  readonly integrityStart: number;
+  readonly integrityLossPerEvent: number;
+}
+
+export interface CartridgePresentation {
+  readonly placeholders: readonly CartridgePlaceholder[];
+  readonly spinnerPools: readonly CartridgeSpinnerPool[];
+  readonly metrics: CartridgeMetricParameters;
+  /** Phase 2 share/status/disturbance surfaces remain explicitly deferred. */
+  readonly phase2: DeferredObject;
+}
+
 export interface CartridgeMeta {
   readonly schemaVersion: number;
   readonly number: number;
@@ -277,6 +367,6 @@ export interface LoadedCartridge {
   readonly meta: CartridgeMeta;
   readonly repository: CartridgeRepository;
   readonly models: readonly CartridgeModel[];
-  readonly story: DeferredObject;
-  readonly presentation: DeferredObject;
+  readonly story: CartridgeStory;
+  readonly presentation: CartridgePresentation;
 }

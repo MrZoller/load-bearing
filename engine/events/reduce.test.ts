@@ -406,7 +406,7 @@ describe("an unregistered event type", () => {
     // The message has to be actionable: which event, and what does exist.
     expect(attempt).toThrow(/event 0 \(shell\.exec\)/);
     expect(attempt).toThrow(
-      /Registered namespaces: clock, git, mind, probe, shell, terminal, tests, vfs, world/,
+      /Registered namespaces: agent, clock, git, mind, probe, shell, terminal, tests, vfs, world/,
     );
   });
 
