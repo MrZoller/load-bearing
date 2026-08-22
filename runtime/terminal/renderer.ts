@@ -76,6 +76,7 @@ function renderLogin(
 ): HTMLLIElement {
   const item = document.createElement("li");
   item.className = "transcript__entry transcript__entry--login";
+  item.dataset["transcriptKey"] = "login";
   item.append(
     ...cartridge.story.opening.login.map((line) =>
       paragraph(document, "transcript__login", line),
@@ -173,6 +174,8 @@ export function renderTerminalTranscript(
         throw new Error("Shell commands and replayed results are out of step.");
       }
       activeShell = renderExchange(document, input);
+      activeShell.dataset["transcriptKey"] =
+        `event-${String(transcriptEntry.index)}`;
       entries.push(activeShell);
     }
 
@@ -186,12 +189,12 @@ export function renderTerminalTranscript(
     }
 
     if (transcriptEntry.type === "agent.capacity-reached") {
-      entries.push(
-        renderMessage(
-          document,
-          authoredMessage(cartridge, capacityResponseId(transcriptEntry)),
-        ),
+      const item = renderMessage(
+        document,
+        authoredMessage(cartridge, capacityResponseId(transcriptEntry)),
       );
+      item.dataset["transcriptKey"] = `event-${String(transcriptEntry.index)}`;
+      entries.push(item);
       continue;
     }
 
@@ -205,13 +208,13 @@ export function renderTerminalTranscript(
     if (message === undefined) {
       throw new Error("A replayed agent message is missing.");
     }
-    entries.push(
-      renderMessage(
-        document,
-        message,
-        readAgentMessageArtifacts(snapshot.state, message.id),
-      ),
+    const item = renderMessage(
+      document,
+      message,
+      readAgentMessageArtifacts(snapshot.state, message.id),
     );
+    item.dataset["transcriptKey"] = `event-${String(transcriptEntry.index)}`;
+    entries.push(item);
     messageCount += 1;
   }
 
