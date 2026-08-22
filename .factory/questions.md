@@ -273,3 +273,22 @@ regression test, run verification, and panel again; B — replan or defer T25,
 which also blocks T28 and T29. Recommendation: A; the defect and minimal fix are
 well bounded, but proceeding now would violate the panel termination rule.
 **A:** Option A — resume T25 in a fresh cycle (operator answer, as Chris's representative; process continuation with a documented default, no product-surface change). Split input-only selection state from document selection so only Ctrl+C consults the document selection; add the focused Tab-completion regression test alongside T24's coverage; full verification and a fresh panel. Option B rejected: deferral blocks T28/T29 for a defect Q8 itself describes as well bounded.
+
+## Q9 (task T32, open) — Where should the waiver-consent query contract begin?
+
+Context: T32 must add closed conditions sufficient to query every approved T31
+ending row, including the row that requires a distinct typed waiver-consent
+ledger fact. That fact and its capture semantics do not exist yet and are
+explicitly assigned to T34. A condition backed by ordinary permission or an
+untyped story fact would violate the approved matrix, while a declared but
+unevaluable predicate would not meet T32's acceptance. Parked branch:
+`factory/t32-closed-story-conditions`.
+Options considered: A — let T32 establish only the typed waiver-ledger state,
+snapshot validation, and read/query contract under `engine/mind/`, while T34
+retains exact input capture and atomic continuation behavior; B — revise T32's
+acceptance so it defines the waiver predicate structurally but does not evaluate
+it until T34; C — move the whole waiver ledger and consent flow into T32,
+materially expanding this already-major story-contract task. Recommendation: A,
+because it gives T32 a truthful closed query vocabulary without taking T34's
+consent-boundary implementation.
+**A:**
