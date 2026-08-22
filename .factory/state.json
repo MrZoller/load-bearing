@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T27",
-  "branch": "factory/t27-semantic-accessibility",
-  "pr": 51,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-22T15:57:21Z"
+  "updated": "2026-08-22T16:05:48Z"
 }
