@@ -1,0 +1,58 @@
+{
+  "name": "021-incident-001-load-balancer",
+  "description": "Production Incident #001's visitor repairs and undoes the load-balancer route through the supported cp -p sequence, recording npm test and health-endpoint evidence at each state.",
+  "seed": "2026-08-22/21/deep-foundation",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    {
+      "type": "shell.execute",
+      "payload": { "input": "npm test" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "curl http://load-balancer.internal/health" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cp -p config/routes.200.conf config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "npm test" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "curl http://load-balancer.internal/health" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cp -p config/routes.500.conf config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "npm test" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "curl http://load-balancer.internal/health" },
+      "version": 0
+    }
+  ]
+}
