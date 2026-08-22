@@ -30,7 +30,7 @@
     }
   ],
   "story": {
-    "opening": { "login": ["Ready."], "response": "missing" },
+    "opening": { "login": ["Ready."], "response": "missing", "beliefs": [] },
     "responses": [
       { "id": "only", "text": "Only response." },
       { "id": "only", "text": "Duplicate response." }
@@ -41,7 +41,7 @@
     ],
     "fallback": { "response": "only" },
     "helpResponse": "only",
-    "compactResponse": "only",
+    "compact": { "response": "only", "summary": "Compacted.", "beliefs": [] },
     "resume": { "unchangedResponse": "only", "changedResponse": "only" }
   },
   "presentation": {

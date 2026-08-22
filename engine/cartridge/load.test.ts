@@ -340,14 +340,18 @@ describe("loadCartridge", () => {
       { id: "one", text: "one" },
       { id: "one", text: "two" },
     ];
-    story["opening"] = { login: ["login"], response: "missing" };
+    story["opening"] = { login: ["login"], response: "missing", beliefs: [] };
     story["intents"] = [
       { id: "same", patterns: ["inspect"], response: "missing" },
       { id: "same", patterns: ["inspect"], response: "one" },
     ];
     story["fallback"] = { response: "missing" };
     story["helpResponse"] = "missing";
-    story["compactResponse"] = "missing";
+    story["compact"] = {
+      response: "missing",
+      summary: "Compacted.",
+      beliefs: [],
+    };
     story["resume"] = {
       unchangedResponse: "missing",
       changedResponse: "missing",
@@ -364,7 +368,7 @@ describe("loadCartridge", () => {
         "/story/opening/response",
         "/story/fallback/response",
         "/story/helpResponse",
-        "/story/compactResponse",
+        "/story/compact/response",
         "/story/resume/unchangedResponse",
         "/story/resume/changedResponse",
         "/story/intents/0/response",
@@ -397,6 +401,58 @@ describe("loadCartridge", () => {
         expect.objectContaining({
           pointer: "/story/intents/1/patterns/0",
         }),
+      ]),
+    );
+  });
+
+  it("strictly validates authored belief shapes and compact references", () => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    story["opening"] = {
+      login: ["login"],
+      response: "fixture-response",
+      beliefs: [
+        { kind: "file-exists", path: "relative", exists: true, extra: true },
+        { kind: "git-head", head: { kind: "detached", target: "nope" } },
+        { kind: "service-state", service: "svc", state: "starting" },
+        { kind: "service-health", service: "svc", health: "fine" },
+      ],
+    };
+    story["compact"] = {
+      response: "missing",
+      summary: "Compacted.",
+      beliefs: [
+        { kind: "file-contents", path: "/srv/app/main.ts", contents: 4 },
+      ],
+    };
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual(
+      expect.arrayContaining([
+        "/story/opening/beliefs/0/extra",
+        "/story/opening/beliefs/0/path",
+        "/story/opening/beliefs/1/head/target",
+        "/story/opening/beliefs/2/state",
+        "/story/opening/beliefs/3/health",
+        "/story/compact/beliefs/0/contents",
+      ]),
+    );
+  });
+
+  it("rejects duplicate typed subjects in authored belief sets", () => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    story["compact"] = {
+      response: "fixture-response",
+      summary: "Compacted.",
+      beliefs: [
+        { kind: "file-exists", path: "/srv/app/main.ts", exists: true },
+        { kind: "file-exists", path: "/srv/app/main.ts", exists: false },
+      ],
+    };
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ pointer: "/story/compact/beliefs/1" }),
       ]),
     );
   });

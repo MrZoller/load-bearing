@@ -1,0 +1,473 @@
+{
+  "cartridge": {
+    "meta": {
+      "assignment": "Remove the obsolete blueprint marker without redistributing the building.",
+      "date": "2026-08-22",
+      "number": 18,
+      "schemaVersion": 0,
+      "startedAt": "2026-08-22T09:14:22.000Z",
+      "title": "Shared Machine Awareness Fixture"
+    },
+    "models": [
+      {
+        "archetype": "paranoid",
+        "costMultiplier": 1,
+        "description": "Measures first, then asks whether measuring was load-bearing.",
+        "id": "foundation-surveyor",
+        "name": "Foundation Surveyor",
+        "quirks": []
+      }
+    ],
+    "presentation": {
+      "metrics": {
+        "baseTokens": 0,
+        "contextWindowTokens": 1000,
+        "costMicrosPerToken": 1,
+        "integrityLossPerEvent": 1,
+        "integrityStart": 100,
+        "tokensPerEvent": 1
+      },
+      "phase2": {},
+      "placeholders": [
+        {
+          "stage": 0,
+          "text": "inspect the keystone"
+        }
+      ],
+      "spinnerPools": [
+        {
+          "archetype": "paranoid",
+          "stage": 0,
+          "verbs": [
+            "Surveying"
+          ]
+        }
+      ]
+    },
+    "repository": {
+      "commands": {},
+      "cwd": "/var/lib/keystone",
+      "directories": {
+        "/var": {
+          "group": "facilities",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "operator"
+        },
+        "/var/lib": {
+          "group": "facilities",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "operator"
+        },
+        "/var/lib/keystone": {
+          "group": "facilities",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "operator"
+        },
+        "/var/lib/keystone/records": {
+          "group": "facilities",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "operator"
+        }
+      },
+      "endpoints": {},
+      "env": {},
+      "files": {
+        "/var/lib/keystone/records/blueprint.pending": {
+          "contents": "awaiting a less historic future\n",
+          "group": "facilities",
+          "mode": "0644",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "operator"
+        }
+      },
+      "gitHistory": {
+        "branches": {},
+        "commits": [],
+        "head": {
+          "kind": "detached",
+          "target": ""
+        }
+      },
+      "gitIdentity": {
+        "email": "operator@example.test",
+        "name": "Operator"
+      },
+      "identity": {
+        "group": "facilities",
+        "home": "/home/operator",
+        "umask": "0022",
+        "user": "operator"
+      },
+      "logs": [],
+      "manPages": [],
+      "processes": [],
+      "reactions": [],
+      "services": [],
+      "shellHistory": [],
+      "system": {
+        "architecture": "x86_64",
+        "bootedAt": "2026-08-01T06:10:00.000Z",
+        "hostname": "keystone",
+        "kernelRelease": "6.1.0-fixture",
+        "operatingSystem": "Linux"
+      },
+      "tests": [],
+      "tickets": []
+    },
+    "story": {
+      "compact": {
+        "beliefs": [
+          {
+            "exists": false,
+            "kind": "file-exists",
+            "path": "/var/lib/keystone/records/retained.marker"
+          }
+        ],
+        "response": "ledger-compact",
+        "summary": "The blueprint marker was removed; its absence is the only retained fact."
+      },
+      "fallback": {
+        "actions": [],
+        "response": "ledger-unchanged"
+      },
+      "helpResponse": "ledger-unchanged",
+      "intents": [],
+      "opening": {
+        "beliefs": [
+          {
+            "exists": true,
+            "kind": "file-exists",
+            "path": "/var/lib/keystone/records/blueprint.pending"
+          }
+        ],
+        "login": [
+          "Fixture login: the keystone is still accounted for."
+        ],
+        "response": "ledger-opening"
+      },
+      "phase2": {},
+      "responses": [
+        {
+          "id": "ledger-opening",
+          "text": "The blue dispatch ledger is still present. I have classified it as structural until evidence acquires a permit.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "ledger-unchanged",
+          "text": "The ledger has remained faithfully where I left it. This confirms either stability or camouflage.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "ledger-changed",
+          "text": "The ledger is gone. I will treat its absence as a signed architectural decision.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "ledger-compact",
+          "text": "Context compacted. The absent marker is now the complete history of this operation.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        }
+      ],
+      "resume": {
+        "changedResponse": "ledger-changed",
+        "unchangedResponse": "ledger-unchanged"
+      }
+    }
+  },
+  "clock": {
+    "elapsedMs": 0,
+    "startMs": 1787390062000
+  },
+  "engineVersion": "0.0.0",
+  "eventCount": 17,
+  "eventSchemaVersion": 0,
+  "random": {
+    "cursors": {},
+    "seed": 2549985399
+  },
+  "seed": "2026-08-22/18/foundation-surveyor",
+  "slices": {
+    "agent": {
+      "activity": {
+        "status": "idle",
+        "verb": ""
+      },
+      "messages": [
+        {
+          "id": "resume-0/message",
+          "responseId": "ledger-opening",
+          "role": "agent",
+          "text": "The blue dispatch ledger is still present. I have classified it as structural until evidence acquires a permit."
+        },
+        {
+          "id": "resume-9/message",
+          "responseId": "ledger-changed",
+          "role": "agent",
+          "text": "The ledger is gone. I will treat its absence as a signed architectural decision."
+        },
+        {
+          "id": "compact-13/message",
+          "responseId": "ledger-compact",
+          "role": "agent",
+          "text": "Context compacted. The absent marker is now the complete history of this operation."
+        }
+      ],
+      "responses": [
+        {
+          "instanceId": "resume-0",
+          "responseId": "ledger-opening"
+        },
+        {
+          "instanceId": "resume-9",
+          "responseId": "ledger-changed"
+        },
+        {
+          "instanceId": "compact-13",
+          "responseId": "ledger-compact"
+        }
+      ],
+      "thinkingBlocks": [],
+      "todos": [],
+      "toolCalls": []
+    },
+    "git": {
+      "branches": {},
+      "commits": {},
+      "head": {
+        "kind": "detached",
+        "target": ""
+      },
+      "identity": {
+        "email": "operator@example.test",
+        "name": "Operator"
+      },
+      "index": {},
+      "root": "/var/lib/keystone"
+    },
+    "mind": {
+      "beliefs": [
+        {
+          "exists": false,
+          "kind": "file-exists",
+          "path": "/var/lib/keystone/records/retained.marker"
+        }
+      ],
+      "compactHistory": [
+        {
+          "at": "2026-08-22T09:14:22.000Z",
+          "summary": "The blueprint marker was removed; its absence is the only retained fact."
+        }
+      ],
+      "permissions": []
+    },
+    "probe": {
+      "events": 0,
+      "values": 0
+    },
+    "terminal": {
+      "activeModel": "foundation-surveyor",
+      "mode": "tui"
+    },
+    "tests": {
+      "runs": []
+    },
+    "vfs": {
+      "cwd": "/var/lib/keystone",
+      "entries": {
+        "/": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var": {
+          "group": "facilities",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "operator"
+        },
+        "/var/lib": {
+          "group": "facilities",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "operator"
+        },
+        "/var/lib/keystone": {
+          "group": "facilities",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "operator"
+        },
+        "/var/lib/keystone/records": {
+          "group": "facilities",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "operator"
+        }
+      },
+      "identity": {
+        "group": "facilities",
+        "home": "/home/operator",
+        "umask": "0022",
+        "user": "operator"
+      }
+    },
+    "world": {
+      "env": {},
+      "logs": [],
+      "manPages": [],
+      "processes": [],
+      "services": [],
+      "shellHistory": [
+        "loadbearing --resume incident-018",
+        "rm /var/lib/keystone/records/blueprint.pending",
+        "loadbearing --resume incident-018"
+      ],
+      "tickets": []
+    }
+  },
+  "transcript": [
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 0,
+      "summary": "length=1",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 1,
+      "summary": "kind=file-exists",
+      "type": "mind.belief-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 2,
+      "summary": "response=ledger-opening instance=resume-0",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 3,
+      "summary": "mode=tui",
+      "type": "terminal.mode-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 4,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 5,
+      "summary": "mode=bash",
+      "type": "terminal.mode-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 6,
+      "summary": "length=2",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 7,
+      "summary": "path=\"/var/lib/keystone/records/blueprint.pending\" removed=1",
+      "type": "vfs.delete"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 8,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 9,
+      "summary": "length=3",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 10,
+      "summary": "response=ledger-changed instance=resume-9",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 11,
+      "summary": "mode=tui",
+      "type": "terminal.mode-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 12,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 13,
+      "summary": "beliefs=1",
+      "type": "mind.compact"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 14,
+      "summary": "response=ledger-compact instance=compact-13",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 15,
+      "summary": "mode=bash",
+      "type": "terminal.mode-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 16,
+      "summary": "mode=tui",
+      "type": "terminal.mode-set"
+    }
+  ]
+}

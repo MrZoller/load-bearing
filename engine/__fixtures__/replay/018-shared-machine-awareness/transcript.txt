@@ -1,0 +1,17 @@
+0000  2026-08-22T09:14:22.000Z  world.history-append length=1
+0001  2026-08-22T09:14:22.000Z  mind.belief-set kind=file-exists
+0002  2026-08-22T09:14:22.000Z  agent.response-recorded response=ledger-opening instance=resume-0
+0003  2026-08-22T09:14:22.000Z  terminal.mode-set mode=tui
+0004  2026-08-22T09:14:22.000Z  shell.result exit=0
+0005  2026-08-22T09:14:22.000Z  terminal.mode-set mode=bash
+0006  2026-08-22T09:14:22.000Z  world.history-append length=2
+0007  2026-08-22T09:14:22.000Z  vfs.delete path="/var/lib/keystone/records/blueprint.pending" removed=1
+0008  2026-08-22T09:14:22.000Z  shell.result exit=0
+0009  2026-08-22T09:14:22.000Z  world.history-append length=3
+0010  2026-08-22T09:14:22.000Z  agent.response-recorded response=ledger-changed instance=resume-9
+0011  2026-08-22T09:14:22.000Z  terminal.mode-set mode=tui
+0012  2026-08-22T09:14:22.000Z  shell.result exit=0
+0013  2026-08-22T09:14:22.000Z  mind.compact beliefs=1
+0014  2026-08-22T09:14:22.000Z  agent.response-recorded response=ledger-compact instance=compact-13
+0015  2026-08-22T09:14:22.000Z  terminal.mode-set mode=bash
+0016  2026-08-22T09:14:22.000Z  terminal.mode-set mode=tui

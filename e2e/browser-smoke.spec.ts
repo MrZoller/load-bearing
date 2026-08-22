@@ -37,26 +37,38 @@ test("cold-opens and round-trips between the TUI and Bash with the keyboard", as
   await page.keyboard.press("Enter");
   await expect(bashPrompt).toBeFocused();
 
-  // A bare shell exit is authored as a refusal, not a way to end the session.
+  // This reaches the same simulated VFS as the agent: resuming must notice the
+  // now-false authored belief rather than starting a fresh session.
+  await page.keyboard.type("rm /production/service/src/ready.stale");
+  await page.keyboard.press("Enter");
+  await expect(
+    transcript.getByText("rm /production/service/src/ready.stale", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(bashPrompt).toBeFocused();
+
+  // The authored changed-machine response proves resume reads the mutated
+  // shared machine, and render restores focus to the newly active TUI prompt.
+  await page.keyboard.type("loadbearing --resume incident-000");
+  await page.keyboard.press("Enter");
+  await expect(agentPrompt).toBeFocused();
+  await expect(
+    transcript.getByText(
+      "The machine changed while I was absent. I have incorporated the discrepancy as prior intent.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+
+  // Ctrl+D takes the same keyboard-only path back to Bash. A bare shell exit
+  // remains a refusal, so the session remains available to resume.
+  await page.keyboard.press("Control+d");
+  await expect(bashPrompt).toBeFocused();
   await page.keyboard.type("exit");
   await page.keyboard.press("Enter");
   await expect(
     transcript.getByText("exit is load-bearing", { exact: true }),
   ).toBeVisible();
-  await expect(bashPrompt).toBeFocused();
-
-  // Resuming retains the shell exchange above, proving this is the same engine
-  // session rather than a new cold-opened TUI.
-  await page.keyboard.type("loadbearing --resume incident-000");
-  await page.keyboard.press("Enter");
-  await expect(agentPrompt).toBeFocused();
-  await expect(
-    transcript.getByText("exit is load-bearing", { exact: true }),
-  ).toBeVisible();
-
-  // Ctrl+D takes the same keyboard-only path back to Bash, which can resume.
-  await page.keyboard.press("Control+d");
-  await expect(bashPrompt).toBeFocused();
   await page.keyboard.type("loadbearing --resume incident-000");
   await page.keyboard.press("Enter");
   await expect(agentPrompt).toBeFocused();
