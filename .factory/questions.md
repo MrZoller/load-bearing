@@ -291,4 +291,11 @@ it until T34; C — move the whole waiver ledger and consent flow into T32,
 materially expanding this already-major story-contract task. Recommendation: A,
 because it gives T32 a truthful closed query vocabulary without taking T34's
 consent-boundary implementation.
-**A:**
+**A:** Option A — T32 establishes the typed waiver-consent ledger state, snapshot
+validation, and read/query contract under `engine/mind/`; T34 retains exact
+input capture and atomic continuation. (Operator answer, as Chris's
+representative: task-boundary decomposition with a documented default and no
+product-surface change. The approved spec decision Q1=A requires the distinct
+typed fact, which A preserves verbatim; B would ship an unevaluable predicate
+and C would materially expand an already-major task beyond its approved
+scope.)
