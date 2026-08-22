@@ -467,6 +467,32 @@ describe("loadCartridge", () => {
     );
   });
 
+  it("rejects a fallback that would enqueue multiple permission prompts", () => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    const fallback = story["fallback"] as Record<string, unknown>;
+    fallback["actions"] = [
+      {
+        kind: "permission-request",
+        id: "delete-motd",
+        action: "delete",
+        resource: "/etc/motd",
+      },
+      {
+        kind: "permission-request",
+        id: "restart-motd",
+        action: "restart",
+        resource: "/etc/motd",
+      },
+    ];
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ pointer: "/story/fallback/actions" }),
+      ]),
+    );
+  });
+
   it("strictly validates authored belief shapes and compact references", () => {
     const source = minimal();
     const story = source["story"] as Record<string, unknown>;

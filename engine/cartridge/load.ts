@@ -45,6 +45,7 @@ import {
 import type { SchemaNode, ObjectNode } from "./schema.js";
 import type {
   CartridgeDirectory,
+  CartridgeAgentAction,
   CartridgeBelief,
   CartridgeGitCommit,
   CartridgeGitHistory,
@@ -1274,6 +1275,22 @@ function checkStoryAndPresentation(
   reference(story.resume.unchangedResponse, "/story/resume/unchangedResponse");
   reference(story.resume.changedResponse, "/story/resume/changedResponse");
 
+  const checkPermissionRequests = (
+    actions: readonly CartridgeAgentAction[],
+    pointer: string,
+  ): void => {
+    const permissionRequests = actions.filter(
+      (action) => action.kind === "permission-request",
+    );
+    if (permissionRequests.length > 1)
+      report.addPhrase(
+        pointer,
+        "at most one permission-request action",
+        `${String(permissionRequests.length)} permission-request actions`,
+      );
+  };
+  checkPermissionRequests(story.fallback.actions, "/story/fallback/actions");
+
   const intents = new Map<string, number>();
   const patterns = new Map<string, string>();
   story.intents.forEach((intent, index) => {
@@ -1298,15 +1315,10 @@ function checkStoryAndPresentation(
           `${JSON.stringify(value)}, already used by ${first}`,
         );
     });
-    const permissionRequests = intent.actions.filter(
-      (action) => action.kind === "permission-request",
+    checkPermissionRequests(
+      intent.actions,
+      `/story/intents/${String(index)}/actions`,
     );
-    if (permissionRequests.length > 1)
-      report.addPhrase(
-        `/story/intents/${String(index)}/actions`,
-        "at most one permission-request action",
-        `${String(permissionRequests.length)} permission-request actions`,
-      );
   });
 
   const pools = new Map<string, number>();
