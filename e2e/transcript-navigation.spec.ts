@@ -61,6 +61,29 @@ test("searches the transcript with the keyboard, navigates results, and restores
   );
 });
 
+test("opens a collapsed artifact that contains the current search match", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const transcript = page.getByRole("list", { name: "Session transcript" });
+  const thinking = transcript.locator("details.artifact--thinking").first();
+  await expect(thinking).not.toHaveAttribute("open", "");
+
+  await prompt.press("Control+f");
+  const search = page.getByRole("searchbox", { name: /transcript/i });
+  await search.fill("surrounding confidence");
+
+  await expect(thinking).toHaveAttribute("open", "");
+  await expect(
+    thinking.getByText(
+      "Okay, the requested deletion is simple. The surrounding confidence is not.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+});
+
 test("leaves selected transcript text available to the browser copy command", async ({
   page,
 }) => {
