@@ -194,7 +194,7 @@ files, history, services, logs, and tests remain consistent with the story.
   is not statistically representative. The automated five-exchange gate protects
   arc length; playtest notes protect pacing and comprehension.
 
-## Open questions
+## Open questions (all four resolved 2026-08-22 — decisions recorded inline)
 
 1. **What should typed waiver consent record?** Options: A — one distinct
    waiver-consent ledger fact containing waiver id/version, exact phrase,
@@ -204,18 +204,21 @@ files, history, services, logs, and tests remain consistent with the story.
    the existing exact-capability model while making the document and timestamp
    durable enough for callbacks and endings without inferring legal consent from
    transcript text.
+   **Decision: A — approved by Chris, 2026-08-22 (operator-relayed).**
 2. **When should Incident #001 roll rare events?** Options: A — each authored
    rare event declares a one-shot eligibility condition and integer weight, then
    draws from its own named stream the first time that condition becomes true;
    B — roll after every matching command; C — choose rare variants only from the
    daily seed at bootstrap. **Recommendation: A.** It makes rarity tunable and
    discoverable without command-spam farming or coupling unrelated events.
+   **Decision: A — approved by Chris, 2026-08-22 (operator-relayed).**
 3. **Where does ending collection persist during Phase 2?** Options: A — record
    ending discoveries only in authoritative session state and defer cross-replay
    browser persistence to Phase 3; B — add browser-local collection now; C — add
    server-backed collection. **Recommendation: A.** Phase 2 proves reachability,
    equality, and continued free play; Phase 3 owns the daily frame, resolution
    report, replay identity, and persistent collection presentation.
+   **Decision: A — approved by Chris, 2026-08-22 (operator-relayed).**
 4. **When should the four ending identities be fixed?** Options: A — approve
    exact names and route conditions in this spec; B — keep the approved structural
    constraints here and make the first content task produce a reviewable four-row
@@ -223,3 +226,4 @@ files, history, services, logs, and tests remain consistent with the story.
    during dialogue writing. **Recommendation: B.** The equality, shell, waiver,
    and no-good-ending rules are product contract; names and punchlines benefit
    from authored iteration, but their reachability should not emerge accidentally.
+   **Decision: B — approved by Chris, 2026-08-22 (operator-relayed).**
