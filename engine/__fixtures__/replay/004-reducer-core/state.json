@@ -245,6 +245,7 @@
     "mind": {
       "beliefs": [],
       "compactHistory": [],
+      "pendingPermission": null,
       "permissions": []
     },
     "probe": {

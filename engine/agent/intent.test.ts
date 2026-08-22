@@ -74,6 +74,30 @@ describe("authored agent input", () => {
     ]);
   });
 
+  it("preserves authored permission requests in action order", () => {
+    const events = createAgentInputEvents(
+      CARTRIDGE,
+      reduce({ cartridge: CARTRIDGE, seed: SEED, events: [] }),
+      "remove it",
+    );
+
+    expect(events).toMatchObject([
+      { type: "agent.message-added" },
+      {
+        type: "mind.permission-requested",
+        payload: {
+          id: "delete-ready-sentinel",
+          capability: {
+            kind: "exact",
+            action: "delete",
+            resource: "/production/service/src/ready.stale",
+          },
+        },
+      },
+      { type: "agent.response-recorded" },
+    ]);
+  });
+
   it("bounds oversized visitor text and still records an authored fallback", () => {
     const input = `${"x".repeat(15_999)}😀z`;
     const events = createAgentInputEvents(

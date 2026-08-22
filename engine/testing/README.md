@@ -94,6 +94,8 @@ against the replay contract.
 | `015-terminal-modes`        | terminal mode and model transitions, then shell-driven incident-matched resume and the authored bare-exit refusal                                           |
 | `016-agent-artifacts`       | authored response instantiation plus stable message/tool/thinking/todo identities, semantic updates, and replayable activity                                |
 | `017-agent-intents`         | recognized and fallback agent turns plus shell passthrough replaying through the shared shell event path                                                    |
+| `018-shared-machine-awareness` | mode changes around a shared-machine mutation, resume divergence acknowledgment, and compacted belief replacement                                        |
+| `019-pending-permissions`   | authored exact-capability consent, simulated-time resolution, atomic prompt clearing, and a durable standing grant                                         |
 
 `002` records 1000 raw draws eight to a line with their index, so a divergence
 names the draw it started at rather than reporting that a file changed.

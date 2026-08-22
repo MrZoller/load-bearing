@@ -1,0 +1,40 @@
+{
+  "name": "019-pending-permissions",
+  "description": "An authored agent response requests exact deletion consent, then a simulated clock tick resolves it into the permission ledger and clears the pending prompt.",
+  "seed": "2026-08-22/19/structural-audit",
+  "cartridge": "minimal",
+  "events": [
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "turn-0", "text": "remove it" },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-requested",
+      "payload": {
+        "id": "delete-fixture",
+        "capability": {
+          "kind": "exact",
+          "action": "delete",
+          "resource": "/production/service/src/index.ts"
+        }
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": { "responseId": "fixture-response", "instanceId": "turn-0" },
+      "version": 0
+    },
+    {
+      "type": "clock.tick",
+      "payload": { "ms": 19 },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-resolved",
+      "payload": { "id": "delete-fixture", "decision": "always-allow" },
+      "version": 0
+    }
+  ]
+}

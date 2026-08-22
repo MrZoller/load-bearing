@@ -55,10 +55,17 @@ export interface CartridgeAuthoredResponse {
 }
 
 /** The closed Phase 1 action surface. Arbitrary engine events are not content. */
-export type CartridgeAgentAction = {
-  readonly kind: "shell-execute";
-  readonly input: string;
-};
+export type CartridgeAgentAction =
+  | {
+      readonly kind: "shell-execute";
+      readonly input: string;
+    }
+  | {
+      readonly kind: "permission-request";
+      readonly id: string;
+      readonly action: string;
+      readonly resource: string;
+    };
 
 export interface CartridgeIntent {
   readonly id: string;

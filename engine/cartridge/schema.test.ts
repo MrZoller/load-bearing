@@ -114,6 +114,41 @@ describe("the published schema", () => {
     expect(publishedPattern.test("visitor\udc00@example.test")).toBe(false);
   });
 
+  it("publishes a closed, bounded permission-request action variant", () => {
+    const root = emitJsonSchema()["properties"] as Record<string, unknown>;
+    const story = root["story"] as Record<string, unknown>;
+    const storyProperties = story["properties"] as Record<string, unknown>;
+    const fallback = storyProperties["fallback"] as Record<string, unknown>;
+    const fallbackProperties = fallback["properties"] as Record<
+      string,
+      unknown
+    >;
+    const actions = fallbackProperties["actions"] as Record<string, unknown>;
+    const items = actions["items"] as Record<string, unknown>;
+    const variants = items["oneOf"] as Record<string, unknown>[];
+    const permission = variants.find((variant) => {
+      const properties = variant["properties"] as Record<string, unknown>;
+      const kind = properties["kind"] as Record<string, unknown>;
+      return (kind["enum"] as unknown[]).includes("permission-request");
+    });
+
+    expect(permission).toMatchObject({
+      additionalProperties: false,
+      required: ["kind", "id", "action", "resource"],
+    });
+    const properties = permission?.["properties"] as Record<string, unknown>;
+    expect(properties["action"]).toMatchObject({
+      type: "string",
+      minLength: 1,
+      maxLength: 240,
+    });
+    expect(properties["resource"]).toMatchObject({
+      type: "string",
+      minLength: 1,
+      maxLength: 240,
+    });
+  });
+
   it("closes every object, so a typo is a rejection rather than a shrug", () => {
     function walk(node: unknown, path: string): void {
       if (typeof node !== "object" || node === null) return;

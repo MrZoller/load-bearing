@@ -6,16 +6,25 @@ import { stampEvent } from "../events/log.js";
 import { readString, requirePayload } from "../events/payload.js";
 import type { EventPayload } from "../events/payload.js";
 import type { EngineEvent } from "../events/state.js";
-import type { Belief, MindSlice } from "./types.js";
+import type {
+  Belief,
+  ExactCapability,
+  MindSlice,
+  PermissionDecision,
+} from "./types.js";
 import {
   compactBeliefs,
   createMindSlice,
   isPermissionDecision,
   recordPermissionDecision,
+  requestPermission,
+  resolvePermission,
   setBelief,
   validateBelief,
   validateCapability,
   validateMindSlice,
+  validatePendingPermissionRequest,
+  validatePermissionRequestId,
 } from "./mind.js";
 
 function payload(
@@ -57,6 +66,26 @@ export function createMindCompactEvent(
   );
 }
 
+export function createMindPermissionRequestedEvent(
+  id: string,
+  capability: ExactCapability,
+): EngineEvent {
+  return stampEvent(
+    { type: "mind.permission-requested", payload: { id, capability } },
+    "mind permission request",
+  );
+}
+
+export function createMindPermissionResolvedEvent(
+  id: string,
+  decision: PermissionDecision,
+): EngineEvent {
+  return stampEvent(
+    { type: "mind.permission-resolved", payload: { id, decision } },
+    "mind permission resolve",
+  );
+}
+
 export const MIND_MODULE = defineEventModule<MindSlice>({
   namespace: "mind",
   description:
@@ -85,6 +114,47 @@ export const MIND_MODULE = defineEventModule<MindSlice>({
             context.clock.timestamp(),
           ),
           summary: `decision=${decision}`,
+        };
+      },
+    },
+    "mind.permission-requested": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["id", "capability"]);
+        const request = validatePendingPermissionRequest(
+          {
+            id: readString(data, "id", context.where),
+            capability: data["capability"],
+          },
+          `${context.where}: request`,
+        );
+        return {
+          slice: requestPermission(slice, request),
+          summary: `id=${request.id}`,
+        };
+      },
+    },
+    "mind.permission-resolved": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["id", "decision"]);
+        const id = validatePermissionRequestId(
+          readString(data, "id", context.where),
+          `${context.where}: id`,
+        );
+        const decision = readString(data, "decision", context.where);
+        if (!isPermissionDecision(decision))
+          throw new Error(
+            `${context.where}: decision must be grant, deny or always-allow`,
+          );
+        return {
+          slice: resolvePermission(
+            slice,
+            id,
+            decision,
+            context.clock.timestamp(),
+          ),
+          summary: `id=${id} decision=${decision}`,
         };
       },
     },

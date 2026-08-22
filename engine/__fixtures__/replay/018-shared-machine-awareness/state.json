@@ -270,6 +270,7 @@
           "summary": "The blueprint marker was removed; its absence is the only retained fact."
         }
       ],
+      "pendingPermission": null,
       "permissions": []
     },
     "probe": {

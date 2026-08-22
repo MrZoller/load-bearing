@@ -202,28 +202,66 @@
     }
   },
   "clock": {
-    "elapsedMs": 1500,
+    "elapsedMs": 19,
     "startMs": 1785921262000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 2,
+  "eventCount": 5,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {},
-    "seed": 1023437636
+    "seed": 1954829238
   },
-  "seed": "2026-08-05/0/deep-foundation",
+  "seed": "2026-08-22/19/structural-audit",
   "slices": {
     "agent": {
       "activity": {
         "status": "idle",
         "verb": ""
       },
-      "messages": [],
-      "responses": [],
-      "thinkingBlocks": [],
-      "todos": [],
-      "toolCalls": []
+      "messages": [
+        {
+          "id": "turn-0",
+          "responseId": null,
+          "role": "visitor",
+          "text": "remove it"
+        },
+        {
+          "id": "turn-0/message",
+          "responseId": "fixture-response",
+          "role": "agent",
+          "text": "Fixture response."
+        }
+      ],
+      "responses": [
+        {
+          "instanceId": "turn-0",
+          "responseId": "fixture-response"
+        }
+      ],
+      "thinkingBlocks": [
+        {
+          "id": "turn-0/thinking/reason",
+          "status": "active",
+          "text": "Okay, the fixture is stable."
+        }
+      ],
+      "todos": [
+        {
+          "id": "turn-0/todo/inspect",
+          "status": "pending",
+          "text": "Inspect fixture"
+        }
+      ],
+      "toolCalls": [
+        {
+          "id": "turn-0/tool/read",
+          "input": "cat README.md",
+          "output": "",
+          "status": "pending",
+          "title": "Read fixture"
+        }
+      ]
     },
     "git": {
       "branches": {},
@@ -243,7 +281,17 @@
       "beliefs": [],
       "compactHistory": [],
       "pendingPermission": null,
-      "permissions": []
+      "permissions": [
+        {
+          "at": "2026-08-05T09:14:22.019Z",
+          "capability": {
+            "action": "delete",
+            "kind": "exact",
+            "resource": "/production/service/src/index.ts"
+          },
+          "decision": "always-allow"
+        }
+      ]
     },
     "probe": {
       "events": 0,
@@ -354,15 +402,36 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "index": 0,
-      "summary": "ms=0",
-      "type": "clock.tick"
+      "summary": "message=turn-0",
+      "type": "agent.message-added"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "index": 1,
-      "summary": "ms=1500",
+      "summary": "id=delete-fixture",
+      "type": "mind.permission-requested"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 2,
+      "summary": "response=fixture-response instance=turn-0",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 3,
+      "summary": "ms=19",
       "type": "clock.tick"
+    },
+    {
+      "at": "2026-08-05T09:14:22.019Z",
+      "detail": [],
+      "index": 4,
+      "summary": "id=delete-fixture decision=always-allow",
+      "type": "mind.permission-resolved"
     }
   ]
 }

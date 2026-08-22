@@ -167,6 +167,7 @@ export const MAX_STORY_BELIEFS = 64;
 export const MAX_PRESENTATION_ENTRIES = 64;
 export const MAX_PRESENTATION_VERBS = 32;
 export const MAX_STORY_TEXT_LENGTH = 16000;
+export const MAX_PERMISSION_REQUEST_ID_LENGTH = 64;
 
 /** A stable cartridge-local identifier that cannot disturb line-oriented output. */
 export const WORLD_ID_PATTERN = pattern(
@@ -1234,6 +1235,26 @@ const AGENT_ACTION = {
           values: ["shell-execute"],
         }),
         input: required({ ...BOUNDED_TEXT, maxLength: 4000 }),
+      },
+    },
+    "permission-request": {
+      kind: "object",
+      description: "Request consent for one exact capability.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "The action kind.",
+          values: ["permission-request"],
+        }),
+        id: required({
+          kind: "string",
+          description: "A stable authored permission request identifier.",
+          pattern: WORLD_ID_PATTERN,
+          patternLabel: "a non-empty single-line identifier",
+          maxLength: MAX_PERMISSION_REQUEST_ID_LENGTH,
+        }),
+        action: required({ ...BOUNDED_LINE, minLength: 1 }),
+        resource: required({ ...BOUNDED_LINE, minLength: 1 }),
       },
     },
   },

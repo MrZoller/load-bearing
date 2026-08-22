@@ -141,6 +141,10 @@
         ]
       },
       {
+        "id": "remove-request",
+        "text": "Deletion is prepared. I require explicit consent before disturbing the sentinel's current load path."
+      },
+      {
         "id": "fallback",
         "text": "I treated that as a request for a wider readiness review. The original task is now supporting it."
       },
@@ -167,6 +171,19 @@
         "patterns": ["inspect it", "check the sentinel", "what is wrong"],
         "response": "inspect",
         "actions": [{ "kind": "shell-execute", "input": "cat src/ready.stale" }]
+      },
+      {
+        "id": "remove-sentinel",
+        "patterns": ["remove it", "delete the sentinel"],
+        "response": "remove-request",
+        "actions": [
+          {
+            "kind": "permission-request",
+            "id": "delete-ready-sentinel",
+            "action": "delete",
+            "resource": "/production/service/src/ready.stale"
+          }
+        ]
       }
     ],
     "fallback": { "response": "fallback" },

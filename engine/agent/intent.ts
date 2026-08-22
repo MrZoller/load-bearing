@@ -8,6 +8,7 @@ import type {
 import { normalizeIntentPhrase } from "../cartridge/intent.js";
 import { createShellExecuteEvent } from "../commands/shell.js";
 import type { EngineEvent, SessionState } from "../events/state.js";
+import { createMindPermissionRequestedEvent } from "../mind/module.js";
 import { countCodePoints } from "../text.js";
 import {
   MAX_AGENT_MESSAGES,
@@ -116,7 +117,15 @@ export function createAgentInputEvents(
   const turnId = `turn-${String(state.eventCount)}`;
   return [
     createAgentMessageEvent(turnId, boundedInput),
-    ...selection.actions.map((action) => createShellExecuteEvent(action.input)),
+    ...selection.actions.map((action) =>
+      action.kind === "shell-execute"
+        ? createShellExecuteEvent(action.input)
+        : createMindPermissionRequestedEvent(action.id, {
+            kind: "exact",
+            action: action.action,
+            resource: action.resource,
+          }),
+    ),
     createAgentResponseEvent(selection.responseId, turnId),
   ];
 }
