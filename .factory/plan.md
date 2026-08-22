@@ -59,7 +59,7 @@ and runtime model calls are deliberately excluded.
   - acceptance: agent activity events select verbs from authored archetype-by-stage pools through a dedicated stable named stream and record the choice; the runtime spinner shows the selected verb plus timer, token count, and Escape guidance while wall time only interpolates presentation; reduced motion exposes the same text without animation, and tests prove unrelated streams, frame timing, and motion preference cannot alter replay state (criteria 9)
   - deps: T16, T21
   - pr: 46
-- [ ] T23 (standard) — Slash commands, autocomplete, and model selector
+- [~] T23 (standard) — Slash commands, autocomplete, and model selector
   - acceptance: one typed slash-command registry implements and accurately describes `/help`, `/model`, `/compact`, `/cost`, and `/exit`; commands dispatch terminal, mind, and agent events or report engine metrics as appropriate; the semantic model selector and slash autocomplete are fully keyboard-operable, model and compact state survive view switches, and focused unit/interaction tests cover discovery, execution, cancellation, and focus restoration (criterion 6)
   - deps: T15, T16, T18, T21
 - [ ] T24 (standard) — Terminal histories, completion, and core controls
