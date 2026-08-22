@@ -1,11 +1,18 @@
-import { bootstrap, readAgentSlice, step } from "../../engine/index.js";
+import {
+  bootstrap,
+  readAgentMessageArtifacts,
+  readAgentSlice,
+  step,
+} from "../../engine/index.js";
 import type {
   AgentMessage,
+  AgentMessageArtifacts,
   EngineEvent,
   LoadedCartridge,
   TranscriptEntry,
 } from "../../engine/index.js";
 import type { RuntimeSessionSnapshot } from "../session.js";
+import { renderAgentArtifacts } from "../components/artifacts.js";
 
 function paragraph(
   document: Document,
@@ -108,6 +115,7 @@ function renderShellResult(
 function renderMessage(
   document: Document,
   message: AgentMessage,
+  messageArtifacts?: AgentMessageArtifacts,
 ): HTMLLIElement {
   const item = document.createElement("li");
   item.className = `transcript__entry transcript__entry--${message.role}`;
@@ -118,6 +126,10 @@ function renderMessage(
       message.text,
     ),
   );
+  if (messageArtifacts !== undefined) {
+    const artifacts = renderAgentArtifacts(document, messageArtifacts);
+    if (artifacts !== null) item.append(artifacts);
+  }
   return item;
 }
 
@@ -192,7 +204,13 @@ export function renderTerminalTranscript(
     if (message === undefined) {
       throw new Error("A replayed agent message is missing.");
     }
-    entries.push(renderMessage(document, message));
+    entries.push(
+      renderMessage(
+        document,
+        message,
+        readAgentMessageArtifacts(snapshot.state, message.id),
+      ),
+    );
     messageCount += 1;
   }
 

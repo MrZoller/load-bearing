@@ -8,6 +8,7 @@ import { loadCartridgeFixture } from "../testing/fixtures.js";
 import {
   MAX_AGENT_MESSAGES,
   MAX_AGENT_TEXT_LENGTH,
+  readAgentMessageArtifacts,
   readAgentSlice,
   recordAuthoredResponse,
   validateAgentSlice,
@@ -23,6 +24,7 @@ import {
   createAgentToolCallAddedEvent,
   createAgentToolCallUpdatedEvent,
 } from "./module.js";
+import { createTerminalModeEvent } from "../terminal/module.js";
 
 function cartridge() {
   const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
@@ -93,6 +95,59 @@ describe("agent replay state", () => {
     expect(slice.responses).toEqual([
       { instanceId: "turn-one", responseId: "authored" },
     ]);
+  });
+
+  it("groups only an authored message's artifacts and leaves visitor and manual work ungrouped", () => {
+    const state = fold([
+      createAgentMessageEvent("visitor-one", "Inspect it."),
+      createAgentToolCallAddedEvent({
+        id: "manual-tool",
+        title: "Manual tool",
+        input: "status",
+        output: "ok",
+        status: "succeeded",
+      }),
+      createAgentResponseEvent("authored", "turn-one"),
+    ]);
+
+    expect(readAgentMessageArtifacts(state, "turn-one/message")).toEqual({
+      toolCalls: [
+        expect.objectContaining({
+          id: "turn-one/tool/read",
+          title: "Read file",
+        }),
+      ],
+      thinkingBlocks: [
+        expect.objectContaining({ id: "turn-one/thinking/private" }),
+      ],
+      todos: [expect.objectContaining({ id: "turn-one/todo/inspect" })],
+    });
+    expect(readAgentMessageArtifacts(state, "visitor-one")).toEqual({
+      toolCalls: [],
+      thinkingBlocks: [],
+      todos: [],
+    });
+    expect(() => readAgentMessageArtifacts(state, "missing-message")).toThrow(
+      /unknown message/,
+    );
+  });
+
+  it("retains authored artifact updates while the replayed terminal changes modes", () => {
+    const state = fold([
+      createAgentResponseEvent("authored", "turn-one"),
+      createTerminalModeEvent("tui"),
+      createAgentToolCallUpdatedEvent("turn-one/tool/read", "running", ""),
+      createTerminalModeEvent("bash"),
+      createAgentToolCallUpdatedEvent("turn-one/tool/read", "succeeded", "ok"),
+      createAgentThinkingUpdatedEvent("turn-one/thinking/private", "complete"),
+      createAgentTodoUpdatedEvent("turn-one/todo/inspect", "completed"),
+    ]);
+
+    expect(readAgentMessageArtifacts(state, "turn-one/message")).toMatchObject({
+      toolCalls: [{ status: "succeeded", output: "ok" }],
+      thinkingBlocks: [{ status: "complete" }],
+      todos: [{ status: "completed" }],
+    });
   });
 
   it("folds every transition immutably and enforces semantic status progress", () => {

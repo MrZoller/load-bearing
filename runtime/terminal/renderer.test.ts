@@ -9,22 +9,33 @@ import { createRuntimeSession } from "../session.js";
 import { renderTerminalTranscript } from "./renderer.js";
 
 interface FakeElement {
+  readonly tagName: string;
   className: string;
   textContent: string;
   readonly children: FakeElement[];
+  readonly dataset: Record<string, string>;
+  readonly attributes: ReadonlyMap<string, string>;
   append(...children: FakeElement[]): void;
+  setAttribute(name: string, value: string): void;
 }
 
 function fakeDocument(): Document {
   return {
-    createElement: () => {
+    createElement: (tagName: string) => {
       const children: FakeElement[] = [];
+      const attributes = new Map<string, string>();
       return {
+        tagName,
         className: "",
         textContent: "",
         children,
+        dataset: {},
+        attributes,
         append(...next: FakeElement[]) {
           children.push(...next);
+        },
+        setAttribute(name: string, value: string) {
+          attributes.set(name, value);
         },
       } as unknown as HTMLElement;
     },
@@ -83,6 +94,20 @@ describe("renderTerminalTranscript", () => {
         "remove me",
       ]),
     );
+    const agentEntry = entries.find(
+      (entry) =>
+        entry.className === "transcript__entry transcript__entry--agent" &&
+        entry.children[0]?.textContent ===
+          "I will inspect the sentinel before changing the forces currently passing through it.",
+    );
+    expect(agentEntry?.children[1]).toMatchObject({
+      tagName: "section",
+      className: "artifacts",
+    });
+    expect(agentEntry?.children[1]?.children[0]?.children[0]).toMatchObject({
+      tagName: "summary",
+      textContent: "Tool: Read src/ready.stale — succeeded",
+    });
   });
 
   it("renders a shell command before its expanded agent response", () => {

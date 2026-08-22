@@ -325,6 +325,7 @@ export {
   addAgentTodo,
   addAgentToolCall,
   createAgentSlice,
+  readAgentMessageArtifacts,
   readAgentSlice,
   recordAuthoredResponse,
   setAgentActivity,
@@ -341,6 +342,7 @@ export {
 export type {
   AgentActivity,
   AgentMessage,
+  AgentMessageArtifacts,
   AgentMessageRole,
   AgentSlice,
   AgentThinkingBlock,

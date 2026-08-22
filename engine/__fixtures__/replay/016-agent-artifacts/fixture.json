@@ -15,12 +15,22 @@
       "version": 0
     },
     {
+      "type": "terminal.mode-set",
+      "payload": { "mode": "tui" },
+      "version": 0
+    },
+    {
       "type": "agent.tool-call-updated",
       "payload": {
         "id": "turn-one/tool/read",
         "status": "running",
         "output": ""
       },
+      "version": 0
+    },
+    {
+      "type": "terminal.mode-set",
+      "payload": { "mode": "bash" },
       "version": 0
     },
     {

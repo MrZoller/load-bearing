@@ -208,7 +208,7 @@
     "startMs": 1785921262000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 8,
+  "eventCount": 10,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {},
@@ -408,41 +408,55 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "index": 2,
+      "summary": "mode=tui",
+      "type": "terminal.mode-set"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 3,
       "summary": "tool=turn-one/tool/read status=running",
       "type": "agent.tool-call-updated"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
-      "index": 3,
+      "index": 4,
+      "summary": "mode=bash",
+      "type": "terminal.mode-set"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 5,
       "summary": "tool=turn-one/tool/read status=succeeded",
       "type": "agent.tool-call-updated"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
-      "index": 4,
+      "index": 6,
       "summary": "thinking=turn-one/thinking/reason status=complete",
       "type": "agent.thinking-updated"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
-      "index": 5,
+      "index": 7,
       "summary": "todo=turn-one/todo/inspect status=in-progress",
       "type": "agent.todo-updated"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
-      "index": 6,
+      "index": 8,
       "summary": "todo=turn-one/todo/inspect status=completed",
       "type": "agent.todo-updated"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
-      "index": 7,
+      "index": 9,
       "summary": "activity=working",
       "type": "agent.activity-set"
     }

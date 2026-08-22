@@ -8,6 +8,7 @@ import { countCodePoints } from "../text.js";
 import type {
   AgentActivity,
   AgentMessage,
+  AgentMessageArtifacts,
   AgentSlice,
   AgentThinkingBlock,
   AgentTodo,
@@ -429,6 +430,41 @@ export function readAgentSlice(state: SessionState): AgentSlice {
     readSlice(state, "agent"),
     "session state: slices.agent",
   );
+}
+
+/**
+ * Read the artifacts instantiated beside one message. Artifact ids encode this
+ * relationship for replay, but callers should not duplicate that encoding.
+ */
+export function readAgentMessageArtifacts(
+  state: SessionState,
+  messageId: string,
+): AgentMessageArtifacts {
+  const slice = readAgentSlice(state);
+  const checkedMessageId = artifactId(messageId, "agent: artifact message id");
+  if (!slice.messages.some((value) => value.id === checkedMessageId))
+    throw new Error(
+      `agent: unknown message ${JSON.stringify(checkedMessageId)}`,
+    );
+  const response = slice.responses.find(
+    (value) =>
+      instanceArtifactId(value.instanceId, "message") === checkedMessageId,
+  );
+  if (response === undefined)
+    return deepFreeze({ toolCalls: [], thinkingBlocks: [], todos: [] });
+  const toolPrefix = instanceArtifactId(response.instanceId, "tool") + "/";
+  const thinkingPrefix =
+    instanceArtifactId(response.instanceId, "thinking") + "/";
+  const todoPrefix = instanceArtifactId(response.instanceId, "todo") + "/";
+  return deepFreeze({
+    toolCalls: slice.toolCalls.filter((value) =>
+      value.id.startsWith(toolPrefix),
+    ),
+    thinkingBlocks: slice.thinkingBlocks.filter((value) =>
+      value.id.startsWith(thinkingPrefix),
+    ),
+    todos: slice.todos.filter((value) => value.id.startsWith(todoPrefix)),
+  });
 }
 
 function append<T>(

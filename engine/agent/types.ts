@@ -41,6 +41,13 @@ export interface AuthoredResponseRecord {
   readonly responseId: string;
 }
 
+/** Artifacts owned by one replayed agent message, grouped without exposing id parsing. */
+export interface AgentMessageArtifacts {
+  readonly toolCalls: readonly AgentToolCall[];
+  readonly thinkingBlocks: readonly AgentThinkingBlock[];
+  readonly todos: readonly AgentTodo[];
+}
+
 export interface AgentSlice {
   readonly messages: readonly AgentMessage[];
   readonly toolCalls: readonly AgentToolCall[];
