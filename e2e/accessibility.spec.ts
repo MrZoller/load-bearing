@@ -27,6 +27,7 @@ test("keeps the stable terminal surface semantic, named, and visibly focused", a
           ".transcript-search",
           ".transcript",
           ".terminal__view",
+          ".mobile-keys",
           ".terminal__status",
         ].map((selector) => {
           const child = element.querySelector(selector);
@@ -34,7 +35,7 @@ test("keeps the stable terminal surface semantic, named, and visibly focused", a
         }),
       ),
     )
-    .toEqual([1, 2, 3, 6, 7]);
+    .toEqual([1, 2, 3, 6, 7, 8]);
 
   await expect(
     transcript.locator('[aria-label^="Shell command:"]').first(),

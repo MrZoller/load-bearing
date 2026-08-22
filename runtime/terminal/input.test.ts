@@ -27,6 +27,8 @@ class FakeInput {
   selectionStart: number | null = 0;
   selectionEnd: number | null = 0;
   selectedDocumentText = "";
+  isConnected = true;
+  focusCalls = 0;
   readonly ownerDocument = {
     getSelection: () => ({ toString: () => this.selectedDocumentText }),
   };
@@ -39,6 +41,10 @@ class FakeInput {
   setSelectionRange(start: number, end: number): void {
     this.selectionStart = start;
     this.selectionEnd = end;
+  }
+
+  focus(): void {
+    this.focusCalls += 1;
   }
 
   dispatch(type: string, event = new FakeEvent()): FakeEvent {
@@ -198,5 +204,136 @@ describe("createTerminalInputController", () => {
     expect(bashEntries).toBe(1);
     expect(tui.input.value).toBe("");
     expect(submissions).toEqual([]);
+  });
+
+  it("inserts virtual text at the selection, resets history, and restores prompt focus", () => {
+    let refreshes = 0;
+    let activity = 0;
+    const controller = createTerminalInputController({
+      clearTranscript() {},
+      enterBash() {},
+      onActivity() {
+        activity += 1;
+      },
+    });
+    const form = new FakeForm();
+    const input = new FakeInput();
+    controller.bind({
+      mode: "tui",
+      form: form as unknown as HTMLFormElement,
+      input: input as unknown as HTMLInputElement,
+      state: STATE,
+      submit() {},
+      completionPresentation: {
+        isOpen: () => false,
+        move() {},
+        accept: () => false,
+        close: () => false,
+        refresh() {
+          refreshes += 1;
+        },
+      },
+    });
+
+    input.value = "remember";
+    input.setSelectionRange(8, 8);
+    form.submit();
+    input.value = "abef";
+    input.setSelectionRange(2, 2);
+    controller.insertText("cd");
+    expect(input.value).toBe("abcdef");
+    expect([input.selectionStart, input.selectionEnd]).toEqual([4, 4]);
+
+    input.setSelectionRange(2, 4);
+    controller.insertText("!");
+    expect(input.value).toBe("ab!ef");
+    expect([input.selectionStart, input.selectionEnd]).toEqual([3, 3]);
+    controller.pressKey("ArrowUp");
+    expect(input.value).toBe("remember");
+    expect(refreshes).toBe(2);
+    expect(input.focusCalls).toBe(3);
+    expect(activity).toBe(4);
+  });
+
+  it("routes virtual Tab and history arrows through the hardware completion paths", () => {
+    let open = true;
+    const moves: number[] = [];
+    let accepts = 0;
+    const controller = createTerminalInputController({
+      clearTranscript() {},
+      enterBash() {},
+    });
+    const form = new FakeForm();
+    const input = new FakeInput();
+    controller.bind({
+      mode: "tui",
+      form: form as unknown as HTMLFormElement,
+      input: input as unknown as HTMLInputElement,
+      state: STATE,
+      submit() {},
+      completionPresentation: {
+        isOpen: () => open,
+        move(direction) {
+          moves.push(direction);
+        },
+        accept() {
+          accepts += 1;
+          return true;
+        },
+        close() {
+          open = false;
+          return true;
+        },
+        refresh() {},
+      },
+    });
+
+    controller.pressKey("ArrowDown");
+    controller.pressKey("Tab");
+    expect(moves).toEqual([1]);
+    expect(accepts).toBe(1);
+
+    open = false;
+    input.value = "inspect it";
+    input.setSelectionRange(10, 10);
+    form.submit();
+    input.value = "draft";
+    input.setSelectionRange(5, 5);
+    controller.pressKey("ArrowUp");
+    expect(input.value).toBe("inspect it");
+    controller.pressKey("ArrowDown");
+    expect(input.value).toBe("draft");
+  });
+
+  it("moves a virtual caret without replacing selections and ignores cleared or stale bindings", () => {
+    const controller = createTerminalInputController({
+      clearTranscript() {},
+      enterBash() {},
+    });
+    const tui = bind(controller, "tui", () => {});
+
+    tui.input.value = "abcdef";
+    tui.input.setSelectionRange(1, 4);
+    controller.pressKey("ArrowLeft");
+    expect([tui.input.selectionStart, tui.input.selectionEnd]).toEqual([1, 1]);
+    tui.input.setSelectionRange(1, 4);
+    controller.pressKey("ArrowRight");
+    expect([tui.input.selectionStart, tui.input.selectionEnd]).toEqual([4, 4]);
+    controller.pressKey("ArrowRight");
+    expect([tui.input.selectionStart, tui.input.selectionEnd]).toEqual([5, 5]);
+
+    controller.clear();
+    controller.insertText("!");
+    controller.pressKey("ArrowLeft");
+    expect(tui.input.value).toBe("abcdef");
+    expect(tui.input.focusCalls).toBe(3);
+
+    const stale = bind(controller, "tui", () => {});
+    stale.input.value = "stale";
+    stale.input.isConnected = false;
+    controller.insertText("/");
+    controller.pressKey("ArrowLeft");
+    expect(stale.input.value).toBe("stale");
+    expect(stale.input.focusCalls).toBe(0);
   });
 });
