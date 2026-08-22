@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T16",
-  "branch": "factory/t16-agent-cartridge-contract",
-  "pr": 40,
-  "hold": true,
-  "updated": "2026-08-22T05:11:51Z"
+  "current_task": null,
+  "branch": null,
+  "pr": null,
+  "hold": false,
+  "updated": "2026-08-22T05:55:40Z"
 }
