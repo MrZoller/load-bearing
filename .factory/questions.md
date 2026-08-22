@@ -256,3 +256,20 @@ Pinned details:
 - Floors may be RAISED later without a question (ratcheting up is safe);
   lowering one is a design question and stops the line.
 - Functions stay at 100% per file — already achieved everywhere.
+
+## Q8 (task T25, open) — Should T25 receive another focused fix cycle after its re-panel block?
+
+Context: The initial panel confirmed and fixed a Linux Ctrl+C transcript-copy
+bug and a degenerate scroll-anchor test. The required one-time re-panel then
+confirmed that broadening the shared `hasSelection` helper also regressed Tab
+completion whenever document text remains selected; the verifier classified
+that as blocking because it reopens native focus traversal fixed in T24. The
+review rubric says a task still blocked after its one re-panel must be parked
+rather than fixed again in the same cycle. Parked branch:
+`factory/t25-transcript-search-scrollback`.
+Options considered: A — resume T25 in a fresh cycle, split input-only selection
+from document selection so only Ctrl+C consults the latter, add the focused Tab
+regression test, run verification, and panel again; B — replan or defer T25,
+which also blocks T28 and T29. Recommendation: A; the defect and minimal fix are
+well bounded, but proceeding now would violate the panel termination rule.
+**A:**
