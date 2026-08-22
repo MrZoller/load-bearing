@@ -67,14 +67,15 @@ and runtime model calls are deliberately excluded.
   - acceptance: `runtime/terminal/{history,completion,input}.ts` provides mode-appropriate TUI and Bash histories, slash/command/path tab completion, arrows, selection-safe copy/paste, `Ctrl+C`, `Ctrl+L`, `Ctrl+D`, and Escape behavior through one input controller; presentation-only clear/cancel operations do not rewrite engine transcript or event log; automated interaction tests cover normal and empty-input cases (criterion 10)
   - deps: T15, T23
   - pr: 48
-- [~] T25 (standard) — Transcript search, scrollback, and anchoring
+- [x] T25 (standard) — Transcript search, scrollback, and anchoring
   - acceptance: `runtime/terminal/{search,scroll}.ts` provides keyboard transcript search, bounded scrollback, focus restoration, and new-output anchoring that follows only when already at the bottom and preserves the reader's place otherwise; an accessible new-output affordance returns to the latest entry; Playwright covers search navigation, copied text, scrolled-up output, and resumed anchoring (criterion 10)
   - deps: T15
+  - pr: 50
 - [x] T26 (standard) — Diegetic onboarding without shell spoilers
   - acceptance: the demo cartridge authors rotating placeholders, accurate in-character help, autocomplete copy, and one idle nudge; runtime timers may reveal preselected presentation or dispatch the explicit replayable nudge event but never choose content from wall time; interaction tests prove each teaching surface appears, only one idle nudge records, and no tooltip, tutorial overlay/modal, post-cold-open shell hint, or hidden-depth advertisement exists (criterion 11)
   - deps: T16, T17, T23
   - pr: 49
-- [ ] T27 (standard) — Semantic accessibility, reduced motion, and visual baseline
+- [~] T27 (standard) — Semantic accessibility, reduced motion, and visual baseline
   - acceptance: terminal/components/styles use reading-order semantic DOM, labeled controls, visible focus, textual equivalents, and a dedicated polite live region that announces only new meaningful output; reduced motion preserves every status and cold-open fact; the restrained original terminal treatment uses structural/I-beam accents without lab names, model trademarks, copied colors, or exact trade dress; automated role/name/focus/motion checks cover the stable component surface (criteria 13, 16; approved decision 3A)
   - deps: T15, T19, T20, T21, T22
 - [ ] T28 (standard) — Responsive terminal and mobile key strip
@@ -133,3 +134,6 @@ and runtime model calls are deliberately excluded.
   - PR #48: compute completion prefixes by Unicode code point so divergent supplementary-code-point VFS paths cannot insert an unpaired surrogate
   - PR #48: seed Bash recall with the visible cold-open resume command, ahead of any authored shell history
   - PR #49: preflight the idle-nudge authored response at bounded agent capacity and record the existing capacity fallback, with regression coverage
+  - PR #50: count transcript-search shortcut and input interactions as activity so an authored idle nudge cannot rerender an active search
+  - PR #50: use locale-independent transcript-search case folding so English queries remain matchable in Turkish and Azerbaijani locales
+  - PR #50: restore focus to the rendered active-view surface when search remains visible but its input no longer owns focus; add a regression assertion

@@ -42,7 +42,6 @@ export function renderAgentActivity(
   const element = document.createElement("p");
   element.className = "agent-activity";
   element.dataset.agentActivity = "true";
-  element.setAttribute("role", "status");
   element.setAttribute("aria-label", "Agent activity");
   element.textContent = text;
   return element;

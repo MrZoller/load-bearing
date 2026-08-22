@@ -132,5 +132,32 @@ describe("renderTerminalTranscript", () => {
     expect(entries[2]?.children[0]?.textContent).toContain(
       "temporary readiness sentinel",
     );
+    expect(entries[1]?.children[0]?.attributes.get("aria-label")).toBe(
+      "Shell command: loadbearing --resume incident-000",
+    );
+    expect(entries[2]?.children[0]?.attributes.get("aria-label")).toContain(
+      "Agent: ",
+    );
+    expect(entries[2]?.dataset["announcement"]).toBe(
+      "Agent: I found the temporary readiness sentinel. Its age suggests removal now requires a structural survey.",
+    );
+  });
+
+  it("labels shell streams textually and exposes only output for announcement", () => {
+    const session = createRuntimeSession(cartridgeDocument);
+    const entries = renderTerminalTranscript(
+      fakeDocument(),
+      session.cartridge,
+      session.dispatch(createShellExecuteEvent("pwd")),
+    ) as unknown as FakeElement[];
+    const exchange = entries[1];
+
+    expect(exchange?.children[1]?.attributes.get("aria-label")).toBe(
+      "Shell output: /production/service",
+    );
+    expect(exchange?.dataset["announcement"]).toBe(
+      "Shell output: /production/service",
+    );
+    expect(exchange?.dataset["announcement"]).not.toContain("pwd");
   });
 });
