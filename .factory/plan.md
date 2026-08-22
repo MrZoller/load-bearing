@@ -47,7 +47,7 @@ and runtime model calls are deliberately excluded.
   - acceptance: `engine/mind/` adds bounded pending-request identity and request/resolve events without breaking existing direct decisions; grant, deny, and always-allow atomically clear the prompt and append the correct simulated-time ledger entry, with standing grants still exact-capability matches; `runtime/components/permission.ts` exposes labeled keyboard controls and restores prompt focus; unit, snapshot, replay, and interaction tests cover all choices (criteria 7)
   - deps: T15, T16
   - pr: 43
-- [ ] T20 (standard) — Replayable tool, thinking, and todo elements
+- [~] T20 (standard) — Replayable tool, thinking, and todo elements
   - acceptance: typed events in `engine/agent/` create and update bounded tool calls, expandable thinking blocks, and todos without storing markup or DOM state; `runtime/components/artifacts.ts` renders each as a distinct semantic element with textual state and keyboard-operable disclosure; replay and interaction tests prove updates survive mode switches and restore from the event log (criteria 7, 13)
   - deps: T15, T16
 - [ ] T21 (standard) — Engine-derived metrics and status bar

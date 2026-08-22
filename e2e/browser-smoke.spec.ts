@@ -136,6 +136,51 @@ test("renders recognized and fallback TUI turns and dispatches ! shell work", as
   expect(pageErrors).toEqual([]);
 });
 
+test("opens artifact disclosures with the keyboard and retains replayed work across Bash resume", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const transcript = page.getByRole("list", { name: "Session transcript" });
+  const agentPrompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const bashPrompt = page.getByRole("textbox", { name: "Bash command" });
+  const thinking = transcript.locator("details.artifact--thinking").first();
+  const thinkingSummary = thinking.locator("summary");
+
+  // The prompt begins focused. Native summaries are reached by Shift+Tab, not
+  // a pointer action, and Space operates the browser's built-in disclosure.
+  await expect(agentPrompt).toBeFocused();
+  await expect(thinking).not.toHaveAttribute("open", "");
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Shift+Tab");
+  await expect(thinkingSummary).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(thinking).toHaveAttribute("open", "");
+  await expect(thinking).toContainText(
+    "Okay, the requested deletion is simple. The surrounding confidence is not.",
+  );
+
+  // DOM disclosure state is presentation-only, but its replayed text and todo
+  // survive switching to Bash and resuming the same engine event log.
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  await expect(agentPrompt).toBeFocused();
+  await page.keyboard.type("/exit");
+  await page.keyboard.press("Enter");
+  await expect(bashPrompt).toBeFocused();
+  await page.keyboard.type("loadbearing --resume incident-000");
+  await page.keyboard.press("Enter");
+  await expect(agentPrompt).toBeFocused();
+  await expect(
+    transcript.locator("details.artifact--thinking").first(),
+  ).toContainText(
+    "Okay, the requested deletion is simple. The surrounding confidence is not.",
+  );
+  await expect(
+    transcript.getByText("Inspect the sentinel — pending", { exact: true }),
+  ).toHaveText("Inspect the sentinel — pending");
+});
+
 async function resolvePendingPermission(
   page: Page,
   choice: string,

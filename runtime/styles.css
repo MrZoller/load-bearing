@@ -160,6 +160,46 @@ body {
   color: #e69b81;
 }
 
+.artifacts {
+  display: grid;
+  max-width: 52rem;
+  gap: 0.55rem;
+  margin: 0.75rem 0 0 1rem;
+}
+
+.artifact {
+  border-left: 1px solid #454a3d;
+  padding-left: 0.75rem;
+  color: #aeb5a4;
+}
+
+.artifact__summary {
+  width: fit-content;
+  cursor: pointer;
+  color: #d4d9c9;
+}
+
+.artifact__summary:focus-visible {
+  outline: 2px solid #c3cc45;
+  outline-offset: 2px;
+}
+
+.artifact__detail {
+  margin: 0.55rem 0 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font: inherit;
+}
+
+.artifact__todos {
+  margin: 0.55rem 0 0;
+  padding-left: 1.5rem;
+}
+
+.artifact__todo {
+  margin-top: 0.35rem;
+}
+
 .prompt {
   display: grid;
   grid-template-columns: auto 1fr;
