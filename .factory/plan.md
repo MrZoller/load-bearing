@@ -19,7 +19,7 @@ and runtime model calls are deliberately excluded.
 
 ## Tasks
 
-- [R] T13 (major) — Browser runtime walking skeleton
+- [x] T13 (major) — Browser runtime walking skeleton
   - acceptance: `index.html`, `vite.config.ts`, `runtime/session.ts`, `runtime/main.ts`, and terminal styles build a production page that loads a real `content/incidents/phase-1-demo.json` through `loadCartridge`, derives one authoritative state by `appendEvent` + `step`, renders a semantic terminal landmark and engine transcript without direct slice mutation, focuses its prompt, and always shows `loadbearing.cc · Incident #NNN`; pinned Playwright smoke coverage runs the production build; root and engine-only TypeScript programs plus all Phase 0 gates remain green (criteria 1 foundation, 4 foundation, 16, 17)
   - deps: none
   - pr: 37
