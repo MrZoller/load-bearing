@@ -1,4 +1,4 @@
-import { readAgentSlice } from "../../engine/index.js";
+import { bootstrap, readAgentSlice, step } from "../../engine/index.js";
 import type {
   AgentMessage,
   EngineEvent,
@@ -26,20 +26,30 @@ function eventString(event: EngineEvent, field: string, label: string): string {
   return value;
 }
 
-function shellInputs(snapshot: RuntimeSessionSnapshot): readonly string[] {
-  return snapshot.eventLog.flatMap((event) =>
-    event.type === "shell.execute"
-      ? [eventString(event, "input", "shell.execute")]
-      : [],
-  );
-}
-
-function shellResults(
+/**
+ * Associate each shell envelope with the first logged child it expands into.
+ * The envelope itself is intentionally absent from the transcript, so replay
+ * the durable event log to keep its command ahead of response children.
+ */
+function shellInputStarts(
   snapshot: RuntimeSessionSnapshot,
-): readonly TranscriptEntry[] {
-  return snapshot.state.transcript.filter(
-    (entry) => entry.type === "shell.result",
-  );
+): ReadonlyMap<number, string> {
+  let state = bootstrap({
+    cartridge: snapshot.state.cartridge,
+    seed: snapshot.state.seed,
+  });
+  const starts = new Map<number, string>();
+  for (const event of snapshot.eventLog) {
+    const before = state.transcript.length;
+    state = step(state, event);
+    if (event.type === "shell.execute") {
+      if (state.transcript.length === before) {
+        throw new Error("A shell command produced no replayed result.");
+      }
+      starts.set(before, eventString(event, "input", "shell.execute"));
+    }
+  }
+  return starts;
 }
 
 function capacityResponseId(entry: TranscriptEntry): string {
@@ -72,14 +82,18 @@ function renderLogin(
   return item;
 }
 
-function renderExchange(
-  document: Document,
-  input: string,
-  result: TranscriptEntry,
-): HTMLLIElement {
+function renderExchange(document: Document, input: string): HTMLLIElement {
   const item = document.createElement("li");
   item.className = "transcript__entry transcript__entry--exchange";
   item.append(paragraph(document, "transcript__command", input));
+  return item;
+}
+
+function renderShellResult(
+  document: Document,
+  item: HTMLLIElement,
+  result: TranscriptEntry,
+): void {
   for (const output of result.output ?? []) {
     item.append(
       paragraph(
@@ -89,7 +103,6 @@ function renderExchange(
       ),
     );
   }
-  return item;
 }
 
 function renderMessage(
@@ -134,23 +147,29 @@ export function renderTerminalTranscript(
   cartridge: LoadedCartridge,
   snapshot: RuntimeSessionSnapshot,
 ): readonly HTMLLIElement[] {
-  const inputs = shellInputs(snapshot);
-  const resultCount = shellResults(snapshot).length;
-  if (inputs.length !== resultCount) {
-    throw new Error("Shell commands and replayed results are out of step.");
-  }
+  const inputStarts = shellInputStarts(snapshot);
 
   const messages = readAgentSlice(snapshot.state).messages;
   const entries: HTMLLIElement[] = [renderLogin(document, cartridge, snapshot)];
-  let shellIndex = 0;
+  let activeShell: HTMLLIElement | undefined;
   let messageCount = 0;
 
   for (const transcriptEntry of snapshot.state.transcript) {
+    const input = inputStarts.get(transcriptEntry.index);
+    if (input !== undefined) {
+      if (activeShell !== undefined) {
+        throw new Error("Shell commands and replayed results are out of step.");
+      }
+      activeShell = renderExchange(document, input);
+      entries.push(activeShell);
+    }
+
     if (transcriptEntry.type === "shell.result") {
-      const input = inputs[shellIndex];
-      if (input === undefined) throw new Error("A shell input is missing.");
-      entries.push(renderExchange(document, input, transcriptEntry));
-      shellIndex += 1;
+      if (activeShell === undefined) {
+        throw new Error("A shell result has no replayed input.");
+      }
+      renderShellResult(document, activeShell, transcriptEntry);
+      activeShell = undefined;
       continue;
     }
 
@@ -177,7 +196,7 @@ export function renderTerminalTranscript(
     messageCount += 1;
   }
 
-  if (shellIndex !== inputs.length)
+  if (activeShell !== undefined)
     throw new Error("Shell commands and replayed results are out of step.");
   if (messageCount !== messages.length) {
     throw new Error("Agent events and replayed messages are out of step.");
