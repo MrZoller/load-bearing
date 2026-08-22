@@ -29,6 +29,7 @@ import {
 export interface AgentIntentSelection {
   readonly intentId: string | null;
   readonly responseId: string;
+  readonly authorizedResponseId: string;
   readonly actions: readonly CartridgeAgentAction[];
 }
 
@@ -65,12 +66,14 @@ export function selectAgentIntent(
     return {
       intentId: null,
       responseId: cartridge.story.fallback.response,
+      authorizedResponseId: "",
       actions: cartridge.story.fallback.actions,
     };
   }
   return {
     intentId: intent.id,
     responseId: intent.response,
+    authorizedResponseId: intent.authorizedResponse,
     actions: intent.actions,
   };
 }
@@ -112,11 +115,24 @@ export function createAgentInputEvents(
 ): readonly EngineEvent[] {
   const boundedInput = boundAgentInput(input);
   const selection = selectAgentIntent(cartridge, boundedInput);
-  if (!canRecordAuthoredResponse(cartridge, state, selection.responseId, 2)) {
+  const mind = readMindSlice(state);
+  const permissionWasAuthorized = selection.actions.some(
+    (action) =>
+      action.kind === "permission-request" &&
+      hasStandingPermission(mind, {
+        kind: "exact",
+        action: action.action,
+        resource: action.resource,
+      }),
+  );
+  const responseId =
+    permissionWasAuthorized && selection.authorizedResponseId !== ""
+      ? selection.authorizedResponseId
+      : selection.responseId;
+  if (!canRecordAuthoredResponse(cartridge, state, responseId, 2)) {
     return [createAgentCapacityEvent(cartridge.story.fallback.response)];
   }
   const turnId = `turn-${String(state.eventCount)}`;
-  const mind = readMindSlice(state);
   return [
     createAgentMessageEvent(turnId, boundedInput),
     ...selection.actions.flatMap((action) => {
@@ -131,6 +147,6 @@ export function createAgentInputEvents(
         ? []
         : [createMindPermissionRequestedEvent(action.id, capability)];
     }),
-    createAgentResponseEvent(selection.responseId, turnId),
+    createAgentResponseEvent(responseId, turnId),
   ];
 }

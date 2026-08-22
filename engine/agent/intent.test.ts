@@ -33,6 +33,7 @@ describe("authored agent input", () => {
     expect(selectAgentIntent(CARTRIDGE, "  CHECK\tTHE   SENTINEL ")).toEqual({
       intentId: "inspect-sentinel",
       responseId: "inspect",
+      authorizedResponseId: "",
       actions: [{ kind: "shell-execute", input: "cat src/ready.stale" }],
     });
 
@@ -123,11 +124,15 @@ describe("authored agent input", () => {
       ],
     });
 
-    expect(
-      createAgentInputEvents(CARTRIDGE, state, "remove it").map(
-        (event) => event.type,
-      ),
-    ).toEqual(["agent.message-added", "agent.response-recorded"]);
+    expect(createAgentInputEvents(CARTRIDGE, state, "remove it")).toMatchObject(
+      [
+        { type: "agent.message-added" },
+        {
+          type: "agent.response-recorded",
+          payload: { responseId: "remove-authorized" },
+        },
+      ],
+    );
   });
 
   it("bounds oversized visitor text and still records an authored fallback", () => {

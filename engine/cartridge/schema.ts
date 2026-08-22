@@ -1442,7 +1442,7 @@ const STORY = {
       items: {
         kind: "object",
         description:
-          "One intent's bounded match phrases, response and actions.",
+          "One intent's bounded match phrases, response, authorized response and actions.",
         fields: {
           id: required(PHASE_ONE_ID),
           patterns: required({
@@ -1453,6 +1453,9 @@ const STORY = {
             maxItems: 16,
           }),
           response: required(PHASE_ONE_ID),
+          // The empty normalized value means this intent's ordinary response
+          // remains coherent when a standing grant skips its prompt action.
+          authorizedResponse: optional(PHASE_ONE_ID, ""),
           actions: optional(ACTIONS, []),
         },
       },

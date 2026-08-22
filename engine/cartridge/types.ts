@@ -71,6 +71,8 @@ export interface CartridgeIntent {
   readonly id: string;
   readonly patterns: readonly string[];
   readonly response: string;
+  /** Empty unless an exact standing grant needs its own authored response. */
+  readonly authorizedResponse: string;
   readonly actions: readonly CartridgeAgentAction[];
 }
 

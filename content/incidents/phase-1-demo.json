@@ -145,6 +145,10 @@
         "text": "Deletion is prepared. I require explicit consent before disturbing the sentinel's current load path."
       },
       {
+        "id": "remove-authorized",
+        "text": "Standing permission remains on file. I will disturb the sentinel's current load path accordingly."
+      },
+      {
         "id": "fallback",
         "text": "I treated that as a request for a wider readiness review. The original task is now supporting it."
       },
@@ -176,6 +180,7 @@
         "id": "remove-sentinel",
         "patterns": ["remove it", "delete the sentinel"],
         "response": "remove-request",
+        "authorizedResponse": "remove-authorized",
         "actions": [
           {
             "kind": "permission-request",

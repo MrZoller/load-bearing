@@ -1901,7 +1901,7 @@
           "description": "Minimal Phase 1 recognized natural-language intents.",
           "items": {
             "additionalProperties": false,
-            "description": "One intent's bounded match phrases, response and actions.",
+            "description": "One intent's bounded match phrases, response, authorized response and actions.",
             "properties": {
               "actions": {
                 "default": [],
@@ -1976,6 +1976,13 @@
                 },
                 "maxItems": 16,
                 "type": "array"
+              },
+              "authorizedResponse": {
+                "default": "",
+                "description": "A stable lowercase Phase 1 content identifier.",
+                "maxLength": 64,
+                "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                "type": "string"
               },
               "id": {
                 "description": "A stable lowercase Phase 1 content identifier.",

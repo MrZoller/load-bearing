@@ -1303,6 +1303,11 @@ function checkStoryAndPresentation(
         `${JSON.stringify(intent.id)}, already used by /story/intents/${String(first)}`,
       );
     reference(intent.response, `/story/intents/${String(index)}/response`);
+    if (intent.authorizedResponse !== "")
+      reference(
+        intent.authorizedResponse,
+        `/story/intents/${String(index)}/authorizedResponse`,
+      );
     intent.patterns.forEach((value, patternIndex) => {
       const normalized = normalizeIntentPhrase(value);
       const first = patterns.get(normalized);
