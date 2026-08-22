@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T31",
-  "branch": "factory/t31-ending-matrix-skeleton",
-  "pr": 55,
-  "hold": true,
-  "updated": "2026-08-22T22:18:01Z"
+  "current_task": null,
+  "branch": null,
+  "pr": null,
+  "hold": false,
+  "updated": "2026-08-22T22:28:00Z"
 }
