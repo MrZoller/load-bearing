@@ -2,12 +2,14 @@ import {
   createAgentInputEvents,
   createShellExecuteEvent,
   createTerminalModeEvent,
+  readMindSlice,
 } from "../../engine/index.js";
 import type {
   EngineEvent,
   LoadedCartridge,
   SessionState,
 } from "../../engine/index.js";
+import { renderPermission } from "../components/permission.js";
 
 export function createTuiInputEvents(
   cartridge: LoadedCartridge,
@@ -25,7 +27,11 @@ export function renderTuiView(
   cartridge: LoadedCartridge,
   state: SessionState,
   dispatch: (events: readonly EngineEvent[]) => void,
-): HTMLFormElement {
+): HTMLElement {
+  const pending = readMindSlice(state).pendingPermission;
+  if (pending !== null)
+    return renderPermission(document, pending, (event) => dispatch([event]));
+
   const form = document.createElement("form");
   form.className = "prompt prompt--tui";
 
