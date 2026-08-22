@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import cartridgeDocument from "../content/incidents/phase-1-demo.json";
-import { createShellExecuteEvent, reduce } from "../engine/index.js";
+import {
+  createAgentMessageEvent,
+  createAgentResponseEvent,
+  createShellExecuteEvent,
+  reduce,
+} from "../engine/index.js";
 import { createRuntimeSession } from "./session.js";
 
 describe("createRuntimeSession", () => {
@@ -47,5 +52,19 @@ describe("createRuntimeSession", () => {
         events: snapshot.eventLog,
       }),
     ).toEqual(snapshot.state);
+  });
+
+  it("publishes no partial visitor turn when a later event in a batch is rejected", () => {
+    const session = createRuntimeSession(cartridgeDocument);
+    const before = session.current();
+
+    expect(() =>
+      session.dispatchMany([
+        createAgentMessageEvent("turn-0", "inspect it"),
+        createAgentResponseEvent("not-an-authored-response", "turn-0"),
+      ]),
+    ).toThrow(/unknown authored response/);
+
+    expect(session.current()).toEqual(before);
   });
 });

@@ -97,7 +97,8 @@ body {
 
 .transcript__login,
 .transcript__prompt,
-.transcript__command {
+.transcript__command,
+.transcript__message {
   margin: 0;
   white-space: pre-wrap;
 }
@@ -119,6 +120,32 @@ body {
 
 .transcript__command::before {
   content: "$ ";
+}
+
+.transcript__entry--visitor {
+  margin-left: clamp(1rem, 5vw, 4rem);
+}
+
+.transcript__message {
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+
+.transcript__message--visitor {
+  color: #f2f5e8;
+}
+
+.transcript__message--visitor::before {
+  content: "❯ ";
+  color: #c3cc45;
+  font-weight: 700;
+}
+
+.transcript__message--agent {
+  max-width: 52rem;
+  padding-left: 1rem;
+  border-left: 2px solid #788068;
+  color: #d4d9c9;
 }
 
 .transcript__detail,

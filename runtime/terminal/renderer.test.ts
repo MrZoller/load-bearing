@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import cartridgeDocument from "../../content/incidents/phase-1-demo.json";
-import { createShellExecuteEvent } from "../../engine/index.js";
+import {
+  createAgentInputEvents,
+  createShellExecuteEvent,
+} from "../../engine/index.js";
 import { createRuntimeSession } from "../session.js";
 import { renderTerminalTranscript } from "./renderer.js";
 
@@ -53,5 +56,32 @@ describe("renderTerminalTranscript", () => {
       session.dispatch(createShellExecuteEvent("pwd")),
     );
     expect(afterCommand).toHaveLength(2);
+  });
+
+  it("renders authored visitor turns and responses alongside their planned shell effects", () => {
+    const session = createRuntimeSession(cartridgeDocument);
+    const state = session.current().state;
+    const snapshot = session.dispatchMany(
+      createAgentInputEvents(session.cartridge, state, "inspect it"),
+    );
+
+    const entries = renderTerminalTranscript(
+      fakeDocument(),
+      session.cartridge,
+      snapshot,
+    ) as unknown as FakeElement[];
+
+    expect(
+      entries.flatMap((entry) =>
+        entry.children.map((line) => line.textContent),
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        "inspect it",
+        "I will inspect the sentinel before changing the forces currently passing through it.",
+        "cat src/ready.stale",
+        "remove me",
+      ]),
+    );
   });
 });
