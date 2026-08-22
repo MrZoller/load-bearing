@@ -63,9 +63,10 @@ and runtime model calls are deliberately excluded.
   - acceptance: one typed slash-command registry implements and accurately describes `/help`, `/model`, `/compact`, `/cost`, and `/exit`; commands dispatch terminal, mind, and agent events or report engine metrics as appropriate; the semantic model selector and slash autocomplete are fully keyboard-operable, model and compact state survive view switches, and focused unit/interaction tests cover discovery, execution, cancellation, and focus restoration (criterion 6)
   - deps: T15, T16, T18, T21
   - pr: 47
-- [~] T24 (standard) — Terminal histories, completion, and core controls
+- [R] T24 (standard) — Terminal histories, completion, and core controls
   - acceptance: `runtime/terminal/{history,completion,input}.ts` provides mode-appropriate TUI and Bash histories, slash/command/path tab completion, arrows, selection-safe copy/paste, `Ctrl+C`, `Ctrl+L`, `Ctrl+D`, and Escape behavior through one input controller; presentation-only clear/cancel operations do not rewrite engine transcript or event log; automated interaction tests cover normal and empty-input cases (criterion 10)
   - deps: T15, T23
+  - pr: 48
 - [ ] T25 (standard) — Transcript search, scrollback, and anchoring
   - acceptance: `runtime/terminal/{search,scroll}.ts` provides keyboard transcript search, bounded scrollback, focus restoration, and new-output anchoring that follows only when already at the bottom and preserves the reader's place otherwise; an accessible new-output affordance returns to the latest entry; Playwright covers search navigation, copied text, scrolled-up output, and resumed anchoring (criterion 10)
   - deps: T15
