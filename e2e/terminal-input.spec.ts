@@ -46,6 +46,9 @@ test("keeps terminal controls mode-specific and presentation-only", async ({
   await agentPrompt.press("Control+c");
   await agentPrompt.press("Control+d");
   await expect(bashPrompt).toBeFocused();
+  await bashPrompt.press("ArrowUp");
+  await expect(bashPrompt).toHaveValue("loadbearing --resume incident-000");
+  await bashPrompt.press("Control+c");
   await bashPrompt.fill("pw");
   await bashPrompt.press("Tab");
   await expect(bashPrompt).toHaveValue("pwd ");
@@ -90,6 +93,33 @@ test("keeps terminal controls mode-specific and presentation-only", async ({
   await expect(transcript.getByText("inspect it", { exact: true })).toHaveCount(
     0,
   );
+});
+
+test("serializes working turns and lets Escape finish the authored sequence", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.goto("/");
+
+  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const transcript = page.getByRole("list", { name: "Session transcript" });
+  await prompt.fill("inspect it");
+  await prompt.press("Enter");
+
+  await expect(prompt).toBeDisabled();
+  await expect(page.locator("[data-agent-activity]")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(prompt).toBeEnabled();
+  await expect(page.locator("[data-agent-activity]")).toHaveCount(0);
+  await expect(transcript.getByText("inspect it", { exact: true })).toHaveCount(
+    1,
+  );
+  await expect(
+    transcript.getByText(
+      "I will inspect the sentinel before changing the forces currently passing through it.",
+      { exact: true },
+    ),
+  ).toBeVisible();
 });
 
 test("restores a draft after navigating through a submitted slash command", async ({

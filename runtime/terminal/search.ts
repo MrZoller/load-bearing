@@ -1,6 +1,7 @@
 export interface TranscriptSearch {
   readonly element: HTMLElement;
   refresh(): void;
+  hasFocus(): boolean;
 }
 
 function isSearchShortcut(event: KeyboardEvent): boolean {
@@ -12,6 +13,7 @@ export function createTranscriptSearch(
   document: Document,
   transcript: HTMLOListElement,
   restoreFocus: () => void,
+  onActivity: () => void,
 ): TranscriptSearch {
   const search = document.createElement("section");
   search.className = "transcript-search";
@@ -54,11 +56,11 @@ export function createTranscriptSearch(
     }
     const match = matches[current];
     if (match === undefined) return;
-    const query = input.value.trim().toLocaleLowerCase();
+    const query = input.value.trim().toLowerCase();
     for (const detail of match.querySelectorAll<HTMLDetailsElement>(
       "details:not([open])",
     )) {
-      if ((detail.textContent ?? "").toLocaleLowerCase().includes(query))
+      if ((detail.textContent ?? "").toLowerCase().includes(query))
         detail.open = true;
     }
     match.classList.add("transcript__entry--search-match");
@@ -71,14 +73,14 @@ export function createTranscriptSearch(
     const currentKey = matches[current]?.dataset["transcriptKey"];
     const priorIndex = current;
     clearCurrent();
-    const query = input.value.trim().toLocaleLowerCase();
+    const query = input.value.trim().toLowerCase();
     matches =
       query.length === 0
         ? []
         : Array.from(transcript.children).filter(
             (entry): entry is HTMLElement =>
               entry instanceof HTMLElement &&
-              (entry.textContent ?? "").toLocaleLowerCase().includes(query),
+              (entry.textContent ?? "").toLowerCase().includes(query),
           );
     const restoredIndex = matches.findIndex(
       (match) => match.dataset["transcriptKey"] === currentKey,
@@ -112,10 +114,15 @@ export function createTranscriptSearch(
   document.addEventListener("keydown", (event) => {
     if (!isSearchShortcut(event)) return;
     event.preventDefault();
+    onActivity();
     open();
   });
-  input.addEventListener("input", refresh);
+  input.addEventListener("input", () => {
+    onActivity();
+    refresh();
+  });
   input.addEventListener("keydown", (event) => {
+    onActivity();
     if (event.key === "Escape") {
       event.preventDefault();
       close();
@@ -128,5 +135,9 @@ export function createTranscriptSearch(
     showCurrent();
   });
 
-  return { element: search, refresh };
+  return {
+    element: search,
+    refresh,
+    hasFocus: () => document.activeElement === input,
+  };
 }

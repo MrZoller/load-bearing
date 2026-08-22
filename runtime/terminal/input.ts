@@ -149,6 +149,11 @@ export function createTerminalInputController(
     if (completion.value !== input.value) {
       replaceInput(input, completion.value, completion.cursor);
       completionPresentation?.refresh();
+      return true;
+    }
+    if (completion.candidates.includes(input.value)) {
+      completionPresentation?.close();
+      return false;
     }
     return true;
   }

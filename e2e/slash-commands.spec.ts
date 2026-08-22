@@ -9,6 +9,7 @@ test("slash commands are keyboard-operable", async ({ page }) => {
 
   await page.keyboard.type("/c");
   await expect(completions).toBeVisible();
+  await expect(agentPrompt).toHaveAttribute("aria-expanded", "true");
   await expect(completions.getByRole("option")).toHaveText([
     "/compactReplace context with the approved summary",
     "/costReport replay-derived session metrics",
@@ -25,6 +26,12 @@ test("slash commands are keyboard-operable", async ({ page }) => {
   );
   await page.keyboard.press("Tab");
   await expect(agentPrompt).toHaveValue("/cost");
+  await expect(completions).toBeHidden();
+  await expect(agentPrompt).toHaveAttribute("aria-expanded", "false");
+  await page.keyboard.press("Shift+Tab");
+  await expect(agentPrompt).not.toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(agentPrompt).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("status", { name: "Session cost" })).toHaveText(
     /^model Structural Audit · tokens [\d,]+ · cost \$[\d,]+\.\d{6} · context \d+%$/,
