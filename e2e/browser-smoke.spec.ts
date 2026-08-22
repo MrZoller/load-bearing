@@ -80,6 +80,35 @@ test("cold-opens and round-trips between the TUI and Bash with the keyboard", as
   expect(failedRequests).toEqual([]);
 });
 
+test("projects replayed engine metrics into the visible session status", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const status = page.getByRole("region", { name: "Session status" });
+  const agentPrompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const tokens = status.getByText(/^tokens /);
+  const cost = status.getByText(/^cost /);
+  const context = status.getByText(/^context /);
+  const integrity = status.getByText(/^integrity /);
+
+  await expect(status).toBeVisible();
+  await expect(status).toContainText("model Structural Audit");
+  await expect(tokens).toHaveText(/^tokens [\d,]+$/);
+  await expect(cost).toHaveText(/^cost \$[\d,]+\.\d{6}$/);
+  await expect(context).toHaveText(/^context \d+%$/);
+  await expect(integrity).toHaveText(/^integrity [\d,]+$/);
+  await expect(status).toContainText("loadbearing.cc · Incident #000");
+
+  const tokensBefore = await tokens.innerText();
+  await agentPrompt.fill("inspect it");
+  await agentPrompt.press("Enter");
+
+  // The status is re-projected after a visitor turn; it cannot be a DOM-only
+  // counter if the token value follows the engine's expanded event history.
+  await expect(tokens).not.toHaveText(tokensBefore);
+});
+
 test("renders recognized and fallback TUI turns and dispatches ! shell work", async ({
   page,
 }) => {

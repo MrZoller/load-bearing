@@ -47,10 +47,11 @@ and runtime model calls are deliberately excluded.
   - acceptance: `engine/mind/` adds bounded pending-request identity and request/resolve events without breaking existing direct decisions; grant, deny, and always-allow atomically clear the prompt and append the correct simulated-time ledger entry, with standing grants still exact-capability matches; `runtime/components/permission.ts` exposes labeled keyboard controls and restores prompt focus; unit, snapshot, replay, and interaction tests cover all choices (criteria 7)
   - deps: T15, T16
   - pr: 43
-- [~] T20 (standard) — Replayable tool, thinking, and todo elements
+- [x] T20 (standard) — Replayable tool, thinking, and todo elements
   - acceptance: typed events in `engine/agent/` create and update bounded tool calls, expandable thinking blocks, and todos without storing markup or DOM state; `runtime/components/artifacts.ts` renders each as a distinct semantic element with textual state and keyboard-operable disclosure; replay and interaction tests prove updates survive mode switches and restore from the event log (criteria 7, 13)
   - deps: T15, T16
-- [ ] T21 (standard) — Engine-derived metrics and status bar
+  - pr: 44
+- [~] T21 (standard) — Engine-derived metrics and status bar
   - acceptance: `engine/metrics/` derives or records model, token count, cost, context percentage, and structural integrity solely from replay state plus validated cartridge parameters, with explicit bounds and snapshot validation; `runtime/components/status.ts` renders those values and attribution from engine queries rather than DOM counters; unit and replay tests prove model switches and identical logs produce stable values (criteria 8)
   - deps: T14, T16
 - [ ] T22 (standard) — Deterministic working verb and suffix channel

@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T20",
-  "branch": "factory/t20-replayable-artifacts",
+  "current_task": "T21",
+  "branch": "factory/t21-engine-metrics-status",
   "pr": null,
   "hold": false,
-  "updated": "2026-08-22T09:50:57Z"
+  "updated": "2026-08-22T10:13:47Z"
 }

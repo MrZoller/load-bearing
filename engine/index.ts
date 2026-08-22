@@ -361,6 +361,9 @@ export {
 } from "./agent/intent.js";
 export type { AgentIntentSelection } from "./agent/intent.js";
 
+export { deriveEngineMetrics, MAX_METRIC_VALUE } from "./metrics/metrics.js";
+export type { EngineMetrics } from "./metrics/types.js";
+
 export { deepFreeze } from "./freeze.js";
 export {
   CONTROL_CHARACTER,

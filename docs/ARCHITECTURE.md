@@ -265,12 +265,14 @@ facts. Determinism and replay must survive it (recorded, not re-generated).
 
 - Escalation stage (0–4) is engine state advanced by cartridge-defined
   triggers (commands, reveals, model switches), never by wall-clock time
-- The metrics module derives token/cost/context/cache/integrity values —
-  and the **Not-Okay Ratio**, computed from thinking-block opener drift
-  (DESIGN.md → Verbal tics are citations) — from event count, stage, and
-  per-model multipliers; stage 4 unlocks non-numeric values ("tokens LOAD /
-  cost BEARING"). Curves are authored per cartridge with sane runtime
-  defaults
+- The Phase 1 metrics query derives a bounded active model, token estimate,
+  current-model cost estimate, context-used percentage, and structural
+  integrity from replay state and validated cartridge parameters. It owns no
+  parallel counter: model switches reprice the complete estimate, while event
+  count remains authoritative. Integer arithmetic saturates rather than losing
+  precision. Later escalation work owns cache curves, the **Not-Okay Ratio**
+  (DESIGN.md → Verbal tics are citations), and stage-4 non-numeric values
+  ("tokens LOAD / cost BEARING").
 
 ### Agent mind state
 
