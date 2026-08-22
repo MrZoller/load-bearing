@@ -26,9 +26,9 @@ test("slash commands are keyboard-operable", async ({ page }) => {
   await page.keyboard.press("Tab");
   await expect(agentPrompt).toHaveValue("/cost");
   await page.keyboard.press("Enter");
-  await expect(
-    page.getByRole("status", { name: "Session cost" }),
-  ).toBeVisible();
+  await expect(page.getByRole("status", { name: "Session cost" })).toHaveText(
+    /^model Structural Audit · tokens [\d,]+ · cost \$[\d,]+\.\d{6} · context \d+%$/,
+  );
   await expect(agentPrompt).toBeFocused();
 
   await page.keyboard.type("/help");

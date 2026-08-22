@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import cartridgeDocument from "../../content/incidents/phase-1-demo.json";
 import {
+  deriveEngineMetrics,
   loadCartridge,
   readAgentSlice,
   readMindSlice,
@@ -44,6 +45,9 @@ describe("the slash command registry", () => {
     expect(readAgentSlice(afterHelp).responses).toMatchObject([
       { responseId: "help" },
     ]);
+    expect(executeSlashCommand(CARTRIDGE, initial, "/HELP")).toMatchObject({
+      kind: "dispatch",
+    });
 
     const compact = executeSlashCommand(CARTRIDGE, afterHelp, "/compact");
     expect(compact).toMatchObject({ kind: "dispatch" });
@@ -65,8 +69,9 @@ describe("the slash command registry", () => {
     expect(executeSlashCommand(CARTRIDGE, initial, "/model")).toEqual({
       kind: "model-selector",
     });
-    expect(executeSlashCommand(CARTRIDGE, initial, "/cost")).toMatchObject({
+    expect(executeSlashCommand(CARTRIDGE, initial, "/cost")).toEqual({
       kind: "metrics",
+      metrics: deriveEngineMetrics(initial),
     });
 
     const exit = executeSlashCommand(CARTRIDGE, initial, " /exit ");

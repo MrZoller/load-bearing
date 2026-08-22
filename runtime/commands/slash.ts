@@ -52,7 +52,8 @@ export function executeSlashCommand(
   input: string,
 ): SlashCommandResult {
   const normalized = input.trim();
-  const definition = SLASH_COMMANDS.find(({ name }) => name === normalized);
+  const commandName = normalized.toLowerCase();
+  const definition = SLASH_COMMANDS.find(({ name }) => name === commandName);
   if (definition === undefined) {
     return {
       kind: "error",
