@@ -36,6 +36,7 @@
 import { deepFreeze } from "../freeze.js";
 import { parseTimestamp } from "../clock/civil.js";
 import { detectBrand } from "../serialize/canonical.js";
+import { normalizeIntentPhrase } from "./intent.js";
 import {
   CARTRIDGE_SCHEMA,
   CARTRIDGE_SCHEMA_VERSION,
@@ -1258,9 +1259,10 @@ function checkStoryAndPresentation(
       );
     reference(intent.response, `/story/intents/${String(index)}/response`);
     intent.patterns.forEach((value, patternIndex) => {
-      const first = patterns.get(value);
+      const normalized = normalizeIntentPhrase(value);
+      const first = patterns.get(normalized);
       const pointer = `/story/intents/${String(index)}/patterns/${String(patternIndex)}`;
-      if (first === undefined) patterns.set(value, pointer);
+      if (first === undefined) patterns.set(normalized, pointer);
       else
         report.addPhrase(
           pointer,

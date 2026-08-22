@@ -376,6 +376,31 @@ describe("loadCartridge", () => {
     );
   });
 
+  it("rejects intent patterns that collide after runtime normalization", () => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    story["intents"] = [
+      {
+        id: "first",
+        patterns: ["Check the sentinel"],
+        response: "fixture-response",
+      },
+      {
+        id: "second",
+        patterns: ["  CHECK\tthe   sentinel  "],
+        response: "fixture-response",
+      },
+    ];
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/story/intents/1/patterns/0",
+        }),
+      ]),
+    );
+  });
+
   it("requires an identity and derives directory metadata from declared ancestors", () => {
     const missingIdentity = minimal();
     delete (missingIdentity["repository"] as Record<string, unknown>)[

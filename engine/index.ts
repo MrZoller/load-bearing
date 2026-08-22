@@ -335,6 +335,7 @@ export type {
   ToolCallStatus,
 } from "./agent/types.js";
 export {
+  boundAgentInput,
   createAgentInputEvents,
   normalizeAgentInput,
   selectAgentIntent,

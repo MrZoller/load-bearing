@@ -70,6 +70,8 @@ test("cold-opens and round-trips between the TUI and Bash with the keyboard", as
 test("renders recognized and fallback TUI turns and dispatches ! shell work", async ({
   page,
 }) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.goto("/");
 
   const transcript = page.getByRole("list", { name: "Session transcript" });
@@ -109,4 +111,14 @@ test("renders recognized and fallback TUI turns and dispatches ! shell work", as
     transcript.getByText("/production/service", { exact: true }),
   ).toBeVisible();
   await expect(agentPrompt).toBeFocused();
+
+  await agentPrompt.fill("x".repeat(16_001));
+  await agentPrompt.press("Enter");
+  await expect(
+    transcript.getByText(
+      "I treated that as a request for a wider readiness review. The original task is now supporting it.",
+      { exact: true },
+    ),
+  ).toHaveCount(2);
+  expect(pageErrors).toEqual([]);
 });

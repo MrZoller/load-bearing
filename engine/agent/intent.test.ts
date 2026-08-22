@@ -6,6 +6,7 @@ import { createShellExecuteEvent } from "../commands/shell.js";
 import { reduce } from "../events/reduce.js";
 import { readAgentSlice } from "./agent.js";
 import {
+  boundAgentInput,
   createAgentInputEvents,
   normalizeAgentInput,
   selectAgentIntent,
@@ -65,5 +66,21 @@ describe("authored agent input", () => {
         text: "I treated that as a request for a wider readiness review. The original task is now supporting it.",
       },
     ]);
+  });
+
+  it("bounds oversized visitor text and still records an authored fallback", () => {
+    const input = `${"x".repeat(15_999)}😀z`;
+    const events = createAgentInputEvents(
+      CARTRIDGE,
+      reduce({ cartridge: CARTRIDGE, seed: SEED, events: [] }),
+      input,
+    );
+
+    expect(Array.from(boundAgentInput(input))).toHaveLength(16_000);
+    expect(events[0]?.payload?.["text"]).toBe(`${"x".repeat(15_999)}…`);
+    expect(events.at(-1)?.payload?.["responseId"]).toBe("fallback");
+    expect(() =>
+      reduce({ cartridge: CARTRIDGE, seed: SEED, events }),
+    ).not.toThrow();
   });
 });
