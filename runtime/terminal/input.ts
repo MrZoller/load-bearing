@@ -29,6 +29,8 @@ export interface TerminalInputControllerOptions {
   readonly initialBashHistory?: readonly string[];
   readonly clearTranscript: () => void;
   readonly enterBash: () => void;
+  /** Browser-only idle scheduling observes interaction without storing it. */
+  readonly onActivity?: () => void;
 }
 
 function hasSelection(input: HTMLInputElement): boolean {
@@ -62,17 +64,20 @@ export function createTerminalInputController(
 
       form.addEventListener("submit", (event) => {
         event.preventDefault();
+        options.onActivity?.();
         const value = input.value;
         history.record(mode, value);
         binding.submit(value);
       });
 
       input.addEventListener("input", () => {
+        options.onActivity?.();
         history.reset(mode);
         completionPresentation?.refresh();
       });
 
       input.addEventListener("keydown", (event) => {
+        options.onActivity?.();
         const key = event.key;
         const control = event.ctrlKey && !event.altKey && !event.metaKey;
 

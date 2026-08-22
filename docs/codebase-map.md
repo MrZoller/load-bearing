@@ -331,10 +331,10 @@ Phase 0 DoD (from `ROADMAP.md`), mapped to what exists:
 **Explicitly not in this phase** (per ROADMAP) — all correct to be absent:
 any rendering, any comedy writing, any real model calls.
 
-**Current Phase 1 gaps:** slash-command discovery, deterministic working-state
-presentation, terminal history/search controls, onboarding, and final responsive
-accessibility hardening. The browser now renders replay-derived metrics and
-replayable agent artifacts without introducing a second state store.
+**Current Phase 1 gaps:** transcript search controls and final responsive
+accessibility hardening. The browser now renders replay-derived metrics,
+replayable agent artifacts, and cartridge-authored onboarding without
+introducing a second state store.
 
 ---
 

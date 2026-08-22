@@ -197,7 +197,8 @@ export function renderTerminalTranscript(
 
     if (
       transcriptEntry.type !== "agent.message-added" &&
-      transcriptEntry.type !== "agent.response-recorded"
+      transcriptEntry.type !== "agent.response-recorded" &&
+      transcriptEntry.type !== "agent.idle-nudged"
     )
       continue;
     const message = messages[messageCount];

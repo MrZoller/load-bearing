@@ -20,19 +20,24 @@ function stateFor(events: Parameters<typeof reduce>[0]["events"] = []) {
 
 describe("the slash command registry", () => {
   it("discovers the typed command register case-insensitively, without completing arguments", () => {
-    expect(discoverSlashCommands("/c")).toEqual([
+    expect(discoverSlashCommands(CARTRIDGE, "/c")).toEqual([
       {
         name: "/compact",
-        description: "Replace context with its authored summary",
+        description: "Replace context with the approved summary",
       },
       {
         name: "/cost",
         description: "Report replay-derived session metrics",
       },
     ]);
-    expect(discoverSlashCommands("/MO")).toMatchObject([{ name: "/model" }]);
-    expect(discoverSlashCommands("/model temporary")).toEqual([]);
-    expect(discoverSlashCommands("help")).toEqual([]);
+    expect(discoverSlashCommands(CARTRIDGE, "/MO")).toEqual([
+      {
+        name: "/model",
+        description: "Choose who assumes responsibility",
+      },
+    ]);
+    expect(discoverSlashCommands(CARTRIDGE, "/model temporary")).toEqual([]);
+    expect(discoverSlashCommands(CARTRIDGE, "help")).toEqual([]);
   });
 
   it("executes authored help and compaction through replayable engine events", () => {

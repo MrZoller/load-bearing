@@ -6,7 +6,7 @@ import {
   resolveVfsPath,
 } from "../../engine/index.js";
 import type { SessionState } from "../../engine/index.js";
-import { discoverSlashCommands } from "../commands/slash.js";
+import { SLASH_COMMAND_NAMES } from "../commands/slash.js";
 import type { TerminalInputMode } from "./history.js";
 
 export interface TerminalCompletion {
@@ -152,9 +152,8 @@ export function completeTerminalInput(
 ): TerminalCompletion | null {
   if (mode === "tui" && value.startsWith("/")) {
     if (cursor !== value.length || /\s/u.test(value)) return null;
-    const matches = discoverSlashCommands(value);
-    if (matches.length === 0) return null;
-    const names = matches.map(({ name }) => name);
+    const names = SLASH_COMMAND_NAMES.filter((name) => name.startsWith(value));
+    if (names.length === 0) return null;
     const replacement =
       names.length === 1 ? (names[0] ?? value) : commonPrefix(names);
     return {
