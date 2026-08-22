@@ -94,7 +94,7 @@ test("search folding is independent of the browser locale", async ({
   const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   await prompt.press("Control+f");
   const search = page.getByRole("searchbox", { name: /transcript/i });
-  await search.fill("incident");
+  await search.fill("Incident");
   await expect(
     page.getByRole("status", { name: /transcript search/i }),
   ).toContainText(/1\s*(?:of|\/)\s*[1-9]/i);
