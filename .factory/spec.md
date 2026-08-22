@@ -145,7 +145,7 @@ technology, and remains usable on a phone.
   authenticity cannot displace keyboard, reduced-motion, mobile, or semantic
   transcript behavior.
 
-## Open questions
+## Open questions (all four resolved 2026-08-21 — decisions recorded inline)
 
 1. **What content should prove natural-language and agent mechanics before
    Incident #001 exists?** Options: A — add a clearly non-production Phase 1
@@ -154,6 +154,7 @@ technology, and remains usable on a phone.
    responses in runtime code. **Recommendation: A.** It exercises the real
    cartridge boundary without stealing Phase 2's vertical slice or violating
    runtime/content separation.
+   **Decision: A — approved by Chris, 2026-08-21 (operator-relayed).**
 2. **How should model switching interact with a seed that currently includes
    the initial model?** Options: A — keep one root session seed and treat each
    model switch as an event, deriving model-specific named substreams from that
@@ -161,11 +162,13 @@ technology, and remains usable on a phone.
    derivation now. **Recommendation: A.** It preserves the existing seed format,
    event-log continuity, and deterministic switching without rerolling unrelated
    state.
+   **Decision: A — approved by Chris, 2026-08-21 (operator-relayed).**
 3. **Which Phase 1 visual direction should set the product baseline?** Options:
    A — restrained original terminal styling with subtle structural/I-beam
    accents; B — a stronger warning-placard aesthetic; C — terminal-genre
    defaults with minimal branding. **Recommendation: A.** It remains credible at
    first glance, establishes distinct identity, and minimizes trade-dress risk.
+   **Decision: A — approved by Chris, 2026-08-21 (operator-relayed).**
 4. **What objective bar defines “Lighthouse accessibility pass” and
    “acceptable on a phone”?** Options: A — accessibility score 100 in a pinned
    Chromium desktop audit plus manual keyboard checks, with 390×844 as the
@@ -173,3 +176,4 @@ technology, and remains usable on a phone.
    C — manual acceptance only. **Recommendation: A**, with additional responsive
    spot checks treated as plan-level verification rather than expanding the
    formal browser matrix.
+   **Decision: A — approved by Chris, 2026-08-21 (operator-relayed).**
