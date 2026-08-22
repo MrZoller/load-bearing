@@ -324,6 +324,15 @@ describe("mind events", () => {
     ).toThrow(/decision must be grant, deny or always-allow/);
     expect(() =>
       fold([
+        createMindPermissionRequestedEvent("delete-motd", CAPABILITY),
+        mindEvent("mind.permission-resolved", {
+          id: "delete-motd",
+          decision: "always",
+        }),
+      ]),
+    ).toThrow(/decision must be grant, deny or always-allow/);
+    expect(() =>
+      fold([
         {
           type: "mind.compact",
           payload: {
