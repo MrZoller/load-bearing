@@ -125,11 +125,12 @@ describe("simulated tests", () => {
       readVfsSlice(state).entries[
         "/production/load-balancer/config/routes.conf"
       ],
-    ).toMatchObject(
-      cartridge.repository.files[
-        "/production/load-balancer/config/routes.500.conf"
-      ],
-    );
+    ).toMatchObject({
+      contents: "health_status=500\neurope_attached=true\n",
+      owner: "root",
+      group: "operators",
+      mode: "0644",
+    });
 
     const repaired = reduce({
       cartridge,
@@ -152,11 +153,12 @@ describe("simulated tests", () => {
       readVfsSlice(repaired).entries[
         "/production/load-balancer/config/routes.conf"
       ],
-    ).toMatchObject(
-      cartridge.repository.files[
-        "/production/load-balancer/config/routes.200.conf"
-      ],
-    );
+    ).toMatchObject({
+      contents: "health_status=200\neurope_attached=false\n",
+      owner: "root",
+      group: "operators",
+      mode: "0644",
+    });
   });
 
   it("records pass/fail history around a VFS edit and advances exact authored time", () => {
