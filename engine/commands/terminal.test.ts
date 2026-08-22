@@ -36,9 +36,15 @@ describe("terminal commands", () => {
       expect(readTerminalSlice(state).mode).toBe("tui");
       expect(state.transcript.map((entry) => entry.type)).toEqual([
         "world.history-append",
+        "agent.response-recorded",
         "terminal.mode-set",
         "shell.result",
       ]);
+      expect(
+        state.transcript.find(
+          (entry) => entry.type === "agent.response-recorded",
+        )?.summary,
+      ).toBe("response=fixture-response instance=resume-0");
       expect(shellResult(state)).toMatchObject({ output: [], exitCode: 0 });
     }
 

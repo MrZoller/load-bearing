@@ -1,0 +1,57 @@
+{
+  "name": "018-shared-machine-awareness",
+  "description": "First resume installs authored beliefs; Bash deletes the believed fixture file; real resume records the authored changed response; compact replaces beliefs and survives mode changes.",
+  "seed": "2026-08-22/18/foundation-surveyor",
+  "cartridge": "shared-machine-awareness",
+  "events": [
+    {
+      "type": "shell.execute",
+      "payload": { "input": "loadbearing --resume incident-018" },
+      "version": 0
+    },
+    {
+      "type": "terminal.mode-set",
+      "payload": { "mode": "bash" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm /var/lib/keystone/records/blueprint.pending" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "loadbearing --resume incident-018" },
+      "version": 0
+    },
+    {
+      "type": "mind.compact",
+      "payload": {
+        "summary": "The blueprint marker was removed; its absence is the only retained fact.",
+        "beliefs": [
+          {
+            "kind": "file-exists",
+            "path": "/var/lib/keystone/records/retained.marker",
+            "exists": false
+          }
+        ]
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": { "responseId": "ledger-compact", "instanceId": "compact-13" },
+      "version": 0
+    },
+    {
+      "type": "terminal.mode-set",
+      "payload": { "mode": "bash" },
+      "version": 0
+    },
+    {
+      "type": "terminal.mode-set",
+      "payload": { "mode": "tui" },
+      "version": 0
+    }
+  ]
+}

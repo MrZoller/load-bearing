@@ -2,8 +2,10 @@
 
 import { defineEventModule } from "../events/module.js";
 import type { EventContext } from "../events/module.js";
+import { stampEvent } from "../events/log.js";
 import { readString, requirePayload } from "../events/payload.js";
 import type { EventPayload } from "../events/payload.js";
+import type { EngineEvent } from "../events/state.js";
 import type { Belief, MindSlice } from "./types.js";
 import {
   compactBeliefs,
@@ -35,6 +37,23 @@ function beliefs(value: unknown, where: string): readonly Belief[] {
   if (!Array.isArray(value)) throw new Error(`${where}: must be an array`);
   return value.map((belief, index) =>
     validateBelief(belief, `${where}[${String(index)}]`),
+  );
+}
+
+export function createMindBeliefEvent(belief: Belief): EngineEvent {
+  return stampEvent(
+    { type: "mind.belief-set", payload: { belief } },
+    "mind belief",
+  );
+}
+
+export function createMindCompactEvent(
+  summary: string,
+  nextBeliefs: readonly Belief[],
+): EngineEvent {
+  return stampEvent(
+    { type: "mind.compact", payload: { summary, beliefs: nextBeliefs } },
+    "mind compact",
   );
 }
 

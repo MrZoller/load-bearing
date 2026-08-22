@@ -236,7 +236,11 @@ export type {
 } from "./tests/types.js";
 export { reactionActionEvent, reactionPredicateMatches } from "./reactions.js";
 
-export { MIND_MODULE } from "./mind/module.js";
+export {
+  MIND_MODULE,
+  createMindBeliefEvent,
+  createMindCompactEvent,
+} from "./mind/module.js";
 export {
   beliefDivergence,
   compactBeliefs,
@@ -294,6 +298,11 @@ export {
   createAgentToolCallAddedEvent,
   createAgentToolCallUpdatedEvent,
 } from "./agent/module.js";
+export {
+  createAgentCompactEvents,
+  createAgentResumeEvents,
+} from "./agent/awareness.js";
+export { canRecordAuthoredResponse } from "./agent/intent.js";
 export {
   MAX_AGENT_ACTIVITY_VERB_LENGTH,
   MAX_AGENT_ID_LENGTH,
@@ -418,6 +427,7 @@ export {
   MAX_PRESENTATION_VERBS,
   MAX_RESPONSE_ARTIFACTS,
   MAX_STORY_ACTIONS,
+  MAX_STORY_BELIEFS,
   MAX_STORY_INTENTS,
   MAX_STORY_RESPONSES,
   MAX_STORY_TEXT_LENGTH,
@@ -439,6 +449,7 @@ export type {
   CartridgeModel,
   CartridgeAgentAction,
   CartridgeAuthoredResponse,
+  CartridgeBelief,
   CartridgeIntent,
   CartridgeMetricParameters,
   CartridgePlaceholder,

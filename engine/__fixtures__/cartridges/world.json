@@ -128,7 +128,11 @@
     }
   ],
   "story": {
-    "opening": { "login": ["Fixture login."], "response": "fixture-response" },
+    "opening": {
+      "login": ["Fixture login."],
+      "response": "fixture-response",
+      "beliefs": []
+    },
     "responses": [{ "id": "fixture-response", "text": "Fixture response." }],
     "intents": [
       {
@@ -139,7 +143,11 @@
     ],
     "fallback": { "response": "fixture-response" },
     "helpResponse": "fixture-response",
-    "compactResponse": "fixture-response",
+    "compact": {
+      "response": "fixture-response",
+      "summary": "Fixture compacted.",
+      "beliefs": []
+    },
     "resume": {
       "unchangedResponse": "fixture-response",
       "changedResponse": "fixture-response"

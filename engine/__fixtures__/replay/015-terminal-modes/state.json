@@ -138,7 +138,11 @@
       "tickets": []
     },
     "story": {
-      "compactResponse": "fixture-response",
+      "compact": {
+        "beliefs": [],
+        "response": "fixture-response",
+        "summary": "Fixture compacted."
+      },
       "fallback": {
         "actions": [],
         "response": "fixture-response"
@@ -155,6 +159,7 @@
         }
       ],
       "opening": {
+        "beliefs": [],
         "login": [
           "Fixture login."
         ],
@@ -201,7 +206,7 @@
     "startMs": 1785921262000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 10,
+  "eventCount": 11,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {},
@@ -214,11 +219,43 @@
         "status": "idle",
         "verb": ""
       },
-      "messages": [],
-      "responses": [],
-      "thinkingBlocks": [],
-      "todos": [],
-      "toolCalls": []
+      "messages": [
+        {
+          "id": "resume-4/message",
+          "responseId": "fixture-response",
+          "role": "agent",
+          "text": "Fixture response."
+        }
+      ],
+      "responses": [
+        {
+          "instanceId": "resume-4",
+          "responseId": "fixture-response"
+        }
+      ],
+      "thinkingBlocks": [
+        {
+          "id": "resume-4/thinking/reason",
+          "status": "active",
+          "text": "Okay, the fixture is stable."
+        }
+      ],
+      "todos": [
+        {
+          "id": "resume-4/todo/inspect",
+          "status": "pending",
+          "text": "Inspect fixture"
+        }
+      ],
+      "toolCalls": [
+        {
+          "id": "resume-4/tool/read",
+          "input": "cat README.md",
+          "output": "",
+          "status": "pending",
+          "title": "Read fixture"
+        }
+      ]
     },
     "git": {
       "branches": {},
@@ -385,6 +422,13 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "index": 5,
+      "summary": "response=fixture-response instance=resume-4",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 6,
       "summary": "mode=tui",
       "type": "terminal.mode-set"
     },
@@ -392,7 +436,7 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 6,
+      "index": 7,
       "output": [],
       "summary": "",
       "type": "shell.result"
@@ -400,14 +444,14 @@
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
-      "index": 7,
+      "index": 8,
       "summary": "mode=bash",
       "type": "terminal.mode-set"
     },
     {
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
-      "index": 8,
+      "index": 9,
       "summary": "length=5",
       "type": "world.history-append"
     },
@@ -415,7 +459,7 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "exitCode": 1,
-      "index": 9,
+      "index": 10,
       "output": [
         {
           "stream": "stdout",

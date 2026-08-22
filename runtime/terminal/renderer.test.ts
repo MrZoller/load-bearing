@@ -84,4 +84,28 @@ describe("renderTerminalTranscript", () => {
       ]),
     );
   });
+
+  it("renders a shell command before its expanded agent response", () => {
+    const session = createRuntimeSession(cartridgeDocument);
+    const snapshot = session.dispatch(
+      createShellExecuteEvent("loadbearing --resume incident-000"),
+    );
+    const entries = renderTerminalTranscript(
+      fakeDocument(),
+      session.cartridge,
+      snapshot,
+    ) as unknown as FakeElement[];
+
+    expect(entries.map((entry) => entry.className)).toEqual([
+      "transcript__entry transcript__entry--login",
+      "transcript__entry transcript__entry--exchange",
+      "transcript__entry transcript__entry--agent",
+    ]);
+    expect(entries[1]?.children[0]?.textContent).toBe(
+      "loadbearing --resume incident-000",
+    );
+    expect(entries[2]?.children[0]?.textContent).toContain(
+      "temporary readiness sentinel",
+    );
+  });
 });

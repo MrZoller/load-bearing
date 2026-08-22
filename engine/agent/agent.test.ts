@@ -46,13 +46,21 @@ function cartridge() {
       todos: [{ id: "inspect", text: "Inspect", status: "pending" }],
     },
   ];
-  story["opening"] = { login: ["Fixture login."], response: "authored" };
+  story["opening"] = {
+    login: ["Fixture login."],
+    response: "authored",
+    beliefs: [],
+  };
   story["intents"] = [
     { id: "fixture-intent", patterns: ["inspect"], response: "authored" },
   ];
   story["fallback"] = { response: "authored" };
   story["helpResponse"] = "authored";
-  story["compactResponse"] = "authored";
+  story["compact"] = {
+    response: "authored",
+    summary: "Fixture compacted.",
+    beliefs: [],
+  };
   story["resume"] = {
     unchangedResponse: "authored",
     changedResponse: "authored",

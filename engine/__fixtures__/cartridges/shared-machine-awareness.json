@@ -1,0 +1,127 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 18,
+    "date": "2026-08-22",
+    "title": "Shared Machine Awareness Fixture",
+    "assignment": "Remove the obsolete blueprint marker without redistributing the building.",
+    "startedAt": "2026-08-22T09:14:22.000Z"
+  },
+  "repository": {
+    "cwd": "/var/lib/keystone",
+    "identity": {
+      "user": "operator",
+      "group": "facilities",
+      "home": "/home/operator"
+    },
+    "gitIdentity": { "name": "Operator", "email": "operator@example.test" },
+    "system": {
+      "hostname": "keystone",
+      "operatingSystem": "Linux",
+      "kernelRelease": "6.1.0-fixture",
+      "architecture": "x86_64",
+      "bootedAt": "2026-08-01T06:10:00.000Z"
+    },
+    "directories": {
+      "/var": {
+        "owner": "operator",
+        "group": "facilities",
+        "mode": "0755"
+      },
+      "/var/lib": {
+        "owner": "operator",
+        "group": "facilities",
+        "mode": "0755"
+      },
+      "/var/lib/keystone": {
+        "owner": "operator",
+        "group": "facilities",
+        "mode": "0755"
+      },
+      "/var/lib/keystone/records": {
+        "owner": "operator",
+        "group": "facilities",
+        "mode": "0755"
+      }
+    },
+    "files": {
+      "/var/lib/keystone/records/blueprint.pending": {
+        "contents": "awaiting a less historic future\n",
+        "owner": "operator",
+        "group": "facilities"
+      }
+    }
+  },
+  "models": [
+    {
+      "id": "foundation-surveyor",
+      "name": "Foundation Surveyor",
+      "archetype": "paranoid",
+      "description": "Measures first, then asks whether measuring was load-bearing.",
+      "costMultiplier": 1
+    }
+  ],
+  "story": {
+    "opening": {
+      "login": ["Fixture login: the keystone is still accounted for."],
+      "response": "ledger-opening",
+      "beliefs": [
+        {
+          "kind": "file-exists",
+          "path": "/var/lib/keystone/records/blueprint.pending",
+          "exists": true
+        }
+      ]
+    },
+    "responses": [
+      {
+        "id": "ledger-opening",
+        "text": "The blue dispatch ledger is still present. I have classified it as structural until evidence acquires a permit."
+      },
+      {
+        "id": "ledger-unchanged",
+        "text": "The ledger has remained faithfully where I left it. This confirms either stability or camouflage."
+      },
+      {
+        "id": "ledger-changed",
+        "text": "The ledger is gone. I will treat its absence as a signed architectural decision."
+      },
+      {
+        "id": "ledger-compact",
+        "text": "Context compacted. The absent marker is now the complete history of this operation."
+      }
+    ],
+    "intents": [],
+    "fallback": { "response": "ledger-unchanged" },
+    "helpResponse": "ledger-unchanged",
+    "compact": {
+      "response": "ledger-compact",
+      "summary": "The blueprint marker was removed; its absence is the only retained fact.",
+      "beliefs": [
+        {
+          "kind": "file-exists",
+          "path": "/var/lib/keystone/records/retained.marker",
+          "exists": false
+        }
+      ]
+    },
+    "resume": {
+      "unchangedResponse": "ledger-unchanged",
+      "changedResponse": "ledger-changed"
+    }
+  },
+  "presentation": {
+    "placeholders": [{ "stage": 0, "text": "inspect the keystone" }],
+    "spinnerPools": [
+      { "archetype": "paranoid", "stage": 0, "verbs": ["Surveying"] }
+    ],
+    "metrics": {
+      "baseTokens": 0,
+      "tokensPerEvent": 1,
+      "contextWindowTokens": 1000,
+      "costMicrosPerToken": 1,
+      "integrityStart": 100,
+      "integrityLossPerEvent": 1
+    }
+  }
+}

@@ -138,7 +138,11 @@
       "tickets": []
     },
     "story": {
-      "compactResponse": "fixture-response",
+      "compact": {
+        "beliefs": [],
+        "response": "fixture-response",
+        "summary": "Fixture compacted."
+      },
       "fallback": {
         "actions": [],
         "response": "fixture-response"
@@ -155,6 +159,7 @@
         }
       ],
       "opening": {
+        "beliefs": [],
         "login": [
           "Fixture login."
         ],

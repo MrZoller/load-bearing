@@ -38,6 +38,12 @@ runtime code does not copy authored behavior. Status updates follow closed
 forward-only transitions, and hostile snapshots are checked for exact fields,
 bounds, unique ids, response references, and matching response messages.
 
+`engine/agent/awareness.ts` plans resume and compact transitions from only the
+loaded cartridge and replayed `SessionState`. Opening beliefs are installed on
+the first resume; later resumes select authored unchanged/changed responses from
+`beliefDivergence`, while compact replaces the complete belief set before
+recording its authored acknowledgment.
+
 Disclosure state, focused controls, animation frames, and wall-time spinner
 progress are presentation concerns and do not belong in this slice.
 
