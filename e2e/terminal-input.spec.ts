@@ -83,9 +83,9 @@ test("keeps terminal controls mode-specific and presentation-only", async ({
   await expect(
     transcript.getByText(/\/help lists commands;/, { exact: true }),
   ).toBeVisible();
-  await expect(
-    transcript.getByText("inspect it", { exact: true }),
-  ).toHaveCount(0);
+  await expect(transcript.getByText("inspect it", { exact: true })).toHaveCount(
+    0,
+  );
 });
 
 test("restores a draft after navigating through a submitted slash command", async ({
