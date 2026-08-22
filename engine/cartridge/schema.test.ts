@@ -96,6 +96,47 @@ describe("the published schema", () => {
     );
   });
 
+  it("requires non-empty spinner verbs in both descriptor and published contracts", () => {
+    const descriptor =
+      CARTRIDGE_SCHEMA.fields.presentation.node.fields.spinnerPools.node.items
+        .fields.verbs.node.items;
+    const emitted = emitJsonSchema()["properties"] as Record<string, unknown>;
+    const presentation = emitted["presentation"] as Record<string, unknown>;
+    const presentationProperties = presentation["properties"] as Record<
+      string,
+      unknown
+    >;
+    const pools = presentationProperties["spinnerPools"] as Record<
+      string,
+      unknown
+    >;
+    const pool = pools["items"] as Record<string, unknown>;
+    const poolProperties = pool["properties"] as Record<string, unknown>;
+    const verbs = poolProperties["verbs"] as Record<string, unknown>;
+    const emittedVerb = verbs["items"] as Record<string, unknown>;
+    const published = JSON.parse(readFileSync(PUBLISHED, "utf8")) as Record<
+      string,
+      unknown
+    >;
+    const publishedPresentation = (
+      published["properties"] as Record<string, unknown>
+    )["presentation"] as Record<string, unknown>;
+    const publishedPools = (
+      publishedPresentation["properties"] as Record<string, unknown>
+    )["spinnerPools"] as Record<string, unknown>;
+    const publishedPool = publishedPools["items"] as Record<string, unknown>;
+    const publishedVerbs = (
+      publishedPool["properties"] as Record<string, unknown>
+    )["verbs"] as Record<string, unknown>;
+
+    expect(descriptor).toMatchObject({ minLength: 1, maxLength: 240 });
+    expect(emittedVerb).toMatchObject({ minLength: 1, maxLength: 240 });
+    expect(publishedVerbs["items"]).toMatchObject({
+      minLength: 1,
+      maxLength: 240,
+    });
+  });
+
   it("keeps Git email Unicode semantics aligned with the loader", () => {
     const emitted = emitJsonSchema();
     const repository = (emitted["properties"] as Record<string, unknown>)[

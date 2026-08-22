@@ -341,6 +341,7 @@ export {
 } from "./agent/agent.js";
 export type {
   AgentActivity,
+  AgentActivityRequest,
   AgentMessage,
   AgentMessageArtifacts,
   AgentMessageRole,

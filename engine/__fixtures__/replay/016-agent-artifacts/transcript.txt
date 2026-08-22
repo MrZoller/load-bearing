@@ -7,4 +7,4 @@
 0006  2026-08-05T09:14:22.000Z  agent.thinking-updated thinking=turn-one/thinking/reason status=complete
 0007  2026-08-05T09:14:22.000Z  agent.todo-updated todo=turn-one/todo/inspect status=in-progress
 0008  2026-08-05T09:14:22.000Z  agent.todo-updated todo=turn-one/todo/inspect status=completed
-0009  2026-08-05T09:14:22.000Z  agent.activity-set activity=working
+0009  2026-08-05T09:14:22.000Z  agent.activity-set activity=working verb="Inspecting"

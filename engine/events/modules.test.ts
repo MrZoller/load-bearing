@@ -97,6 +97,9 @@ describe("the engine's module list", () => {
       "world.service-start",
       "world.service-stop",
     ]);
+    expect(ENGINE_EVENT_REGISTRY.handler("agent.activity-set")?.version).toBe(
+      1,
+    );
   });
 
   it("is frozen, so nothing can register an event type at runtime", () => {

@@ -281,8 +281,9 @@
               "verbs": {
                 "description": "Candidate spinner verbs.",
                 "items": {
-                  "description": "Bounded single-line authored text.",
+                  "description": "Non-empty bounded single-line authored text.",
                   "maxLength": 240,
+                  "minLength": 1,
                   "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
                   "type": "string"
                 },

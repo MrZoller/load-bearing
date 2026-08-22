@@ -4,6 +4,7 @@ import { loadCartridge } from "../cartridge/load.js";
 import { deserialize, serialize } from "../serialize/canonical.js";
 import { reduce, restoreSnapshot, snapshot } from "../events/reduce.js";
 import type { EngineEvent } from "../events/state.js";
+import { createRandom } from "../random/stream.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import {
   MAX_AGENT_MESSAGES,
@@ -24,7 +25,11 @@ import {
   createAgentToolCallAddedEvent,
   createAgentToolCallUpdatedEvent,
 } from "./module.js";
-import { createTerminalModeEvent } from "../terminal/module.js";
+import {
+  createTerminalModeEvent,
+  createTerminalModelEvent,
+} from "../terminal/module.js";
+import { forkModelStream } from "../terminal/terminal.js";
 
 function cartridge() {
   const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
@@ -75,6 +80,31 @@ const SEED = "2026-08-21/16/deep-foundation";
 
 function fold(events: readonly EngineEvent[]) {
   return reduce({ cartridge: CARTRIDGE, seed: SEED, events });
+}
+
+function activityCartridge() {
+  const source = structuredClone(loadCartridgeFixture("minimal")) as Record<
+    string,
+    unknown
+  >;
+  source["presentation"] = {
+    placeholders: [{ stage: 0, text: "inspect" }],
+    spinnerPools: [
+      { archetype: "paranoid", stage: 0, verbs: ["Deep zero", "Deep again"] },
+      { archetype: "paranoid", stage: 1, verbs: ["Deep one"] },
+      { archetype: "reckless", stage: 0, verbs: ["Quick zero"] },
+      { archetype: "reckless", stage: 1, verbs: ["Quick one"] },
+    ],
+    metrics: {
+      baseTokens: 0,
+      tokensPerEvent: 1,
+      contextWindowTokens: 1000,
+      costMicrosPerToken: 1,
+      integrityStart: 100,
+      integrityLossPerEvent: 1,
+    },
+  };
+  return loadCartridge(source);
 }
 
 describe("agent replay state", () => {
@@ -175,13 +205,13 @@ describe("agent replay state", () => {
       }),
       createAgentTodoUpdatedEvent("manual-todo", "in-progress"),
       createAgentTodoUpdatedEvent("manual-todo", "completed"),
-      createAgentActivityEvent({ status: "working", verb: "Surveying" }),
+      createAgentActivityEvent({ status: "working", stage: 0 }),
     ];
     const before = fold([]);
     const after = fold(events);
     expect(readAgentSlice(before).messages).toEqual([]);
     expect(readAgentSlice(after)).toMatchObject({
-      activity: { status: "working", verb: "Surveying" },
+      activity: { status: "working", verb: "Inspecting" },
       toolCalls: [{ status: "succeeded", output: "ok" }],
       thinkingBlocks: [{ status: "complete" }],
       todos: [{ status: "completed" }],
@@ -433,12 +463,96 @@ describe("agent replay state", () => {
       }),
     ).not.toThrow();
     expect(() =>
-      fold([
-        createAgentActivityEvent({
-          status: "working",
-          verb: emoji.repeat(240),
-        }),
-      ]),
+      fold([createAgentActivityEvent({ status: "working", stage: 0 })]),
     ).not.toThrow();
+  });
+
+  it("selects and records a version-1 working verb from the active model's exact archetype/stage pool", () => {
+    const activity = createAgentActivityEvent({ status: "working", stage: 1 });
+    const custom = activityCartridge();
+    const deep = reduce({ cartridge: custom, seed: SEED, events: [activity] });
+    const quick = reduce({
+      cartridge: custom,
+      seed: SEED,
+      events: [createTerminalModelEvent("quick-patch"), activity],
+    });
+
+    expect(activity).toEqual({
+      type: "agent.activity-set",
+      payload: { status: "working", stage: 1 },
+      version: 1,
+    });
+    expect(readAgentSlice(deep).activity).toEqual({
+      status: "working",
+      verb: "Deep one",
+    });
+    expect(readAgentSlice(quick).activity).toEqual({
+      status: "working",
+      verb: "Quick one",
+    });
+    expect(deep.transcript.at(-1)?.summary).toContain('verb="Deep one"');
+  });
+
+  it("keeps model-scoped spinner draws isolated from other model switches and persists them through snapshots", () => {
+    const custom = activityCartridge();
+    const working = createAgentActivityEvent({ status: "working", stage: 0 });
+    const state = reduce({
+      cartridge: custom,
+      seed: SEED,
+      events: [
+        working,
+        {
+          type: "probe.random",
+          payload: { stream: "unrelated", count: 1, form: "uint32" },
+        },
+        createTerminalModelEvent("quick-patch"),
+        working,
+        createTerminalModelEvent("deep-foundation"),
+        working,
+      ],
+    });
+    const deepVerbs = ["Deep zero", "Deep again"];
+    const deepSpinner = forkModelStream(
+      createRandom(SEED).fork("agent"),
+      "deep-foundation",
+    ).fork("spinner.verbs");
+    const expectedDeep = [
+      deepSpinner.pick(deepVerbs),
+      deepSpinner.pick(deepVerbs),
+    ];
+
+    expect(readAgentSlice(state).activity).toEqual({
+      status: "working",
+      verb: expectedDeep[1],
+    });
+    expect(Object.keys(state.random.cursors)).toContain(
+      "root/agent/models/deep-foundation/spinner.verbs",
+    );
+    expect(Object.keys(state.random.cursors)).toContain(
+      "root/agent/models/quick-patch/spinner.verbs",
+    );
+    expect(Object.keys(state.random.cursors)).toContain("root/probe/unrelated");
+    expect(restoreSnapshot(snapshot(state))).toEqual(state);
+  });
+
+  it("does not draw for idle activity and rejects a working stage without an authored pool", () => {
+    const custom = activityCartridge();
+    const idle = reduce({
+      cartridge: custom,
+      seed: SEED,
+      events: [createAgentActivityEvent({ status: "idle" })],
+    });
+
+    expect(readAgentSlice(idle).activity).toEqual({ status: "idle", verb: "" });
+    expect(Object.keys(idle.random.cursors)).not.toContain(
+      "root/agent/models/deep-foundation/spinner.verbs",
+    );
+    expect(() =>
+      reduce({
+        cartridge: custom,
+        seed: SEED,
+        events: [createAgentActivityEvent({ status: "working", stage: 2 })],
+      }),
+    ).toThrow(/no spinner pool for archetype "paranoid" at stage 2/);
   });
 });
