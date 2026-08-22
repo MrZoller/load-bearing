@@ -78,6 +78,14 @@ export function createAgentResponseEvent(
   );
 }
 
+/** Record an authored refusal when bounded message history has no room. */
+export function createAgentCapacityEvent(responseId: string): EngineEvent {
+  return stampEvent(
+    { type: "agent.capacity-reached", payload: { responseId } },
+    "agent capacity",
+  );
+}
+
 export function createAgentToolCallAddedEvent(
   toolCall: AgentToolCall,
 ): EngineEvent {
@@ -184,6 +192,21 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
             instanceId,
           ),
           summary: `response=${responseId} instance=${instanceId}`,
+        };
+      },
+    },
+    "agent.capacity-reached": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["responseId"]);
+        const responseId = validateAgentId(
+          data["responseId"],
+          `${context.where}: responseId`,
+        );
+        authoredResponse(context, responseId);
+        return {
+          slice,
+          summary: `capacity response=${responseId}`,
         };
       },
     },

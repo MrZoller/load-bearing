@@ -3,8 +3,12 @@ import { describe, expect, it } from "vitest";
 import cartridgeDocument from "../../content/incidents/phase-1-demo.json";
 import { loadCartridge } from "../cartridge/load.js";
 import { createShellExecuteEvent } from "../commands/shell.js";
-import { reduce } from "../events/reduce.js";
-import { readAgentSlice } from "./agent.js";
+import { reduce, step } from "../events/reduce.js";
+import {
+  MAX_AGENT_MESSAGES,
+  MAX_AGENT_RESPONSES,
+  readAgentSlice,
+} from "./agent.js";
 import {
   boundAgentInput,
   createAgentInputEvents,
@@ -82,5 +86,34 @@ describe("authored agent input", () => {
     expect(() =>
       reduce({ cartridge: CARTRIDGE, seed: SEED, events }),
     ).not.toThrow();
+  });
+
+  it("records an authored refusal instead of throwing at history capacity", () => {
+    let state = reduce({ cartridge: CARTRIDGE, seed: SEED, events: [] });
+    for (let turn = 0; turn < MAX_AGENT_RESPONSES; turn += 1) {
+      for (const event of createAgentInputEvents(
+        CARTRIDGE,
+        state,
+        `unmatched request ${String(turn)}`,
+      )) {
+        state = step(state, event);
+      }
+    }
+    expect(readAgentSlice(state)).toMatchObject({
+      messages: { length: MAX_AGENT_MESSAGES },
+      responses: { length: MAX_AGENT_RESPONSES },
+    });
+
+    const events = createAgentInputEvents(CARTRIDGE, state, "one more request");
+    expect(events).toMatchObject([
+      {
+        type: "agent.capacity-reached",
+        payload: { responseId: "fallback" },
+      },
+    ]);
+    const capacityEvent = events[0];
+    if (capacityEvent === undefined)
+      throw new Error("capacity event is missing");
+    expect(() => step(state, capacityEvent)).not.toThrow();
   });
 });

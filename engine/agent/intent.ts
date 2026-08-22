@@ -8,8 +8,17 @@ import type {
 import { normalizeIntentPhrase } from "../cartridge/intent.js";
 import { createShellExecuteEvent } from "../commands/shell.js";
 import type { EngineEvent, SessionState } from "../events/state.js";
-import { MAX_AGENT_TEXT_LENGTH } from "./agent.js";
-import { createAgentMessageEvent, createAgentResponseEvent } from "./module.js";
+import {
+  MAX_AGENT_MESSAGES,
+  MAX_AGENT_RESPONSES,
+  MAX_AGENT_TEXT_LENGTH,
+  readAgentSlice,
+} from "./agent.js";
+import {
+  createAgentCapacityEvent,
+  createAgentMessageEvent,
+  createAgentResponseEvent,
+} from "./module.js";
 
 export interface AgentIntentSelection {
   readonly intentId: string | null;
@@ -68,6 +77,13 @@ export function createAgentInputEvents(
   state: SessionState,
   input: string,
 ): readonly EngineEvent[] {
+  const agent = readAgentSlice(state);
+  if (
+    agent.messages.length + 2 > MAX_AGENT_MESSAGES ||
+    agent.responses.length + 1 > MAX_AGENT_RESPONSES
+  ) {
+    return [createAgentCapacityEvent(cartridge.story.fallback.response)];
+  }
   const boundedInput = boundAgentInput(input);
   const selection = selectAgentIntent(cartridge, boundedInput);
   const turnId = `turn-${String(state.eventCount)}`;

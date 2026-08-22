@@ -284,6 +284,7 @@ export { TERMINAL_COMMANDS } from "./commands/terminal.js";
 export {
   AGENT_MODULE,
   createAgentActivityEvent,
+  createAgentCapacityEvent,
   createAgentMessageEvent,
   createAgentResponseEvent,
   createAgentThinkingAddedEvent,

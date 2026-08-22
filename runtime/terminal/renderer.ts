@@ -98,6 +98,26 @@ function renderMessage(
   return item;
 }
 
+function authoredMessage(
+  cartridge: LoadedCartridge,
+  responseId: string,
+): AgentMessage {
+  const response = cartridge.story.responses.find(
+    (candidate) => candidate.id === responseId,
+  );
+  if (response === undefined) {
+    throw new Error(
+      `A stored agent capacity event names unknown response ${JSON.stringify(responseId)}.`,
+    );
+  }
+  return {
+    id: "capacity/message",
+    role: "agent",
+    text: response.text,
+    responseId,
+  };
+}
+
 /** Project replayed shell and agent state in the order of its durable event log. */
 export function renderTerminalTranscript(
   document: Document,
@@ -123,6 +143,19 @@ export function renderTerminalTranscript(
       if (result === undefined) throw new Error("A shell result is missing.");
       entries.push(renderExchange(document, input, result));
       shellIndex += 1;
+      continue;
+    }
+
+    if (event.type === "agent.capacity-reached") {
+      entries.push(
+        renderMessage(
+          document,
+          authoredMessage(
+            cartridge,
+            eventString(event, "responseId", "agent.capacity-reached"),
+          ),
+        ),
+      );
       continue;
     }
 
