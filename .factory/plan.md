@@ -23,7 +23,7 @@ and runtime model calls are deliberately excluded.
   - acceptance: `index.html`, `vite.config.ts`, `runtime/session.ts`, `runtime/main.ts`, and terminal styles build a production page that loads a real `content/incidents/phase-1-demo.json` through `loadCartridge`, derives one authoritative state by `appendEvent` + `step`, renders a semantic terminal landmark and engine transcript without direct slice mutation, focuses its prompt, and always shows `loadbearing.cc · Incident #NNN`; pinned Playwright smoke coverage runs the production build; root and engine-only TypeScript programs plus all Phase 0 gates remain green (criteria 1 foundation, 4 foundation, 16, 17)
   - deps: none
   - pr: 37
-- [ ] T14 (standard) — Replayable terminal mode and active model
+- [~] T14 (standard) — Replayable terminal mode and active model
   - acceptance: `engine/terminal/` registers a validated plain-JSON slice and events for `tui`/`bash` mode and active-model changes; `engine/commands/terminal.ts` implements `loadbearing --resume` and an authored bare-`exit` refusal; `/exit` and TUI `Ctrl+D` share one mode event; model switches retain the original `SessionState.seed` and isolate model-specific named substreams; unit, snapshot, and golden replay tests cover every transition (criteria 2, 6; approved decision 2A)
   - deps: none
 - [ ] T15 (standard) — Cold open and two-view terminal skeleton
