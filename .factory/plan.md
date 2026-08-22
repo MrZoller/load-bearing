@@ -35,9 +35,10 @@ and runtime model calls are deliberately excluded.
   - acceptance: `engine/agent/` defines validated, bounded, plain-JSON messages, tool calls, thinking blocks, todos, activity, and authored response records; `engine/cartridge/{schema,types,load}.ts` concretely validates only the Phase 1 `story`/`presentation` subsections needed for opening copy, minimal intents/fallback, help, compact/resume responses, placeholders, spinner pools, and metrics while leaving Phase 2 interiors extensible; the published schema, malformed fixtures, demo cartridge, public exports, docs, and an intentional golden-fixture update remain in lockstep (criteria 5, 7, 9, 11; approved decision 1A)
   - deps: T14
   - pr: 40
-- [~] T17 (standard) — Authored natural-language input and shell passthrough
+- [R] T17 (standard) — Authored natural-language input and shell passthrough
   - acceptance: `engine/agent/intent.ts` and agent events choose the demo cartridge's minimal authored response/action set for recognized and unmatched natural-language input without apology or parser error; `!command` strips only the prefix and dispatches the same `createShellExecuteEvent` path as Bash, producing identical ordered output and machine effects; TUI rendering and unit/replay/Playwright tests prove both paths (criteria 5)
   - deps: T15, T16
+  - pr: 41
 - [ ] T18 (standard) — Shared-machine awareness and compacted beliefs
   - acceptance: generic agent resume logic compares typed mind beliefs with VFS/Git/service truth through `beliefDivergence`, selects cartridge-authored reactions without hardcoded demo paths, and records the response as agent state; deleting the demonstration file in Bash then resuming yields a deterministic in-character acknowledgment, while an authored compact summary replaces beliefs and survives mode changes; a golden replay pins the full behavior (criteria 3, 6)
   - deps: T16, T17
