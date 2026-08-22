@@ -139,6 +139,11 @@ describe("shell execution", () => {
   it.each([
     ["an unterminated quote containing a control character", "echo '\u0000"],
     ["a dangling escape after a lone surrogate", "echo \ud800\\"],
+    ["surrogate halves separated by shell whitespace", "echo \ud800\n\udc00"],
+    [
+      "surrogate halves separated by quoted shell whitespace",
+      "echo '\ud800\n\udc00'",
+    ],
   ])("rejects %s before tokenization or history", (_case, input) => {
     const before = reduce({
       cartridge: loadCartridge(loadCartridgeFixture("minimal")),

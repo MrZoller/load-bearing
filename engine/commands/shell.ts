@@ -4,7 +4,7 @@ import { BUILTIN_COMMAND_REGISTRY } from "./builtins.js";
 import { executeCommand } from "./registry.js";
 import { ShellSyntaxError, tokenizeShell } from "./tokenize.js";
 import type { CommandExecution, CommandRegistry } from "./types.js";
-import { describeUnwritableText } from "../text.js";
+import { describeUnwritableText, LONE_SURROGATE } from "../text.js";
 
 /** Leaves room for the fixed suffix on unknown-command stderr. */
 export const MAX_SHELL_INPUT_LENGTH = 4000;
@@ -41,7 +41,12 @@ export function executeShell(
       }),
     ]);
   }
+  // Shell whitespace is valid between arguments, so exclude it from the
+  // one-line artifact check. Surrogate pairing, however, is positional: doing
+  // that first would turn two invalid halves separated by whitespace into a
+  // valid pair and allow unrenderable input past this boundary.
   if (
+    LONE_SURROGATE.test(input) ||
     describeUnwritableText(
       input.replaceAll("\t", "").replaceAll("\n", "").replaceAll("\r", ""),
     ) !== undefined
