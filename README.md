@@ -53,7 +53,9 @@ PR description.
 
 ## Status
 
-Phase 0 — headless state engine. Nothing renders yet.
+Phase 1 — the browser runtime walking skeleton renders the deterministic engine
+as an interactive Bash and coding-agent terminal. Incident content remains
+cartridge-authored under `content/incidents/`.
 
 ## License
 

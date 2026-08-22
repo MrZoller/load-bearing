@@ -4,8 +4,8 @@ A daily interactive comedy presented as a polished browser-based coding
 environment: visitors investigate a fictional production incident inside a
 coding-agent TUI where everything is load-bearing and the agent deteriorates.
 The terminal is real; the computer is lying. The product is deterministic —
-`state = reduce(cartridge, seed, eventLog)` — and today Phase 1 is building a
-browser terminal over the completed headless engine. The engine remains pure
+`state = reduce(cartridge, seed, eventLog)` — and today Phase 1 has a browser
+terminal walking skeleton over the completed headless engine. The engine remains pure
 TypeScript with zero DOM/runtime dependencies and runs identically in Node and
 the browser; DOM mechanics live under `runtime/`.
 
@@ -91,6 +91,7 @@ Commands I read but did **not** run (all write to the tree): `fixtures:update`,
   `update-schema.ts`.
 - `.github/workflows/ci.yml` — CI gate: typecheck → format → purity → tests in
   two timezones. Reads `.nvmrc`, not a pinned version.
+- `content/incidents/` — browser-loadable authored incident cartridges.
 - Not yet present (future phases): `pipeline/` and `content/lore/`.
 
 ## Conventions
