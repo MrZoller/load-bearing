@@ -7,11 +7,14 @@ import type { EngineEvent, SessionState } from "../events/state.js";
 import { readMindSlice } from "../mind/mind.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { createTerminalModeEvent } from "../terminal/module.js";
-import { readAgentSlice } from "./agent.js";
+import { readTerminalSlice } from "../terminal/terminal.js";
+import { MAX_AGENT_MESSAGES, readAgentSlice } from "./agent.js";
 import {
   createAgentCompactEvents,
   createAgentResumeEvents,
 } from "./awareness.js";
+import { createAgentInputEvents } from "./intent.js";
+import { createAgentMessageEvent } from "./module.js";
 
 function cartridge() {
   const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
@@ -64,6 +67,23 @@ function fold(
 
 function base(): SessionState {
   return reduce({ cartridge: CARTRIDGE, seed: SEED, events: [] });
+}
+
+function withFullMessageHistory(): SessionState {
+  let state = base();
+  for (let turn = 0; turn < MAX_AGENT_MESSAGES / 2 - 1; turn += 1) {
+    for (const event of createAgentInputEvents(
+      CARTRIDGE,
+      state,
+      `unmatched request ${String(turn)}`,
+    )) {
+      state = step(state, event);
+    }
+  }
+  state = step(state, createAgentMessageEvent("filler-0", "filler"));
+  state = step(state, createAgentMessageEvent("filler-1", "filler"));
+  expect(readAgentSlice(state).messages).toHaveLength(MAX_AGENT_MESSAGES);
+  return state;
 }
 
 describe("agent awareness planning", () => {
@@ -123,5 +143,55 @@ describe("agent awareness planning", () => {
     expect(readAgentSlice(state).responses.at(-1)?.responseId).toBe(
       "compact-awareness",
     );
+  });
+
+  it("falls back without a message at capacity while resume still enters tui mode", () => {
+    const state = withFullMessageHistory();
+    const events = createAgentResumeEvents(CARTRIDGE, state);
+
+    expect(events).toMatchObject([
+      {
+        type: "agent.capacity-reached",
+        payload: { responseId: "resume-unchanged" },
+      },
+      { type: "terminal.mode-set", payload: { mode: "tui" } },
+    ]);
+    expect(() => fold(state, events)).not.toThrow();
+
+    const next = fold(state, events);
+    expect(readAgentSlice(next).messages).toHaveLength(MAX_AGENT_MESSAGES);
+    expect(readMindSlice(next).beliefs).toEqual([]);
+    expect(readTerminalSlice(next).mode).toBe("tui");
+  });
+
+  it("compacts the mind before its capacity fallback without adding a message", () => {
+    const state = withFullMessageHistory();
+    const events = createAgentCompactEvents(CARTRIDGE, state);
+
+    expect(events).toMatchObject([
+      {
+        type: "mind.compact",
+        payload: {
+          summary: "Only the missing cache marker remains relevant.",
+        },
+      },
+      {
+        type: "agent.capacity-reached",
+        payload: { responseId: "resume-unchanged" },
+      },
+    ]);
+    expect(() => fold(state, events)).not.toThrow();
+
+    const next = fold(state, events);
+    expect(readAgentSlice(next).messages).toHaveLength(MAX_AGENT_MESSAGES);
+    expect(readMindSlice(next)).toMatchObject({
+      beliefs: [
+        { kind: "file-exists", path: "/srv/app/cache.lock", exists: false },
+      ],
+      compactHistory: [
+        { summary: "Only the missing cache marker remains relevant." },
+      ],
+    });
+    expect(readTerminalSlice(next).mode).toBe("bash");
   });
 });
