@@ -147,7 +147,8 @@ function renderMessage(
       message.text,
     ),
   );
-  if (message.role === "agent") item.dataset["announcement"] = message.text;
+  if (message.role === "agent")
+    item.dataset["announcement"] = `Agent: ${message.text}`;
   if (messageArtifacts !== undefined) {
     const artifacts = renderAgentArtifacts(document, messageArtifacts);
     if (artifacts !== null) item.append(artifacts);

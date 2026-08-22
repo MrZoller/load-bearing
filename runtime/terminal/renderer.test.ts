@@ -138,8 +138,8 @@ describe("renderTerminalTranscript", () => {
     expect(entries[2]?.children[0]?.attributes.get("aria-label")).toContain(
       "Agent: ",
     );
-    expect(entries[2]?.dataset["announcement"]).toContain(
-      "temporary readiness sentinel",
+    expect(entries[2]?.dataset["announcement"]).toBe(
+      "Agent: I found the temporary readiness sentinel. Its age suggests removal now requires a structural survey.",
     );
   });
 

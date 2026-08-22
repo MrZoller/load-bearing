@@ -98,6 +98,15 @@ test("announces only newly rendered agent and shell output", async ({
   ).toBeVisible();
   await expect(liveOutput).toHaveText("Shell output: /production/service");
   await expect(liveOutput).toHaveAttribute("data-mutations", "1");
+
+  await page.getByRole("radio").first().press("Escape");
+  await prompt.fill("inspect it");
+  await prompt.press("Enter");
+  await expect(liveOutput).toContainText(
+    "Agent: I will inspect the sentinel before changing the forces currently passing through it.",
+  );
+  await expect(liveOutput).not.toContainText("Visitor:");
+  await expect.poll(() => liveOutput.getAttribute("data-mutations")).toBe("2");
 });
 
 test("reduced motion preserves cold-open, activity, and status information", async ({
@@ -115,6 +124,9 @@ test("reduced motion preserves cold-open, activity, and status information", asy
     "Last login: maintenance window still open.",
   );
   await expect(transcript).toContainText("loadbearing --resume incident-000");
+  await expect(transcript).toContainText(
+    "I found the temporary readiness sentinel. Its age suggests removal now requires a structural survey.",
+  );
   await expect(status).toContainText("model Structural Audit");
   await expect(status).toContainText(/tokens [\d,]+/);
   await expect(status).toContainText(/cost \$[\d,]+\.\d{6}/);
