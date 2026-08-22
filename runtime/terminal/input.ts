@@ -23,6 +23,11 @@ export interface TerminalInputBinding {
 
 export interface TerminalInputController {
   bind(binding: TerminalInputBinding): void;
+  clear(): void;
+  insertText(text: string): void;
+  pressKey(
+    key: "Tab" | "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight",
+  ): void;
 }
 
 export interface TerminalInputControllerOptions {
@@ -54,6 +59,43 @@ function replaceInput(
   input.setSelectionRange(cursor, cursor);
 }
 
+function isHighSurrogate(codeUnit: number): boolean {
+  return codeUnit >= 0xd800 && codeUnit <= 0xdbff;
+}
+
+function isLowSurrogate(codeUnit: number): boolean {
+  return codeUnit >= 0xdc00 && codeUnit <= 0xdfff;
+}
+
+/** Keep virtual controls from splitting a supplementary Unicode character. */
+function snapToCodePointBoundary(value: string, offset: number): number {
+  if (
+    offset > 0 &&
+    offset < value.length &&
+    isHighSurrogate(value.charCodeAt(offset - 1)) &&
+    isLowSurrogate(value.charCodeAt(offset))
+  ) {
+    return offset - 1;
+  }
+  return offset;
+}
+
+function previousCodePointBoundary(value: string, offset: number): number {
+  const previous = Math.max(0, offset - 1);
+  return snapToCodePointBoundary(value, previous);
+}
+
+function nextCodePointBoundary(value: string, offset: number): number {
+  if (
+    offset + 1 < value.length &&
+    isHighSurrogate(value.charCodeAt(offset)) &&
+    isLowSurrogate(value.charCodeAt(offset + 1))
+  ) {
+    return offset + 2;
+  }
+  return Math.min(value.length, offset + 1);
+}
+
 /** Bind both prompts to one controller while their DOM nodes rerender. */
 export function createTerminalInputController(
   options: TerminalInputControllerOptions,
@@ -62,8 +104,58 @@ export function createTerminalInputController(
     options.initialBashHistory,
   );
 
+  let currentBinding: TerminalInputBinding | null = null;
+
+  function activeBinding(): TerminalInputBinding | null {
+    if (currentBinding === null || !currentBinding.input.isConnected)
+      return null;
+    return currentBinding;
+  }
+
+  function moveOrComplete(
+    binding: TerminalInputBinding,
+    key: "Tab" | "ArrowUp" | "ArrowDown",
+  ): boolean {
+    const { input, mode, completionPresentation } = binding;
+    if (
+      completionPresentation?.isOpen() === true &&
+      (key === "ArrowUp" || key === "ArrowDown")
+    ) {
+      completionPresentation.move(key === "ArrowDown" ? 1 : -1);
+      return true;
+    }
+    if (key === "ArrowUp" || key === "ArrowDown") {
+      const value =
+        key === "ArrowUp"
+          ? history.previous(mode, input.value)
+          : history.next(mode, input.value);
+      replaceInput(input, value);
+      // History owns this arrow sequence. Reopening a slash popup for a
+      // recalled command would capture ArrowDown and strand the draft.
+      completionPresentation?.close();
+      return true;
+    }
+    if (hasInputSelection(input)) return false;
+    if (completionPresentation?.isOpen() === true)
+      return completionPresentation.accept();
+    const cursor = input.selectionStart ?? input.value.length;
+    const completion = completeTerminalInput(
+      mode,
+      input.value,
+      cursor,
+      binding.state,
+    );
+    if (completion === null) return false;
+    if (completion.value !== input.value) {
+      replaceInput(input, completion.value, completion.cursor);
+      completionPresentation?.refresh();
+    }
+    return true;
+  }
+
   return {
     bind(binding) {
+      currentBinding = binding;
       const { form, input, mode, completionPresentation } = binding;
 
       form.addEventListener("submit", (event) => {
@@ -122,48 +214,61 @@ export function createTerminalInputController(
           }
           return;
         }
-        if (
-          completionPresentation?.isOpen() === true &&
-          (key === "ArrowUp" || key === "ArrowDown")
-        ) {
-          event.preventDefault();
-          completionPresentation.move(key === "ArrowDown" ? 1 : -1);
-          return;
-        }
         if (key === "ArrowUp" || key === "ArrowDown") {
           if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
             return;
-          event.preventDefault();
-          const value =
-            key === "ArrowUp"
-              ? history.previous(mode, input.value)
-              : history.next(mode, input.value);
-          replaceInput(input, value);
-          // History owns this arrow sequence. Reopening a slash popup for a
-          // recalled command would capture ArrowDown and strand the draft.
-          completionPresentation?.close();
+          if (moveOrComplete(binding, key)) event.preventDefault();
           return;
         }
         // A transcript selection matters to copy, but it must not disable
         // prompt completion after the user returns focus to the input.
         if (key !== "Tab" || event.shiftKey || hasInputSelection(input)) return;
-        if (completionPresentation?.isOpen() === true) {
-          if (completionPresentation.accept()) event.preventDefault();
-          return;
-        }
-        const cursor = input.selectionStart ?? input.value.length;
-        const completion = completeTerminalInput(
-          mode,
-          input.value,
-          cursor,
-          binding.state,
-        );
-        if (completion === null) return;
-        event.preventDefault();
-        if (completion.value === input.value) return;
-        replaceInput(input, completion.value, completion.cursor);
-        completionPresentation?.refresh();
+        if (moveOrComplete(binding, "Tab")) event.preventDefault();
       });
+    },
+    clear() {
+      currentBinding = null;
+    },
+    insertText(text) {
+      const binding = activeBinding();
+      if (binding === null) return;
+      const { input, mode, completionPresentation } = binding;
+      const start = snapToCodePointBoundary(
+        input.value,
+        input.selectionStart ?? input.value.length,
+      );
+      const end = snapToCodePointBoundary(
+        input.value,
+        input.selectionEnd ?? start,
+      );
+      const value = `${input.value.slice(0, start)}${text}${input.value.slice(end)}`;
+      replaceInput(input, value, start + text.length);
+      history.reset(mode);
+      completionPresentation?.refresh();
+      options.onActivity?.();
+      input.focus();
+    },
+    pressKey(key) {
+      const binding = activeBinding();
+      if (binding === null) return;
+      const { input } = binding;
+      if (key === "ArrowLeft" || key === "ArrowRight") {
+        const start = input.selectionStart ?? input.value.length;
+        const end = input.selectionEnd ?? start;
+        const cursor =
+          key === "ArrowLeft"
+            ? start === end
+              ? previousCodePointBoundary(input.value, start)
+              : start
+            : start === end
+              ? nextCodePointBoundary(input.value, end)
+              : end;
+        input.setSelectionRange(cursor, cursor);
+      } else {
+        moveOrComplete(binding, key);
+      }
+      options.onActivity?.();
+      input.focus();
     },
   };
 }

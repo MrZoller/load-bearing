@@ -75,10 +75,11 @@ and runtime model calls are deliberately excluded.
   - acceptance: the demo cartridge authors rotating placeholders, accurate in-character help, autocomplete copy, and one idle nudge; runtime timers may reveal preselected presentation or dispatch the explicit replayable nudge event but never choose content from wall time; interaction tests prove each teaching surface appears, only one idle nudge records, and no tooltip, tutorial overlay/modal, post-cold-open shell hint, or hidden-depth advertisement exists (criterion 11)
   - deps: T16, T17, T23
   - pr: 49
-- [~] T27 (standard) — Semantic accessibility, reduced motion, and visual baseline
+- [x] T27 (standard) — Semantic accessibility, reduced motion, and visual baseline
   - acceptance: terminal/components/styles use reading-order semantic DOM, labeled controls, visible focus, textual equivalents, and a dedicated polite live region that announces only new meaningful output; reduced motion preserves every status and cold-open fact; the restrained original terminal treatment uses structural/I-beam accents without lab names, model trademarks, copied colors, or exact trade dress; automated role/name/focus/motion checks cover the stable component surface (criteria 13, 16; approved decision 3A)
   - deps: T15, T19, T20, T21, T22
-- [ ] T28 (standard) — Responsive terminal and mobile key strip
+  - pr: 51
+- [~] T28 (standard) — Responsive terminal and mobile key strip
   - acceptance: responsive styles and `runtime/components/mobile-keys.ts` keep transcript, prompt, selectors, and permission controls usable at 390×844 with no page-level horizontal overflow; focused-prompt viewport resizing remains usable with a software keyboard; the labeled `/`, `!`, Tab, and arrow keys feed the same input controller as hardware keys; Playwright covers width, focus, long output, and key behavior (criterion 15; approved decision 4A)
   - deps: T24, T25, T27
 - [ ] T29 (standard) — Phase 1 deterministic browser acceptance gate

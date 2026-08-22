@@ -11,12 +11,14 @@ import type { EngineEvent } from "../engine/index.js";
 import { createRuntimeSession } from "./session.js";
 import { renderStatus } from "./components/status.js";
 import { updateAgentActivity } from "./components/activity.js";
+import { renderMobileKeys } from "./components/mobile-keys.js";
 import { renderTerminalTranscript } from "./terminal/renderer.js";
 import { createTerminalInputController } from "./terminal/input.js";
 import { createTranscriptSearch } from "./terminal/search.js";
 import { createTranscriptScroll } from "./terminal/scroll.js";
 import { renderBashView } from "./views/bash.js";
 import { renderTuiView } from "./views/tui.js";
+import { observeVisualViewport } from "./viewport.js";
 
 // This is presentation time only: the authored working/idle events and their
 // selected verb are already fixed before the browser schedules this interval.
@@ -83,18 +85,6 @@ export function mountApp(
     transcript,
     focusPrompt,
   );
-  terminal.append(
-    beam,
-    assignment,
-    transcriptSearch.element,
-    transcript,
-    outputAnnouncements,
-    transcriptScroll.newOutputButton,
-    view,
-    status,
-  );
-  mount.replaceChildren(terminal);
-
   const browser = document.defaultView;
   let activityStartedAt: number | null = null;
   let activityFrame: number | null = null;
@@ -127,6 +117,20 @@ export function mountApp(
       resetIdleTimer();
     },
   });
+  const mobileKeys = renderMobileKeys(document, inputController);
+  terminal.append(
+    beam,
+    assignment,
+    transcriptSearch.element,
+    transcript,
+    outputAnnouncements,
+    transcriptScroll.newOutputButton,
+    view,
+    mobileKeys,
+    status,
+  );
+  mount.replaceChildren(terminal);
+  observeVisualViewport(document);
 
   function stopIdleTimer(): void {
     if (browser !== null && idleTimer !== null) browser.clearTimeout(idleTimer);
@@ -273,6 +277,7 @@ export function mountApp(
     transcriptSearch.refresh();
     transcriptScroll.afterSearchRefresh();
 
+    inputController.clear();
     const activeView =
       readTerminalSlice(snapshot.state).mode === "bash"
         ? renderBashView(document, snapshot.state, dispatch, inputController)
