@@ -41,6 +41,7 @@ test("Lighthouse reports a perfect accessibility score", async ({
     chrome = await launch({
       chromePath: chromium.executablePath(),
       chromeFlags: [
+        "--headless=new",
         `--window-size=${DESKTOP_VIEWPORT.width},${DESKTOP_VIEWPORT.height}`,
       ],
       logLevel: "silent",
