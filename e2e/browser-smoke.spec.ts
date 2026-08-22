@@ -106,6 +106,10 @@ test("projects replayed engine metrics into the visible session status", async (
   await expect(
     page.getByRole("status", { name: "Agent activity" }),
   ).toBeVisible();
+  await page.waitForTimeout(100);
+  await expect(
+    page.getByRole("status", { name: "Agent activity" }),
+  ).toBeVisible();
 
   // The status is re-projected after a visitor turn; it cannot be a DOM-only
   // counter if the token value follows the engine's expanded event history.

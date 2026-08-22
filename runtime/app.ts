@@ -11,6 +11,10 @@ import { renderTerminalTranscript } from "./terminal/renderer.js";
 import { renderBashView } from "./views/bash.js";
 import { renderTuiView } from "./views/tui.js";
 
+// This is presentation time only: the authored working/idle events and their
+// selected verb are already fixed before the browser schedules this interval.
+const ACTIVITY_PRESENTATION_MS = 300;
+
 /** Mount one terminal whose visible mode is always projected from engine state. */
 export function mountApp(
   document: Document,
@@ -102,15 +106,13 @@ export function mountApp(
     ) {
       session.dispatch(first);
       render();
-      browser.requestAnimationFrame(() => {
-        // RAF callbacks run before their frame paints. A second callback keeps
-        // the replayable working state mounted through that paint, then folds
-        // the already-authored completion without letting wall time choose it.
-        browser.requestAnimationFrame(() => {
-          session.dispatchMany(events.slice(1));
-          render();
-        });
-      });
+      // Keep the already-authored working boundary on screen long enough to
+      // read its verb and see the spinner move. Wall time decides only when
+      // this fixed event sequence is presented, never which events it holds.
+      browser.setTimeout(() => {
+        session.dispatchMany(events.slice(1));
+        render();
+      }, ACTIVITY_PRESENTATION_MS);
       return;
     }
     session.dispatchMany(events);
