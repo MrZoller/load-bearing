@@ -43,7 +43,7 @@ and runtime model calls are deliberately excluded.
   - acceptance: generic agent resume logic compares typed mind beliefs with VFS/Git/service truth through `beliefDivergence`, selects cartridge-authored reactions without hardcoded demo paths, and records the response as agent state; deleting the demonstration file in Bash then resuming yields a deterministic in-character acknowledgment, while an authored compact summary replaces beliefs and survives mode changes; a golden replay pins the full behavior (criteria 3, 6)
   - deps: T16, T17
   - pr: 42
-- [R] T19 (standard) — Pending permissions and keyboard decisions
+- [x] T19 (standard) — Pending permissions and keyboard decisions
   - acceptance: `engine/mind/` adds bounded pending-request identity and request/resolve events without breaking existing direct decisions; grant, deny, and always-allow atomically clear the prompt and append the correct simulated-time ledger entry, with standing grants still exact-capability matches; `runtime/components/permission.ts` exposes labeled keyboard controls and restores prompt focus; unit, snapshot, replay, and interaction tests cover all choices (criteria 7)
   - deps: T15, T16
   - pr: 43
