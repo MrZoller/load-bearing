@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { loadCartridge } from "../cartridge/load.js";
 import { reduce } from "../events/reduce.js";
-import { loadCartridgeFixture } from "../testing/fixtures.js";
+import {
+  loadCartridgeFixture,
+  loadReplayFixture,
+} from "../testing/fixtures.js";
 import { validateVfsSlice } from "./module.js";
 import {
   baseName,
@@ -204,6 +207,70 @@ describe("VFS construction and paths", () => {
 });
 
 describe("VFS permissions and mutations", () => {
+  it("lets Incident #001's visitor replace routes through the operator-writable config directory", () => {
+    const incident = loadCartridge(
+      loadReplayFixture("020-incident-001-story").cartridge,
+    );
+    const original = createVfsSlice(incident);
+    const route = "config/routes.conf";
+    const detached = "config/routes.200.conf";
+    const attached = "config/routes.500.conf";
+
+    expect(original.identity).toMatchObject({
+      user: "visitor",
+      group: "operators",
+    });
+    expect(original.entries["/production/load-balancer/config"]).toMatchObject({
+      owner: "root",
+      group: "operators",
+      mode: "0775",
+    });
+    expect(
+      original.entries["/production/load-balancer/config/routes.conf"],
+    ).toMatchObject({
+      contents: "health_status=500\neurope_attached=true\n",
+      owner: "root",
+      group: "operators",
+      mode: "0664",
+    });
+
+    let slice = successful(deleteVfs(original, route, NOW));
+    slice = successful(
+      copyVfs(slice, detached, route, NOW, { preserve: true }),
+    );
+    expect(
+      slice.entries["/production/load-balancer/config/routes.conf"],
+    ).toMatchObject({
+      contents: "health_status=200\neurope_attached=false\n",
+      owner: "root",
+      group: "operators",
+      mode: "0644",
+    });
+
+    slice = successful(deleteVfs(slice, route, LATER));
+    slice = successful(
+      copyVfs(slice, attached, route, LATER, { preserve: true }),
+    );
+    expect(
+      slice.entries["/production/load-balancer/config/routes.conf"],
+    ).toMatchObject({
+      contents: "health_status=500\neurope_attached=true\n",
+      owner: "root",
+      group: "operators",
+      mode: "0644",
+    });
+
+    const nonOperator = {
+      ...original,
+      identity: { ...original.identity, user: "observer", group: "observers" },
+    };
+    expect(deleteVfs(nonOperator, route, NOW).result).toMatchObject({
+      ok: false,
+      code: "EACCES",
+      operation: "delete",
+    });
+  });
+
   it("returns precise failures for ordinary file, directory, and metadata operations", () => {
     const slice = fresh();
     expect(readVfs(slice, "src")).toMatchObject({ ok: false, code: "EISDIR" });

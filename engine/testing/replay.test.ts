@@ -43,6 +43,24 @@ const RESOLVE_CARTRIDGE = (reference: CartridgeReference) => ({
 });
 
 describe("golden replay fixtures", () => {
+  it("declares the Incident #001 load-balancer shell evidence without needing a recording", () => {
+    const fixture = loadReplayFixture("021-incident-001-load-balancer");
+
+    expect(fixture.cartridgeName).toBe("incident-001");
+    expect(fixture.events.map((event) => event.payload?.["input"])).toEqual([
+      "npm test",
+      "curl http://load-balancer.internal/health",
+      "rm config/routes.conf",
+      "cp -p config/routes.200.conf config/routes.conf",
+      "npm test",
+      "curl http://load-balancer.internal/health",
+      "rm config/routes.conf",
+      "cp -p config/routes.500.conf config/routes.conf",
+      "npm test",
+      "curl http://load-balancer.internal/health",
+    ]);
+  });
+
   it("records the full session's cross-subsystem consequences", () => {
     const recording = replayFixture(loadReplayFixture("014-full-session"));
     const state = deserialize(recording.state) as Record<string, unknown>;

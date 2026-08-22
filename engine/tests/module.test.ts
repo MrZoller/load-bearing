@@ -8,13 +8,17 @@ import {
   snapshot,
   step,
 } from "../events/reduce.js";
-import { loadCartridgeFixture } from "../testing/fixtures.js";
+import {
+  loadCartridgeFixture,
+  loadReplayFixture,
+} from "../testing/fixtures.js";
 import { executeCommand } from "../commands/registry.js";
 import { BUILTIN_COMMAND_REGISTRY } from "../commands/builtins.js";
 import { readTestsSlice } from "./module.js";
 import { evaluateFilePredicate } from "./planner.js";
 import { readVfsSlice } from "../vfs/module.js";
 import type { VfsSlice } from "../vfs/types.js";
+import { readWorldSlice } from "../world/module.js";
 
 function cartridge(override = false) {
   const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
@@ -49,6 +53,112 @@ function cartridge(override = false) {
 }
 
 describe("simulated tests", () => {
+  it("replays Incident #001's operator repair and undo through the supported shell sequence", () => {
+    const cartridge = loadCartridge(
+      loadReplayFixture("020-incident-001-story").cartridge,
+    );
+    const repair = [
+      "rm config/routes.conf",
+      "cp -p config/routes.200.conf config/routes.conf",
+    ];
+    const undo = [
+      "rm config/routes.conf",
+      "cp -p config/routes.500.conf config/routes.conf",
+    ];
+    const inputs = [
+      "npm test",
+      "curl http://load-balancer.internal/health",
+      ...repair,
+      "npm test",
+      "curl http://load-balancer.internal/health",
+      ...undo,
+      "npm test",
+      "curl http://load-balancer.internal/health",
+    ];
+    const state = reduce({
+      cartridge,
+      seed: "2026-08-22/21/deep-foundation",
+      events: inputs.map((input) => ({
+        type: "shell.execute",
+        payload: { input },
+      })),
+    });
+
+    // The visitor is not root; its operators group may replace the group-writable
+    // config entry, and cp -p is the supported way to retain authored metadata.
+    expect(
+      state.transcript
+        .filter((entry) => entry.type === "shell.result")
+        .map((entry) => entry.exitCode),
+    ).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    expect(
+      readTestsSlice(state).runs.map((run) =>
+        run.cases.map((test) => test.passed),
+      ),
+    ).toEqual([
+      [false, true],
+      [true, false],
+      [false, true],
+    ]);
+    expect(
+      state.transcript
+        .filter((entry) => entry.type === "shell.result")
+        .filter((entry) =>
+          entry.output?.some((line) => line.text.startsWith("HTTP/")),
+        )
+        .map((entry) => entry.output?.map((line) => line.text)),
+    ).toEqual([
+      ["HTTP/1.1 500 Internal Server Error", "health_status=500"],
+      ["HTTP/1.1 200 OK", "health_status=200"],
+      ["HTTP/1.1 500 Internal Server Error", "health_status=500"],
+    ]);
+    expect(readWorldSlice(state).services).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "regional-router",
+          state: "running",
+          health: "healthy",
+        }),
+      ]),
+    );
+    expect(
+      readVfsSlice(state).entries[
+        "/production/load-balancer/config/routes.conf"
+      ],
+    ).toMatchObject(
+      cartridge.repository.files[
+        "/production/load-balancer/config/routes.500.conf"
+      ],
+    );
+
+    const repaired = reduce({
+      cartridge,
+      seed: "2026-08-22/21/deep-foundation",
+      events: repair.map((input) => ({
+        type: "shell.execute",
+        payload: { input },
+      })),
+    });
+    expect(readWorldSlice(repaired).services).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "regional-router",
+          state: "running",
+          health: "unhealthy",
+        }),
+      ]),
+    );
+    expect(
+      readVfsSlice(repaired).entries[
+        "/production/load-balancer/config/routes.conf"
+      ],
+    ).toMatchObject(
+      cartridge.repository.files[
+        "/production/load-balancer/config/routes.200.conf"
+      ],
+    );
+  });
+
   it("records pass/fail history around a VFS edit and advances exact authored time", () => {
     const state = reduce({
       cartridge: cartridge(),

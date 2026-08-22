@@ -5,6 +5,7 @@ import {
   listInvalidCartridgeFixtures,
   loadCartridgeFixture,
   loadInvalidCartridgeFixture,
+  loadReplayFixture,
 } from "../testing/fixtures.js";
 import {
   CartridgeValidationError,
@@ -35,6 +36,89 @@ function setStoryPhase2(source: Record<string, unknown>, value: unknown): void {
 }
 
 describe("loadCartridge", () => {
+  it("loads Incident #001's authored load-balancer files and test contract exactly", () => {
+    const cartridge = loadCartridge(
+      loadReplayFixture("020-incident-001-story").cartridge,
+    );
+
+    expect(cartridge.meta).toMatchObject({
+      number: 1,
+      date: "2026-08-22",
+      title: "The Inverted Load Balancer",
+      startedAt: "2026-08-22T09:14:22.000Z",
+    });
+    expect(cartridge.repository.cwd).toBe("/production/load-balancer");
+    expect(cartridge.repository.identity).toEqual({
+      user: "visitor",
+      group: "operators",
+      home: "/home/visitor",
+      umask: "0022",
+    });
+    expect(cartridge.repository.services).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "regional-router",
+          state: "running",
+          health: "healthy",
+        }),
+      ]),
+    );
+    expect(Object.keys(cartridge.repository.files).sort()).toEqual([
+      "/production/load-balancer/config/routes.200.conf",
+      "/production/load-balancer/config/routes.500.conf",
+      "/production/load-balancer/config/routes.conf",
+      "/production/load-balancer/package.json",
+      "/production/load-balancer/src/config.ts",
+      "/production/load-balancer/test/routes.test.ts",
+    ]);
+    expect(
+      cartridge.repository.files[
+        "/production/load-balancer/config/routes.conf"
+      ],
+    ).toMatchObject({
+      contents: "health_status=500\neurope_attached=true\n",
+      owner: "root",
+      group: "operators",
+      mode: "0664",
+    });
+    expect(
+      cartridge.repository.files[
+        "/production/load-balancer/config/routes.200.conf"
+      ],
+    ).toMatchObject({
+      contents: "health_status=200\neurope_attached=false\n",
+      owner: "root",
+      group: "operators",
+      mode: "0644",
+    });
+    expect(
+      cartridge.repository.files["/production/load-balancer/src/config.ts"]
+        ?.contents,
+    ).toContain("expectedHealthStatus = 200");
+    expect(cartridge.repository.tests).toEqual([
+      {
+        id: "health-status-200",
+        name: "health endpoint returns 200",
+        durationMs: 90,
+        predicate: {
+          kind: "file-contents",
+          path: "/production/load-balancer/config/routes.conf",
+          equals: "health_status=200\neurope_attached=false\n",
+        },
+      },
+      {
+        id: "europe-attached",
+        name: "Europe remains attached",
+        durationMs: 110,
+        predicate: {
+          kind: "file-contents",
+          path: "/production/load-balancer/config/routes.conf",
+          equals: "health_status=500\neurope_attached=true\n",
+        },
+      },
+    ]);
+  });
+
   it("loads the minimal fixture cartridge", () => {
     const cartridge = loadCartridge(minimal());
 
