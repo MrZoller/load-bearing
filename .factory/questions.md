@@ -300,7 +300,7 @@ typed fact, which A preserves verbatim; B would ship an unevaluable predicate
 and C would materially expand an already-major task beyond its approved
 scope.)
 
-## Q10 (task T41, open) — How should the default-branch fixture copies be recovered?
+## Q10 (task T41, consumed) — How should the default-branch fixture copies be recovered?
 
 Context: The default-branch checkout contains three untracked production replay
 fixture files under `engine/__fixtures__/replay/021-incident-001-load-balancer/`.
