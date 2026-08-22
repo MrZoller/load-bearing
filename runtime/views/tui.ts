@@ -2,7 +2,6 @@ import {
   createAgentInputEvents,
   createShellExecuteEvent,
   createTerminalModelEvent,
-  createTerminalModeEvent,
   readMindSlice,
   readTerminalSlice,
 } from "../../engine/index.js";
@@ -19,6 +18,7 @@ import {
   executeSlashCommand,
 } from "../commands/slash.js";
 import type { SlashCommandDefinition } from "../commands/slash.js";
+import type { TerminalInputController } from "../terminal/input.js";
 
 export function createTuiInputEvents(
   cartridge: LoadedCartridge,
@@ -39,6 +39,7 @@ export function renderTuiView(
   cartridge: LoadedCartridge,
   state: SessionState,
   dispatch: (events: readonly EngineEvent[]) => void,
+  inputController: TerminalInputController,
   activityElapsedMs = 0,
 ): HTMLElement {
   const pending = readMindSlice(state).pendingPermission;
@@ -76,12 +77,26 @@ export function renderTuiView(
   let matches: readonly SlashCommandDefinition[] = [];
   let activeCompletion = 0;
 
-  function closePresentation(): void {
-    presentation.replaceChildren();
+  function closeCompletions(): boolean {
+    const wasOpen = !completions.hidden;
     completions.replaceChildren();
     completions.hidden = true;
     input.setAttribute("aria-expanded", "false");
     input.removeAttribute("aria-activedescendant");
+    matches = [];
+    activeCompletion = 0;
+    return wasOpen;
+  }
+
+  function closeAuxiliaryPresentation(): boolean {
+    const wasOpen = presentation.hasChildNodes();
+    presentation.replaceChildren();
+    return wasOpen;
+  }
+
+  function closePresentation(): void {
+    closeCompletions();
+    closeAuxiliaryPresentation();
   }
 
   function renderCompletions(): void {
@@ -171,74 +186,58 @@ export function renderTuiView(
     fieldset.querySelector<HTMLInputElement>("input:checked, input")?.focus();
   }
 
-  function enterBash(): void {
-    dispatch([createTerminalModeEvent("bash")]);
-  }
-
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    if (input.value.trim().startsWith("/")) {
-      const result = executeSlashCommand(cartridge, state, input.value);
-      if (result.kind === "dispatch") {
-        dispatch(result.events);
-      } else if (result.kind === "model-selector") {
-        showModelSelector();
-      } else if (result.kind === "metrics") {
-        showMessage(
-          "Session cost",
-          [
-            `model ${result.metrics.modelName}`,
-            `tokens ${groupedInteger(result.metrics.tokenCount)}`,
-            `cost ${currencyFromMicros(result.metrics.costMicros)}`,
-            `context ${String(result.metrics.contextPercent)}%`,
-          ].join(" · "),
-        );
-      } else {
-        showMessage("Command error", result.message);
+  inputController.bind({
+    mode: "tui",
+    form,
+    input,
+    state,
+    submit(value) {
+      if (value.trim().startsWith("/")) {
+        const result = executeSlashCommand(cartridge, state, value);
+        if (result.kind === "dispatch") {
+          dispatch(result.events);
+        } else if (result.kind === "model-selector") {
+          showModelSelector();
+        } else if (result.kind === "metrics") {
+          showMessage(
+            "Session cost",
+            [
+              `model ${result.metrics.modelName}`,
+              `tokens ${groupedInteger(result.metrics.tokenCount)}`,
+              `cost ${currencyFromMicros(result.metrics.costMicros)}`,
+              `context ${String(result.metrics.contextPercent)}%`,
+            ].join(" · "),
+          );
+        } else {
+          showMessage("Command error", result.message);
+        }
+        return;
       }
-      return;
-    }
-    dispatch(createTuiInputEvents(cartridge, state, input.value));
-  });
-  input.addEventListener("input", () => {
-    activeCompletion = 0;
-    renderCompletions();
-  });
-  input.addEventListener("keydown", (event) => {
-    if (event.ctrlKey && event.key.toLowerCase() === "d") {
-      event.preventDefault();
-      enterBash();
-      return;
-    }
-    if (
-      event.key === "Escape" &&
-      (!completions.hidden || presentation.hasChildNodes())
-    ) {
-      event.preventDefault();
-      closePresentation();
-      input.value = "";
-      input.focus();
-      return;
-    }
-    if (
-      !completions.hidden &&
-      (event.key === "ArrowDown" || event.key === "ArrowUp")
-    ) {
-      event.preventDefault();
-      const direction = event.key === "ArrowDown" ? 1 : -1;
-      activeCompletion =
-        (activeCompletion + direction + matches.length) % matches.length;
-      renderCompletions();
-      return;
-    }
-    if (!completions.hidden && event.key === "Tab") {
-      event.preventDefault();
-      const command = matches[activeCompletion];
-      if (command !== undefined) {
-        input.value = command.name;
+      dispatch(createTuiInputEvents(cartridge, state, value));
+    },
+    completionPresentation: {
+      isOpen: () => !completions.hidden,
+      move(direction) {
+        if (matches.length === 0) return;
+        activeCompletion =
+          (activeCompletion + direction + matches.length) % matches.length;
         renderCompletions();
-      }
-    }
+      },
+      accept() {
+        const command = matches[activeCompletion];
+        if (command === undefined) return false;
+        input.value = command.name;
+        input.setSelectionRange(input.value.length, input.value.length);
+        closeCompletions();
+        return true;
+      },
+      close: closeCompletions,
+      refresh() {
+        activeCompletion = 0;
+        renderCompletions();
+      },
+    },
+    closePresentation: closeAuxiliaryPresentation,
   });
   form.append(label, input);
 

@@ -1,11 +1,13 @@
 import { createShellExecuteEvent, readVfsSlice } from "../../engine/index.js";
 import type { EngineEvent, SessionState } from "../../engine/index.js";
+import type { TerminalInputController } from "../terminal/input.js";
 
 /** Render the shell as a thin dispatcher over the shared engine command path. */
 export function renderBashView(
   document: Document,
   state: SessionState,
   dispatch: (event: EngineEvent) => void,
+  inputController: TerminalInputController,
 ): HTMLFormElement {
   const form = document.createElement("form");
   form.className = "prompt prompt--bash";
@@ -25,9 +27,14 @@ export function renderBashView(
   input.spellcheck = false;
   input.setAttribute("aria-label", "Bash command");
 
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    dispatch(createShellExecuteEvent(input.value));
+  inputController.bind({
+    mode: "bash",
+    form,
+    input,
+    state,
+    submit(value) {
+      dispatch(createShellExecuteEvent(value));
+    },
   });
   form.append(label, input);
   return form;

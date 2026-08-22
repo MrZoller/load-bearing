@@ -1,5 +1,6 @@
 import {
   createShellExecuteEvent,
+  createTerminalModeEvent,
   readAgentSlice,
   readTerminalSlice,
 } from "../engine/index.js";
@@ -8,6 +9,7 @@ import { createRuntimeSession } from "./session.js";
 import { renderStatus } from "./components/status.js";
 import { updateAgentActivity } from "./components/activity.js";
 import { renderTerminalTranscript } from "./terminal/renderer.js";
+import { createTerminalInputController } from "./terminal/input.js";
 import { renderBashView } from "./views/bash.js";
 import { renderTuiView } from "./views/tui.js";
 
@@ -56,6 +58,24 @@ export function mountApp(
   const browser = document.defaultView;
   let activityStartedAt: number | null = null;
   let activityFrame: number | null = null;
+  let hiddenTranscriptEntries = 0;
+
+  const inputController = createTerminalInputController({
+    initialBashHistory: session.cartridge.repository.shellHistory,
+    clearTranscript() {
+      hiddenTranscriptEntries = renderTerminalTranscript(
+        document,
+        session.cartridge,
+        session.current(),
+      ).length;
+      // Keep the live prompt and its draft in place. The cutoff is consulted
+      // on later renders, while this immediate clear touches presentation only.
+      transcript.replaceChildren();
+    },
+    enterBash() {
+      dispatch(createTerminalModeEvent("bash"));
+    },
+  });
 
   function stopActivityFrame(): void {
     if (browser !== null && activityFrame !== null)
@@ -129,18 +149,24 @@ export function mountApp(
       activityStartedAt = null;
       stopActivityFrame();
     }
+    const transcriptEntries = renderTerminalTranscript(
+      document,
+      session.cartridge,
+      snapshot,
+    );
     transcript.replaceChildren(
-      ...renderTerminalTranscript(document, session.cartridge, snapshot),
+      ...transcriptEntries.slice(hiddenTranscriptEntries),
     );
 
     const activeView =
       readTerminalSlice(snapshot.state).mode === "bash"
-        ? renderBashView(document, snapshot.state, dispatch)
+        ? renderBashView(document, snapshot.state, dispatch, inputController)
         : renderTuiView(
             document,
             session.cartridge,
             snapshot.state,
             dispatchMany,
+            inputController,
             activityStartedAt === null || browser === null
               ? 0
               : browser.performance.now() - activityStartedAt,
