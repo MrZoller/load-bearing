@@ -41,6 +41,7 @@ export function renderTuiView(
   dispatch: (events: readonly EngineEvent[]) => void,
   inputController: TerminalInputController,
   activityElapsedMs = 0,
+  placeholder = "",
 ): HTMLElement {
   const pending = readMindSlice(state).pendingPermission;
   if (pending !== null)
@@ -65,6 +66,7 @@ export function renderTuiView(
   input.setAttribute("aria-autocomplete", "list");
   input.setAttribute("aria-controls", "slash-completions");
   input.setAttribute("aria-expanded", "false");
+  input.placeholder = placeholder;
 
   const presentation = document.createElement("div");
   presentation.className = "tui-presentation";
@@ -100,7 +102,7 @@ export function renderTuiView(
   }
 
   function renderCompletions(): void {
-    matches = discoverSlashCommands(input.value.trim());
+    matches = discoverSlashCommands(cartridge, input.value.trim());
     activeCompletion = Math.min(
       activeCompletion,
       Math.max(0, matches.length - 1),

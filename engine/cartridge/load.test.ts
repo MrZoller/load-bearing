@@ -380,6 +380,21 @@ describe("loadCartridge", () => {
     );
   });
 
+  it("rejects an idle nudge that names no authored response", () => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    story["idleNudgeResponse"] = "missing-idle-response";
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/story/idleNudgeResponse",
+          expected: "the id of a declared authored response",
+        }),
+      ]),
+    );
+  });
+
   it("rejects an empty authored spinner verb at the cartridge boundary", () => {
     const source = minimal();
     const presentation = source["presentation"] as Record<string, unknown>;

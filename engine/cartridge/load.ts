@@ -1276,6 +1276,8 @@ function checkStoryAndPresentation(
       "/story/fallback/authorizedResponse",
     );
   reference(story.helpResponse, "/story/helpResponse");
+  if (story.idleNudgeResponse !== "")
+    reference(story.idleNudgeResponse, "/story/idleNudgeResponse");
   reference(story.compact.response, "/story/compact/response");
   reference(story.resume.unchangedResponse, "/story/resume/unchangedResponse");
   reference(story.resume.changedResponse, "/story/resume/changedResponse");

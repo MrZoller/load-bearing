@@ -432,6 +432,13 @@ export function readAgentSlice(state: SessionState): AgentSlice {
   );
 }
 
+/** Derive the one-shot teaching state from replayed responses, never the DOM. */
+export function hasAgentIdleNudged(state: SessionState): boolean {
+  return readAgentSlice(state).responses.some(
+    (response) => response.instanceId === "idle-nudge",
+  );
+}
+
 /**
  * Read the artifacts instantiated beside one message. Artifact ids encode this
  * relationship for replay, but callers should not duplicate that encoding.

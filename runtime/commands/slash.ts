@@ -19,16 +19,26 @@ export interface SlashCommandDefinition {
   readonly description: string;
 }
 
-export const SLASH_COMMANDS: readonly SlashCommandDefinition[] = Object.freeze([
-  { name: "/help", description: "Show the authored command reference" },
-  { name: "/model", description: "Choose the active agent model" },
-  {
-    name: "/compact",
-    description: "Replace context with its authored summary",
-  },
-  { name: "/cost", description: "Report replay-derived session metrics" },
-  { name: "/exit", description: "Return to the incident shell" },
+export const SLASH_COMMAND_NAMES: readonly SlashCommandName[] = Object.freeze([
+  "/help",
+  "/model",
+  "/compact",
+  "/cost",
+  "/exit",
 ]);
+
+function slashCommands(
+  cartridge: LoadedCartridge,
+): readonly SlashCommandDefinition[] {
+  const copy = cartridge.presentation.autocomplete;
+  return [
+    { name: "/help", description: copy.help },
+    { name: "/model", description: copy.model },
+    { name: "/compact", description: copy.compact },
+    { name: "/cost", description: copy.cost },
+    { name: "/exit", description: copy.exit },
+  ];
+}
 
 export type SlashCommandResult =
   | { readonly kind: "dispatch"; readonly events: readonly EngineEvent[] }
@@ -38,11 +48,12 @@ export type SlashCommandResult =
 
 /** Discover only the command token; argument completion belongs to T24. */
 export function discoverSlashCommands(
+  cartridge: LoadedCartridge,
   input: string,
 ): readonly SlashCommandDefinition[] {
   if (!input.startsWith("/") || /\s/u.test(input)) return [];
   const prefix = input.toLowerCase();
-  return SLASH_COMMANDS.filter(({ name }) => name.startsWith(prefix));
+  return slashCommands(cartridge).filter(({ name }) => name.startsWith(prefix));
 }
 
 /** Execute the complete bounded slash register without a parallel state store. */
@@ -53,7 +64,7 @@ export function executeSlashCommand(
 ): SlashCommandResult {
   const normalized = input.trim();
   const commandName = normalized.toLowerCase();
-  const definition = SLASH_COMMANDS.find(({ name }) => name === commandName);
+  const definition = SLASH_COMMAND_NAMES.find((name) => name === commandName);
   if (definition === undefined) {
     return {
       kind: "error",
@@ -63,7 +74,7 @@ export function executeSlashCommand(
     };
   }
 
-  switch (definition.name) {
+  switch (definition) {
     case "/help":
       return {
         kind: "dispatch",

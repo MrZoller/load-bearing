@@ -85,7 +85,7 @@ test("keeps terminal controls mode-specific and presentation-only", async ({
   await agentPrompt.fill("/help");
   await agentPrompt.press("Enter");
   await expect(
-    transcript.getByText(/\/help lists commands;/, { exact: true }),
+    transcript.getByText(/\/help repeats this register;/, { exact: true }),
   ).toBeVisible();
   await expect(transcript.getByText("inspect it", { exact: true })).toHaveCount(
     0,

@@ -118,6 +118,8 @@ export interface CartridgeStory {
     readonly actions: readonly CartridgeAgentAction[];
   };
   readonly helpResponse: string;
+  /** Empty for legacy cartridges that do not teach through an idle response. */
+  readonly idleNudgeResponse: string;
   readonly compact: {
     readonly response: string;
     readonly summary: string;
@@ -151,8 +153,18 @@ export interface CartridgeMetricParameters {
   readonly integrityLossPerEvent: number;
 }
 
+export interface CartridgeAutocompleteCopy {
+  readonly help: string;
+  readonly model: string;
+  readonly compact: string;
+  readonly cost: string;
+  readonly exit: string;
+}
+
 export interface CartridgePresentation {
   readonly placeholders: readonly CartridgePlaceholder[];
+  /** Incident-authored descriptions for the runtime-owned slash register. */
+  readonly autocomplete: CartridgeAutocompleteCopy;
   readonly spinnerPools: readonly CartridgeSpinnerPool[];
   readonly metrics: CartridgeMetricParameters;
   /** Phase 2 share/status/disturbance surfaces remain explicitly deferred. */

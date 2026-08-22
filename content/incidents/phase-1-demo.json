@@ -161,7 +161,11 @@
       },
       {
         "id": "help",
-        "text": "/help lists commands; /model changes the active model; /compact frees context lossily; /cost reports replay-derived usage; /exit returns to the incident shell. Prefix shell work with !."
+        "text": "/help repeats this register; /model changes the active model; /compact replaces context with an authored summary; /cost reports replay-derived usage; /exit leaves this view. Begin with what you want inspected."
+      },
+      {
+        "id": "idle-nudge",
+        "text": "The readiness incident remains open. Asking me to inspect it would at least make the uncertainty explicit."
       },
       {
         "id": "compact",
@@ -200,6 +204,7 @@
     ],
     "fallback": { "response": "fallback" },
     "helpResponse": "help",
+    "idleNudgeResponse": "idle-nudge",
     "compact": {
       "response": "compact",
       "summary": "The readiness sentinel was believed to support the service and its removal remains under review.",
@@ -218,9 +223,17 @@
   },
   "presentation": {
     "placeholders": [
+      { "stage": 0, "text": "ask what is wrong" },
       { "stage": 0, "text": "try: inspect it" },
-      { "stage": 0, "text": "try: !git status" }
+      { "stage": 0, "text": "type /help for the incident register" }
     ],
+    "autocomplete": {
+      "help": "Review the incident register",
+      "model": "Choose who assumes responsibility",
+      "compact": "Replace context with the approved summary",
+      "cost": "Report replay-derived session metrics",
+      "exit": "Leave the agent view"
+    },
     "spinnerPools": [
       {
         "archetype": "paranoid",

@@ -1,7 +1,10 @@
 import {
+  createAgentIdleNudgeEvent,
   createShellExecuteEvent,
   createTerminalModeEvent,
+  hasAgentIdleNudged,
   readAgentSlice,
+  readMindSlice,
   readTerminalSlice,
 } from "../engine/index.js";
 import type { EngineEvent } from "../engine/index.js";
@@ -16,6 +19,8 @@ import { renderTuiView } from "./views/tui.js";
 // This is presentation time only: the authored working/idle events and their
 // selected verb are already fixed before the browser schedules this interval.
 const ACTIVITY_PRESENTATION_MS = 300;
+const PLACEHOLDER_PRESENTATION_MS = 4_000;
+const IDLE_NUDGE_MS = 30_000;
 
 /** Mount one terminal whose visible mode is always projected from engine state. */
 export function mountApp(
@@ -59,6 +64,12 @@ export function mountApp(
   let activityStartedAt: number | null = null;
   let activityFrame: number | null = null;
   let hiddenTranscriptEntries = 0;
+  let idleTimer: number | null = null;
+  let placeholderTimer: number | null = null;
+  const placeholders = session.cartridge.presentation.placeholders
+    .filter(({ stage }) => stage === 0)
+    .map(({ text }) => text);
+  let placeholderIndex = 0;
 
   const inputController = createTerminalInputController({
     initialBashHistory: session.cartridge.repository.shellHistory,
@@ -75,7 +86,59 @@ export function mountApp(
     enterBash() {
       dispatch(createTerminalModeEvent("bash"));
     },
+    onActivity() {
+      resetIdleTimer();
+    },
   });
+
+  function stopIdleTimer(): void {
+    if (browser !== null && idleTimer !== null) browser.clearTimeout(idleTimer);
+    idleTimer = null;
+  }
+
+  function resetIdleTimer(): void {
+    stopIdleTimer();
+    if (browser === null || session.cartridge.story.idleNudgeResponse === "")
+      return;
+    const current = session.current();
+    if (
+      readTerminalSlice(current.state).mode !== "tui" ||
+      readAgentSlice(current.state).activity.status !== "idle" ||
+      readMindSlice(current.state).pendingPermission !== null ||
+      hasAgentIdleNudged(current.state)
+    )
+      return;
+    idleTimer = browser.setTimeout(() => {
+      idleTimer = null;
+      const snapshot = session.current();
+      const prompt = view.querySelector<HTMLInputElement>("#agent-input");
+      if (
+        readTerminalSlice(snapshot.state).mode !== "tui" ||
+        readAgentSlice(snapshot.state).activity.status !== "idle" ||
+        readMindSlice(snapshot.state).pendingPermission !== null ||
+        prompt?.value !== "" ||
+        hasAgentIdleNudged(snapshot.state)
+      ) {
+        if (!hasAgentIdleNudged(snapshot.state)) resetIdleTimer();
+        return;
+      }
+      // Wall time dispatches one explicit authored event. The response choice
+      // and one-shot fact both live in replay state, never this callback.
+      dispatch(createAgentIdleNudgeEvent());
+    }, IDLE_NUDGE_MS);
+  }
+
+  function schedulePlaceholder(): void {
+    if (browser === null || placeholders.length < 2) return;
+    if (placeholderTimer !== null) browser.clearTimeout(placeholderTimer);
+    placeholderTimer = browser.setTimeout(() => {
+      placeholderIndex = (placeholderIndex + 1) % placeholders.length;
+      const prompt = view.querySelector<HTMLInputElement>("#agent-input");
+      if (prompt !== null)
+        prompt.placeholder = placeholders[placeholderIndex] ?? "";
+      schedulePlaceholder();
+    }, PLACEHOLDER_PRESENTATION_MS);
+  }
 
   function stopActivityFrame(): void {
     if (browser !== null && activityFrame !== null)
@@ -170,6 +233,7 @@ export function mountApp(
             activityStartedAt === null || browser === null
               ? 0
               : browser.performance.now() - activityStartedAt,
+            placeholders[placeholderIndex] ?? "",
           );
     view.replaceChildren(activeView);
     status.replaceChildren(
@@ -179,7 +243,9 @@ export function mountApp(
       .querySelector<HTMLElement>("[data-initial-focus], input")
       ?.focus();
     scheduleActivityFrame();
+    resetIdleTimer();
   }
 
   render();
+  schedulePlaceholder();
 }

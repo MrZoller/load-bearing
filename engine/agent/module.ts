@@ -79,6 +79,11 @@ export function createAgentResponseEvent(
   );
 }
 
+/** Record the cartridge's one replayable idle teaching response. */
+export function createAgentIdleNudgeEvent(): EngineEvent {
+  return stampEvent({ type: "agent.idle-nudged" }, "agent idle nudge");
+}
+
 /** Record an authored refusal when bounded message history has no room. */
 export function createAgentCapacityEvent(responseId: string): EngineEvent {
   return stampEvent(
@@ -188,6 +193,24 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
   initialSlice: createAgentSlice,
   validateSlice: validateAgentSlice,
   events: {
+    "agent.idle-nudged": {
+      version: 0,
+      apply(context, slice) {
+        if (context.cartridge.story.idleNudgeResponse === "")
+          throw new Error(`${context.where}: cartridge has no idle nudge`);
+        return {
+          slice: recordAuthoredResponse(
+            slice,
+            authoredResponse(
+              context,
+              context.cartridge.story.idleNudgeResponse,
+            ),
+            "idle-nudge",
+          ),
+          summary: `response=${context.cartridge.story.idleNudgeResponse} instance=idle-nudge`,
+        };
+      },
+    },
     "agent.message-added": {
       version: 0,
       apply(context, slice) {

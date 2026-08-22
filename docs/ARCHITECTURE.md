@@ -391,8 +391,9 @@ Three things worth noting, because each is a decision rather than a detail:
 
 The Phase 1 portions of `story` and `presentation` are concrete and bounded in
 v0: opening copy, authored response records and artifacts, minimal intents and
-fallback, help/compact/resume references, placeholders, archetype-stage spinner
-pools, and integer metric parameters. Cartridge actions are a closed
+fallback, help/idle-nudge/compact/resume references, rotating placeholders,
+slash autocomplete descriptions, archetype-stage spinner pools, and integer
+metric parameters. Cartridge actions are a closed
 `shell-execute` union rather than arbitrary engine events. Loading rejects
 duplicate/dangling response and intent identities, duplicate spinner keys, and
 missing stage-0 pools for model archetypes. Each section has an explicit

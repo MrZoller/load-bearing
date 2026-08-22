@@ -1490,6 +1490,7 @@ const STORY = {
       },
     }),
     helpResponse: required(PHASE_ONE_ID),
+    idleNudgeResponse: optional(OPTIONAL_PHASE_ONE_ID, ""),
     compact: required({
       kind: "object",
       description: "Authored lossy context replacement and acknowledgment.",
@@ -1543,6 +1544,27 @@ const PRESENTATION = {
         },
       },
     }),
+    autocomplete: optional(
+      {
+        kind: "object",
+        description:
+          "Incident-authored teaching copy for the runtime-owned slash register.",
+        fields: {
+          help: required(BOUNDED_LINE),
+          model: required(BOUNDED_LINE),
+          compact: required(BOUNDED_LINE),
+          cost: required(BOUNDED_LINE),
+          exit: required(BOUNDED_LINE),
+        },
+      },
+      {
+        help: "Show the authored command reference",
+        model: "Choose the active agent model",
+        compact: "Replace context with its authored summary",
+        cost: "Report replay-derived session metrics",
+        exit: "Leave the agent view",
+      },
+    ),
     spinnerPools: required({
       kind: "array",
       description:
@@ -1652,6 +1674,7 @@ const PHASE_ONE_STORY_DEFAULT = {
     actions: [],
   },
   helpResponse: "default-response",
+  idleNudgeResponse: "",
   compact: {
     response: "default-response",
     summary: "Session ready.",
@@ -1666,6 +1689,13 @@ const PHASE_ONE_STORY_DEFAULT = {
 
 const PHASE_ONE_PRESENTATION_DEFAULT = {
   placeholders: [{ stage: 0, text: "Enter a request" }],
+  autocomplete: {
+    help: "Show the authored command reference",
+    model: "Choose the active agent model",
+    compact: "Replace context with its authored summary",
+    cost: "Report replay-derived session metrics",
+    exit: "Leave the agent view",
+  },
   spinnerPools: ARCHETYPES.map((archetype) => ({
     archetype,
     stage: 0,

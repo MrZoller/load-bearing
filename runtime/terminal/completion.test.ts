@@ -22,6 +22,11 @@ describe("completeTerminalInput", () => {
       cursor: 5,
       candidates: ["/help"],
     });
+    expect(completeTerminalInput("tui", "/C", 2, STATE)).toEqual({
+      value: "/co",
+      cursor: 3,
+      candidates: ["/compact", "/cost"],
+    });
     expect(completeTerminalInput("bash", "pw", 2, STATE)).toEqual({
       value: "pwd ",
       cursor: 4,
