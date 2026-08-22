@@ -6,7 +6,6 @@ import { reduce, restoreSnapshot, snapshot } from "../events/reduce.js";
 import type { EngineEvent } from "../events/state.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import {
-  MAX_AGENT_ACTIVITY_VERB_LENGTH,
   MAX_AGENT_MESSAGES,
   MAX_AGENT_TEXT_LENGTH,
   readAgentSlice,
@@ -334,7 +333,7 @@ describe("agent replay state", () => {
       fold([
         createAgentActivityEvent({
           status: "working",
-          verb: emoji.repeat(MAX_AGENT_ACTIVITY_VERB_LENGTH),
+          verb: emoji.repeat(240),
         }),
       ]),
     ).not.toThrow();
