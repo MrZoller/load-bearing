@@ -73,7 +73,7 @@ describe("agent activity component", () => {
     expect(deriveEngineMetrics(state).tokenCount).toBe(1_380);
   });
 
-  it("varies only presentation text across elapsed frames and motion preferences, never replay state", () => {
+  it("varies only presentation text across elapsed frames, never replay state", () => {
     const state = workingState();
     const before = snapshot(state);
     const frame = { textContent: "" } as HTMLElement;
@@ -82,10 +82,8 @@ describe("agent activity component", () => {
     expect(formatAgentActivity(state, 2_100)).toContain("2s");
     updateAgentActivity(frame, state, 2_100);
     expect(frame.textContent).toContain("2s");
-    // Motion is CSS-only, so this text projection has no motion-dependent branch.
-    expect(formatAgentActivity(state, 2_100)).toBe(
-      formatAgentActivity(state, 2_100),
-    );
+    // Motion is CSS-only; this projection exposes no preference input that
+    // could choose different replay-derived text.
     expect(snapshot(state)).toBe(before);
   });
 
