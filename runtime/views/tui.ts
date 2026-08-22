@@ -25,7 +25,7 @@ export function createTuiInputEvents(
   state: SessionState,
   input: string,
 ): readonly EngineEvent[] {
-  if (input.startsWith("/")) {
+  if (input.trim().startsWith("/")) {
     const result = executeSlashCommand(cartridge, state, input);
     return result.kind === "dispatch" ? result.events : [];
   }
@@ -85,7 +85,7 @@ export function renderTuiView(
   }
 
   function renderCompletions(): void {
-    matches = discoverSlashCommands(input.value);
+    matches = discoverSlashCommands(input.value.trim());
     activeCompletion = Math.min(
       activeCompletion,
       Math.max(0, matches.length - 1),
@@ -177,7 +177,7 @@ export function renderTuiView(
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    if (input.value.startsWith("/")) {
+    if (input.value.trim().startsWith("/")) {
       const result = executeSlashCommand(cartridge, state, input.value);
       if (result.kind === "dispatch") {
         dispatch(result.events);

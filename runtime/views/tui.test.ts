@@ -40,5 +40,8 @@ describe("createTuiInputEvents", () => {
     expect(createTuiInputEvents(CARTRIDGE, STATE, "/exit")).toMatchObject([
       { type: "terminal.mode-set", payload: { mode: "bash" } },
     ]);
+    expect(createTuiInputEvents(CARTRIDGE, STATE, " /exit ")).toMatchObject([
+      { type: "terminal.mode-set", payload: { mode: "bash" } },
+    ]);
   });
 });

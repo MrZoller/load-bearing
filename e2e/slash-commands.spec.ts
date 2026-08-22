@@ -71,6 +71,10 @@ test("slash commands are keyboard-operable", async ({ page }) => {
       { exact: true },
     ),
   ).toBeVisible();
+
+  await page.keyboard.type(" /exit ");
+  await page.keyboard.press("Enter");
+  await expect(bashPrompt).toBeFocused();
 });
 
 test("model selection persists across mode switches", async ({ page }) => {
