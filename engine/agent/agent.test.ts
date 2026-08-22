@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { loadCartridge } from "../cartridge/load.js";
 import { deserialize, serialize } from "../serialize/canonical.js";
-import { reduce, restoreSnapshot, snapshot } from "../events/reduce.js";
+import { reduce, restoreSnapshot, snapshot, step } from "../events/reduce.js";
 import type { EngineEvent } from "../events/state.js";
 import { createRandom } from "../random/stream.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
@@ -156,6 +156,30 @@ describe("agent replay state", () => {
     expect(() =>
       reduce({ cartridge: idleCartridge, seed: SEED, events: [event, event] }),
     ).toThrow(/duplicate.*idle-nudge|idle-nudge.*duplicate/i);
+  });
+
+  it("records the idle nudge capacity fallback without overflowing state", () => {
+    const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
+    const story = source["story"] as Record<string, unknown>;
+    story["idleNudgeResponse"] = "fixture-response";
+    const cartridge = loadCartridge(source);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+    for (let index = 0; index < MAX_AGENT_MESSAGES; index += 1)
+      state = step(
+        state,
+        createAgentMessageEvent(`filler-${String(index)}`, "filler"),
+      );
+
+    const next = step(state, createAgentIdleNudgeEvent());
+    expect(readAgentSlice(next).messages).toHaveLength(MAX_AGENT_MESSAGES);
+    expect(next.transcript.at(-1)).toMatchObject({
+      type: "agent.idle-nudged",
+      summary: "capacity response=fixture-response",
+    });
+    expect(hasAgentIdleNudged(next)).toBe(true);
+    expect(() => step(next, createAgentIdleNudgeEvent())).toThrow(
+      /duplicate.*idle-nudge|idle-nudge.*duplicate/i,
+    );
   });
 
   it("groups only an authored message's artifacts and leaves visitor and manual work ungrouped", () => {
@@ -325,6 +349,21 @@ describe("agent replay state", () => {
         "snapshot: slices.agent",
       ),
     ).toThrow(/unexpected field/);
+  });
+
+  it("rejects restored response records reordered away from their agent messages", () => {
+    const state = fold([
+      createAgentResponseEvent("authored", "turn-one"),
+      createAgentResponseEvent("authored", "turn-two"),
+    ]);
+    const recorded = deserialize(snapshot(state)) as Record<string, unknown>;
+    const slices = recorded["slices"] as Record<string, unknown>;
+    const agent = slices["agent"] as Record<string, unknown>;
+    (agent["responses"] as unknown[]).reverse();
+
+    expect(() => restoreSnapshot(serialize(recorded))).toThrow(
+      /response record order must match agent message order/,
+    );
   });
 
   it("restores authored artifacts only at reachable statuses", () => {

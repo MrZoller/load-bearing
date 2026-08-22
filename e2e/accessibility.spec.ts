@@ -27,7 +27,7 @@ test("keeps the stable terminal surface semantic, named, and visibly focused", a
 
   const terminal = page.getByRole("main", { name: "Load Bearing terminal" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
-  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const liveOutput = page.getByRole("status", { name: "New terminal output" });
 
   await expect(terminal).toBeVisible();
@@ -86,7 +86,7 @@ test("gives every visible interactive control a name and a non-trapping Tab cycl
 }) => {
   await page.goto("/");
 
-  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   await expectVisibleControlsNamed(page);
   await expect(prompt).toBeFocused();
 
@@ -122,7 +122,7 @@ test("announces only newly rendered agent and shell output", async ({
 }) => {
   await page.goto("/");
 
-  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const liveOutput = page.getByRole("status", { name: "New terminal output" });
   await liveOutput.evaluate((element) => {
     element.dataset["mutations"] = "0";
@@ -174,7 +174,7 @@ test("reduced motion preserves cold-open, activity, and status information", asy
   await page.goto("/");
 
   const transcript = page.getByRole("list", { name: "Session transcript" });
-  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const status = page.getByRole("region", { name: "Session status" });
 
   await expect(transcript).toContainText(

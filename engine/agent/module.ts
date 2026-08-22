@@ -12,6 +12,11 @@ import {
   addAgentTodo,
   addAgentToolCall,
   createAgentSlice,
+  MAX_AGENT_MESSAGES,
+  MAX_AGENT_RESPONSES,
+  MAX_AGENT_THINKING_BLOCKS,
+  MAX_AGENT_TODOS,
+  MAX_AGENT_TOOL_CALLS,
   recordAuthoredResponse,
   setAgentActivity,
   updateAgentThinkingBlock,
@@ -198,15 +203,33 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
       apply(context, slice) {
         if (context.cartridge.story.idleNudgeResponse === "")
           throw new Error(`${context.where}: cartridge has no idle nudge`);
-        return {
-          slice: recordAuthoredResponse(
+        // The capacity fallback cannot record an authored-response instance,
+        // so the transcript is the durable one-shot record for both paths.
+        if (
+          context.state.transcript.some(
+            (entry) => entry.type === "agent.idle-nudged",
+          )
+        )
+          throw new Error(`${context.where}: duplicate idle-nudge`);
+        const response = authoredResponse(
+          context,
+          context.cartridge.story.idleNudgeResponse,
+        );
+        if (
+          slice.messages.length + 1 > MAX_AGENT_MESSAGES ||
+          slice.responses.length + 1 > MAX_AGENT_RESPONSES ||
+          slice.toolCalls.length + response.toolCalls.length >
+            MAX_AGENT_TOOL_CALLS ||
+          slice.thinkingBlocks.length + response.thinkingBlocks.length >
+            MAX_AGENT_THINKING_BLOCKS ||
+          slice.todos.length + response.todos.length > MAX_AGENT_TODOS
+        )
+          return {
             slice,
-            authoredResponse(
-              context,
-              context.cartridge.story.idleNudgeResponse,
-            ),
-            "idle-nudge",
-          ),
+            summary: `capacity response=${response.id}`,
+          };
+        return {
+          slice: recordAuthoredResponse(slice, response, "idle-nudge"),
           summary: `response=${context.cartridge.story.idleNudgeResponse} instance=idle-nudge`,
         };
       },

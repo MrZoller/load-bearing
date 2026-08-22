@@ -415,7 +415,7 @@
             "type": "object"
           },
           "default": {},
-          "description": "Static hidden commands and explicit overrides. Cartridge records take precedence over runtime builtins with the same name; stdout lines are emitted before stderr lines.",
+          "description": "Static hidden commands and safe explicit overrides. Mechanics-owned commands such as loadbearing are reserved; stdout lines are emitted before stderr lines.",
           "propertyNames": {
             "description": "Each key is a shell command name.",
             "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]*$"

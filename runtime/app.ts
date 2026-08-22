@@ -80,6 +80,7 @@ export function mountApp(
     document,
     transcript,
     focusPrompt,
+    () => resetIdleTimer(),
   );
   const transcriptScroll = createTranscriptScroll(
     document,
@@ -92,6 +93,8 @@ export function mountApp(
   let hiddenTranscriptEntries = 0;
   let idleTimer: number | null = null;
   let placeholderTimer: number | null = null;
+  let workingTimer: number | null = null;
+  let pendingWorkingEvents: readonly EngineEvent[] | null = null;
   const seenTranscriptKeys = new Set<string>();
   let announcementsSeeded = false;
   const placeholders = session.cartridge.presentation.placeholders
@@ -100,7 +103,10 @@ export function mountApp(
   let placeholderIndex = 0;
 
   const inputController = createTerminalInputController({
-    initialBashHistory: session.cartridge.repository.shellHistory,
+    initialBashHistory: [
+      ...session.cartridge.repository.shellHistory,
+      resumeCommand,
+    ],
     clearTranscript() {
       hiddenTranscriptEntries = renderTerminalTranscript(
         document,
@@ -217,6 +223,17 @@ export function mountApp(
     render();
   }
 
+  function finishWorkingPresentation(): void {
+    if (pendingWorkingEvents === null) return;
+    const events = pendingWorkingEvents;
+    pendingWorkingEvents = null;
+    if (browser !== null && workingTimer !== null)
+      browser.clearTimeout(workingTimer);
+    workingTimer = null;
+    session.dispatchMany(events);
+    render();
+  }
+
   function dispatchMany(events: readonly EngineEvent[]): void {
     const first = events[0];
     // A visitor turn starts with a replayable working event and ends idle.
@@ -229,15 +246,17 @@ export function mountApp(
       events.length > 1 &&
       browser !== null
     ) {
+      if (pendingWorkingEvents !== null) return;
       session.dispatch(first);
+      pendingWorkingEvents = events.slice(1);
       render();
       // Keep the already-authored working boundary on screen long enough to
       // read its verb and see the spinner move. Wall time decides only when
       // this fixed event sequence is presented, never which events it holds.
-      browser.setTimeout(() => {
-        session.dispatchMany(events.slice(1));
-        render();
-      }, ACTIVITY_PRESENTATION_MS);
+      workingTimer = browser.setTimeout(
+        finishWorkingPresentation,
+        ACTIVITY_PRESENTATION_MS,
+      );
       return;
     }
     session.dispatchMany(events);
@@ -297,12 +316,18 @@ export function mountApp(
     status.replaceChildren(
       renderStatus(document, snapshot.state, session.cartridge.meta.number),
     );
-    if (transcriptSearch.element.hidden) focusPrompt();
+    if (transcriptSearch.element.hidden || !transcriptSearch.hasFocus())
+      focusPrompt();
     scheduleActivityFrame();
     resetIdleTimer();
   }
 
   render();
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || pendingWorkingEvents === null) return;
+    event.preventDefault();
+    finishWorkingPresentation();
+  });
   schedulePlaceholder();
   // The mounted surface may expose this read-only pair to an acceptance
   // harness. Mutation remains private to the closures above: browser tests can

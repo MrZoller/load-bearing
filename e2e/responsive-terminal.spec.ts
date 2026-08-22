@@ -18,7 +18,7 @@ test("keeps long terminal content and controls within a 390px viewport", async (
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
 
-  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   // An unknown shell command echoes its 4,000-character name in stderr, which
   // exercises both a long visible prompt and a real long output line.
   await prompt.fill(`!${"x".repeat(4_000)}`);
@@ -37,7 +37,9 @@ test("keeps long terminal content and controls within a 390px viewport", async (
   await expectNoPageOverflow(page);
 
   await page.goto("/");
-  const permissionPrompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const permissionPrompt = page.getByRole("combobox", {
+    name: "Agent prompt",
+  });
   await permissionPrompt.fill("remove it");
   await permissionPrompt.press("Enter");
   await expect(
@@ -52,7 +54,7 @@ test("keeps the focused prompt usable when the mobile viewport height changes", 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
 
-  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   await expect(prompt).toBeFocused();
   await page.setViewportSize({ width: 390, height: 500 });
   await expect(prompt).toBeFocused();
@@ -74,7 +76,7 @@ test("routes labeled mobile keys through the prompt controller", async ({
   await page.goto("/");
 
   const keys = page.getByRole("navigation", { name: "Terminal keys" });
-  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   await expect(keys).toBeVisible();
 
   await keys.getByRole("button", { name: "Insert slash" }).click();

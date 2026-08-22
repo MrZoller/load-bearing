@@ -64,6 +64,31 @@ describe("completeTerminalInput", () => {
     });
   });
 
+  it("computes ambiguous VFS prefixes by code point", () => {
+    const stateWithSupplementaryNames = reduce({
+      cartridge: CARTRIDGE,
+      seed: "2026-08-22/0/structural-audit",
+      events: [
+        createShellExecuteEvent("mkdir glyphs"),
+        createShellExecuteEvent("touch glyphs/🧱"),
+        createShellExecuteEvent("touch glyphs/🧰"),
+      ],
+    });
+
+    expect(
+      completeTerminalInput(
+        "bash",
+        "cat glyphs/",
+        11,
+        stateWithSupplementaryNames,
+      ),
+    ).toEqual({
+      value: "cat glyphs/",
+      cursor: 11,
+      candidates: ["glyphs/🧰", "glyphs/🧱"],
+    });
+  });
+
   it("leaves unsupported positions and unmatched prefixes alone", () => {
     expect(completeTerminalInput("tui", "/help more", 5, STATE)).toBeNull();
     expect(completeTerminalInput("bash", "unknown", 7, STATE)).toBeNull();

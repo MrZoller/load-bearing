@@ -69,6 +69,28 @@ describe("renderTerminalTranscript", () => {
     expect(afterCommand).toHaveLength(2);
   });
 
+  it("renders cartridge-authored opening copy when the VFS has no motd", () => {
+    const document = structuredClone(cartridgeDocument) as Record<
+      string,
+      unknown
+    >;
+    const repository = document["repository"] as Record<string, unknown>;
+    const files = repository["files"] as Record<string, unknown>;
+    delete files["/etc/motd"];
+    const session = createRuntimeSession(document);
+
+    const entries = renderTerminalTranscript(
+      fakeDocument(),
+      session.cartridge,
+      session.current(),
+    ) as unknown as FakeElement[];
+    expect(entries[0]?.children.map((line) => line.textContent)).toEqual([
+      "Last login: maintenance window still open.",
+      "Load Bearing incident shell attached.",
+      "visitor@load-bearing:/production/service$",
+    ]);
+  });
+
   it("renders authored visitor turns and responses alongside their planned shell effects", () => {
     const session = createRuntimeSession(cartridgeDocument);
     const state = session.current().state;
@@ -159,5 +181,50 @@ describe("renderTerminalTranscript", () => {
       "Shell output: /production/service",
     );
     expect(exchange?.dataset["announcement"]).not.toContain("pwd");
+  });
+
+  it("rejects transcript shell results without their replayed input", () => {
+    const session = createRuntimeSession(cartridgeDocument);
+    const snapshot = session.dispatch(createShellExecuteEvent("pwd"));
+
+    expect(() =>
+      renderTerminalTranscript(fakeDocument(), session.cartridge, {
+        eventLog: [],
+        state: snapshot.state,
+      }),
+    ).toThrow(/shell result has no replayed input/i);
+  });
+
+  it("rejects replayed shell inputs whose stored result is missing", () => {
+    const session = createRuntimeSession(cartridgeDocument);
+    const snapshot = session.dispatch(createShellExecuteEvent("pwd"));
+
+    expect(() =>
+      renderTerminalTranscript(fakeDocument(), session.cartridge, {
+        eventLog: snapshot.eventLog,
+        state: { ...snapshot.state, transcript: [] },
+      }),
+    ).toThrow(/shell commands and replayed results are out of step/i);
+  });
+
+  it("rejects agent transcript events without replayed messages", () => {
+    const session = createRuntimeSession(cartridgeDocument);
+    const snapshot = session.dispatch(
+      createShellExecuteEvent("loadbearing --resume incident-000"),
+    );
+    const agentEntry = snapshot.state.transcript.find(
+      (entry) => entry.type === "agent.response-recorded",
+    );
+    if (agentEntry === undefined) throw new Error("missing agent entry");
+
+    expect(() =>
+      renderTerminalTranscript(fakeDocument(), session.cartridge, {
+        eventLog: snapshot.eventLog,
+        state: {
+          ...snapshot.state,
+          transcript: [...snapshot.state.transcript, agentEntry],
+        },
+      }),
+    ).toThrow(/replayed agent message is missing/i);
   });
 });

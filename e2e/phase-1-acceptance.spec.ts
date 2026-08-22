@@ -40,7 +40,7 @@ test("replays a complete keyboard-only browser session byte-for-byte", async ({
   await page.goto("/?acceptance=1");
 
   const transcript = page.getByRole("list", { name: "Session transcript" });
-  const agentPrompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
   const bashPrompt = page.getByRole("textbox", { name: "Bash command" });
 
   // Cold open enters the TUI, and all subsequent visitor input uses the
@@ -149,7 +149,7 @@ test("keeps browser presentation activity outside the replay record", async ({
   });
   await page.goto("/?acceptance=1");
 
-  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
   await page.keyboard.type("inspect it");
   await page.keyboard.press("Enter");

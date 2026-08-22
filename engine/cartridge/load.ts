@@ -1358,6 +1358,16 @@ function checkStoryAndPresentation(
 
 /** Cross-references and uniqueness that descriptor nodes cannot express. */
 function checkWorld(repository: CartridgeRepository, report: Report): void {
+  // Static output cannot stand in for commands whose replayable effects are
+  // runtime mechanics. Reserve the whole command because authored records do
+  // not dispatch by argument shape.
+  if (Object.hasOwn(repository.commands, "loadbearing"))
+    report.addPhrase(
+      "/repository/commands/loadbearing",
+      "a cartridge command name that is not reserved for runtime mechanics",
+      '"loadbearing"',
+    );
+
   const uniqueIds = <T extends { readonly id: string }>(
     values: readonly T[],
     field: "processes" | "services" | "logs" | "tickets",

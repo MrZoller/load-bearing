@@ -28,7 +28,7 @@ test("searches the transcript with the keyboard, navigates results, and restores
 }) => {
   await page.goto("/");
 
-  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   await addShellLines(prompt, 2, "search-target");
   await prompt.fill("/model");
   await prompt.press("Enter");
@@ -48,6 +48,8 @@ test("searches the transcript with the keyboard, navigates results, and restores
   // A render from an unrelated control must not reset the reader to match one.
   await page.locator('input[name="active-model"]').nth(1).click();
   await expect(searchStatus).toContainText(/2\s*(?:of|\/)\s*2/i);
+  await expect(search).toBeVisible();
+  await expect(prompt).toBeFocused();
 
   await search.press("Escape");
   await expect(search).toBeHidden();
@@ -61,12 +63,51 @@ test("searches the transcript with the keyboard, navigates results, and restores
   );
 });
 
+test("search interaction postpones the authored idle nudge", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.goto("/");
+
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
+  const transcript = page.getByRole("list", { name: "Session transcript" });
+  await page.clock.fastForward(29_000);
+  await prompt.press("Control+f");
+  const search = page.getByRole("searchbox", { name: /transcript/i });
+  await search.fill("incident");
+  await page.clock.fastForward(2_000);
+  await expect(
+    transcript.getByText(
+      "The readiness incident remains open. Asking me to inspect it would at least make the uncertainty explicit.",
+      { exact: true },
+    ),
+  ).toHaveCount(0);
+});
+
+test("search folding is independent of the browser locale", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ locale: "tr-TR" });
+  const page = await context.newPage();
+  await page.goto("/");
+
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
+  await prompt.press("Control+f");
+  const search = page.getByRole("searchbox", { name: /transcript/i });
+  await search.fill("Incident");
+  await expect(
+    page.getByRole("status", { name: /transcript search/i }),
+  ).toContainText(/1\s*(?:of|\/)\s*[1-9]/i);
+
+  await context.close();
+});
+
 test("opens a collapsed artifact that contains the current search match", async ({
   page,
 }) => {
   await page.goto("/");
 
-  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
   const thinking = transcript.locator("details.artifact--thinking").first();
   await expect(thinking).not.toHaveAttribute("open", "");
@@ -118,7 +159,7 @@ test("bounds scrollback without discarding the newest transcript output", async 
   test.setTimeout(90_000);
   await page.goto("/");
 
-  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
   const entriesBefore = await transcript.getByRole("listitem").count();
   await addShellLines(prompt, 300, "scrollback");
@@ -141,7 +182,7 @@ test("preserves scrolled-up reading position until new output is acknowledged, t
 }) => {
   await page.goto("/");
 
-  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
   const newOutput = page.getByRole("button", { name: /new output/i });
   await addShellLines(prompt, 40, "anchor");
@@ -202,7 +243,7 @@ test("keeps the new-output affordance after search restores an old match", async
 }) => {
   await page.goto("/");
 
-  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
   const newOutput = page.getByRole("button", { name: /new output/i });
   await addShellLines(prompt, 40, "old-search-target");

@@ -305,6 +305,47 @@ describe("createTerminalInputController", () => {
     expect(input.value).toBe("draft");
   });
 
+  it("returns exact completed input to native Tab traversal after closing the popup", () => {
+    let open = true;
+    const controller = createTerminalInputController({
+      clearTranscript() {},
+      enterBash() {},
+    });
+    const form = new FakeForm();
+    const input = new FakeInput();
+    input.value = "/help";
+    input.setSelectionRange(5, 5);
+    controller.bind({
+      mode: "tui",
+      form: form as unknown as HTMLFormElement,
+      input: input as unknown as HTMLInputElement,
+      state: STATE,
+      submit() {},
+      completionPresentation: {
+        isOpen: () => open,
+        move() {},
+        accept() {
+          open = false;
+          return true;
+        },
+        close() {
+          const wasOpen = open;
+          open = false;
+          return wasOpen;
+        },
+        refresh() {},
+      },
+    });
+
+    expect(
+      input.dispatch("keydown", new FakeEvent("Tab")).defaultPrevented,
+    ).toBe(true);
+    expect(open).toBe(false);
+    expect(
+      input.dispatch("keydown", new FakeEvent("Tab")).defaultPrevented,
+    ).toBe(false);
+  });
+
   it("moves a virtual caret without replacing selections and ignores cleared or stale bindings", () => {
     const controller = createTerminalInputController({
       clearTranscript() {},

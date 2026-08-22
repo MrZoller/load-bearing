@@ -187,6 +187,7 @@ export function renderTerminalTranscript(
   const messages = readAgentSlice(snapshot.state).messages;
   const entries: HTMLLIElement[] = [renderLogin(document, cartridge, snapshot)];
   let activeShell: HTMLLIElement | undefined;
+  let renderedShellStarts = 0;
   let messageCount = 0;
 
   for (const transcriptEntry of snapshot.state.transcript) {
@@ -196,6 +197,7 @@ export function renderTerminalTranscript(
         throw new Error("Shell commands and replayed results are out of step.");
       }
       activeShell = renderExchange(document, input);
+      renderedShellStarts += 1;
       activeShell.dataset["transcriptKey"] =
         `event-${String(transcriptEntry.index)}`;
       entries.push(activeShell);
@@ -210,7 +212,11 @@ export function renderTerminalTranscript(
       continue;
     }
 
-    if (transcriptEntry.type === "agent.capacity-reached") {
+    if (
+      transcriptEntry.type === "agent.capacity-reached" ||
+      (transcriptEntry.type === "agent.idle-nudged" &&
+        transcriptEntry.summary.startsWith("capacity response="))
+    ) {
       const item = renderMessage(
         document,
         authoredMessage(cartridge, capacityResponseId(transcriptEntry)),
@@ -241,6 +247,8 @@ export function renderTerminalTranscript(
   }
 
   if (activeShell !== undefined)
+    throw new Error("Shell commands and replayed results are out of step.");
+  if (renderedShellStarts !== inputStarts.size)
     throw new Error("Shell commands and replayed results are out of step.");
   if (messageCount !== messages.length) {
     throw new Error("Agent events and replayed messages are out of step.");

@@ -22,6 +22,18 @@ describe("createTerminalHistory", () => {
     );
   });
 
+  it("recalls the visible cold-open command before older authored shell history", () => {
+    const history = createTerminalHistory([
+      "git status",
+      "loadbearing --resume incident-000",
+    ]);
+
+    expect(history.previous("bash", "")).toBe(
+      "loadbearing --resume incident-000",
+    );
+    expect(history.previous("bash", "")).toBe("git status");
+  });
+
   it("does not record empty submissions and restores an empty draft after navigation", () => {
     const history = createTerminalHistory();
 

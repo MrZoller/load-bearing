@@ -23,12 +23,20 @@ interface ActiveToken {
 }
 
 function commonPrefix(values: readonly string[]): string {
-  const first = values[0] ?? "";
+  const first = Array.from(values[0] ?? "");
   let length = first.length;
   for (const value of values.slice(1)) {
-    while (length > 0 && !value.startsWith(first.slice(0, length))) length -= 1;
+    const codePoints = Array.from(value);
+    let shared = 0;
+    while (
+      shared < length &&
+      shared < codePoints.length &&
+      first[shared] === codePoints[shared]
+    )
+      shared += 1;
+    length = shared;
   }
-  return first.slice(0, length);
+  return first.slice(0, length).join("");
 }
 
 function escapeShellToken(value: string): string {
