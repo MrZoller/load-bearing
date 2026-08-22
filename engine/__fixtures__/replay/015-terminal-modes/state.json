@@ -112,13 +112,13 @@
     "startMs": 1785921262000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 0,
+  "eventCount": 10,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {},
-    "seed": 1023437636
+    "seed": 3520740594
   },
-  "seed": "2026-08-05/0/deep-foundation",
+  "seed": "2026-08-21/15/terminal-model",
   "slices": {
     "git": {
       "branches": {},
@@ -238,10 +238,92 @@
       "shellHistory": [
         "cd /production/service",
         "git status",
-        "npm test"
+        "npm test",
+        "loadbearing --resume incident-000",
+        "exit"
       ],
       "tickets": []
     }
   },
-  "transcript": []
+  "transcript": [
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 0,
+      "summary": "mode=tui",
+      "type": "terminal.mode-set"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 1,
+      "summary": "model=quick-patch",
+      "type": "terminal.model-set"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 2,
+      "summary": "mode=bash",
+      "type": "terminal.mode-set"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 3,
+      "summary": "model=deep-foundation",
+      "type": "terminal.model-set"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 4,
+      "summary": "length=4",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 5,
+      "summary": "mode=tui",
+      "type": "terminal.mode-set"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 6,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 7,
+      "summary": "mode=bash",
+      "type": "terminal.mode-set"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 8,
+      "summary": "length=5",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 1,
+      "index": 9,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "exit is load-bearing"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    }
+  ]
 }

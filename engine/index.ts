@@ -264,6 +264,23 @@ export type {
   ServiceStateBelief,
 } from "./mind/types.js";
 
+export {
+  TERMINAL_MODULE,
+  createTerminalModeEvent,
+  createTerminalModelEvent,
+} from "./terminal/module.js";
+export {
+  createTerminalSlice,
+  forkModelStream,
+  isTerminalMode,
+  readTerminalSlice,
+  setActiveModel,
+  setTerminalMode,
+  validateTerminalSlice,
+} from "./terminal/terminal.js";
+export type { TerminalMode, TerminalSlice } from "./terminal/types.js";
+export { TERMINAL_COMMANDS } from "./commands/terminal.js";
+
 export { deepFreeze } from "./freeze.js";
 export {
   CONTROL_CHARACTER,
@@ -285,6 +302,7 @@ export {
   UINT32_RANGE,
   formatSeed,
   hashString,
+  MODEL_ID_PATTERN,
 } from "./random/seed.js";
 export type { SeedMaterial } from "./random/seed.js";
 export {

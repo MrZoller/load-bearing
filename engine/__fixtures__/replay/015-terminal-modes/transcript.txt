@@ -1,0 +1,11 @@
+0000  2026-08-05T09:14:22.000Z  terminal.mode-set mode=tui
+0001  2026-08-05T09:14:22.000Z  terminal.model-set model=quick-patch
+0002  2026-08-05T09:14:22.000Z  terminal.mode-set mode=bash
+0003  2026-08-05T09:14:22.000Z  terminal.model-set model=deep-foundation
+0004  2026-08-05T09:14:22.000Z  world.history-append length=4
+0005  2026-08-05T09:14:22.000Z  terminal.mode-set mode=tui
+0006  2026-08-05T09:14:22.000Z  shell.result exit=0
+0007  2026-08-05T09:14:22.000Z  terminal.mode-set mode=bash
+0008  2026-08-05T09:14:22.000Z  world.history-append length=5
+0009  2026-08-05T09:14:22.000Z  shell.result exit=1
+      stdout> exit is load-bearing

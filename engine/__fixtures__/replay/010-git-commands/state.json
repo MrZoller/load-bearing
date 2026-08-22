@@ -265,6 +265,10 @@
       "events": 0,
       "values": 0
     },
+    "terminal": {
+      "activeModel": "deep-foundation",
+      "mode": "bash"
+    },
     "tests": {
       "runs": []
     },

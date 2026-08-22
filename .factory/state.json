@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T13",
-  "branch": "factory/t13-browser-runtime",
-  "pr": 37,
-  "hold": true,
-  "updated": "2026-08-22T03:11:57Z"
+  "current_task": "T14",
+  "branch": "factory/t14-terminal-mode-model",
+  "pr": null,
+  "hold": false,
+  "updated": "2026-08-22T03:26:23Z"
 }

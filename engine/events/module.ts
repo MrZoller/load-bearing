@@ -269,7 +269,9 @@ export interface EventModuleDefinition<S> {
    */
   readonly initialSlice?: (context: BootstrapContext) => S;
   /**
-   * Check a slice arriving from a snapshot, and return it narrowed.
+   * Check a slice arriving from a snapshot, and return it narrowed. The loaded
+   * cartridge is supplied for invariants whose valid values are authored data,
+   * such as an active model that must name one of the cartridge's models.
    *
    * **Optional, and deliberately so.** `restoreSnapshot` rebuilds the cartridge,
    * the clock and the PRNG through their own validators, but a slice is a shape
@@ -296,7 +298,11 @@ export interface EventModuleDefinition<S> {
    * narrowed" is the contract; the carve-out is written down because this is a
    * hook and a future module could.
    */
-  readonly validateSlice?: (slice: unknown, where: string) => S;
+  readonly validateSlice?: (
+    slice: unknown,
+    where: string,
+    cartridge?: LoadedCartridge,
+  ) => S;
   /** Keyed by full event type (`vfs.write`), not by the part after the dot. */
   readonly events: Readonly<Record<string, EventHandlerDefinition<S>>>;
 }
@@ -324,7 +330,11 @@ export interface EventModule {
   /** `undefined` for a stateless module. */
   initialSlice(context: BootstrapContext): unknown;
   /** Absent when the module declares no slice validator. See the definition. */
-  readonly validateSlice?: (slice: unknown, where: string) => unknown;
+  readonly validateSlice?: (
+    slice: unknown,
+    where: string,
+    cartridge?: LoadedCartridge,
+  ) => unknown;
   /** Every type this module owns, sorted. */
   readonly types: readonly string[];
   readonly handlers: Readonly<Record<string, RegisteredHandler>>;
@@ -480,8 +490,11 @@ export function defineEventModule<S>(
     ...(boundValidateSlice === undefined
       ? {}
       : {
-          validateSlice: (slice: unknown, where: string): unknown =>
-            boundValidateSlice(slice, where),
+          validateSlice: (
+            slice: unknown,
+            where: string,
+            cartridge?: LoadedCartridge,
+          ): unknown => boundValidateSlice(slice, where, cartridge),
         }),
     types: Object.freeze(declaredEvents.map(([type]) => type).sort()),
     handlers: Object.freeze(handlers),
