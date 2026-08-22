@@ -284,6 +284,7 @@ export { TERMINAL_COMMANDS } from "./commands/terminal.js";
 export {
   AGENT_MODULE,
   createAgentActivityEvent,
+  createAgentCapacityEvent,
   createAgentMessageEvent,
   createAgentResponseEvent,
   createAgentThinkingAddedEvent,
@@ -334,6 +335,13 @@ export type {
   TodoStatus,
   ToolCallStatus,
 } from "./agent/types.js";
+export {
+  boundAgentInput,
+  createAgentInputEvents,
+  normalizeAgentInput,
+  selectAgentIntent,
+} from "./agent/intent.js";
+export type { AgentIntentSelection } from "./agent/intent.js";
 
 export { deepFreeze } from "./freeze.js";
 export {

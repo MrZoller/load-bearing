@@ -21,6 +21,7 @@ export interface RuntimeSession {
   readonly cartridge: LoadedCartridge;
   current(): RuntimeSessionSnapshot;
   dispatch(event: EngineEvent): RuntimeSessionSnapshot;
+  dispatchMany(events: readonly EngineEvent[]): RuntimeSessionSnapshot;
 }
 
 /**
@@ -47,19 +48,29 @@ export function createRuntimeSession(document: unknown): RuntimeSession {
   }
 
   function dispatch(event: EngineEvent): RuntimeSessionSnapshot {
-    const nextLog = appendEvent(eventLog, event);
-    const storedEvent = nextLog[nextLog.length - 1];
-    if (storedEvent === undefined) {
-      throw new Error("Appending an event produced an empty event log.");
+    return dispatchMany([event]);
+  }
+
+  function dispatchMany(
+    events: readonly EngineEvent[],
+  ): RuntimeSessionSnapshot {
+    let nextLog = eventLog;
+    let nextState = state;
+    for (const event of events) {
+      nextLog = appendEvent(nextLog, event);
+      const storedEvent = nextLog[nextLog.length - 1];
+      if (storedEvent === undefined) {
+        throw new Error("Appending an event produced an empty event log.");
+      }
+      nextState = step(nextState, storedEvent);
     }
 
-    // Publish the new history only after its canonical stored event folds. If a
-    // handler rejects it, callers retain the last complete state/log pair.
-    const nextState = step(state, storedEvent);
+    // Publish only after the complete visitor turn folds. A rejected action
+    // cannot expose a visitor message without its authored consequence.
     eventLog = nextLog;
     state = nextState;
     return current();
   }
 
-  return Object.freeze({ cartridge, current, dispatch });
+  return Object.freeze({ cartridge, current, dispatch, dispatchMany });
 }

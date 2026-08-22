@@ -57,6 +57,11 @@ export function mountApp(
     render();
   }
 
+  function dispatchMany(events: readonly EngineEvent[]): void {
+    session.dispatchMany(events);
+    render();
+  }
+
   function render(): void {
     const snapshot = session.current();
     transcript.replaceChildren(
@@ -66,7 +71,12 @@ export function mountApp(
     const activeView =
       readTerminalSlice(snapshot.state).mode === "bash"
         ? renderBashView(document, snapshot.state, dispatch)
-        : renderTuiView(document, dispatch);
+        : renderTuiView(
+            document,
+            session.cartridge,
+            snapshot.state,
+            dispatchMany,
+          );
     view.replaceChildren(activeView);
     activeView.querySelector("input")?.focus();
   }

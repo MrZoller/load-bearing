@@ -1,0 +1,7 @@
+0000  2026-08-05T09:14:22.000Z  agent.message-added message=turn-0
+0001  2026-08-05T09:14:22.000Z  world.history-append length=4
+0002  2026-08-05T09:14:22.000Z  shell.result exit=0
+      stdout> /production/service
+0003  2026-08-05T09:14:22.000Z  agent.response-recorded response=fixture-response instance=turn-0
+0004  2026-08-05T09:14:22.000Z  agent.message-added message=turn-5
+0005  2026-08-05T09:14:22.000Z  agent.response-recorded response=fixture-response instance=turn-5

@@ -93,6 +93,7 @@ against the replay contract.
 | `014-full-session`          | one Phase 0 session spanning VFS mutation, Git restore, test failure and recovery, service/process reactions, permission, and belief divergence             |
 | `015-terminal-modes`        | terminal mode and model transitions, then shell-driven incident-matched resume and the authored bare-exit refusal                                           |
 | `016-agent-artifacts`       | authored response instantiation plus stable message/tool/thinking/todo identities, semantic updates, and replayable activity                                |
+| `017-agent-intents`         | recognized and fallback agent turns plus shell passthrough replaying through the shared shell event path                                                    |
 
 `002` records 1000 raw draws eight to a line with their index, so a divergence
 names the draw it started at rather than reporting that a file changed.

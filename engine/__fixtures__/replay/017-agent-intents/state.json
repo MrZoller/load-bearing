@@ -1,0 +1,469 @@
+{
+  "cartridge": {
+    "meta": {
+      "assignment": "Exercise the loader. Do not make this interesting.",
+      "date": "2026-08-05",
+      "number": 0,
+      "schemaVersion": 0,
+      "startedAt": "2026-08-05T09:14:22.000Z",
+      "title": "Fixture World"
+    },
+    "models": [
+      {
+        "archetype": "paranoid",
+        "costMultiplier": 48000,
+        "description": "Thorough. Expensive. Excavation permit required.",
+        "id": "deep-foundation",
+        "name": "Deep Foundation",
+        "quirks": [
+          "Surveys before it reads."
+        ]
+      },
+      {
+        "archetype": "reckless",
+        "costMultiplier": 3,
+        "description": "Ships first. Reads the diff later, or never.",
+        "id": "quick-patch",
+        "name": "Quick Patch",
+        "quirks": []
+      }
+    ],
+    "presentation": {
+      "metrics": {
+        "baseTokens": 0,
+        "contextWindowTokens": 1000,
+        "costMicrosPerToken": 1,
+        "integrityLossPerEvent": 1,
+        "integrityStart": 100,
+        "tokensPerEvent": 1
+      },
+      "phase2": {},
+      "placeholders": [
+        {
+          "stage": 0,
+          "text": "inspect"
+        }
+      ],
+      "spinnerPools": [
+        {
+          "archetype": "paranoid",
+          "stage": 0,
+          "verbs": [
+            "Inspecting"
+          ]
+        },
+        {
+          "archetype": "reckless",
+          "stage": 0,
+          "verbs": [
+            "Assuming"
+          ]
+        }
+      ]
+    },
+    "repository": {
+      "commands": {},
+      "cwd": "/production/service",
+      "directories": {},
+      "endpoints": {},
+      "env": {
+        "PATH": "/usr/local/bin:/usr/bin:/bin",
+        "SERVICE_TIER": "critical"
+      },
+      "files": {
+        "/etc/motd": {
+          "contents": "This system is load-bearing.\n",
+          "group": "root",
+          "mode": "0444",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/README.md": {
+          "contents": "# service\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src/index.ts": {
+          "contents": "export const load = 1;\n",
+          "group": "departed",
+          "mode": "0644",
+          "mtime": "2026-07-31T02:11:09.000Z",
+          "owner": "greg"
+        }
+      },
+      "gitHistory": {
+        "branches": {},
+        "commits": [],
+        "head": {
+          "kind": "detached",
+          "target": ""
+        }
+      },
+      "gitIdentity": {
+        "email": "visitor@example.test",
+        "name": "Visitor"
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      },
+      "logs": [],
+      "manPages": [
+        {
+          "contents": "SERVICE(8)\n\nNAME\n     service - the service\n",
+          "name": "service",
+          "section": "8"
+        }
+      ],
+      "processes": [],
+      "reactions": [],
+      "services": [],
+      "shellHistory": [
+        "cd /production/service",
+        "git status",
+        "npm test"
+      ],
+      "system": {
+        "architecture": "x86_64",
+        "bootedAt": "2025-07-01T06:10:00.000Z",
+        "hostname": "production",
+        "kernelRelease": "6.1.0-load-bearing",
+        "operatingSystem": "Linux"
+      },
+      "tests": [],
+      "tickets": []
+    },
+    "story": {
+      "compactResponse": "fixture-response",
+      "fallback": {
+        "actions": [],
+        "response": "fixture-response"
+      },
+      "helpResponse": "fixture-response",
+      "intents": [
+        {
+          "actions": [],
+          "id": "fixture-intent",
+          "patterns": [
+            "inspect"
+          ],
+          "response": "fixture-response"
+        }
+      ],
+      "opening": {
+        "login": [
+          "Fixture login."
+        ],
+        "response": "fixture-response"
+      },
+      "phase2": {},
+      "responses": [
+        {
+          "id": "fixture-response",
+          "text": "Fixture response.",
+          "thinkingBlocks": [
+            {
+              "id": "reason",
+              "status": "active",
+              "text": "Okay, the fixture is stable."
+            }
+          ],
+          "todos": [
+            {
+              "id": "inspect",
+              "status": "pending",
+              "text": "Inspect fixture"
+            }
+          ],
+          "toolCalls": [
+            {
+              "id": "read",
+              "input": "cat README.md",
+              "output": "",
+              "status": "pending",
+              "title": "Read fixture"
+            }
+          ]
+        }
+      ],
+      "resume": {
+        "changedResponse": "fixture-response",
+        "unchangedResponse": "fixture-response"
+      }
+    }
+  },
+  "clock": {
+    "elapsedMs": 0,
+    "startMs": 1785921262000
+  },
+  "engineVersion": "0.0.0",
+  "eventCount": 6,
+  "eventSchemaVersion": 0,
+  "random": {
+    "cursors": {},
+    "seed": 1828588712
+  },
+  "seed": "2026-08-22/17/structural-audit",
+  "slices": {
+    "agent": {
+      "activity": {
+        "status": "idle",
+        "verb": ""
+      },
+      "messages": [
+        {
+          "id": "turn-0",
+          "responseId": null,
+          "role": "visitor",
+          "text": "inspect"
+        },
+        {
+          "id": "turn-0/message",
+          "responseId": "fixture-response",
+          "role": "agent",
+          "text": "Fixture response."
+        },
+        {
+          "id": "turn-5",
+          "responseId": null,
+          "role": "visitor",
+          "text": "unmatched request"
+        },
+        {
+          "id": "turn-5/message",
+          "responseId": "fixture-response",
+          "role": "agent",
+          "text": "Fixture response."
+        }
+      ],
+      "responses": [
+        {
+          "instanceId": "turn-0",
+          "responseId": "fixture-response"
+        },
+        {
+          "instanceId": "turn-5",
+          "responseId": "fixture-response"
+        }
+      ],
+      "thinkingBlocks": [
+        {
+          "id": "turn-0/thinking/reason",
+          "status": "active",
+          "text": "Okay, the fixture is stable."
+        },
+        {
+          "id": "turn-5/thinking/reason",
+          "status": "active",
+          "text": "Okay, the fixture is stable."
+        }
+      ],
+      "todos": [
+        {
+          "id": "turn-0/todo/inspect",
+          "status": "pending",
+          "text": "Inspect fixture"
+        },
+        {
+          "id": "turn-5/todo/inspect",
+          "status": "pending",
+          "text": "Inspect fixture"
+        }
+      ],
+      "toolCalls": [
+        {
+          "id": "turn-0/tool/read",
+          "input": "cat README.md",
+          "output": "",
+          "status": "pending",
+          "title": "Read fixture"
+        },
+        {
+          "id": "turn-5/tool/read",
+          "input": "cat README.md",
+          "output": "",
+          "status": "pending",
+          "title": "Read fixture"
+        }
+      ]
+    },
+    "git": {
+      "branches": {},
+      "commits": {},
+      "head": {
+        "kind": "detached",
+        "target": ""
+      },
+      "identity": {
+        "email": "visitor@example.test",
+        "name": "Visitor"
+      },
+      "index": {},
+      "root": "/production/service"
+    },
+    "mind": {
+      "beliefs": [],
+      "compactHistory": [],
+      "permissions": []
+    },
+    "probe": {
+      "events": 0,
+      "values": 0
+    },
+    "terminal": {
+      "activeModel": "deep-foundation",
+      "mode": "bash"
+    },
+    "tests": {
+      "runs": []
+    },
+    "vfs": {
+      "cwd": "/production/service",
+      "entries": {
+        "/": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/etc": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/etc/motd": {
+          "contents": "This system is load-bearing.\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0444",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/README.md": {
+          "contents": "# service\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-05T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/service/src/index.ts": {
+          "contents": "export const load = 1;\n",
+          "group": "departed",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-07-31T02:11:09.000Z",
+          "owner": "greg"
+        }
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      }
+    },
+    "world": {
+      "env": {
+        "PATH": "/usr/local/bin:/usr/bin:/bin",
+        "SERVICE_TIER": "critical"
+      },
+      "logs": [],
+      "manPages": [
+        {
+          "contents": "SERVICE(8)\n\nNAME\n     service - the service\n",
+          "name": "service",
+          "section": "8"
+        }
+      ],
+      "processes": [],
+      "services": [],
+      "shellHistory": [
+        "cd /production/service",
+        "git status",
+        "npm test",
+        "pwd"
+      ],
+      "tickets": []
+    }
+  },
+  "transcript": [
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 0,
+      "summary": "message=turn-0",
+      "type": "agent.message-added"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 1,
+      "summary": "length=4",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 2,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "/production/service"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 3,
+      "summary": "response=fixture-response instance=turn-0",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 4,
+      "summary": "message=turn-5",
+      "type": "agent.message-added"
+    },
+    {
+      "at": "2026-08-05T09:14:22.000Z",
+      "detail": [],
+      "index": 5,
+      "summary": "response=fixture-response instance=turn-5",
+      "type": "agent.response-recorded"
+    }
+  ]
+}

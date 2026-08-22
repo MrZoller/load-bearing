@@ -1,10 +1,30 @@
-import { createTerminalModeEvent } from "../../engine/index.js";
-import type { EngineEvent } from "../../engine/index.js";
+import {
+  createAgentInputEvents,
+  createShellExecuteEvent,
+  createTerminalModeEvent,
+} from "../../engine/index.js";
+import type {
+  EngineEvent,
+  LoadedCartridge,
+  SessionState,
+} from "../../engine/index.js";
 
-/** Render the Phase 1 agent prompt without inventing the T17 intent parser. */
+export function createTuiInputEvents(
+  cartridge: LoadedCartridge,
+  state: SessionState,
+  input: string,
+): readonly EngineEvent[] {
+  if (input === "/exit") return [createTerminalModeEvent("bash")];
+  if (input.startsWith("!")) return [createShellExecuteEvent(input.slice(1))];
+  return createAgentInputEvents(cartridge, state, input);
+}
+
+/** Render the agent prompt as a thin dispatcher over replayable engine events. */
 export function renderTuiView(
   document: Document,
-  dispatch: (event: EngineEvent) => void,
+  cartridge: LoadedCartridge,
+  state: SessionState,
+  dispatch: (events: readonly EngineEvent[]) => void,
 ): HTMLFormElement {
   const form = document.createElement("form");
   form.className = "prompt prompt--tui";
@@ -24,12 +44,12 @@ export function renderTuiView(
   input.setAttribute("aria-label", "Agent prompt");
 
   function enterBash(): void {
-    dispatch(createTerminalModeEvent("bash"));
+    dispatch([createTerminalModeEvent("bash")]);
   }
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    if (input.value === "/exit") enterBash();
+    dispatch(createTuiInputEvents(cartridge, state, input.value));
   });
   input.addEventListener("keydown", (event) => {
     if (event.ctrlKey && event.key.toLowerCase() === "d") {

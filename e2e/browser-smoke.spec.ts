@@ -66,3 +66,59 @@ test("cold-opens and round-trips between the TUI and Bash with the keyboard", as
   expect(pageErrors).toEqual([]);
   expect(failedRequests).toEqual([]);
 });
+
+test("renders recognized and fallback TUI turns and dispatches ! shell work", async ({
+  page,
+}) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.goto("/");
+
+  const transcript = page.getByRole("list", { name: "Session transcript" });
+  const agentPrompt = page.getByRole("textbox", { name: "Agent prompt" });
+
+  await agentPrompt.fill("inspect it");
+  await agentPrompt.press("Enter");
+  await expect(
+    transcript.getByText("inspect it", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    transcript.getByText(
+      "I will inspect the sentinel before changing the forces currently passing through it.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(
+    transcript.getByText("cat src/ready.stale", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    transcript.getByText("remove me", { exact: true }),
+  ).toBeVisible();
+
+  await agentPrompt.fill("please rotate the moon");
+  await agentPrompt.press("Enter");
+  await expect(
+    transcript.getByText(
+      "I treated that as a request for a wider readiness review. The original task is now supporting it.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+
+  await agentPrompt.fill("!pwd");
+  await agentPrompt.press("Enter");
+  await expect(transcript.getByText("pwd", { exact: true })).toBeVisible();
+  await expect(
+    transcript.getByText("/production/service", { exact: true }),
+  ).toBeVisible();
+  await expect(agentPrompt).toBeFocused();
+
+  await agentPrompt.fill("x".repeat(16_001));
+  await agentPrompt.press("Enter");
+  await expect(
+    transcript.getByText(
+      "I treated that as a request for a wider readiness review. The original task is now supporting it.",
+      { exact: true },
+    ),
+  ).toHaveCount(2);
+  expect(pageErrors).toEqual([]);
+});

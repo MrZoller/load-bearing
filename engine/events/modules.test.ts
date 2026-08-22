@@ -41,6 +41,7 @@ describe("the engine's module list", () => {
     );
     expect(ENGINE_EVENT_REGISTRY.types).toEqual([
       "agent.activity-set",
+      "agent.capacity-reached",
       "agent.message-added",
       "agent.response-recorded",
       "agent.thinking-added",

@@ -1,4 +1,10 @@
-import type { LoadedCartridge, TranscriptEntry } from "../../engine/index.js";
+import { readAgentSlice } from "../../engine/index.js";
+import type {
+  AgentMessage,
+  EngineEvent,
+  LoadedCartridge,
+  TranscriptEntry,
+} from "../../engine/index.js";
 import type { RuntimeSessionSnapshot } from "../session.js";
 
 function paragraph(
@@ -12,15 +18,20 @@ function paragraph(
   return line;
 }
 
+function eventString(event: EngineEvent, field: string, label: string): string {
+  const value = event.payload?.[field];
+  if (typeof value !== "string") {
+    throw new Error(`A stored ${label} event has no string ${field}.`);
+  }
+  return value;
+}
+
 function shellInputs(snapshot: RuntimeSessionSnapshot): readonly string[] {
-  return snapshot.eventLog.flatMap((event) => {
-    if (event.type !== "shell.execute") return [];
-    const input = event.payload?.["input"];
-    if (typeof input !== "string") {
-      throw new Error("A stored shell.execute event has no string input.");
-    }
-    return [input];
-  });
+  return snapshot.eventLog.flatMap((event) =>
+    event.type === "shell.execute"
+      ? [eventString(event, "input", "shell.execute")]
+      : [],
+  );
 }
 
 function shellResults(
@@ -71,7 +82,43 @@ function renderExchange(
   return item;
 }
 
-/** Project visitor shell commands and their replayed results without UI history. */
+function renderMessage(
+  document: Document,
+  message: AgentMessage,
+): HTMLLIElement {
+  const item = document.createElement("li");
+  item.className = `transcript__entry transcript__entry--${message.role}`;
+  item.append(
+    paragraph(
+      document,
+      `transcript__message transcript__message--${message.role}`,
+      message.text,
+    ),
+  );
+  return item;
+}
+
+function authoredMessage(
+  cartridge: LoadedCartridge,
+  responseId: string,
+): AgentMessage {
+  const response = cartridge.story.responses.find(
+    (candidate) => candidate.id === responseId,
+  );
+  if (response === undefined) {
+    throw new Error(
+      `A stored agent capacity event names unknown response ${JSON.stringify(responseId)}.`,
+    );
+  }
+  return {
+    id: "capacity/message",
+    role: "agent",
+    text: response.text,
+    responseId,
+  };
+}
+
+/** Project replayed shell and agent state in the order of its durable event log. */
 export function renderTerminalTranscript(
   document: Document,
   cartridge: LoadedCartridge,
@@ -83,12 +130,55 @@ export function renderTerminalTranscript(
     throw new Error("Shell commands and replayed results are out of step.");
   }
 
-  return [
-    renderLogin(document, cartridge, snapshot),
-    ...inputs.map((input, index) => {
-      const result = results[index];
+  const messages = readAgentSlice(snapshot.state).messages;
+  const entries: HTMLLIElement[] = [renderLogin(document, cartridge, snapshot)];
+  let shellIndex = 0;
+  let messageCount = 0;
+
+  for (const event of snapshot.eventLog) {
+    if (event.type === "shell.execute") {
+      const input = inputs[shellIndex];
+      const result = results[shellIndex];
+      if (input === undefined) throw new Error("A shell input is missing.");
       if (result === undefined) throw new Error("A shell result is missing.");
-      return renderExchange(document, input, result);
-    }),
-  ];
+      entries.push(renderExchange(document, input, result));
+      shellIndex += 1;
+      continue;
+    }
+
+    if (event.type === "agent.capacity-reached") {
+      entries.push(
+        renderMessage(
+          document,
+          authoredMessage(
+            cartridge,
+            eventString(event, "responseId", "agent.capacity-reached"),
+          ),
+        ),
+      );
+      continue;
+    }
+
+    const messageId =
+      event.type === "agent.message-added"
+        ? eventString(event, "id", "agent.message-added")
+        : event.type === "agent.response-recorded"
+          ? `${eventString(event, "instanceId", "agent.response-recorded")}/message`
+          : null;
+    if (messageId === null) continue;
+
+    const message = messages.find((candidate) => candidate.id === messageId);
+    if (message === undefined) {
+      throw new Error(
+        `Replayed agent message ${JSON.stringify(messageId)} is missing.`,
+      );
+    }
+    entries.push(renderMessage(document, message));
+    messageCount += 1;
+  }
+
+  if (messageCount !== messages.length) {
+    throw new Error("Agent events and replayed messages are out of step.");
+  }
+  return entries;
 }
