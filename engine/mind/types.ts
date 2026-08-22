@@ -16,6 +16,11 @@ export interface PermissionLedgerEntry {
   readonly at: string;
 }
 
+export interface PendingPermissionRequest {
+  readonly id: string;
+  readonly capability: ExactCapability;
+}
+
 export interface FileExistsBelief {
   readonly kind: "file-exists";
   readonly path: string;
@@ -60,6 +65,7 @@ export interface CompactSummary {
 
 export interface MindSlice {
   readonly permissions: readonly PermissionLedgerEntry[];
+  readonly pendingPermission: PendingPermissionRequest | null;
   readonly beliefs: readonly Belief[];
   readonly compactHistory: readonly CompactSummary[];
 }

@@ -78,7 +78,9 @@ export function mountApp(
             dispatchMany,
           );
     view.replaceChildren(activeView);
-    activeView.querySelector("input")?.focus();
+    activeView
+      .querySelector<HTMLElement>("[data-initial-focus], input")
+      ?.focus();
   }
 
   render();

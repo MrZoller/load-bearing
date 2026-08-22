@@ -75,25 +75,27 @@ against the replay contract.
 
 ### The fixtures so far
 
-| fixture                     | what it pins                                                                                                                                                |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `001-engine-smoke`          | the loop itself: an input triple folds, records, and compares. The shared cartridge is written with unsorted keys, so a key-ordering regression fails here  |
-| `002-random-clock`          | the seed hash, the mulberry32 constants, `fork`'s path derivation, `int`'s rejection window, `weightedPick`'s distribution, and the UTC calendar arithmetic |
-| `003-cartridge-load`        | load to initial state with an empty event log — normalization alone, isolated from the fold                                                                 |
-| `004-reducer-core`          | the reducer's machinery at readable size: a stamped payload schema version, dispatch across two modules, a slice accumulating, transcript index and stamps  |
-| `005-vfs-lifecycle`         | VFS create, overwrite, chmod, delete, and persistence of deletion across a later event                                                                      |
-| `006-vfs-git`               | VFS edits reflected in Git status/diff, dirty checkout refusal, and atomic clean checkout across Git and VFS slices                                         |
-| `007-world-state`           | environmental hydration plus replayable process, service, log, environment, and history transitions                                                         |
-| `008-command-shell`         | unlogged shell expansion plus stable stream-tagged builtin, override, unknown, and blank command results                                                    |
-| `009-filesystem-commands`   | shell-driven VFS creation, cwd persistence, deletion observed by later commands, and permission-denied output                                               |
-| `010-git-commands`          | bounded Git command rendering and coherent shell-driven branch, index, working-tree, commit, blame and checkout transitions                                 |
-| `011-system-commands`       | world inspection, raw shell history, exact endpoint responses, and persistent environment, service and process transitions                                  |
-| `012-test-runner-reactions` | authored test outcomes and durations before/after a shell edit, plus ordered persistent service, process, health and dual-log reactions                     |
-| `013-agent-mind`            | timestamped exact permission and intentionally false file/service beliefs, preserving an induced divergence through replay                                  |
-| `014-full-session`          | one Phase 0 session spanning VFS mutation, Git restore, test failure and recovery, service/process reactions, permission, and belief divergence             |
-| `015-terminal-modes`        | terminal mode and model transitions, then shell-driven incident-matched resume and the authored bare-exit refusal                                           |
-| `016-agent-artifacts`       | authored response instantiation plus stable message/tool/thinking/todo identities, semantic updates, and replayable activity                                |
-| `017-agent-intents`         | recognized and fallback agent turns plus shell passthrough replaying through the shared shell event path                                                    |
+| fixture                        | what it pins                                                                                                                                                |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `001-engine-smoke`             | the loop itself: an input triple folds, records, and compares. The shared cartridge is written with unsorted keys, so a key-ordering regression fails here  |
+| `002-random-clock`             | the seed hash, the mulberry32 constants, `fork`'s path derivation, `int`'s rejection window, `weightedPick`'s distribution, and the UTC calendar arithmetic |
+| `003-cartridge-load`           | load to initial state with an empty event log — normalization alone, isolated from the fold                                                                 |
+| `004-reducer-core`             | the reducer's machinery at readable size: a stamped payload schema version, dispatch across two modules, a slice accumulating, transcript index and stamps  |
+| `005-vfs-lifecycle`            | VFS create, overwrite, chmod, delete, and persistence of deletion across a later event                                                                      |
+| `006-vfs-git`                  | VFS edits reflected in Git status/diff, dirty checkout refusal, and atomic clean checkout across Git and VFS slices                                         |
+| `007-world-state`              | environmental hydration plus replayable process, service, log, environment, and history transitions                                                         |
+| `008-command-shell`            | unlogged shell expansion plus stable stream-tagged builtin, override, unknown, and blank command results                                                    |
+| `009-filesystem-commands`      | shell-driven VFS creation, cwd persistence, deletion observed by later commands, and permission-denied output                                               |
+| `010-git-commands`             | bounded Git command rendering and coherent shell-driven branch, index, working-tree, commit, blame and checkout transitions                                 |
+| `011-system-commands`          | world inspection, raw shell history, exact endpoint responses, and persistent environment, service and process transitions                                  |
+| `012-test-runner-reactions`    | authored test outcomes and durations before/after a shell edit, plus ordered persistent service, process, health and dual-log reactions                     |
+| `013-agent-mind`               | timestamped exact permission and intentionally false file/service beliefs, preserving an induced divergence through replay                                  |
+| `014-full-session`             | one Phase 0 session spanning VFS mutation, Git restore, test failure and recovery, service/process reactions, permission, and belief divergence             |
+| `015-terminal-modes`           | terminal mode and model transitions, then shell-driven incident-matched resume and the authored bare-exit refusal                                           |
+| `016-agent-artifacts`          | authored response instantiation plus stable message/tool/thinking/todo identities, semantic updates, and replayable activity                                |
+| `017-agent-intents`            | recognized and fallback agent turns plus shell passthrough replaying through the shared shell event path                                                    |
+| `018-shared-machine-awareness` | mode changes around a shared-machine mutation, resume divergence acknowledgment, and compacted belief replacement                                           |
+| `019-pending-permissions`      | authored exact-capability consent, simulated-time resolution, atomic prompt clearing, and a durable standing grant                                          |
 
 `002` records 1000 raw draws eight to a line with their index, so a divergence
 names the draw it started at rather than reporting that a file changed.

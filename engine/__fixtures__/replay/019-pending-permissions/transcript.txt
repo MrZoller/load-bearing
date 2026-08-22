@@ -1,0 +1,5 @@
+0000  2026-08-05T09:14:22.000Z  agent.message-added message=turn-0
+0001  2026-08-05T09:14:22.000Z  mind.permission-requested id=delete-fixture
+0002  2026-08-05T09:14:22.000Z  agent.response-recorded response=fixture-response instance=turn-0
+0003  2026-08-05T09:14:22.000Z  clock.tick ms=19
+0004  2026-08-05T09:14:22.019Z  mind.permission-resolved id=delete-fixture decision=always-allow

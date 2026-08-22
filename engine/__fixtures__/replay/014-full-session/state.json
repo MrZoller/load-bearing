@@ -233,12 +233,14 @@
       },
       "fallback": {
         "actions": [],
+        "authorizedResponse": "",
         "response": "fixture-response"
       },
       "helpResponse": "fixture-response",
       "intents": [
         {
           "actions": [],
+          "authorizedResponse": "",
           "id": "fixture-intent",
           "patterns": [
             "inspect"
@@ -348,6 +350,7 @@
         }
       ],
       "compactHistory": [],
+      "pendingPermission": null,
       "permissions": [
         {
           "at": "2026-08-05T09:14:24.000Z",

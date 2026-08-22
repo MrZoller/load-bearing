@@ -141,12 +141,14 @@
       },
       "fallback": {
         "actions": [],
+        "authorizedResponse": "",
         "response": "fixture-response"
       },
       "helpResponse": "fixture-response",
       "intents": [
         {
           "actions": [],
+          "authorizedResponse": "",
           "id": "fixture-intent",
           "patterns": [
             "inspect"
@@ -218,6 +220,7 @@
     "mind": {
       "beliefs": [],
       "compactHistory": [],
+      "pendingPermission": null,
       "permissions": []
     },
     "probe": {

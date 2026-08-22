@@ -8,6 +8,8 @@ import type {
 import { normalizeIntentPhrase } from "../cartridge/intent.js";
 import { createShellExecuteEvent } from "../commands/shell.js";
 import type { EngineEvent, SessionState } from "../events/state.js";
+import { createMindPermissionRequestedEvent } from "../mind/module.js";
+import { hasStandingPermission, readMindSlice } from "../mind/mind.js";
 import { countCodePoints } from "../text.js";
 import {
   MAX_AGENT_MESSAGES,
@@ -27,6 +29,7 @@ import {
 export interface AgentIntentSelection {
   readonly intentId: string | null;
   readonly responseId: string;
+  readonly authorizedResponseId: string;
   readonly actions: readonly CartridgeAgentAction[];
 }
 
@@ -63,12 +66,14 @@ export function selectAgentIntent(
     return {
       intentId: null,
       responseId: cartridge.story.fallback.response,
+      authorizedResponseId: cartridge.story.fallback.authorizedResponse,
       actions: cartridge.story.fallback.actions,
     };
   }
   return {
     intentId: intent.id,
     responseId: intent.response,
+    authorizedResponseId: intent.authorizedResponse,
     actions: intent.actions,
   };
 }
@@ -110,13 +115,38 @@ export function createAgentInputEvents(
 ): readonly EngineEvent[] {
   const boundedInput = boundAgentInput(input);
   const selection = selectAgentIntent(cartridge, boundedInput);
-  if (!canRecordAuthoredResponse(cartridge, state, selection.responseId, 2)) {
+  const mind = readMindSlice(state);
+  const permissionWasAuthorized = selection.actions.some(
+    (action) =>
+      action.kind === "permission-request" &&
+      hasStandingPermission(mind, {
+        kind: "exact",
+        action: action.action,
+        resource: action.resource,
+      }),
+  );
+  const responseId =
+    permissionWasAuthorized && selection.authorizedResponseId !== ""
+      ? selection.authorizedResponseId
+      : selection.responseId;
+  if (!canRecordAuthoredResponse(cartridge, state, responseId, 2)) {
     return [createAgentCapacityEvent(cartridge.story.fallback.response)];
   }
   const turnId = `turn-${String(state.eventCount)}`;
   return [
     createAgentMessageEvent(turnId, boundedInput),
-    ...selection.actions.map((action) => createShellExecuteEvent(action.input)),
-    createAgentResponseEvent(selection.responseId, turnId),
+    ...selection.actions.flatMap((action) => {
+      if (action.kind === "shell-execute")
+        return [createShellExecuteEvent(action.input)];
+      const capability = {
+        kind: "exact" as const,
+        action: action.action,
+        resource: action.resource,
+      };
+      return hasStandingPermission(mind, capability)
+        ? []
+        : [createMindPermissionRequestedEvent(action.id, capability)];
+    }),
+    createAgentResponseEvent(responseId, turnId),
   ];
 }

@@ -1542,6 +1542,7 @@
         },
         "fallback": {
           "actions": [],
+          "authorizedResponse": "",
           "response": "default-response"
         },
         "helpResponse": "default-response",
@@ -1833,11 +1834,58 @@
                       "input"
                     ],
                     "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "description": "Request consent for one exact capability.",
+                    "properties": {
+                      "action": {
+                        "description": "Bounded single-line authored text.",
+                        "maxLength": 240,
+                        "minLength": 1,
+                        "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                        "type": "string"
+                      },
+                      "id": {
+                        "description": "A stable authored permission request identifier.",
+                        "maxLength": 64,
+                        "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                        "type": "string"
+                      },
+                      "kind": {
+                        "description": "The action kind.",
+                        "enum": [
+                          "permission-request"
+                        ],
+                        "type": "string"
+                      },
+                      "resource": {
+                        "description": "Bounded single-line authored text.",
+                        "maxLength": 240,
+                        "minLength": 1,
+                        "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "id",
+                      "action",
+                      "resource"
+                    ],
+                    "type": "object"
                   }
                 ]
               },
               "maxItems": 16,
               "type": "array"
+            },
+            "authorizedResponse": {
+              "default": "",
+              "description": "An optional stable lowercase Phase 1 content identifier.",
+              "maxLength": 64,
+              "pattern": "^(?:|[a-z][a-z0-9-]{0,63})$",
+              "type": "string"
             },
             "response": {
               "description": "A stable lowercase Phase 1 content identifier.",
@@ -1861,7 +1909,7 @@
           "description": "Minimal Phase 1 recognized natural-language intents.",
           "items": {
             "additionalProperties": false,
-            "description": "One intent's bounded match phrases, response and actions.",
+            "description": "One intent's bounded match phrases, response, authorized response and actions.",
             "properties": {
               "actions": {
                 "default": [],
@@ -1891,11 +1939,58 @@
                         "input"
                       ],
                       "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "description": "Request consent for one exact capability.",
+                      "properties": {
+                        "action": {
+                          "description": "Bounded single-line authored text.",
+                          "maxLength": 240,
+                          "minLength": 1,
+                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                          "type": "string"
+                        },
+                        "id": {
+                          "description": "A stable authored permission request identifier.",
+                          "maxLength": 64,
+                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                          "type": "string"
+                        },
+                        "kind": {
+                          "description": "The action kind.",
+                          "enum": [
+                            "permission-request"
+                          ],
+                          "type": "string"
+                        },
+                        "resource": {
+                          "description": "Bounded single-line authored text.",
+                          "maxLength": 240,
+                          "minLength": 1,
+                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "id",
+                        "action",
+                        "resource"
+                      ],
+                      "type": "object"
                     }
                   ]
                 },
                 "maxItems": 16,
                 "type": "array"
+              },
+              "authorizedResponse": {
+                "default": "",
+                "description": "An optional stable lowercase Phase 1 content identifier.",
+                "maxLength": 64,
+                "pattern": "^(?:|[a-z][a-z0-9-]{0,63})$",
+                "type": "string"
               },
               "id": {
                 "description": "A stable lowercase Phase 1 content identifier.",

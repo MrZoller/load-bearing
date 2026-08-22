@@ -5,6 +5,10 @@ import { loadCartridge } from "../cartridge/load.js";
 import { createShellExecuteEvent } from "../commands/shell.js";
 import { reduce, step } from "../events/reduce.js";
 import {
+  createMindPermissionRequestedEvent,
+  createMindPermissionResolvedEvent,
+} from "../mind/module.js";
+import {
   MAX_AGENT_MESSAGES,
   MAX_AGENT_RESPONSES,
   MAX_AGENT_TEXT_LENGTH,
@@ -29,6 +33,7 @@ describe("authored agent input", () => {
     expect(selectAgentIntent(CARTRIDGE, "  CHECK\tTHE   SENTINEL ")).toEqual({
       intentId: "inspect-sentinel",
       responseId: "inspect",
+      authorizedResponseId: "",
       actions: [{ kind: "shell-execute", input: "cat src/ready.stale" }],
     });
 
@@ -70,6 +75,108 @@ describe("authored agent input", () => {
         role: "agent",
         responseId: "fallback",
         text: "I treated that as a request for a wider readiness review. The original task is now supporting it.",
+      },
+    ]);
+  });
+
+  it("preserves authored permission requests in action order", () => {
+    const events = createAgentInputEvents(
+      CARTRIDGE,
+      reduce({ cartridge: CARTRIDGE, seed: SEED, events: [] }),
+      "remove it",
+    );
+
+    expect(events).toMatchObject([
+      { type: "agent.message-added" },
+      {
+        type: "mind.permission-requested",
+        payload: {
+          id: "delete-ready-sentinel",
+          capability: {
+            kind: "exact",
+            action: "delete",
+            resource: "/production/service/src/ready.stale",
+          },
+        },
+      },
+      { type: "agent.response-recorded" },
+    ]);
+  });
+
+  it("does not re-prompt an exactly standing permission", () => {
+    const request = createMindPermissionRequestedEvent(
+      "delete-ready-sentinel",
+      {
+        kind: "exact",
+        action: "delete",
+        resource: "/production/service/src/ready.stale",
+      },
+    );
+    const state = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      events: [
+        request,
+        createMindPermissionResolvedEvent(
+          "delete-ready-sentinel",
+          "always-allow",
+        ),
+      ],
+    });
+
+    expect(createAgentInputEvents(CARTRIDGE, state, "remove it")).toMatchObject(
+      [
+        { type: "agent.message-added" },
+        {
+          type: "agent.response-recorded",
+          payload: { responseId: "remove-authorized" },
+        },
+      ],
+    );
+  });
+
+  it("uses a fallback's authored authorized response after Always allow", () => {
+    const document = JSON.parse(JSON.stringify(cartridgeDocument)) as {
+      story: {
+        fallback: {
+          authorizedResponse?: string;
+          actions?: unknown[];
+        };
+      };
+    };
+    document.story.fallback.authorizedResponse = "remove-authorized";
+    document.story.fallback.actions = [
+      {
+        kind: "permission-request",
+        id: "remove-fallback-sentinel",
+        action: "delete",
+        resource: "/production/service/src/ready.stale",
+      },
+    ];
+    const cartridge = loadCartridge(document);
+    const state = reduce({
+      cartridge,
+      seed: SEED,
+      events: [
+        createMindPermissionRequestedEvent("remove-fallback-sentinel", {
+          kind: "exact",
+          action: "delete",
+          resource: "/production/service/src/ready.stale",
+        }),
+        createMindPermissionResolvedEvent(
+          "remove-fallback-sentinel",
+          "always-allow",
+        ),
+      ],
+    });
+
+    expect(
+      createAgentInputEvents(cartridge, state, "please rotate the moon"),
+    ).toMatchObject([
+      { type: "agent.message-added" },
+      {
+        type: "agent.response-recorded",
+        payload: { responseId: "remove-authorized" },
       },
     ]);
   });

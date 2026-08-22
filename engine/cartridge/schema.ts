@@ -167,6 +167,7 @@ export const MAX_STORY_BELIEFS = 64;
 export const MAX_PRESENTATION_ENTRIES = 64;
 export const MAX_PRESENTATION_VERBS = 32;
 export const MAX_STORY_TEXT_LENGTH = 16000;
+export const MAX_PERMISSION_REQUEST_ID_LENGTH = 64;
 
 /** A stable cartridge-local identifier that cannot disturb line-oriented output. */
 export const WORLD_ID_PATTERN = pattern(
@@ -1123,6 +1124,18 @@ const PHASE_ONE_ID = {
   maxLength: 64,
 } satisfies StringNode;
 
+// An absent authorized response is normalized to the empty value, while an
+// authored one remains a response identifier. The normalized form appears in
+// replay snapshots, so the schema must accept it when those snapshots reload.
+const OPTIONAL_PHASE_ONE_ID = {
+  kind: "string",
+  description: "An optional stable lowercase Phase 1 content identifier.",
+  pattern: pattern(/^(?:|[a-z][a-z0-9-]{0,63})$/),
+  patternLabel:
+    "an empty value or a lowercase id slug of at most 64 characters",
+  maxLength: 64,
+} satisfies StringNode;
+
 const BOUNDED_TEXT = {
   kind: "string",
   description: "Bounded authored text.",
@@ -1234,6 +1247,26 @@ const AGENT_ACTION = {
           values: ["shell-execute"],
         }),
         input: required({ ...BOUNDED_TEXT, maxLength: 4000 }),
+      },
+    },
+    "permission-request": {
+      kind: "object",
+      description: "Request consent for one exact capability.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "The action kind.",
+          values: ["permission-request"],
+        }),
+        id: required({
+          kind: "string",
+          description: "A stable authored permission request identifier.",
+          pattern: WORLD_ID_PATTERN,
+          patternLabel: "a non-empty single-line identifier",
+          maxLength: MAX_PERMISSION_REQUEST_ID_LENGTH,
+        }),
+        action: required({ ...BOUNDED_LINE, minLength: 1 }),
+        resource: required({ ...BOUNDED_LINE, minLength: 1 }),
       },
     },
   },
@@ -1421,7 +1454,7 @@ const STORY = {
       items: {
         kind: "object",
         description:
-          "One intent's bounded match phrases, response and actions.",
+          "One intent's bounded match phrases, response, authorized response and actions.",
         fields: {
           id: required(PHASE_ONE_ID),
           patterns: required({
@@ -1432,6 +1465,9 @@ const STORY = {
             maxItems: 16,
           }),
           response: required(PHASE_ONE_ID),
+          // The empty normalized value means this intent's ordinary response
+          // remains coherent when a standing grant skips its prompt action.
+          authorizedResponse: optional(OPTIONAL_PHASE_ONE_ID, ""),
           actions: optional(ACTIONS, []),
         },
       },
@@ -1441,6 +1477,9 @@ const STORY = {
       description: "Confident authored fallback for unmatched input.",
       fields: {
         response: required(PHASE_ONE_ID),
+        // Like recognized intents, a fallback that requests permission needs
+        // coherent copy for the later exact-standing-grant path.
+        authorizedResponse: optional(OPTIONAL_PHASE_ONE_ID, ""),
         actions: optional(ACTIONS, []),
       },
     }),
@@ -1601,7 +1640,11 @@ const PHASE_ONE_STORY_DEFAULT = {
     },
   ],
   intents: [],
-  fallback: { response: "default-response", actions: [] },
+  fallback: {
+    response: "default-response",
+    authorizedResponse: "",
+    actions: [],
+  },
   helpResponse: "default-response",
   compact: {
     response: "default-response",

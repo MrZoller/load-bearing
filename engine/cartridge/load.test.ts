@@ -405,6 +405,94 @@ describe("loadCartridge", () => {
     );
   });
 
+  it.each([
+    [
+      "an empty permission action",
+      { action: "", resource: "/etc/motd" },
+      "/story/intents/0/actions/0/action",
+    ],
+    [
+      "an overlong permission action",
+      { action: "x".repeat(241), resource: "/etc/motd" },
+      "/story/intents/0/actions/0/action",
+    ],
+    [
+      "an unknown permission action field",
+      { action: "delete", resource: "/etc/motd", unexpected: true },
+      "/story/intents/0/actions/0/unexpected",
+    ],
+    [
+      "an unknown action kind",
+      { kind: "permission-please", action: "delete", resource: "/etc/motd" },
+      "/story/intents/0/actions/0/kind",
+    ],
+  ])("rejects %s", (_case, action, pointer) => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    const intent = (story["intents"] as Record<string, unknown>[])[0];
+    if (intent === undefined)
+      throw new Error("minimal fixture lacks an intent");
+    intent["actions"] = [
+      { kind: "permission-request", id: "delete-motd", ...action },
+    ];
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toContain(pointer);
+  });
+
+  it("rejects an intent that would enqueue multiple permission prompts", () => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    const intent = (story["intents"] as Record<string, unknown>[])[0];
+    if (intent === undefined)
+      throw new Error("minimal fixture lacks an intent");
+    intent["actions"] = [
+      {
+        kind: "permission-request",
+        id: "delete-motd",
+        action: "delete",
+        resource: "/etc/motd",
+      },
+      {
+        kind: "permission-request",
+        id: "restart-motd",
+        action: "restart",
+        resource: "/etc/motd",
+      },
+    ];
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ pointer: "/story/intents/0/actions" }),
+      ]),
+    );
+  });
+
+  it("rejects a fallback that would enqueue multiple permission prompts", () => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    const fallback = story["fallback"] as Record<string, unknown>;
+    fallback["actions"] = [
+      {
+        kind: "permission-request",
+        id: "delete-motd",
+        action: "delete",
+        resource: "/etc/motd",
+      },
+      {
+        kind: "permission-request",
+        id: "restart-motd",
+        action: "restart",
+        resource: "/etc/motd",
+      },
+    ];
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ pointer: "/story/fallback/actions" }),
+      ]),
+    );
+  });
+
   it("strictly validates authored belief shapes and compact references", () => {
     const source = minimal();
     const story = source["story"] as Record<string, unknown>;

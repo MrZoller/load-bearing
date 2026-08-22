@@ -65,6 +65,8 @@ describe("the engine's module list", () => {
       "mind.belief-set",
       "mind.compact",
       "mind.permission-decision",
+      "mind.permission-requested",
+      "mind.permission-resolved",
       "probe.int",
       "probe.random",
       "probe.weighted",

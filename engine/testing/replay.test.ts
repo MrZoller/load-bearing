@@ -73,6 +73,33 @@ describe("golden replay fixtures", () => {
     expect(recording.transcript).toContain("git.restore");
   });
 
+  it("records pending permission resolution at its simulated instant", () => {
+    const recording = replayFixture(
+      loadReplayFixture("019-pending-permissions"),
+    );
+    const state = deserialize(recording.state) as Record<string, unknown>;
+    const slices = state["slices"] as Record<string, Record<string, unknown>>;
+    const mind = slices["mind"];
+
+    expect(mind).toMatchObject({
+      pendingPermission: null,
+      permissions: [
+        {
+          capability: {
+            kind: "exact",
+            action: "delete",
+            resource: "/production/service/src/index.ts",
+          },
+          decision: "always-allow",
+          at: "2026-08-05T09:14:22.019Z",
+        },
+      ],
+    });
+    expect(recording.transcript).toContain(
+      "2026-08-05T09:14:22.019Z  mind.permission-resolved",
+    );
+  });
+
   it("has fixtures to replay", () => {
     // A suite that silently found nothing would pass forever while proving
     // nothing, which is the failure mode this whole harness exists to prevent.

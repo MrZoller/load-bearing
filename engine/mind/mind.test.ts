@@ -7,7 +7,7 @@ import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { readVfsSlice } from "../vfs/module.js";
 import { readVfs } from "../vfs/vfs.js";
 import { readWorldSlice } from "../world/module.js";
-import { reduce, restoreSnapshot, snapshot } from "../events/reduce.js";
+import { reduce, restoreSnapshot, snapshot, step } from "../events/reduce.js";
 import type { EngineEvent, SessionState } from "../events/state.js";
 import {
   beliefDivergence,
@@ -15,6 +15,10 @@ import {
   readMindSlice,
   validateMindSlice,
 } from "./mind.js";
+import {
+  createMindPermissionRequestedEvent,
+  createMindPermissionResolvedEvent,
+} from "./module.js";
 
 const SEED = "2026-08-05/13/deep-foundation";
 const STARTED_AT = "2026-08-05T09:14:22.000Z";
@@ -41,6 +45,98 @@ const CAPABILITY = {
 };
 
 describe("mind events", () => {
+  it("resolves every choice atomically from only the matching pending request", () => {
+    const requested = createMindPermissionRequestedEvent(
+      "delete-motd",
+      CAPABILITY,
+    );
+    const pending = fold([requested]);
+
+    expect(readMindSlice(pending).pendingPermission).toEqual({
+      id: "delete-motd",
+      capability: CAPABILITY,
+    });
+    expect(() =>
+      fold([
+        requested,
+        createMindPermissionRequestedEvent("second-request", CAPABILITY),
+      ]),
+    ).toThrow(/must be resolved first/);
+    expect(() =>
+      fold([
+        requested,
+        createMindPermissionResolvedEvent("different-request", "grant"),
+      ]),
+    ).toThrow(/does not match pending request/);
+    expect(() =>
+      fold([createMindPermissionResolvedEvent("delete-motd", "grant")]),
+    ).toThrow(/no permission request is pending/);
+
+    for (const [decision, ms] of [
+      ["grant", 7],
+      ["deny", 8],
+      ["always-allow", 9],
+    ] as const) {
+      const resolved = fold([
+        requested,
+        { type: "clock.tick", payload: { ms } },
+        createMindPermissionResolvedEvent("delete-motd", decision),
+      ]);
+      expect(readMindSlice(resolved)).toEqual({
+        pendingPermission: null,
+        permissions: [
+          {
+            capability: CAPABILITY,
+            decision,
+            at: `2026-08-05T09:14:22.00${String(ms)}Z`,
+          },
+        ],
+        beliefs: [],
+        compactHistory: [],
+      });
+    }
+  });
+
+  it("restores a pending request without changing how direct decisions replay", () => {
+    const requested = fold([
+      createMindPermissionRequestedEvent("delete-motd", CAPABILITY),
+    ]);
+    const restored = restoreSnapshot(snapshot(requested));
+
+    expect(readMindSlice(restored).pendingPermission).toEqual({
+      id: "delete-motd",
+      capability: CAPABILITY,
+    });
+    expect(
+      readMindSlice(
+        step(
+          restored,
+          createMindPermissionResolvedEvent("delete-motd", "deny"),
+        ),
+      ),
+    ).toMatchObject({
+      pendingPermission: null,
+      permissions: [
+        { capability: CAPABILITY, decision: "deny", at: STARTED_AT },
+      ],
+    });
+    expect(
+      readMindSlice(
+        fold([
+          {
+            type: "mind.permission-decision",
+            payload: { capability: CAPABILITY, decision: "grant" },
+          },
+        ]),
+      ),
+    ).toMatchObject({
+      pendingPermission: null,
+      permissions: [
+        { capability: CAPABILITY, decision: "grant", at: STARTED_AT },
+      ],
+    });
+  });
+
   it("timestamps every permission decision at its simulated instant", () => {
     const state = fold([
       {
@@ -171,6 +267,7 @@ describe("mind events", () => {
 
     expect(readMindSlice(state)).toEqual({
       permissions: [],
+      pendingPermission: null,
       beliefs: [],
       compactHistory: [
         {
@@ -223,6 +320,15 @@ describe("mind events", () => {
           type: "mind.permission-decision",
           payload: { capability: CAPABILITY, decision: "always" },
         },
+      ]),
+    ).toThrow(/decision must be grant, deny or always-allow/);
+    expect(() =>
+      fold([
+        createMindPermissionRequestedEvent("delete-motd", CAPABILITY),
+        mindEvent("mind.permission-resolved", {
+          id: "delete-motd",
+          decision: "always",
+        }),
       ]),
     ).toThrow(/decision must be grant, deny or always-allow/);
     expect(() =>
@@ -291,6 +397,7 @@ describe("mind events", () => {
 
     const duplicateSlice = {
       permissions: [],
+      pendingPermission: null,
       beliefs: duplicateBeliefs,
       compactHistory: [],
     };
@@ -302,7 +409,13 @@ describe("mind events", () => {
     );
     expect(() =>
       validateMindSlice(
-        { permissions: [], beliefs: [], compactHistory: [], extra: true },
+        {
+          permissions: [],
+          pendingPermission: null,
+          beliefs: [],
+          compactHistory: [],
+          extra: true,
+        },
         "snapshot: slices.mind",
       ),
     ).toThrow(/unexpected field/);
@@ -310,10 +423,48 @@ describe("mind events", () => {
     expect(() =>
       restoreWithMind({
         permissions: [],
+        pendingPermission: null,
         beliefs: [],
         compactHistory: [{ summary: "x", at: "not-time" }],
       }),
     ).toThrow(/real fixed-width UTC instant/);
+
+    for (const [pendingPermission, message] of [
+      [
+        {
+          id: "bad\nid",
+          capability: CAPABILITY,
+        },
+        /non-empty single-line identifier/,
+      ],
+      [
+        {
+          id: "delete-motd",
+          capability: { ...CAPABILITY, action: "" },
+        },
+        /non-empty single-line string/,
+      ],
+      [
+        {
+          id: "delete-motd",
+          capability: { ...CAPABILITY, resource: "x".repeat(16_001) },
+        },
+        /action and resource must each be at most/,
+      ],
+      [
+        { id: "delete-motd", capability: CAPABILITY, extra: true },
+        /unexpected field/,
+      ],
+    ] as const) {
+      expect(() =>
+        restoreWithMind({
+          permissions: [],
+          pendingPermission,
+          beliefs: [],
+          compactHistory: [],
+        }),
+      ).toThrow(message);
+    }
   });
 });
 

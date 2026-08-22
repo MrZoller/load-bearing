@@ -240,6 +240,8 @@ export {
   MIND_MODULE,
   createMindBeliefEvent,
   createMindCompactEvent,
+  createMindPermissionRequestedEvent,
+  createMindPermissionResolvedEvent,
 } from "./mind/module.js";
 export {
   beliefDivergence,
@@ -248,10 +250,14 @@ export {
   hasStandingPermission,
   readMindSlice,
   recordPermissionDecision,
+  requestPermission,
+  resolvePermission,
   setBelief,
   validateBelief,
   validateCapability,
   validateMindSlice,
+  validatePendingPermissionRequest,
+  validatePermissionRequestId,
 } from "./mind/mind.js";
 export type {
   Belief,
@@ -262,6 +268,7 @@ export type {
   FileExistsBelief,
   GitHeadBelief,
   MindSlice,
+  PendingPermissionRequest,
   PermissionDecision,
   PermissionLedgerEntry,
   ServiceHealthBelief,
@@ -424,6 +431,7 @@ export {
   WORLD_ID_PATTERN,
   EVENT_TYPE_PATTERN,
   MAX_PRESENTATION_ENTRIES,
+  MAX_PERMISSION_REQUEST_ID_LENGTH,
   MAX_PRESENTATION_VERBS,
   MAX_RESPONSE_ARTIFACTS,
   MAX_STORY_ACTIONS,

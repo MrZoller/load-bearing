@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 test("cold-opens and round-trips between the TUI and Bash with the keyboard", async ({
   page,
@@ -133,4 +134,57 @@ test("renders recognized and fallback TUI turns and dispatches ! shell work", as
     ),
   ).toHaveCount(2);
   expect(pageErrors).toEqual([]);
+});
+
+async function resolvePendingPermission(
+  page: Page,
+  choice: string,
+  tabs: number,
+): Promise<void> {
+  await page.goto("/");
+
+  const agentPrompt = page.getByRole("textbox", { name: "Agent prompt" });
+  await expect(agentPrompt).toBeFocused();
+  await page.keyboard.type("remove it");
+  await page.keyboard.press("Enter");
+
+  const permission = page.getByRole("group", { name: "Permission required" });
+  await expect(permission).toBeVisible();
+  await expect(permission).toContainText("Action: delete");
+  await expect(permission).toContainText(
+    "Resource: /production/service/src/ready.stale",
+  );
+  await expect(
+    permission.getByRole("button", { name: "Allow once" }),
+  ).toBeVisible();
+  await expect(permission.getByRole("button", { name: "Deny" })).toBeVisible();
+  await expect(
+    permission.getByRole("button", { name: "Always allow" }),
+  ).toBeVisible();
+
+  for (let index = 0; index < tabs; index += 1)
+    await page.keyboard.press("Tab");
+  await expect(permission.getByRole("button", { name: choice })).toBeFocused();
+  await page.keyboard.press("Enter");
+
+  await expect(permission).toHaveCount(0);
+  await expect(agentPrompt).toBeFocused();
+}
+
+test("resolves the pending permission with the keyboard: allow once", async ({
+  page,
+}) => {
+  await resolvePendingPermission(page, "Allow once", 0);
+});
+
+test("resolves the pending permission with the keyboard: deny", async ({
+  page,
+}) => {
+  await resolvePendingPermission(page, "Deny", 1);
+});
+
+test("resolves the pending permission with the keyboard: always allow", async ({
+  page,
+}) => {
+  await resolvePendingPermission(page, "Always allow", 2);
 });

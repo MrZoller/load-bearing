@@ -4,6 +4,8 @@ import type { ServiceHealth } from "../cartridge/types.js";
 import {
   ABSOLUTE_PATH_PATTERN,
   GIT_BRANCH_PATTERN,
+  MAX_PERMISSION_REQUEST_ID_LENGTH,
+  MAX_STORY_TEXT_LENGTH,
   SINGLE_LINE_PATTERN,
   WORLD_ID_PATTERN,
 } from "../cartridge/schema.js";
@@ -18,11 +20,13 @@ import { readVfsSlice } from "../vfs/module.js";
 import { queryVfsTruth } from "../vfs/vfs.js";
 import { readWorldSlice } from "../world/module.js";
 import { lookupService } from "../world/world.js";
+import { countCodePoints } from "../text.js";
 import type {
   Belief,
   BeliefMismatch,
   ExactCapability,
   MindSlice,
+  PendingPermissionRequest,
   PermissionDecision,
 } from "./types.js";
 
@@ -124,6 +128,37 @@ export function validateCapability(
   return value as ExactCapability;
 }
 
+export function validatePendingPermissionRequest(
+  value: unknown,
+  where: string,
+): PendingPermissionRequest {
+  const item = record(value, where, ["id", "capability"]);
+  validatePermissionRequestId(string(item, "id", where), `${where}.id`);
+  const capability = validateCapability(
+    item["capability"],
+    `${where}.capability`,
+  );
+  if (
+    countCodePoints(capability.action) > MAX_STORY_TEXT_LENGTH ||
+    countCodePoints(capability.resource) > MAX_STORY_TEXT_LENGTH
+  )
+    throw new Error(
+      `${where}.capability: action and resource must each be at most ${String(MAX_STORY_TEXT_LENGTH)} characters`,
+    );
+  return value as PendingPermissionRequest;
+}
+
+export function validatePermissionRequestId(id: string, where: string): string {
+  if (
+    !WORLD_ID_PATTERN.test(id) ||
+    countCodePoints(id) > MAX_PERMISSION_REQUEST_ID_LENGTH
+  )
+    throw new Error(
+      `${where}: must be a non-empty single-line identifier of at most ${String(MAX_PERMISSION_REQUEST_ID_LENGTH)} characters`,
+    );
+  return id;
+}
+
 export function validateBelief(value: unknown, where: string): Belief {
   const base = record(value, where, [
     "kind",
@@ -178,6 +213,7 @@ export function validateBelief(value: unknown, where: string): Belief {
 export function validateMindSlice(slice: unknown, where: string): MindSlice {
   const root = record(slice, where, [
     "permissions",
+    "pendingPermission",
     "beliefs",
     "compactHistory",
   ]);
@@ -194,6 +230,11 @@ export function validateMindSlice(slice: unknown, where: string): MindSlice {
       throw new Error(`${at}.decision: must be grant, deny or always-allow`);
     timestamp(string(item, "at", at), `${at}.at`);
   });
+  if (root["pendingPermission"] !== null)
+    validatePendingPermissionRequest(
+      root["pendingPermission"],
+      `${where}.pendingPermission`,
+    );
   const subjects = new Set<string>();
   array(root["beliefs"], `${where}.beliefs`).forEach((value, index) => {
     const belief = validateBelief(value, `${where}.beliefs[${String(index)}]`);
@@ -223,7 +264,20 @@ export function readMindSlice(state: SessionState): MindSlice {
 }
 
 export function createMindSlice(): MindSlice {
-  return deepFreeze({ permissions: [], beliefs: [], compactHistory: [] });
+  return deepFreeze({
+    permissions: [],
+    pendingPermission: null,
+    beliefs: [],
+    compactHistory: [],
+  });
+}
+
+function copyPendingPermission(
+  pending: PendingPermissionRequest | null,
+): PendingPermissionRequest | null {
+  return pending === null
+    ? null
+    : { ...pending, capability: { ...pending.capability } };
 }
 
 export function recordPermissionDecision(
@@ -241,6 +295,58 @@ export function recordPermissionDecision(
       })),
       { capability: { ...capability }, decision, at },
     ],
+    pendingPermission: copyPendingPermission(slice.pendingPermission),
+    beliefs: slice.beliefs.map(copyBelief),
+    compactHistory: slice.compactHistory.map((entry) => ({ ...entry })),
+  });
+}
+
+export function requestPermission(
+  slice: MindSlice,
+  request: PendingPermissionRequest,
+): MindSlice {
+  if (slice.pendingPermission !== null)
+    throw new Error(
+      `mind permission request: pending request ${JSON.stringify(slice.pendingPermission.id)} must be resolved first`,
+    );
+  return deepFreeze({
+    permissions: slice.permissions.map((entry) => ({
+      ...entry,
+      capability: { ...entry.capability },
+    })),
+    pendingPermission: {
+      ...request,
+      capability: { ...request.capability },
+    },
+    beliefs: slice.beliefs.map(copyBelief),
+    compactHistory: slice.compactHistory.map((entry) => ({ ...entry })),
+  });
+}
+
+export function resolvePermission(
+  slice: MindSlice,
+  id: string,
+  decision: PermissionDecision,
+  at: string,
+): MindSlice {
+  const pending = slice.pendingPermission;
+  if (pending === null)
+    throw new Error(
+      "mind permission resolve: no permission request is pending",
+    );
+  if (pending.id !== id)
+    throw new Error(
+      `mind permission resolve: request id ${JSON.stringify(id)} does not match pending request ${JSON.stringify(pending.id)}`,
+    );
+  return deepFreeze({
+    permissions: [
+      ...slice.permissions.map((entry) => ({
+        ...entry,
+        capability: { ...entry.capability },
+      })),
+      { capability: { ...pending.capability }, decision, at },
+    ],
+    pendingPermission: null,
     beliefs: slice.beliefs.map(copyBelief),
     compactHistory: slice.compactHistory.map((entry) => ({ ...entry })),
   });
@@ -287,6 +393,7 @@ export function setBelief(slice: MindSlice, belief: Belief): MindSlice {
       ...entry,
       capability: { ...entry.capability },
     })),
+    pendingPermission: copyPendingPermission(slice.pendingPermission),
     beliefs,
     compactHistory: slice.compactHistory.map((entry) => ({ ...entry })),
   });
@@ -313,6 +420,7 @@ export function compactBeliefs(
       ...entry,
       capability: { ...entry.capability },
     })),
+    pendingPermission: copyPendingPermission(slice.pendingPermission),
     beliefs: beliefs.map(copyBelief),
     compactHistory: [
       ...slice.compactHistory.map((entry) => ({ ...entry })),
