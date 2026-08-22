@@ -177,6 +177,9 @@ describe("agent replay state", () => {
       summary: "capacity response=fixture-response",
     });
     expect(hasAgentIdleNudged(next)).toBe(true);
+    expect(() => step(next, createAgentIdleNudgeEvent())).toThrow(
+      /duplicate.*idle-nudge|idle-nudge.*duplicate/i,
+    );
   });
 
   it("groups only an authored message's artifacts and leaves visitor and manual work ungrouped", () => {

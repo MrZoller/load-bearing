@@ -203,6 +203,14 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
       apply(context, slice) {
         if (context.cartridge.story.idleNudgeResponse === "")
           throw new Error(`${context.where}: cartridge has no idle nudge`);
+        // The capacity fallback cannot record an authored-response instance,
+        // so the transcript is the durable one-shot record for both paths.
+        if (
+          context.state.transcript.some(
+            (entry) => entry.type === "agent.idle-nudged",
+          )
+        )
+          throw new Error(`${context.where}: duplicate idle-nudge`);
         const response = authoredResponse(
           context,
           context.cartridge.story.idleNudgeResponse,
