@@ -1,179 +1,225 @@
-# Spec: Phase 1 — one browser terminal, two views, one simulated machine
+# Spec: Phase 2 — Incident #001, the inverted load-balancer vertical slice
 
 ## Problem
 
-Phase 0 provides a deterministic, coherent simulated machine, but visitors
-cannot experience it: there is no browser runtime, terminal rendering, agent
-surface, or way to enter the Bash layer. The product's central realization —
-that the coding-agent parody sits on top of a real, shared fictional computer —
-does not yet exist outside headless replays.
+Phase 1 provides a polished, deterministic browser terminal, but its demonstration
+cartridge is only a mechanics proof. Visitors cannot yet experience the product's
+actual promise: a coherent fictional production incident whose repository rewards
+investigation, whose coding agent changes character with the selected model, and
+whose obvious path delivers a complete joke without sacrificing the deeper shell.
 
 ## Outcome
 
-Visitors can complete a polished browser session through an agent-style TUI or
-a simulated Bash shell. Both views operate one replayable Phase 0 session, so a
-change made in either view remains true in the other. The experience teaches
-its surface diegetically, works end to end by keyboard, is legible to assistive
-technology, and remains usable on a phone.
+Incident #001 is a fully authored vertical slice built around an inverted load
+balancer: the HTTP 500 response is intentionally keeping Europe attached, and
+restoring the error risks detaching it. A first-time visitor can reach the agent's
+declaration that the 500 is load-bearing in about 90 seconds, while repeat play
+reveals four equally valid collectible endings, four genuinely distinct personas,
+permission complicity, belief damage, handoffs, rare events, and a machine whose
+files, history, services, logs, and tests remain consistent with the story.
 
 ## Scope
 
 ### In
 
-- A custom semantic-DOM terminal renderer with authentic focus, cursor,
-  scrolling, scrollback, copy/paste, transcript search, and responsive layout.
-- A cold open that boots into Bash, shows the login/prompt and
-  `loadbearing --resume incident-NNN`, then enters the agent TUI.
-- An agent TUI with a `❯` natural-language prompt, `!` shell passthrough,
-  `/help`, `/model`, `/compact`, `/cost`, and `/exit`, plus slash autocomplete
-  and a model selector.
-- A simulated Bash view over the existing shell command layer, with command
-  history, tab completion, `Ctrl+C`, `Ctrl+L`, and mode changes through
-  `/exit`, `Ctrl+D`, and `loadbearing --resume`; bare Bash `exit` refuses in
-  character.
-- Engine-backed TUI state for messages, tool calls, expandable thinking,
-  todos, pending permission prompts and decisions, active mode/model, and the
-  agent's reaction to machine changes made while it was absent.
-- Engine-derived status values for model, tokens, cost, context percentage,
-  and structural integrity, plus a deterministic archetype-by-stage working
-  spinner and its timer/token/Escape-hint suffix.
-- Diegetic onboarding through authored rotating placeholders, an accurate
-  in-character `/help`, an idle nudge, autocomplete, and mobile terminal keys;
-  no overlays, tutorials, tooltips, or hints that advertise the shell layer.
-- Visible `loadbearing.cc · Incident #NNN` attribution, an original
-  lab-agnostic visual treatment, reduced-motion behavior, and a semantic
-  screen-reader transcript.
-- The smallest generic engine and cartridge-contract additions needed to make
-  those mechanics deterministic and content-driven while preserving the
-  existing headless API and golden replay contracts.
+- A complete, schema-valid Incident #001 cartridge: repository, coherent Git
+  history and blame, tests, processes, services, endpoints, logs, environment,
+  man pages, shell history, ticket archive, hidden premise, reveals, callbacks,
+  seeded rare events, consequence chains, and four endings.
+- The documented Incident #001 roster — Deep Foundation (paranoid), Temporary
+  Shoring (reckless), Drywall (superficial), and Cantilever (Experimental)
+  (existential) — modulating shared story beats rather than following four
+  parallel scripts.
+- Roughly 30 distinct, meaningful Incident #001 command forms or investigative
+  uses across the existing simulated shell, plus a deterministic natural-language
+  intent table, generic conversational habits, and a state-mutating confident-
+  misunderstanding fallback for unmatched input.
+- Event-driven escalation stages 0–4, with stage- and archetype-aware responses,
+  thinking, onboarding, spinner pools and suffixes, and reactive status narrative
+  including the Not-Okay Ratio and impossible terminal-stage values.
+- Permission complicity through trivial asks, conspicuous non-asks, grant/deny/
+  always-allow consequences, exact ledger callbacks, and an authored `WAIVER.md`
+  flow requiring typed `I agree` and citing the recorded simulated time later.
+- Archetype-specific `/compact` summaries that replace beliefs with subtly wrong
+  assertions and visibly alter later responses while machine truth stays intact.
+- Predecessor-aware handoff blame for all 12 ordered archetype pairs, combining
+  reusable pair templates with Incident #001-specific lines when models switch.
+- Authored opening lines, stage-keyed placeholders, accurate in-character
+  `/help`, idle nudges, capitulation reflexes (including stage-3+ misfires), and
+  weighted spinner verb pools for every archetype at every stage.
+- Mechanically grounded field-recognized habits: scope-creep consequences,
+  victory summaries, real VFS litter, counted flail loops, test gaming, and
+  fantasy estimates, rationed by archetype and stage.
+- Four unranked, collectible endings with continued free play: at least one
+  reachable only through the shell and at least one keyed to the permission
+  ledger and waiver. There is no canonical good ending.
+- Headless golden replays and focused browser coverage for the complete arc,
+  persona distinctness, switching, permissions, waiver, compact damage, shell
+  discovery, rare-event reproducibility, escalation, and all endings.
+- `docs/PLAYTEST.md`, completed with the Phase 2 checklist and evidence from one
+  creator pacing run and one first-time-participant run.
+- The smallest reusable engine, cartridge-contract, and runtime additions needed
+  to express the above as content, including shared beats, conditional routing,
+  bounded consequence actions, permission continuations, ending discovery, and
+  stage-aware presentation; no Incident #001 facts or prose in generic code.
 
 ### Out
 
-- Incident #001, its 90-second arc, endings, four complete personas, authored
-  intent table, escalation story, and deep comedy content — Phase 2.
-- A production-grade confident-misunderstanding catalog; Phase 1 includes only
-  enough authored demonstration content to prevent an out-of-character input
-  path, subject to Open question 1.
-- Daily brief/countdown/archive chrome, replay URLs, resolution reports, share
-  cards, and `/share` — Phase 3.
-- Full terminal emulation, PTYs, arbitrary host commands, networking, or an
-  xterm-compatible escape-sequence surface — never required for this product.
-- Runtime model/API calls, accounts, server-side session state, or other
-  backend infrastructure — prohibited or unnecessary.
-- Automated incident generation, playtester agents, and production deployment
-  infrastructure — later phases.
+- Incident Resolution Report UI, cross-session ending collection, replay URLs,
+  share cards, `/share`, daily brief/countdown, and archive navigation — Phase 3.
+- Incident #002, third-party cartridge authoring, and a standalone
+  `cartridge validate` CLI — Phase 4 proves and hardens the contract.
+- Automated playtester agents, nightly generation, telemetry, session recording,
+  or other analytics infrastructure — later or explicitly excluded; Phase 2 uses
+  committed replays and the two documented human playtests only.
+- Runtime model/API calls or unconstrained improvisation — deferred indefinitely;
+  all behavior remains deterministic and cartridge-driven.
+- New accounts, scoring, ranked outcomes, a canonical solution, or server-side
+  persistence — contrary to completion-without-victory and the static product.
+- A general shell, PTY, pipelines, redirection, or arbitrary host commands — the
+  bounded simulator grows only where Incident #001 needs a reusable mechanic.
+- Phase 5 parking-lot ideas such as the rehearsal reveal, contractor, dissenting
+  playtester, or certification — they must not delay the vertical slice.
 
 ## Acceptance criteria
 
-1. Loading the terminal page shows the authored shell login banner and prompt,
-   visibly runs `loadbearing --resume incident-NNN`, and enters a focused TUI
-   without requiring pointer input.
-2. `/exit` and `Ctrl+D` move from TUI to Bash; `loadbearing --resume` returns to
-   the same TUI session; bare Bash `exit` prints an in-character refusal and
-   leaves the experience running.
-3. Deleting a file in Bash changes the shared engine state, and resuming the TUI
-   produces a deterministic, in-character response that reflects that deletion
-   rather than stale agent knowledge.
-4. Replaying the same cartridge, seed, and visitor-event log produces
-   byte-identical authoritative state and transcript in Node and the browser;
-   UI animation frames, focus, and scroll position do not affect the replay.
-5. The `❯` prompt accepts natural-language input without a generic apology or
-   parser error, and `!command` uses the same shell execution path and output as
-   entering that command in Bash.
-6. `/help`, `/model`, `/compact`, `/cost`, and `/exit` are keyboard-operable,
-   accurately described in autocomplete/help, and mutate or report engine state
-   as appropriate; model changes and compacted beliefs survive view switches.
-7. Tool calls, thinking blocks, todos, and permission prompts render as distinct
-   TUI elements backed by replayable engine state; granting, denying, and
-   always-allowing a prompt records the correct permission-ledger decision.
-8. The status bar's model, token, cost, context, and structural-integrity values
-   come from engine metrics and remain replay-stable; no displayed narrative
-   metric is maintained only as a DOM counter.
-9. Working verbs are selected from authored archetype-by-stage pools through a
-   dedicated seeded stream. The suffix exposes timer, token count, and Escape
-   guidance, while reduced motion presents the same information without
-   animation.
-10. TUI and Bash each provide appropriate history and tab completion;
-    `Ctrl+C`, `Ctrl+L`, copy/paste, transcript search, focus restoration,
-    scrollback, and new-output scroll anchoring have automated interaction
-    coverage.
-11. Rotating placeholders, `/help`, slash autocomplete, and one idle nudge
-    teach the visible surface in character. No tooltip, tutorial overlay/modal,
-    or post-cold-open shell hint appears.
-12. A complete session — cold open, TUI input, permission choice, shell
-    passthrough, Bash switch, machine mutation, resume, model switch, compact,
-    and exit refusal — is possible using only the keyboard with visible focus.
-13. The transcript uses semantic DOM in reading order, announces new meaningful
-    output without repeatedly reading the full log, gives textual equivalents
-    for visual state, and preserves all information with reduced motion enabled.
-14. The terminal page meets the approved Lighthouse accessibility threshold
-    and has no keyboard trap or unlabeled interactive control under the pinned
-    audit profile described in Open question 4.
-15. At the approved phone viewport, the terminal remains readable without page-
-    level horizontal scrolling, the prompt and transcript stay usable with the
-    software keyboard, and a mobile key strip exposes `/`, `!`, Tab, and arrows.
-16. Every normal visible frame includes `loadbearing.cc · Incident #NNN`, and
-    product copy, model names, colors, and chrome do not use lab trademarks or
-    clone any lab's exact trade dress.
-17. The existing engine remains pure, headless, zero-runtime-dependency
-    TypeScript with no DOM/host-time/network access, and the full Phase 0 replay,
-    purity, typecheck, format, coverage, and timezone gates remain green.
+1. The shipped Incident #001 presents the inverted load-balancer premise through
+   coherent evidence: the apparent task is to restore an HTTP 500 response, doing
+   so risks detaching Europe, and the shortest authored path ends with the agent
+   declaring the 500 response load-bearing.
+2. A committed headless golden-path scenario reaches a complete setup → worsening
+   → reveal/callback → punchline arc within no more than five visitor exchanges.
+   A creator playtest recorded in `docs/PLAYTEST.md` reaches that arc in roughly
+   90 seconds; elapsed human time is a pacing observation, not engine state.
+3. A first-time participant receives no instructions beyond the shipped
+   experience, reaches a punchline, and has the route, elapsed time, confusion,
+   and follow-up changes recorded in `docs/PLAYTEST.md`.
+4. Identical seed and visitor inputs under each of the four models produce four
+   observably distinct, state-consistent transcripts and archetype-appropriate
+   consequences while traversing shared beat identities rather than model-owned
+   parallel scripts.
+5. Switching models changes the next authored behavior, preserves one session
+   and machine state, and emits predecessor-aware handoff blame for each of the
+   12 ordered archetype pairs without reseeding unrelated outcomes.
+6. The cartridge provides roughly 30 meaningful shell command forms or authored
+   investigative uses and a deterministic intent table covering the obvious
+   assignment, undo/why/status, disagreement, insult, compliment, waiver consent,
+   and incident-specific investigation; each useful path has coherent output and
+   bounded effects.
+7. Every unmatched natural-language input takes a deterministic, cartridge-
+   defined adjacent action through normal events and returns in character; an
+   adversarial input corpus and browser checks produce no generic apology,
+   parser-facing failure, out-of-character response, or contradiction of current
+   world, belief, permission, beat, or ending state.
+8. Escalation advances replayably from stage 0 through 4 only when authored
+   session events and conditions fire. Command/reveal/model/permission/compact
+   triggers are covered, and waiting or changing browser frame timing alone
+   cannot change stage or select content.
+9. Status values react to active model and escalation, progress from ridiculous
+   numeric values to impossible stage-4 display values, include the Not-Okay
+   Ratio, and remain pure projections of replay state rather than DOM counters.
+10. File owners/groups/modes, shell history, environment variables, man pages,
+    process and service names, logs, endpoints, tickets, tests, Git history, and
+    blame form one restrained deadpan world whose discoverable evidence supports
+    the premise and remains coherent after every authored mutation.
+11. Permission decisions produce coherent and observably different grant, deny,
+    and standing-allow continuations. Trivial requests and conspicuous non-asks
+    are authored, and later callbacks/endings query exact ledger facts rather
+    than inferring consent from dialogue.
+12. The waiver flow creates the authored `WAIVER.md`, requires the visitor to
+    type exactly `I agree` before its gated consequence, records the consent and
+    simulated timestamp, and later quotes that same document and time. Alternate
+    wording or denial cannot silently grant consent.
+13. `/compact` selects the active archetype's subtly wrong summary, replaces its
+    beliefs without changing world truth, and causes a later response or ending
+    condition to differ demonstrably from the equivalent uncompacted replay.
+14. Four named endings are reachable and recorded as equally valid discoveries;
+    none is presented as correct or best, discovery does not terminate free play,
+    at least one route requires a Bash-layer action, and at least one route keys
+    off the permission ledger and waiver.
+15. All four archetypes have authored spinner pools for stages 0–4 with explicit
+    weights favoring plausible verbs and making spikes rare. Stage-aware suffix,
+    placeholder, opening, `/help`, and idle-nudge content remains deterministic,
+    accessible, and useful without exposing hidden shell depth after the cold open.
+16. Capitulation responses exist for every archetype across escalation, preserve
+    the underlying belief that caused the disagreement, and include deterministic
+    stage-3+ misfires without firing so often that the behavior becomes a catchphrase.
+17. Scope creep, victory summaries, filesystem litter, flail-loop counters,
+    test-gaming moves, and fantasy estimates each occur through real replayable
+    state or authored timing effects, are discoverable afterward where applicable,
+    and are rationed to the archetypes for which they fit.
+18. Reveals, callbacks, rare events, consequences, handoffs, permission paths,
+    compact divergence, escalation stages, and each ending have committed
+    headless replay evidence; seeded rare events reproduce exactly and unrelated
+    random streams do not perturb them.
+19. `docs/PLAYTEST.md` contains a repeatable Phase 2 checklist and the creator and
+    first-time-participant evidence. It records observations and content changes
+    without adding telemetry, automatic recording, or a new data service.
+20. Incident content and copy live in the cartridge; all new engine/runtime
+    behavior is reusable and headless. Same cartridge, seed, and event log remain
+    byte-identical in Node and browser, and the full typecheck, format, purity,
+    replay, timezone, browser, mobile, and accessibility gates remain green.
 
 ## Risks & constraints
 
+- The story contract is the largest Phase 2 risk. It must model shared beats,
+  conditional variants, callbacks, and endings without becoming four scripts or
+  allowing cartridges to inject arbitrary engine events. Actions stay closed,
+  validated, bounded, and owned by generic subsystems.
+- Permission prompts currently record decisions but do not execute grant/deny
+  continuations. The waiver and complicity arc must make consent and consequence
+  atomic and replayable; no risky action may run before the relevant decision.
+- Current escalation is effectively stage 0, intent matching is exact phrase
+  matching, and endings do not exist as engine state. These are generic contract
+  gaps, not invitations to hardcode #001 in `runtime/` or `engine/session.ts`.
 - Authoritative behavior remains `state = reduce(cartridge, seed, eventLog)`.
-  Visitor input, mode/model changes, permission choices, and idle-nudge effects
-  must be replayable events; wall time may interpolate presentation only and
-  must never choose content or mutate engine state.
-- Both views are renderers over one `SessionState`; the shell cannot be a
-  subprocess, cosmetic transcript, or second source of truth. Runtime code may
-  dispatch events but may not edit engine slices directly.
-- Runtime owns mechanics and cartridges own worlds, copy, response pools,
-  presentation pools, and model parameters. No Incident #001 behavior may be
-  hardcoded to make the demo convincing.
-- The current transcript is an event diagnostic log, and the current mind slice
-  has a decision ledger but no pending-prompt lifecycle. New UI-facing state
-  must remain plain JSON, versioned, bounded, serializable, and meaningful to
-  future headless playtesters rather than inferred from DOM state or event-name
-  strings.
-- DOM types and browser dependencies belong under `runtime/`; they must not leak
-  into the engine's independent TypeScript program or weaken the purity gate.
-- Existing golden fixtures are contracts. Intentional state/transcript schema
-  changes require generated fixture updates and explicit review; incidental
-  rendering changes must not rewrite them.
-- Accessibility is a shipped feature. Visual fidelity, animation, or terminal
-  authenticity cannot displace keyboard, reduced-motion, mobile, or semantic
-  transcript behavior.
+  Stage, beat, callback, handoff, permission, compact, habit, rare-event, and
+  ending behavior must be logged or purely derived; wall time may measure human
+  pacing and interpolate presentation only.
+- All randomness uses named seeded streams. Stream names, authored order, and
+  weights are replay contracts; model switching must not perturb unrelated draws.
+- The engine remains synchronous, pure, headless, zero-runtime-dependency
+  TypeScript with no DOM, host clock/timezone, unseeded randomness, network, or
+  runtime model access. Runtime owns accessible presentation, never story truth.
+- The published cartridge schema remains strict, bounded, plain-JSON, and
+  generated from its descriptor authority. The deferred Phase 2 interiors must
+  become concrete validated contracts, not remain opaque content bags.
+- Golden fixtures are contracts. Intentional state/schema changes require
+  deliberate regeneration and reviewed diffs; content tuning must not mask a
+  determinism regression.
+- The shell plays it straight, every agent response satisfies the comedy bible's
+  fundamental response rule, and literal phrases/tics remain rationed. Machine
+  inconsistency cannot be excused as deterioration.
+- The human 90-second target has only two required observations in this phase and
+  is not statistically representative. The automated five-exchange gate protects
+  arc length; playtest notes protect pacing and comprehension.
 
-## Open questions (all four resolved 2026-08-21 — decisions recorded inline)
+## Open questions
 
-1. **What content should prove natural-language and agent mechanics before
-   Incident #001 exists?** Options: A — add a clearly non-production Phase 1
-   demonstration cartridge with a minimal authored input/response/action set;
-   B — pull a thin slice of Incident #001 into this phase; C — put generic agent
-   responses in runtime code. **Recommendation: A.** It exercises the real
-   cartridge boundary without stealing Phase 2's vertical slice or violating
-   runtime/content separation.
-   **Decision: A — approved by Chris, 2026-08-21 (operator-relayed).**
-2. **How should model switching interact with a seed that currently includes
-   the initial model?** Options: A — keep one root session seed and treat each
-   model switch as an event, deriving model-specific named substreams from that
-   root; B — reseed the session on every switch; C — remove the model from seed
-   derivation now. **Recommendation: A.** It preserves the existing seed format,
-   event-log continuity, and deterministic switching without rerolling unrelated
-   state.
-   **Decision: A — approved by Chris, 2026-08-21 (operator-relayed).**
-3. **Which Phase 1 visual direction should set the product baseline?** Options:
-   A — restrained original terminal styling with subtle structural/I-beam
-   accents; B — a stronger warning-placard aesthetic; C — terminal-genre
-   defaults with minimal branding. **Recommendation: A.** It remains credible at
-   first glance, establishes distinct identity, and minimizes trade-dress risk.
-   **Decision: A — approved by Chris, 2026-08-21 (operator-relayed).**
-4. **What objective bar defines “Lighthouse accessibility pass” and
-   “acceptable on a phone”?** Options: A — accessibility score 100 in a pinned
-   Chromium desktop audit plus manual keyboard checks, with 390×844 as the
-   required phone viewport; B — score at least 95 and a broader viewport matrix;
-   C — manual acceptance only. **Recommendation: A**, with additional responsive
-   spot checks treated as plan-level verification rather than expanding the
-   formal browser matrix.
-   **Decision: A — approved by Chris, 2026-08-21 (operator-relayed).**
+1. **What should typed waiver consent record?** Options: A — one distinct
+   waiver-consent ledger fact containing waiver id/version, exact phrase,
+   simulated time, and gated capability, while also resolving that capability's
+   continuation; B — represent it only as an ordinary exact permission decision;
+   C — treat `I agree` only as a story beat. **Recommendation: A.** It preserves
+   the existing exact-capability model while making the document and timestamp
+   durable enough for callbacks and endings without inferring legal consent from
+   transcript text.
+2. **When should Incident #001 roll rare events?** Options: A — each authored
+   rare event declares a one-shot eligibility condition and integer weight, then
+   draws from its own named stream the first time that condition becomes true;
+   B — roll after every matching command; C — choose rare variants only from the
+   daily seed at bootstrap. **Recommendation: A.** It makes rarity tunable and
+   discoverable without command-spam farming or coupling unrelated events.
+3. **Where does ending collection persist during Phase 2?** Options: A — record
+   ending discoveries only in authoritative session state and defer cross-replay
+   browser persistence to Phase 3; B — add browser-local collection now; C — add
+   server-backed collection. **Recommendation: A.** Phase 2 proves reachability,
+   equality, and continued free play; Phase 3 owns the daily frame, resolution
+   report, replay identity, and persistent collection presentation.
+4. **When should the four ending identities be fixed?** Options: A — approve
+   exact names and route conditions in this spec; B — keep the approved structural
+   constraints here and make the first content task produce a reviewable four-row
+   ending matrix before downstream story integration; C — let endings emerge
+   during dialogue writing. **Recommendation: B.** The equality, shell, waiver,
+   and no-good-ending rules are product contract; names and punchlines benefit
+   from authored iteration, but their reachability should not emerge accidentally.
