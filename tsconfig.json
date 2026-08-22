@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
@@ -10,6 +10,7 @@
     "noEmit": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
     "skipLibCheck": true,
     // The purity gate scans .js/.jsx/.mjs/.cjs under engine/, so the type
     // programs have to cover them too. Without this a JavaScript engine source
@@ -24,6 +25,9 @@
     "content",
     "pipeline",
     "vitest.config.ts",
+    "vite.config.ts",
+    "playwright.config.ts",
+    "e2e",
     // Every TypeScript script, not a named list. `scripts/update-schema.ts`
     // generates the published cartridge contract and was typechecked by
     // nothing at all, so a broken import in it would merge green and fail only
