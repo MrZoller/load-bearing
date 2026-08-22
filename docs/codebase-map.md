@@ -233,6 +233,11 @@ whole assertion set while appending timestamped summary history.
 `beliefDivergence(state)` walks assertions in stored order and uses only the
 closed VFS/Git/service truth queries, so authored wrongness is explicit and no
 generic deep-diff contract leaks into later phases.
+Cartridges author the opening belief set and the grouped compact summary,
+replacement beliefs, and response reference using the same closed five-kind
+vocabulary. The generic awareness planner records deterministic response
+instances before entering TUI, and `loadbearing --resume` invokes that plan as
+ordinary shell expansion children.
 
 The `agent` slice owns visible dialogue artifacts but no presentation state.
 `agent.response-recorded` resolves one validated cartridge response and derives

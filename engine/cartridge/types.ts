@@ -67,10 +67,38 @@ export interface CartridgeIntent {
   readonly actions: readonly CartridgeAgentAction[];
 }
 
+/** Cartridge-authored assertions use the mind subsystem's closed vocabulary. */
+export type CartridgeBelief =
+  | {
+      readonly kind: "file-exists";
+      readonly path: string;
+      readonly exists: boolean;
+    }
+  | {
+      readonly kind: "file-contents";
+      readonly path: string;
+      readonly contents: string;
+    }
+  | {
+      readonly kind: "git-head";
+      readonly head: CartridgeGitHead;
+    }
+  | {
+      readonly kind: "service-state";
+      readonly service: string;
+      readonly state: WorldUnitState;
+    }
+  | {
+      readonly kind: "service-health";
+      readonly service: string;
+      readonly health: ServiceHealth;
+    };
+
 export interface CartridgeStory {
   readonly opening: {
     readonly login: readonly string[];
     readonly response: string;
+    readonly beliefs: readonly CartridgeBelief[];
   };
   readonly responses: readonly CartridgeAuthoredResponse[];
   readonly intents: readonly CartridgeIntent[];
@@ -79,7 +107,11 @@ export interface CartridgeStory {
     readonly actions: readonly CartridgeAgentAction[];
   };
   readonly helpResponse: string;
-  readonly compactResponse: string;
+  readonly compact: {
+    readonly response: string;
+    readonly summary: string;
+    readonly beliefs: readonly CartridgeBelief[];
+  };
   readonly resume: {
     readonly unchangedResponse: string;
     readonly changedResponse: string;

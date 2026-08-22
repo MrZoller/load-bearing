@@ -1,7 +1,7 @@
 /** Commands that cross between the Bash and agent-TUI views. */
 
 import type { CommandContext, CommandDefinition } from "./types.js";
-import { createTerminalModeEvent } from "../terminal/module.js";
+import { createAgentResumeEvents } from "../agent/awareness.js";
 
 const RESUME_USAGE = "usage: loadbearing --resume [incident-NNN]";
 
@@ -20,7 +20,7 @@ const LOADBEARING: CommandDefinition = Object.freeze({
       stdout: [],
       stderr: [],
       exitCode: 0,
-      events: [createTerminalModeEvent("tui")],
+      events: createAgentResumeEvents(context.state.cartridge, context.state),
     };
   },
 });

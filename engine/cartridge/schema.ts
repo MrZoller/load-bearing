@@ -163,6 +163,7 @@ export const MAX_STORY_RESPONSES = 256;
 export const MAX_STORY_INTENTS = 128;
 export const MAX_RESPONSE_ARTIFACTS = 64;
 export const MAX_STORY_ACTIONS = 16;
+export const MAX_STORY_BELIEFS = 64;
 export const MAX_PRESENTATION_ENTRIES = 64;
 export const MAX_PRESENTATION_VERBS = 32;
 export const MAX_STORY_TEXT_LENGTH = 16000;
@@ -1245,6 +1246,148 @@ const ACTIONS = {
   maxItems: MAX_STORY_ACTIONS,
 } satisfies ArrayNode;
 
+const BELIEF_PATH = {
+  kind: "string",
+  description: "A bounded canonical absolute VFS path.",
+  pattern: ABSOLUTE_PATH_PATTERN,
+  patternLabel: "an absolute POSIX path",
+  maxLength: 4096,
+} satisfies StringNode;
+
+const CARTRIDGE_BELIEF = {
+  kind: "union",
+  description:
+    "One bounded authored assertion in the mind's closed vocabulary.",
+  discriminator: "kind",
+  variants: {
+    "file-exists": {
+      kind: "object",
+      description: "Whether a VFS path exists.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "Belief kind.",
+          values: ["file-exists"],
+        }),
+        path: required(BELIEF_PATH),
+        exists: required({
+          kind: "boolean",
+          description: "Believed existence.",
+        }),
+      },
+    },
+    "file-contents": {
+      kind: "object",
+      description: "The exact contents believed to occupy a VFS path.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "Belief kind.",
+          values: ["file-contents"],
+        }),
+        path: required(BELIEF_PATH),
+        contents: required(BOUNDED_TEXT),
+      },
+    },
+    "git-head": {
+      kind: "object",
+      description: "The believed Git HEAD.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "Belief kind.",
+          values: ["git-head"],
+        }),
+        head: required({
+          kind: "union",
+          description: "A branch or detached Git HEAD.",
+          discriminator: "kind",
+          variants: {
+            branch: {
+              kind: "object",
+              description: "A branch HEAD.",
+              fields: {
+                kind: required({
+                  kind: "enum",
+                  description: "HEAD kind.",
+                  values: ["branch"],
+                }),
+                target: required({
+                  kind: "string",
+                  description: "Branch name.",
+                  pattern: GIT_BRANCH_PATTERN,
+                  patternLabel: "a valid Git branch name",
+                  maxLength: 240,
+                }),
+              },
+            },
+            detached: {
+              kind: "object",
+              description: "A detached or unborn HEAD.",
+              fields: {
+                kind: required({
+                  kind: "enum",
+                  description: "HEAD kind.",
+                  values: ["detached"],
+                }),
+                target: required({
+                  kind: "string",
+                  description:
+                    "A 40-digit hash, or empty for an unborn repository.",
+                  pattern: pattern(/^(?:[0-9a-f]{40})?$/),
+                  patternLabel: "an empty string or 40-digit lowercase hash",
+                  maxLength: 40,
+                }),
+              },
+            },
+          },
+        }),
+      },
+    },
+    "service-state": {
+      kind: "object",
+      description: "A service's believed running state.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "Belief kind.",
+          values: ["service-state"],
+        }),
+        service: required({ ...WORLD_ID, maxLength: 240 }),
+        state: required({
+          kind: "enum",
+          description: "Service state.",
+          values: ["running", "stopped"],
+        }),
+      },
+    },
+    "service-health": {
+      kind: "object",
+      description: "A service's believed health.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "Belief kind.",
+          values: ["service-health"],
+        }),
+        service: required({ ...WORLD_ID, maxLength: 240 }),
+        health: required({
+          kind: "enum",
+          description: "Service health.",
+          values: ["healthy", "degraded", "unhealthy", "unknown"],
+        }),
+      },
+    },
+  },
+} satisfies UnionNode;
+
+const CARTRIDGE_BELIEFS = {
+  kind: "array",
+  description: "Ordered authored beliefs.",
+  items: CARTRIDGE_BELIEF,
+  maxItems: MAX_STORY_BELIEFS,
+} satisfies ArrayNode;
+
 const STORY = {
   kind: "object",
   description: "Concrete bounded Phase 1 dialogue and command content.",
@@ -1261,6 +1404,7 @@ const STORY = {
           maxItems: 8,
         }),
         response: required(PHASE_ONE_ID),
+        beliefs: required(CARTRIDGE_BELIEFS),
       },
     }),
     responses: required({
@@ -1301,7 +1445,15 @@ const STORY = {
       },
     }),
     helpResponse: required(PHASE_ONE_ID),
-    compactResponse: required(PHASE_ONE_ID),
+    compact: required({
+      kind: "object",
+      description: "Authored lossy context replacement and acknowledgment.",
+      fields: {
+        response: required(PHASE_ONE_ID),
+        summary: required(BOUNDED_TEXT),
+        beliefs: required(CARTRIDGE_BELIEFS),
+      },
+    }),
     resume: required({
       kind: "object",
       description:
@@ -1434,7 +1586,11 @@ const PRESENTATION = {
 // inert contract rather than becoming unreadable; authored incidents should
 // declare these sections, as the demo does.
 const PHASE_ONE_STORY_DEFAULT = {
-  opening: { login: ["Session ready."], response: "default-response" },
+  opening: {
+    login: ["Session ready."],
+    response: "default-response",
+    beliefs: [],
+  },
   responses: [
     {
       id: "default-response",
@@ -1447,7 +1603,11 @@ const PHASE_ONE_STORY_DEFAULT = {
   intents: [],
   fallback: { response: "default-response", actions: [] },
   helpResponse: "default-response",
-  compactResponse: "default-response",
+  compact: {
+    response: "default-response",
+    summary: "Session ready.",
+    beliefs: [],
+  },
   resume: {
     unchangedResponse: "default-response",
     changedResponse: "default-response",

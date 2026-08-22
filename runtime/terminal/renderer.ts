@@ -42,6 +42,16 @@ function shellResults(
   );
 }
 
+function capacityResponseId(entry: TranscriptEntry): string {
+  const prefix = "capacity response=";
+  if (
+    !entry.summary.startsWith(prefix) ||
+    entry.summary.length === prefix.length
+  )
+    throw new Error("A stored agent capacity transcript has no response id.");
+  return entry.summary.slice(prefix.length);
+}
+
 function renderLogin(
   document: Document,
   cartridge: LoadedCartridge,
@@ -125,8 +135,8 @@ export function renderTerminalTranscript(
   snapshot: RuntimeSessionSnapshot,
 ): readonly HTMLLIElement[] {
   const inputs = shellInputs(snapshot);
-  const results = shellResults(snapshot);
-  if (inputs.length !== results.length) {
+  const resultCount = shellResults(snapshot).length;
+  if (inputs.length !== resultCount) {
     throw new Error("Shell commands and replayed results are out of step.");
   }
 
@@ -135,48 +145,40 @@ export function renderTerminalTranscript(
   let shellIndex = 0;
   let messageCount = 0;
 
-  for (const event of snapshot.eventLog) {
-    if (event.type === "shell.execute") {
+  for (const transcriptEntry of snapshot.state.transcript) {
+    if (transcriptEntry.type === "shell.result") {
       const input = inputs[shellIndex];
-      const result = results[shellIndex];
       if (input === undefined) throw new Error("A shell input is missing.");
-      if (result === undefined) throw new Error("A shell result is missing.");
-      entries.push(renderExchange(document, input, result));
+      entries.push(renderExchange(document, input, transcriptEntry));
       shellIndex += 1;
       continue;
     }
 
-    if (event.type === "agent.capacity-reached") {
+    if (transcriptEntry.type === "agent.capacity-reached") {
       entries.push(
         renderMessage(
           document,
-          authoredMessage(
-            cartridge,
-            eventString(event, "responseId", "agent.capacity-reached"),
-          ),
+          authoredMessage(cartridge, capacityResponseId(transcriptEntry)),
         ),
       );
       continue;
     }
 
-    const messageId =
-      event.type === "agent.message-added"
-        ? eventString(event, "id", "agent.message-added")
-        : event.type === "agent.response-recorded"
-          ? `${eventString(event, "instanceId", "agent.response-recorded")}/message`
-          : null;
-    if (messageId === null) continue;
-
-    const message = messages.find((candidate) => candidate.id === messageId);
+    if (
+      transcriptEntry.type !== "agent.message-added" &&
+      transcriptEntry.type !== "agent.response-recorded"
+    )
+      continue;
+    const message = messages[messageCount];
     if (message === undefined) {
-      throw new Error(
-        `Replayed agent message ${JSON.stringify(messageId)} is missing.`,
-      );
+      throw new Error("A replayed agent message is missing.");
     }
     entries.push(renderMessage(document, message));
     messageCount += 1;
   }
 
+  if (shellIndex !== inputs.length)
+    throw new Error("Shell commands and replayed results are out of step.");
   if (messageCount !== messages.length) {
     throw new Error("Agent events and replayed messages are out of step.");
   }

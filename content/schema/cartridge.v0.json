@@ -1535,7 +1535,11 @@
     "story": {
       "additionalProperties": false,
       "default": {
-        "compactResponse": "default-response",
+        "compact": {
+          "beliefs": [],
+          "response": "default-response",
+          "summary": "Session ready."
+        },
         "fallback": {
           "actions": [],
           "response": "default-response"
@@ -1543,6 +1547,7 @@
         "helpResponse": "default-response",
         "intents": [],
         "opening": {
+          "beliefs": [],
           "login": [
             "Session ready."
           ],
@@ -1565,11 +1570,236 @@
       },
       "description": "Concrete bounded Phase 1 dialogue and command content.",
       "properties": {
-        "compactResponse": {
-          "description": "A stable lowercase Phase 1 content identifier.",
-          "maxLength": 64,
-          "pattern": "^[a-z][a-z0-9-]{0,63}$",
-          "type": "string"
+        "compact": {
+          "additionalProperties": false,
+          "description": "Authored lossy context replacement and acknowledgment.",
+          "properties": {
+            "beliefs": {
+              "description": "Ordered authored beliefs.",
+              "items": {
+                "description": "One bounded authored assertion in the mind's closed vocabulary.",
+                "oneOf": [
+                  {
+                    "additionalProperties": false,
+                    "description": "Whether a VFS path exists.",
+                    "properties": {
+                      "exists": {
+                        "description": "Believed existence.",
+                        "type": "boolean"
+                      },
+                      "kind": {
+                        "description": "Belief kind.",
+                        "enum": [
+                          "file-exists"
+                        ],
+                        "type": "string"
+                      },
+                      "path": {
+                        "description": "A bounded canonical absolute VFS path.",
+                        "maxLength": 4096,
+                        "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "path",
+                      "exists"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "description": "The exact contents believed to occupy a VFS path.",
+                    "properties": {
+                      "contents": {
+                        "description": "Bounded authored text.",
+                        "maxLength": 16000,
+                        "type": "string"
+                      },
+                      "kind": {
+                        "description": "Belief kind.",
+                        "enum": [
+                          "file-contents"
+                        ],
+                        "type": "string"
+                      },
+                      "path": {
+                        "description": "A bounded canonical absolute VFS path.",
+                        "maxLength": 4096,
+                        "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "path",
+                      "contents"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "description": "The believed Git HEAD.",
+                    "properties": {
+                      "head": {
+                        "description": "A branch or detached Git HEAD.",
+                        "oneOf": [
+                          {
+                            "additionalProperties": false,
+                            "description": "A branch HEAD.",
+                            "properties": {
+                              "kind": {
+                                "description": "HEAD kind.",
+                                "enum": [
+                                  "branch"
+                                ],
+                                "type": "string"
+                              },
+                              "target": {
+                                "description": "Branch name.",
+                                "maxLength": 240,
+                                "pattern": "^(?!HEAD$)(?!\\/|.*(?:\\/\\/|\\.\\.|@\\{|\\\\|\\s|[~^:?*\\[]))[A-Za-z0-9._/-]+(?<![/.])$",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "target"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "description": "A detached or unborn HEAD.",
+                            "properties": {
+                              "kind": {
+                                "description": "HEAD kind.",
+                                "enum": [
+                                  "detached"
+                                ],
+                                "type": "string"
+                              },
+                              "target": {
+                                "description": "A 40-digit hash, or empty for an unborn repository.",
+                                "maxLength": 40,
+                                "pattern": "^(?:[0-9a-f]{40})?$",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "target"
+                            ],
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      "kind": {
+                        "description": "Belief kind.",
+                        "enum": [
+                          "git-head"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "head"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "description": "A service's believed running state.",
+                    "properties": {
+                      "kind": {
+                        "description": "Belief kind.",
+                        "enum": [
+                          "service-state"
+                        ],
+                        "type": "string"
+                      },
+                      "service": {
+                        "description": "A stable, non-empty single-line cartridge-local identifier.",
+                        "maxLength": 240,
+                        "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                        "type": "string"
+                      },
+                      "state": {
+                        "description": "Service state.",
+                        "enum": [
+                          "running",
+                          "stopped"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "service",
+                      "state"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "description": "A service's believed health.",
+                    "properties": {
+                      "health": {
+                        "description": "Service health.",
+                        "enum": [
+                          "healthy",
+                          "degraded",
+                          "unhealthy",
+                          "unknown"
+                        ],
+                        "type": "string"
+                      },
+                      "kind": {
+                        "description": "Belief kind.",
+                        "enum": [
+                          "service-health"
+                        ],
+                        "type": "string"
+                      },
+                      "service": {
+                        "description": "A stable, non-empty single-line cartridge-local identifier.",
+                        "maxLength": 240,
+                        "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "service",
+                      "health"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "maxItems": 64,
+              "type": "array"
+            },
+            "response": {
+              "description": "A stable lowercase Phase 1 content identifier.",
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]{0,63}$",
+              "type": "string"
+            },
+            "summary": {
+              "description": "Bounded authored text.",
+              "maxLength": 16000,
+              "type": "string"
+            }
+          },
+          "required": [
+            "response",
+            "summary",
+            "beliefs"
+          ],
+          "type": "object"
         },
         "fallback": {
           "additionalProperties": false,
@@ -1706,6 +1936,214 @@
           "additionalProperties": false,
           "description": "Cold-open shell copy and first agent response.",
           "properties": {
+            "beliefs": {
+              "description": "Ordered authored beliefs.",
+              "items": {
+                "description": "One bounded authored assertion in the mind's closed vocabulary.",
+                "oneOf": [
+                  {
+                    "additionalProperties": false,
+                    "description": "Whether a VFS path exists.",
+                    "properties": {
+                      "exists": {
+                        "description": "Believed existence.",
+                        "type": "boolean"
+                      },
+                      "kind": {
+                        "description": "Belief kind.",
+                        "enum": [
+                          "file-exists"
+                        ],
+                        "type": "string"
+                      },
+                      "path": {
+                        "description": "A bounded canonical absolute VFS path.",
+                        "maxLength": 4096,
+                        "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "path",
+                      "exists"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "description": "The exact contents believed to occupy a VFS path.",
+                    "properties": {
+                      "contents": {
+                        "description": "Bounded authored text.",
+                        "maxLength": 16000,
+                        "type": "string"
+                      },
+                      "kind": {
+                        "description": "Belief kind.",
+                        "enum": [
+                          "file-contents"
+                        ],
+                        "type": "string"
+                      },
+                      "path": {
+                        "description": "A bounded canonical absolute VFS path.",
+                        "maxLength": 4096,
+                        "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "path",
+                      "contents"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "description": "The believed Git HEAD.",
+                    "properties": {
+                      "head": {
+                        "description": "A branch or detached Git HEAD.",
+                        "oneOf": [
+                          {
+                            "additionalProperties": false,
+                            "description": "A branch HEAD.",
+                            "properties": {
+                              "kind": {
+                                "description": "HEAD kind.",
+                                "enum": [
+                                  "branch"
+                                ],
+                                "type": "string"
+                              },
+                              "target": {
+                                "description": "Branch name.",
+                                "maxLength": 240,
+                                "pattern": "^(?!HEAD$)(?!\\/|.*(?:\\/\\/|\\.\\.|@\\{|\\\\|\\s|[~^:?*\\[]))[A-Za-z0-9._/-]+(?<![/.])$",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "target"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "description": "A detached or unborn HEAD.",
+                            "properties": {
+                              "kind": {
+                                "description": "HEAD kind.",
+                                "enum": [
+                                  "detached"
+                                ],
+                                "type": "string"
+                              },
+                              "target": {
+                                "description": "A 40-digit hash, or empty for an unborn repository.",
+                                "maxLength": 40,
+                                "pattern": "^(?:[0-9a-f]{40})?$",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "target"
+                            ],
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      "kind": {
+                        "description": "Belief kind.",
+                        "enum": [
+                          "git-head"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "head"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "description": "A service's believed running state.",
+                    "properties": {
+                      "kind": {
+                        "description": "Belief kind.",
+                        "enum": [
+                          "service-state"
+                        ],
+                        "type": "string"
+                      },
+                      "service": {
+                        "description": "A stable, non-empty single-line cartridge-local identifier.",
+                        "maxLength": 240,
+                        "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                        "type": "string"
+                      },
+                      "state": {
+                        "description": "Service state.",
+                        "enum": [
+                          "running",
+                          "stopped"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "service",
+                      "state"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "description": "A service's believed health.",
+                    "properties": {
+                      "health": {
+                        "description": "Service health.",
+                        "enum": [
+                          "healthy",
+                          "degraded",
+                          "unhealthy",
+                          "unknown"
+                        ],
+                        "type": "string"
+                      },
+                      "kind": {
+                        "description": "Belief kind.",
+                        "enum": [
+                          "service-health"
+                        ],
+                        "type": "string"
+                      },
+                      "service": {
+                        "description": "A stable, non-empty single-line cartridge-local identifier.",
+                        "maxLength": 240,
+                        "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "service",
+                      "health"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "maxItems": 64,
+              "type": "array"
+            },
             "login": {
               "description": "Login banner lines.",
               "items": {
@@ -1727,7 +2165,8 @@
           },
           "required": [
             "login",
-            "response"
+            "response",
+            "beliefs"
           ],
           "type": "object"
         },
@@ -1924,7 +2363,7 @@
         "intents",
         "fallback",
         "helpResponse",
-        "compactResponse",
+        "compact",
         "resume"
       ],
       "type": "object"

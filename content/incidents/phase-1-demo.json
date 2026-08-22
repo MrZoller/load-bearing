@@ -94,7 +94,14 @@
         "Last login: maintenance window still open.",
         "Load Bearing incident shell attached."
       ],
-      "response": "opening"
+      "response": "opening",
+      "beliefs": [
+        {
+          "kind": "file-exists",
+          "path": "/production/service/src/ready.stale",
+          "exists": true
+        }
+      ]
     },
     "responses": [
       {
@@ -164,7 +171,17 @@
     ],
     "fallback": { "response": "fallback" },
     "helpResponse": "help",
-    "compactResponse": "compact",
+    "compact": {
+      "response": "compact",
+      "summary": "The readiness sentinel was believed to support the service and its removal remains under review.",
+      "beliefs": [
+        {
+          "kind": "file-exists",
+          "path": "/production/service/src/ready.stale",
+          "exists": true
+        }
+      ]
+    },
     "resume": {
       "unchangedResponse": "resume-unchanged",
       "changedResponse": "resume-changed"

@@ -45,6 +45,7 @@ import {
 import type { SchemaNode, ObjectNode } from "./schema.js";
 import type {
   CartridgeDirectory,
+  CartridgeBelief,
   CartridgeGitCommit,
   CartridgeGitHistory,
   CartridgeMeta,
@@ -1201,6 +1202,33 @@ function checkStoryAndPresentation(
   models: readonly CartridgeModel[],
   report: Report,
 ): void {
+  const beliefSubject = (belief: CartridgeBelief): string => {
+    if (belief.kind === "git-head") return belief.kind;
+    if (belief.kind === "file-exists" || belief.kind === "file-contents")
+      return `${belief.kind}\u0000${belief.path}`;
+    return `${belief.kind}\u0000${belief.service}`;
+  };
+  const checkBeliefs = (
+    beliefs: readonly CartridgeBelief[],
+    pointer: string,
+  ): void => {
+    const subjects = new Map<string, number>();
+    beliefs.forEach((belief, index) => {
+      const subject = beliefSubject(belief);
+      const first = subjects.get(subject);
+      if (first === undefined) subjects.set(subject, index);
+      else
+        report.addPhrase(
+          `${pointer}/${String(index)}`,
+          "a typed subject no other belief in this list uses",
+          `a duplicate of ${pointer}/${String(first)}`,
+        );
+    });
+  };
+
+  checkBeliefs(story.opening.beliefs, "/story/opening/beliefs");
+  checkBeliefs(story.compact.beliefs, "/story/compact/beliefs");
+
   const responses = new Map<string, number>();
   story.responses.forEach((response, index) => {
     const first = responses.get(response.id);
@@ -1242,7 +1270,7 @@ function checkStoryAndPresentation(
   reference(story.opening.response, "/story/opening/response");
   reference(story.fallback.response, "/story/fallback/response");
   reference(story.helpResponse, "/story/helpResponse");
-  reference(story.compactResponse, "/story/compactResponse");
+  reference(story.compact.response, "/story/compact/response");
   reference(story.resume.unchangedResponse, "/story/resume/unchangedResponse");
   reference(story.resume.changedResponse, "/story/resume/changedResponse");
 

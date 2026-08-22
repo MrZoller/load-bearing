@@ -73,6 +73,32 @@ export function selectAgentIntent(
   };
 }
 
+/** Check every bounded collection an authored response instantiates. */
+export function canRecordAuthoredResponse(
+  cartridge: LoadedCartridge,
+  state: SessionState,
+  responseId: string,
+  additionalMessages = 1,
+): boolean {
+  const agent = readAgentSlice(state);
+  const response = cartridge.story.responses.find(
+    (candidate) => candidate.id === responseId,
+  );
+  if (response === undefined) {
+    throw new Error(
+      `agent plan selected unknown response ${JSON.stringify(responseId)}`,
+    );
+  }
+  return !(
+    agent.messages.length + additionalMessages > MAX_AGENT_MESSAGES ||
+    agent.responses.length + 1 > MAX_AGENT_RESPONSES ||
+    agent.toolCalls.length + response.toolCalls.length > MAX_AGENT_TOOL_CALLS ||
+    agent.thinkingBlocks.length + response.thinkingBlocks.length >
+      MAX_AGENT_THINKING_BLOCKS ||
+    agent.todos.length + response.todos.length > MAX_AGENT_TODOS
+  );
+}
+
 /**
  * Plan one visitor turn as ordinary top-level events. Shell envelopes must stay
  * top-level because the reducer deliberately rejects nested expansions.
@@ -82,25 +108,9 @@ export function createAgentInputEvents(
   state: SessionState,
   input: string,
 ): readonly EngineEvent[] {
-  const agent = readAgentSlice(state);
   const boundedInput = boundAgentInput(input);
   const selection = selectAgentIntent(cartridge, boundedInput);
-  const response = cartridge.story.responses.find(
-    (candidate) => candidate.id === selection.responseId,
-  );
-  if (response === undefined) {
-    throw new Error(
-      `agent intent selected unknown response ${JSON.stringify(selection.responseId)}`,
-    );
-  }
-  if (
-    agent.messages.length + 2 > MAX_AGENT_MESSAGES ||
-    agent.responses.length + 1 > MAX_AGENT_RESPONSES ||
-    agent.toolCalls.length + response.toolCalls.length > MAX_AGENT_TOOL_CALLS ||
-    agent.thinkingBlocks.length + response.thinkingBlocks.length >
-      MAX_AGENT_THINKING_BLOCKS ||
-    agent.todos.length + response.todos.length > MAX_AGENT_TODOS
-  ) {
+  if (!canRecordAuthoredResponse(cartridge, state, selection.responseId, 2)) {
     return [createAgentCapacityEvent(cartridge.story.fallback.response)];
   }
   const turnId = `turn-${String(state.eventCount)}`;
