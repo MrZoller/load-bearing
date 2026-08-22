@@ -9,6 +9,7 @@ import { loadCartridgeFixture } from "../testing/fixtures.js";
 import {
   MAX_AGENT_MESSAGES,
   MAX_AGENT_TEXT_LENGTH,
+  hasAgentIdleNudged,
   readAgentMessageArtifacts,
   readAgentSlice,
   recordAuthoredResponse,
@@ -16,6 +17,7 @@ import {
 } from "./agent.js";
 import {
   createAgentActivityEvent,
+  createAgentIdleNudgeEvent,
   createAgentMessageEvent,
   createAgentResponseEvent,
   createAgentThinkingAddedEvent,
@@ -125,6 +127,35 @@ describe("agent replay state", () => {
     expect(slice.responses).toEqual([
       { instanceId: "turn-one", responseId: "authored" },
     ]);
+  });
+
+  it("records the authored idle nudge once in replay state", () => {
+    const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
+    const story = source["story"] as Record<string, unknown>;
+    story["idleNudgeResponse"] = "fixture-response";
+    const idleCartridge = loadCartridge(source);
+    const event = createAgentIdleNudgeEvent();
+    const state = reduce({
+      cartridge: idleCartridge,
+      seed: SEED,
+      events: [event],
+    });
+
+    expect(event).toMatchObject({ type: "agent.idle-nudged", version: 0 });
+    expect(
+      hasAgentIdleNudged(
+        reduce({ cartridge: idleCartridge, seed: SEED, events: [] }),
+      ),
+    ).toBe(false);
+    expect(hasAgentIdleNudged(state)).toBe(true);
+    expect(readAgentSlice(state).responses).toEqual([
+      { instanceId: "idle-nudge", responseId: "fixture-response" },
+    ]);
+    expect(state.eventCount).toBe(1);
+    expect(restoreSnapshot(snapshot(state))).toEqual(state);
+    expect(() =>
+      reduce({ cartridge: idleCartridge, seed: SEED, events: [event, event] }),
+    ).toThrow(/duplicate.*idle-nudge|idle-nudge.*duplicate/i);
   });
 
   it("groups only an authored message's artifacts and leaves visitor and manual work ungrouped", () => {

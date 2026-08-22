@@ -19,6 +19,13 @@
       }
     ],
     "presentation": {
+      "autocomplete": {
+        "compact": "Replace context with its authored summary",
+        "cost": "Report replay-derived session metrics",
+        "exit": "Leave the agent view",
+        "help": "Show the authored command reference",
+        "model": "Choose the active agent model"
+      },
       "metrics": {
         "baseTokens": 0,
         "contextWindowTokens": 1000,
@@ -253,6 +260,7 @@
         "response": "fixture-response"
       },
       "helpResponse": "fixture-response",
+      "idleNudgeResponse": "",
       "intents": [
         {
           "actions": [],
