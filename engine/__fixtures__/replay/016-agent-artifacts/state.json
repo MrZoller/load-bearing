@@ -211,7 +211,9 @@
   "eventCount": 10,
   "eventSchemaVersion": 0,
   "random": {
-    "cursors": {},
+    "cursors": {
+      "root/agent/models/deep-foundation/spinner.verbs": 160597972
+    },
     "seed": 3809901853
   },
   "seed": "2026-08-21/16/deep-foundation",
@@ -219,7 +221,7 @@
     "agent": {
       "activity": {
         "status": "working",
-        "verb": "Surveying"
+        "verb": "Inspecting"
       },
       "messages": [
         {
@@ -457,7 +459,7 @@
       "at": "2026-08-05T09:14:22.000Z",
       "detail": [],
       "index": 9,
-      "summary": "activity=working",
+      "summary": "activity=working verb=\"Inspecting\"",
       "type": "agent.activity-set"
     }
   ]

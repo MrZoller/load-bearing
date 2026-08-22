@@ -45,6 +45,10 @@ describe("authored agent input", () => {
       ),
     ).toEqual([
       expect.objectContaining({
+        type: "agent.activity-set",
+        payload: { status: "working", stage: 0 },
+      }),
+      expect.objectContaining({
         type: "agent.message-added",
         payload: { id: "turn-0", text: "inspect it" },
       }),
@@ -52,6 +56,10 @@ describe("authored agent input", () => {
       expect.objectContaining({
         type: "agent.response-recorded",
         payload: { responseId: "inspect", instanceId: "turn-0" },
+      }),
+      expect.objectContaining({
+        type: "agent.activity-set",
+        payload: { status: "idle" },
       }),
     ]);
   });
@@ -63,10 +71,12 @@ describe("authored agent input", () => {
       "please rotate the moon",
     );
 
-    expect(events).toHaveLength(2);
+    expect(events).toHaveLength(4);
     expect(events.map((event) => event.type)).toEqual([
+      "agent.activity-set",
       "agent.message-added",
       "agent.response-recorded",
+      "agent.activity-set",
     ]);
     const state = reduce({ cartridge: CARTRIDGE, seed: SEED, events });
     expect(readAgentSlice(state).messages).toMatchObject([
@@ -87,6 +97,7 @@ describe("authored agent input", () => {
     );
 
     expect(events).toMatchObject([
+      { type: "agent.activity-set", payload: { status: "working", stage: 0 } },
       { type: "agent.message-added" },
       {
         type: "mind.permission-requested",
@@ -100,6 +111,7 @@ describe("authored agent input", () => {
         },
       },
       { type: "agent.response-recorded" },
+      { type: "agent.activity-set", payload: { status: "idle" } },
     ]);
   });
 
@@ -126,11 +138,16 @@ describe("authored agent input", () => {
 
     expect(createAgentInputEvents(CARTRIDGE, state, "remove it")).toMatchObject(
       [
+        {
+          type: "agent.activity-set",
+          payload: { status: "working", stage: 0 },
+        },
         { type: "agent.message-added" },
         {
           type: "agent.response-recorded",
           payload: { responseId: "remove-authorized" },
         },
+        { type: "agent.activity-set", payload: { status: "idle" } },
       ],
     );
   });
@@ -173,11 +190,13 @@ describe("authored agent input", () => {
     expect(
       createAgentInputEvents(cartridge, state, "please rotate the moon"),
     ).toMatchObject([
+      { type: "agent.activity-set", payload: { status: "working", stage: 0 } },
       { type: "agent.message-added" },
       {
         type: "agent.response-recorded",
         payload: { responseId: "remove-authorized" },
       },
+      { type: "agent.activity-set", payload: { status: "idle" } },
     ]);
   });
 
@@ -190,8 +209,8 @@ describe("authored agent input", () => {
     );
 
     expect(Array.from(boundAgentInput(input))).toHaveLength(16_000);
-    expect(events[0]?.payload?.["text"]).toBe(`${"x".repeat(15_999)}…`);
-    expect(events.at(-1)?.payload?.["responseId"]).toBe("fallback");
+    expect(events[1]?.payload?.["text"]).toBe(`${"x".repeat(15_999)}…`);
+    expect(events.at(-2)?.payload?.["responseId"]).toBe("fallback");
     expect(() =>
       reduce({ cartridge: CARTRIDGE, seed: SEED, events }),
     ).not.toThrow();

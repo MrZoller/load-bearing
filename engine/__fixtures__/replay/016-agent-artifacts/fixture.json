@@ -1,6 +1,6 @@
 {
   "name": "016-agent-artifacts",
-  "description": "Authored responses instantiate stable messages, tool calls, thinking blocks and todos, whose semantic updates survive replay.",
+  "description": "Authored responses instantiate stable messages, tool calls, thinking blocks and todos, whose semantic updates and stage-selected activity survive replay.",
   "seed": "2026-08-21/16/deep-foundation",
   "cartridge": "minimal",
   "events": [
@@ -59,8 +59,8 @@
     },
     {
       "type": "agent.activity-set",
-      "payload": { "activity": { "status": "working", "verb": "Surveying" } },
-      "version": 0
+      "payload": { "status": "working", "stage": 0 },
+      "version": 1
     }
   ]
 }

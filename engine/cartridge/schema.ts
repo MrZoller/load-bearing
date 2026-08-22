@@ -1150,6 +1150,12 @@ const BOUNDED_LINE = {
   maxLength: 240,
 } satisfies StringNode;
 
+const NONEMPTY_BOUNDED_LINE = {
+  ...BOUNDED_LINE,
+  description: "Non-empty bounded single-line authored text.",
+  minLength: 1,
+} satisfies StringNode;
+
 const RESPONSE_TOOL_CALL = {
   kind: "object",
   description: "One authored tool-call artifact instantiated by a response.",
@@ -1561,7 +1567,7 @@ const PRESENTATION = {
           verbs: required({
             kind: "array",
             description: "Candidate spinner verbs.",
-            items: BOUNDED_LINE,
+            items: NONEMPTY_BOUNDED_LINE,
             minItems: 1,
             maxItems: MAX_PRESENTATION_VERBS,
           }),

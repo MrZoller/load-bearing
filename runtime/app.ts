@@ -1,10 +1,19 @@
-import { createShellExecuteEvent, readTerminalSlice } from "../engine/index.js";
+import {
+  createShellExecuteEvent,
+  readAgentSlice,
+  readTerminalSlice,
+} from "../engine/index.js";
 import type { EngineEvent } from "../engine/index.js";
 import { createRuntimeSession } from "./session.js";
 import { renderStatus } from "./components/status.js";
+import { updateAgentActivity } from "./components/activity.js";
 import { renderTerminalTranscript } from "./terminal/renderer.js";
 import { renderBashView } from "./views/bash.js";
 import { renderTuiView } from "./views/tui.js";
+
+// This is presentation time only: the authored working/idle events and their
+// selected verb are already fixed before the browser schedules this interval.
+const ACTIVITY_PRESENTATION_MS = 300;
 
 /** Mount one terminal whose visible mode is always projected from engine state. */
 export function mountApp(
@@ -44,18 +53,82 @@ export function mountApp(
   terminal.append(beam, assignment, transcript, view, status);
   mount.replaceChildren(terminal);
 
+  const browser = document.defaultView;
+  let activityStartedAt: number | null = null;
+  let activityFrame: number | null = null;
+
+  function stopActivityFrame(): void {
+    if (browser !== null && activityFrame !== null)
+      browser.cancelAnimationFrame(activityFrame);
+    activityFrame = null;
+  }
+
+  function scheduleActivityFrame(): void {
+    stopActivityFrame();
+    if (browser === null || activityStartedAt === null) return;
+    const snapshot = session.current();
+    if (
+      readTerminalSlice(snapshot.state).mode !== "tui" ||
+      readAgentSlice(snapshot.state).activity.status !== "working"
+    )
+      return;
+
+    activityFrame = browser.requestAnimationFrame((now) => {
+      const element = view.querySelector<HTMLElement>("[data-agent-activity]");
+      if (element === null || activityStartedAt === null) return;
+      // Wall time interpolates this one presentation node. It never dispatches
+      // an event, chooses copy, increments metrics, or rewrites replay state.
+      updateAgentActivity(
+        element,
+        session.current().state,
+        now - activityStartedAt,
+      );
+      scheduleActivityFrame();
+    });
+  }
+
   function dispatch(event: EngineEvent): void {
     session.dispatch(event);
     render();
   }
 
   function dispatchMany(events: readonly EngineEvent[]): void {
+    const first = events[0];
+    // A visitor turn starts with a replayable working event and ends idle.
+    // Paint that boundary once before folding the completed authored turn, so
+    // the spinner is a real browser state rather than dead presentation code.
+    // The frame only schedules rendering; it never chooses or changes events.
+    if (
+      first?.type === "agent.activity-set" &&
+      first.payload?.["status"] === "working" &&
+      events.length > 1 &&
+      browser !== null
+    ) {
+      session.dispatch(first);
+      render();
+      // Keep the already-authored working boundary on screen long enough to
+      // read its verb and see the spinner move. Wall time decides only when
+      // this fixed event sequence is presented, never which events it holds.
+      browser.setTimeout(() => {
+        session.dispatchMany(events.slice(1));
+        render();
+      }, ACTIVITY_PRESENTATION_MS);
+      return;
+    }
     session.dispatchMany(events);
     render();
   }
 
   function render(): void {
     const snapshot = session.current();
+    const activity = readAgentSlice(snapshot.state).activity;
+    const inTui = readTerminalSlice(snapshot.state).mode === "tui";
+    if (inTui && activity.status === "working") {
+      activityStartedAt ??= browser?.performance.now() ?? 0;
+    } else {
+      activityStartedAt = null;
+      stopActivityFrame();
+    }
     transcript.replaceChildren(
       ...renderTerminalTranscript(document, session.cartridge, snapshot),
     );
@@ -68,6 +141,9 @@ export function mountApp(
             session.cartridge,
             snapshot.state,
             dispatchMany,
+            activityStartedAt === null || browser === null
+              ? 0
+              : browser.performance.now() - activityStartedAt,
           );
     view.replaceChildren(activeView);
     status.replaceChildren(
@@ -76,6 +152,7 @@ export function mountApp(
     activeView
       .querySelector<HTMLElement>("[data-initial-focus], input")
       ?.focus();
+    scheduleActivityFrame();
   }
 
   render();

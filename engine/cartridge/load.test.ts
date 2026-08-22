@@ -380,6 +380,25 @@ describe("loadCartridge", () => {
     );
   });
 
+  it("rejects an empty authored spinner verb at the cartridge boundary", () => {
+    const source = minimal();
+    const presentation = source["presentation"] as Record<string, unknown>;
+    presentation["spinnerPools"] = [
+      { archetype: "paranoid", stage: 0, verbs: [""] },
+      { archetype: "reckless", stage: 0, verbs: ["Assuming"] },
+    ];
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        {
+          pointer: "/presentation/spinnerPools/0/verbs/0",
+          expected: "at least 1 character(s)",
+          found: '""',
+        },
+      ]),
+    );
+  });
+
   it("rejects intent patterns that collide after runtime normalization", () => {
     const source = minimal();
     const story = source["story"] as Record<string, unknown>;

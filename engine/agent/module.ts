@@ -3,7 +3,7 @@
 import { defineEventModule } from "../events/module.js";
 import type { EventContext } from "../events/module.js";
 import { stampEvent } from "../events/log.js";
-import { readString, requirePayload } from "../events/payload.js";
+import { readInteger, readString, requirePayload } from "../events/payload.js";
 import type { EventPayload } from "../events/payload.js";
 import type { EngineEvent } from "../events/state.js";
 import {
@@ -17,7 +17,6 @@ import {
   updateAgentThinkingBlock,
   updateAgentTodo,
   updateAgentToolCall,
-  validateAgentActivity,
   validateAgentId,
   validateAgentSlice,
   validateAgentThinkingBlock,
@@ -26,6 +25,7 @@ import {
 } from "./agent.js";
 import type {
   AgentActivity,
+  AgentActivityRequest,
   AgentSlice,
   AgentThinkingBlock,
   AgentTodo,
@@ -34,6 +34,7 @@ import type {
   TodoStatus,
   ToolCallStatus,
 } from "./types.js";
+import { forkModelStream, readTerminalSlice } from "../terminal/terminal.js";
 
 function payload(
   context: EventContext,
@@ -142,11 +143,42 @@ export function createAgentTodoUpdatedEvent(
   );
 }
 
-export function createAgentActivityEvent(activity: AgentActivity): EngineEvent {
+export function createAgentActivityEvent(
+  activity: AgentActivityRequest,
+): EngineEvent {
   return stampEvent(
-    { type: "agent.activity-set", payload: { activity } },
+    {
+      type: "agent.activity-set",
+      payload:
+        activity.status === "idle"
+          ? { status: "idle" }
+          : { status: "working", stage: activity.stage },
+    },
     "agent activity",
   );
+}
+
+function selectActivity(context: EventContext, stage: number): AgentActivity {
+  const activeModel = readTerminalSlice(context.state).activeModel;
+  const model = context.cartridge.models.find(
+    (candidate) => candidate.id === activeModel,
+  );
+  if (model === undefined)
+    throw new Error(
+      `${context.where}: active model ${JSON.stringify(activeModel)} is not in the cartridge`,
+    );
+  const pool = context.cartridge.presentation.spinnerPools.find(
+    (candidate) =>
+      candidate.archetype === model.archetype && candidate.stage === stage,
+  );
+  if (pool === undefined)
+    throw new Error(
+      `${context.where}: no spinner pool for archetype ${JSON.stringify(model.archetype)} at stage ${String(stage)}`,
+    );
+  const verb = forkModelStream(context.random, activeModel)
+    .fork("spinner.verbs")
+    .pick(pool.verbs);
+  return { status: "working", verb };
 }
 
 export const AGENT_MODULE = defineEventModule<AgentSlice>({
@@ -308,16 +340,29 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
       },
     },
     "agent.activity-set": {
-      version: 0,
+      version: 1,
       apply(context, slice) {
-        const data = payload(context, ["activity"]);
-        const activity = validateAgentActivity(
-          data["activity"],
-          `${context.where}: activity`,
+        const initial = requirePayload(context);
+        const status = readString(initial, "status", context.where);
+        const data = payload(
+          context,
+          status === "idle" ? ["status"] : ["status", "stage"],
         );
+        if (status !== "idle" && status !== "working")
+          throw new Error(`${context.where}: status must be idle or working`);
+        const activity =
+          status === "idle"
+            ? ({ status: "idle", verb: "" } as const)
+            : selectActivity(
+                context,
+                readInteger(data, "stage", 0, 4, context.where),
+              );
         return {
           slice: setAgentActivity(slice, activity),
-          summary: `activity=${activity.status}`,
+          summary:
+            activity.status === "idle"
+              ? "activity=idle"
+              : `activity=working verb=${JSON.stringify(activity.verb)}`,
         };
       },
     },
