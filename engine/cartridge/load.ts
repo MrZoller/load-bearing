@@ -1324,7 +1324,10 @@ function checkStoryAndPresentation(
     string,
     { readonly index: number; readonly kind: string }
   >();
-  story.phase2.facts.forEach((fact, index) => {
+  // When an unrelated structural error prevents global default filling, older
+  // otherwise-valid phase2 graphs may still omit these optional additions.
+  // Cross-checks must report the authored error, never escape on that shape.
+  (story.phase2.facts ?? []).forEach((fact, index) => {
     const first = facts.get(fact.id);
     if (first === undefined) facts.set(fact.id, { index, kind: fact.kind });
     else
@@ -1371,9 +1374,9 @@ function checkStoryAndPresentation(
       });
     };
     checkEnding(beat.ending, `${root}/ending`);
-    checkFacts(beat.facts, `${root}/facts`);
+    checkFacts(beat.facts ?? [], `${root}/facts`);
     const variants = new Map<string, number>();
-    beat.variants.forEach((variant, variantIndex) => {
+    (beat.variants ?? []).forEach((variant, variantIndex) => {
       const variantRoot = `${root}/variants/${String(variantIndex)}`;
       const first = variants.get(variant.id);
       if (first === undefined) variants.set(variant.id, variantIndex);
@@ -1384,7 +1387,7 @@ function checkStoryAndPresentation(
           `${JSON.stringify(variant.id)}, already used by ${root}/variants/${String(first)}`,
         );
       checkEnding(variant.ending, `${variantRoot}/ending`);
-      checkFacts(variant.facts, `${variantRoot}/facts`);
+      checkFacts(variant.facts ?? [], `${variantRoot}/facts`);
       variant.when.forEach((condition, conditionIndex) => {
         const conditionRoot = `${variantRoot}/when/${String(conditionIndex)}`;
         if (condition.kind === "story-fact") {
