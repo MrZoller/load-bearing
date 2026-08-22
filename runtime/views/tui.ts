@@ -65,7 +65,6 @@ export function renderTuiView(
   input.setAttribute("aria-label", "Agent prompt");
   input.setAttribute("aria-autocomplete", "list");
   input.setAttribute("aria-controls", "slash-completions");
-  input.setAttribute("aria-expanded", "false");
   input.placeholder = placeholder;
 
   const presentation = document.createElement("div");
@@ -83,7 +82,6 @@ export function renderTuiView(
     const wasOpen = !completions.hidden;
     completions.replaceChildren();
     completions.hidden = true;
-    input.setAttribute("aria-expanded", "false");
     input.removeAttribute("aria-activedescendant");
     matches = [];
     activeCompletion = 0;
@@ -126,7 +124,6 @@ export function renderTuiView(
       }),
     );
     completions.hidden = matches.length === 0;
-    input.setAttribute("aria-expanded", String(matches.length > 0));
     if (matches.length > 0) {
       input.setAttribute(
         "aria-activedescendant",

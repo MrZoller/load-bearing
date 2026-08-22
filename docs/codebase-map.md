@@ -5,11 +5,10 @@ The deep map of the repository, for a day-one agent or engineer. Companion to
 this document is *what exists today*, as opposed to what is designed.
 `CLAUDE.md` and `AGENTS.md` carry the invariants and verified commands.
 
-Status: **Phase 1 — browser terminal in progress.** The Phase 0 engine is
-complete; the browser runtime, two terminal modes, bounded agent artifact state,
-and concrete Phase 1 cartridge shell now exist. Natural-language dispatch and
-the remaining interaction slices are still in progress. See
-[Implementation status vs Phase 0](#implementation-status-vs-phase-0).
+Status: **Phase 1 — browser terminal complete.** The headless engine and one
+replay-backed browser terminal now cover two views, shared-machine interaction,
+bounded agent artifacts, keyboard/mobile operation, and the deterministic
+production acceptance gate. See [Implementation status](#implementation-status).
 
 ---
 
@@ -317,7 +316,7 @@ structured around "the same input, anywhere, produces the same bytes."
 
 ---
 
-## Implementation status vs Phase 0
+## Implementation status
 
 Phase 0 DoD (from `ROADMAP.md`), mapped to what exists:
 
@@ -331,10 +330,10 @@ Phase 0 DoD (from `ROADMAP.md`), mapped to what exists:
 **Explicitly not in this phase** (per ROADMAP) — all correct to be absent:
 any rendering, any comedy writing, any real model calls.
 
-**Current Phase 1 gaps:** transcript search controls and final responsive
-accessibility hardening. The browser now renders replay-derived metrics,
-replayable agent artifacts, and cartridge-authored onboarding without
-introducing a second state store.
+Phase 1's complete keyboard session, Node/browser byte comparison, desktop and
+390×844 interactions, and Lighthouse accessibility score of 100 run against the
+production build. Presentation-only focus, scrolling, viewport, reduced-motion,
+and animation activity are asserted not to alter the replay log.
 
 ---
 

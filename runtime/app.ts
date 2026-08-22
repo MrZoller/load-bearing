@@ -9,6 +9,7 @@ import {
 } from "../engine/index.js";
 import type { EngineEvent } from "../engine/index.js";
 import { createRuntimeSession } from "./session.js";
+import type { RuntimeSession } from "./session.js";
 import { renderStatus } from "./components/status.js";
 import { updateAgentActivity } from "./components/activity.js";
 import { renderMobileKeys } from "./components/mobile-keys.js";
@@ -31,7 +32,7 @@ export function mountApp(
   document: Document,
   mount: HTMLElement,
   cartridgeDocument: unknown,
-): void {
+): Pick<RuntimeSession, "cartridge" | "current"> {
   const session = createRuntimeSession(cartridgeDocument);
   const incidentNumber = String(session.cartridge.meta.number).padStart(3, "0");
   const resumeCommand = `loadbearing --resume incident-${incidentNumber}`;
@@ -303,4 +304,11 @@ export function mountApp(
 
   render();
   schedulePlaceholder();
+  // The mounted surface may expose this read-only pair to an acceptance
+  // harness. Mutation remains private to the closures above: browser tests can
+  // replay what happened, but cannot manufacture state outside dispatch.
+  return Object.freeze({
+    cartridge: session.cartridge,
+    current: session.current,
+  });
 }
