@@ -42,6 +42,9 @@ test("Lighthouse reports a perfect accessibility score", async ({
       chromePath: chromium.executablePath(),
       chromeFlags: [
         "--headless=new",
+        // GitHub Actions runs the audit in a containerized Linux environment
+        // where Chrome's user-namespace sandbox is unavailable.
+        "--no-sandbox",
         `--window-size=${DESKTOP_VIEWPORT.width},${DESKTOP_VIEWPORT.height}`,
       ],
       logLevel: "silent",
