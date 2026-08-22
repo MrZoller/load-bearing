@@ -41,6 +41,19 @@ export function executeShell(
       }),
     ]);
   }
+  if (
+    describeUnwritableText(
+      input.replaceAll("\t", "").replaceAll("\n", "").replaceAll("\r", ""),
+    ) !== undefined
+  )
+    return Object.freeze([
+      resultEvent({
+        stdout: [],
+        stderr: ["shell: command contains unrenderable input"],
+        exitCode: 2,
+        events: [],
+      }),
+    ]);
   const history =
     input.trim() === ""
       ? []
@@ -64,25 +77,6 @@ export function executeShell(
     };
     return Object.freeze([...history, resultEvent(result)]);
   }
-  if (
-    argv.some(
-      (argument) =>
-        describeUnwritableText(
-          argument
-            .replaceAll("\t", "")
-            .replaceAll("\n", "")
-            .replaceAll("\r", ""),
-        ) !== undefined,
-    )
-  )
-    return Object.freeze([
-      resultEvent({
-        stdout: [],
-        stderr: ["shell: command contains unrenderable input"],
-        exitCode: 2,
-        events: [],
-      }),
-    ]);
   const execution = executeCommand(state, argv, registry);
   return Object.freeze([
     ...history,

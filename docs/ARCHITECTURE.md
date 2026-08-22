@@ -230,10 +230,11 @@ renders the same entries differently without changing what was recorded.
   builtin with the same name, and its stdout lines precede stderr lines
 - unknown names return straight shell-register stderr and exit 127; blank input
   records a successful empty result
-- every nonblank raw shell input, including one that fails tokenization, expands
-  first to `world.history-append`, then command-owned events, then
-  `shell.result`. Output is computed before expansion, so `history` deliberately
-  displays prior entries rather than itself.
+- every renderable nonblank raw shell input, including one that fails
+  tokenization, expands first to `world.history-append`, then command-owned
+  events, then `shell.result`. Unrenderable raw input is rejected before
+  tokenization and never enters history. Output is computed before expansion,
+  so `history` deliberately displays prior entries rather than itself.
 - The TUI passes `!`-prefixed input straight to the shell layer; both views
   are thin renderers over the same engine session
 
