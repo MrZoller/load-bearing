@@ -60,7 +60,9 @@ test("keeps the stable terminal surface semantic, named, and visibly focused", a
     .not.toBe("none");
 });
 
-test("announces only newly rendered agent and shell output", async ({ page }) => {
+test("announces only newly rendered agent and shell output", async ({
+  page,
+}) => {
   await page.goto("/");
 
   const prompt = page.getByRole("textbox", { name: "Agent prompt" });
@@ -71,7 +73,11 @@ test("announces only newly rendered agent and shell output", async ({ page }) =>
       element.dataset["mutations"] = String(
         Number(element.dataset["mutations"] ?? "0") + 1,
       );
-    }).observe(element, { childList: true, subtree: true, characterData: true });
+    }).observe(element, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
   });
 
   // The cold open and visitor command were already present when the announcer
@@ -81,15 +87,15 @@ test("announces only newly rendered agent and shell output", async ({ page }) =>
   await prompt.press("Enter");
   await expect(liveOutput).toHaveText("Shell output: /production/service");
   await expect(liveOutput).not.toContainText("pwd");
-  await expect
-    .poll(() => liveOutput.getAttribute("data-mutations"))
-    .toBe("1");
+  await expect.poll(() => liveOutput.getAttribute("data-mutations")).toBe("1");
 
   // A presentation-only command rerenders the transcript but must not repeat
   // output that was already keyed and announced.
   await prompt.fill("/model");
   await prompt.press("Enter");
-  await expect(page.getByRole("group", { name: "Choose active model" })).toBeVisible();
+  await expect(
+    page.getByRole("group", { name: "Choose active model" }),
+  ).toBeVisible();
   await expect(liveOutput).toHaveText("Shell output: /production/service");
   await expect(liveOutput).toHaveAttribute("data-mutations", "1");
 });
@@ -131,6 +137,8 @@ test("reduced motion preserves cold-open, activity, and status information", asy
     .toBe("none");
 
   const productText = await page.locator("body").innerText();
-  expect(productText).not.toMatch(/OpenAI|Anthropic|ChatGPT|Claude|Gemini|Copilot/i);
+  expect(productText).not.toMatch(
+    /OpenAI|Anthropic|ChatGPT|Claude|Gemini|Copilot/i,
+  );
   await expect(page.locator(".beam")).toHaveAttribute("aria-hidden", "true");
 });
