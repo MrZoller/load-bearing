@@ -55,7 +55,9 @@ export function createTranscriptSearch(
     const match = matches[current];
     if (match === undefined) return;
     const query = input.value.trim().toLocaleLowerCase();
-    for (const detail of match.querySelectorAll("details:not([open])")) {
+    for (const detail of match.querySelectorAll<HTMLDetailsElement>(
+      "details:not([open])",
+    )) {
       if ((detail.textContent ?? "").toLocaleLowerCase().includes(query))
         detail.open = true;
     }
