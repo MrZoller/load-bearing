@@ -1,0 +1,146 @@
+:root {
+  color-scheme: dark;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  background: #090a08;
+  color: #e7eadf;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 4vw, 4rem);
+  background:
+    linear-gradient(rgb(255 255 255 / 2%) 1px, transparent 1px) 0 0 / 100% 2rem,
+    radial-gradient(circle at 50% 20%, #1c2118 0, #090a08 58%);
+}
+
+#app {
+  width: min(70rem, 100%);
+}
+
+.terminal {
+  position: relative;
+  min-height: min(44rem, calc(100vh - 2rem));
+  overflow: hidden;
+  border: 1px solid #454a3d;
+  border-radius: 0.25rem;
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+  background: #11130f;
+  box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 45%);
+}
+
+.beam {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0.45rem;
+  border-right: 1px solid #788068;
+  background: #c3cc45;
+}
+
+.terminal__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #30352b;
+}
+
+.terminal__brand,
+.terminal__status,
+.terminal__assignment,
+.transcript__heading {
+  margin: 0;
+}
+
+.terminal__brand {
+  color: #f2f5e8;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.terminal__status {
+  color: #b5bd3e;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+}
+
+.terminal__assignment {
+  max-width: 52rem;
+  margin-top: 1.5rem;
+  color: #aeb5a4;
+  line-height: 1.6;
+}
+
+.transcript {
+  min-height: 12rem;
+  margin: 2rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.transcript__entry {
+  margin-block: 1rem;
+}
+
+.transcript__heading {
+  color: #7f8876;
+  font-size: 0.78rem;
+}
+
+.transcript__detail,
+.transcript__output {
+  margin: 0.35rem 0 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font: inherit;
+}
+
+.transcript__output--stderr {
+  color: #e69b81;
+}
+
+.prompt {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid #30352b;
+}
+
+.prompt__label {
+  color: #c3cc45;
+  font-weight: 700;
+}
+
+.prompt input {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  padding: 0.4rem 0;
+  background: transparent;
+  color: inherit;
+  caret-color: #c3cc45;
+  font: inherit;
+}
+
+.prompt input:focus-visible {
+  box-shadow: 0 2px #c3cc45;
+}
+
+@media (max-width: 38rem) {
+  .terminal__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

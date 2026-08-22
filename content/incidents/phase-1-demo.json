@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 0,
+    "date": "2026-08-22",
+    "title": "Phase 1 Demonstration",
+    "assignment": "The readiness sentinel was declared temporary. It has now outlived two maintainers and one definition of temporary.",
+    "startedAt": "2026-08-22T09:14:22.000Z"
+  },
+  "repository": {
+    "cwd": "/production/service",
+    "identity": {
+      "user": "visitor",
+      "group": "operators",
+      "home": "/home/visitor"
+    },
+    "gitIdentity": { "name": "Visitor", "email": "visitor@example.test" },
+    "system": {
+      "hostname": "load-bearing",
+      "operatingSystem": "Linux",
+      "kernelRelease": "6.1.0-load-bearing",
+      "architecture": "x86_64",
+      "bootedAt": "2025-07-01T06:10:00.000Z"
+    },
+    "directories": {
+      "/production": {
+        "owner": "visitor",
+        "group": "operators",
+        "mode": "0755"
+      },
+      "/production/service": {
+        "owner": "visitor",
+        "group": "operators",
+        "mode": "0755"
+      },
+      "/production/service/src": {
+        "owner": "visitor",
+        "group": "operators",
+        "mode": "0755"
+      }
+    },
+    "files": {
+      "/production/service/src/ready.stale": {
+        "contents": "remove me\n",
+        "owner": "visitor",
+        "group": "operators"
+      },
+      "/production/service/src/worker.ts": {
+        "contents": "export const load = 2;\n",
+        "owner": "visitor",
+        "group": "operators"
+      }
+    },
+    "gitHistory": {
+      "commits": [
+        {
+          "id": "before-ready",
+          "author": { "name": "Greg Formerly", "email": "greg@example.test" },
+          "message": "add readiness sentinel\n",
+          "committedAt": "2026-07-31T02:11:09.000Z",
+          "files": {
+            "/production/service/src/ready.stale": {
+              "contents": "remove me\n",
+              "blame": ["before-ready"]
+            },
+            "/production/service/src/worker.ts": {
+              "contents": "export const load = 2;\n",
+              "blame": ["before-ready"]
+            }
+          }
+        }
+      ],
+      "branches": { "main": "before-ready" },
+      "head": { "kind": "branch", "target": "main" }
+    }
+  },
+  "models": [
+    {
+      "id": "structural-audit",
+      "name": "Structural Audit",
+      "archetype": "paranoid",
+      "description": "Thorough enough to require a permit.",
+      "costMultiplier": 1
+    }
+  ]
+}

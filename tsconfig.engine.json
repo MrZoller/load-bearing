@@ -19,7 +19,10 @@
   // is the single documented exception in both.
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": []
+    "types": [],
+    // The browser runtime needs DOM types in the root program. Override them
+    // here so an accidental document/window reference in engine still fails.
+    "lib": ["ES2022"]
   },
   "include": ["engine"],
   "exclude": [

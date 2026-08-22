@@ -18,7 +18,9 @@ determinism harness).
 
 All verified on Node 22+/npm 11 (`npm run verify`, green on this machine):
 
-- setup: `npm install` (CI uses `npm ci`; `package-lock.json` is committed)
+- setup: `npm install && npx playwright install chromium` (CI uses `npm ci`
+  and installs Chromium with its system dependencies; `package-lock.json` is
+  committed)
 - test: `npm test` — Vitest, unit + golden replay suite (336 tests)
 - test both host timezones: `npm run test:timezones` (CI runs this: UTC then
   Asia/Tokyo — the engine must not read a host timezone)
