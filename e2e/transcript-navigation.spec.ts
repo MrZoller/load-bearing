@@ -89,6 +89,10 @@ test("leaves selected transcript text available to the browser copy command", as
 test("bounds scrollback without discarding the newest transcript output", async ({
   page,
 }) => {
+  // This deliberately drives 300 DOM renders to cross the retention boundary.
+  // GitHub's single-worker Chromium can take longer than Playwright's default
+  // per-test budget even though the interaction itself remains responsive.
+  test.setTimeout(90_000);
   await page.goto("/");
 
   const prompt = page.getByRole("textbox", { name: "Agent prompt" });
