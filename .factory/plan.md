@@ -52,9 +52,10 @@ authoring tooling remain excluded.
 - [ ] T40 (standard) — Stage-aware presentation mechanics
   - acceptance: `engine/cartridge/{schema,types,load,load.test}.ts`, `engine/agent/{types,module,module.test}.ts`, `runtime/app.ts`, `runtime/components/activity.ts`, `runtime/views/tui.ts`, and `runtime/commands/slash.ts` support weighted spinner verbs, authored suffixes, openings, placeholders, `/help`, and idle nudges by archetype/stage; stage 0–4 pools use integer weights with plausible verbs demonstrably heavier than rare spikes, deterministic output has a reduced-motion equivalent, hidden shell depth is not advertised, and timers only display or dispatch authored replay events (criteria 15, 20)
   - deps: T35, T36
-- [~] T41 (standard) — Load-balancer files, ownership, and tests
+- [R] T41 (standard) — Load-balancer files, ownership, and tests
   - acceptance: `content/incidents/incident-001.json`, `engine/cartridge/load.test.ts`, `engine/vfs/vfs.test.ts`, and `engine/tests/module.test.ts` gain production source/config files, owners/groups/modes, test definitions, and minimal reactions proving the apparent HTTP 500 fix can detach Europe; VFS contents, endpoint expectation, tests, and repair/undo mutations agree in a reviewed production-cartridge golden (criteria 1, 10, 20)
   - deps: T31
+  - pr: 56
 - [ ] T42 (standard) — Restrained Git history, blame, and shell history
   - acceptance: `content/incidents/incident-001.json`, `engine/git/git.test.ts`, and `engine/commands/git.test.ts` add coherent commits, refs, index, blame spans, departed-maintainer trail, and shell history; log/diff/blame/checkout/restore views agree with T41's current files before and after authored repair/undo actions, pinned by a focused golden (criteria 6 shell foundation, 10, 20)
   - deps: T41
