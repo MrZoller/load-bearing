@@ -336,4 +336,25 @@ describe("createTerminalInputController", () => {
     expect(stale.input.value).toBe("stale");
     expect(stale.input.focusCalls).toBe(0);
   });
+
+  it("moves virtual carets across Unicode code points without splitting surrogates", () => {
+    const controller = createTerminalInputController({
+      clearTranscript() {},
+      enterBash() {},
+    });
+    const tui = bind(controller, "tui", () => {});
+
+    tui.input.value = "🧱a";
+    tui.input.setSelectionRange(0, 0);
+    controller.pressKey("ArrowRight");
+    expect([tui.input.selectionStart, tui.input.selectionEnd]).toEqual([2, 2]);
+    controller.pressKey("ArrowLeft");
+    expect([tui.input.selectionStart, tui.input.selectionEnd]).toEqual([0, 0]);
+
+    tui.input.value = "🧱";
+    tui.input.setSelectionRange(1, 1);
+    controller.insertText("!");
+    expect(tui.input.value).toBe("!🧱");
+    expect([tui.input.selectionStart, tui.input.selectionEnd]).toEqual([1, 1]);
+  });
 });

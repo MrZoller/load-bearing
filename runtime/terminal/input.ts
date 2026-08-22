@@ -59,6 +59,43 @@ function replaceInput(
   input.setSelectionRange(cursor, cursor);
 }
 
+function isHighSurrogate(codeUnit: number): boolean {
+  return codeUnit >= 0xd800 && codeUnit <= 0xdbff;
+}
+
+function isLowSurrogate(codeUnit: number): boolean {
+  return codeUnit >= 0xdc00 && codeUnit <= 0xdfff;
+}
+
+/** Keep virtual controls from splitting a supplementary Unicode character. */
+function snapToCodePointBoundary(value: string, offset: number): number {
+  if (
+    offset > 0 &&
+    offset < value.length &&
+    isHighSurrogate(value.charCodeAt(offset - 1)) &&
+    isLowSurrogate(value.charCodeAt(offset))
+  ) {
+    return offset - 1;
+  }
+  return offset;
+}
+
+function previousCodePointBoundary(value: string, offset: number): number {
+  const previous = Math.max(0, offset - 1);
+  return snapToCodePointBoundary(value, previous);
+}
+
+function nextCodePointBoundary(value: string, offset: number): number {
+  if (
+    offset + 1 < value.length &&
+    isHighSurrogate(value.charCodeAt(offset)) &&
+    isLowSurrogate(value.charCodeAt(offset + 1))
+  ) {
+    return offset + 2;
+  }
+  return Math.min(value.length, offset + 1);
+}
+
 /** Bind both prompts to one controller while their DOM nodes rerender. */
 export function createTerminalInputController(
   options: TerminalInputControllerOptions,
@@ -196,8 +233,14 @@ export function createTerminalInputController(
       const binding = activeBinding();
       if (binding === null) return;
       const { input, mode, completionPresentation } = binding;
-      const start = input.selectionStart ?? input.value.length;
-      const end = input.selectionEnd ?? start;
+      const start = snapToCodePointBoundary(
+        input.value,
+        input.selectionStart ?? input.value.length,
+      );
+      const end = snapToCodePointBoundary(
+        input.value,
+        input.selectionEnd ?? start,
+      );
       const value = `${input.value.slice(0, start)}${text}${input.value.slice(end)}`;
       replaceInput(input, value, start + text.length);
       history.reset(mode);
@@ -215,10 +258,10 @@ export function createTerminalInputController(
         const cursor =
           key === "ArrowLeft"
             ? start === end
-              ? Math.max(0, start - 1)
+              ? previousCodePointBoundary(input.value, start)
               : start
             : start === end
-              ? Math.min(input.value.length, end + 1)
+              ? nextCodePointBoundary(input.value, end)
               : end;
         input.setSelectionRange(cursor, cursor);
       } else {
