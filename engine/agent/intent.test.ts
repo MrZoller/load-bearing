@@ -135,6 +135,52 @@ describe("authored agent input", () => {
     );
   });
 
+  it("uses a fallback's authored authorized response after Always allow", () => {
+    const document = JSON.parse(JSON.stringify(cartridgeDocument)) as {
+      story: {
+        fallback: {
+          authorizedResponse?: string;
+          actions?: unknown[];
+        };
+      };
+    };
+    document.story.fallback.authorizedResponse = "remove-authorized";
+    document.story.fallback.actions = [
+      {
+        kind: "permission-request",
+        id: "remove-fallback-sentinel",
+        action: "delete",
+        resource: "/production/service/src/ready.stale",
+      },
+    ];
+    const cartridge = loadCartridge(document);
+    const state = reduce({
+      cartridge,
+      seed: SEED,
+      events: [
+        createMindPermissionRequestedEvent("remove-fallback-sentinel", {
+          kind: "exact",
+          action: "delete",
+          resource: "/production/service/src/ready.stale",
+        }),
+        createMindPermissionResolvedEvent(
+          "remove-fallback-sentinel",
+          "always-allow",
+        ),
+      ],
+    });
+
+    expect(
+      createAgentInputEvents(cartridge, state, "please rotate the moon"),
+    ).toMatchObject([
+      { type: "agent.message-added" },
+      {
+        type: "agent.response-recorded",
+        payload: { responseId: "remove-authorized" },
+      },
+    ]);
+  });
+
   it("bounds oversized visitor text and still records an authored fallback", () => {
     const input = `${"x".repeat(15_999)}😀z`;
     const events = createAgentInputEvents(

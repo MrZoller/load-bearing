@@ -1124,6 +1124,18 @@ const PHASE_ONE_ID = {
   maxLength: 64,
 } satisfies StringNode;
 
+// An absent authorized response is normalized to the empty value, while an
+// authored one remains a response identifier. The normalized form appears in
+// replay snapshots, so the schema must accept it when those snapshots reload.
+const OPTIONAL_PHASE_ONE_ID = {
+  kind: "string",
+  description: "An optional stable lowercase Phase 1 content identifier.",
+  pattern: pattern(/^(?:|[a-z][a-z0-9-]{0,63})$/),
+  patternLabel:
+    "an empty value or a lowercase id slug of at most 64 characters",
+  maxLength: 64,
+} satisfies StringNode;
+
 const BOUNDED_TEXT = {
   kind: "string",
   description: "Bounded authored text.",
@@ -1455,7 +1467,7 @@ const STORY = {
           response: required(PHASE_ONE_ID),
           // The empty normalized value means this intent's ordinary response
           // remains coherent when a standing grant skips its prompt action.
-          authorizedResponse: optional(PHASE_ONE_ID, ""),
+          authorizedResponse: optional(OPTIONAL_PHASE_ONE_ID, ""),
           actions: optional(ACTIONS, []),
         },
       },
@@ -1465,6 +1477,9 @@ const STORY = {
       description: "Confident authored fallback for unmatched input.",
       fields: {
         response: required(PHASE_ONE_ID),
+        // Like recognized intents, a fallback that requests permission needs
+        // coherent copy for the later exact-standing-grant path.
+        authorizedResponse: optional(OPTIONAL_PHASE_ONE_ID, ""),
         actions: optional(ACTIONS, []),
       },
     }),
@@ -1625,7 +1640,11 @@ const PHASE_ONE_STORY_DEFAULT = {
     },
   ],
   intents: [],
-  fallback: { response: "default-response", actions: [] },
+  fallback: {
+    response: "default-response",
+    authorizedResponse: "",
+    actions: [],
+  },
   helpResponse: "default-response",
   compact: {
     response: "default-response",

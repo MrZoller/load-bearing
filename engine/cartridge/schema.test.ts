@@ -36,6 +36,7 @@ import type {
   CartridgeMetricParameters,
   CartridgePlaceholder,
   CartridgeSpinnerPool,
+  CartridgeStory,
   CartridgeLog,
   CartridgeManPage,
   CartridgeProcess,
@@ -416,6 +417,9 @@ describe("descriptor and type lockstep", () => {
     );
     agrees<CartridgeIntent["authorizedResponse"]>(
       story.fields.intents.node.items.fields.authorizedResponse.node,
+    );
+    agrees<CartridgeStory["fallback"]["authorizedResponse"]>(
+      story.fields.fallback.node.fields.authorizedResponse.node,
     );
     agrees<CartridgeIntent["patterns"][number]>(
       story.fields.intents.node.items.fields.patterns.node.items,

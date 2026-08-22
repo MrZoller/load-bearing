@@ -1270,6 +1270,11 @@ function checkStoryAndPresentation(
   };
   reference(story.opening.response, "/story/opening/response");
   reference(story.fallback.response, "/story/fallback/response");
+  if (story.fallback.authorizedResponse !== "")
+    reference(
+      story.fallback.authorizedResponse,
+      "/story/fallback/authorizedResponse",
+    );
   reference(story.helpResponse, "/story/helpResponse");
   reference(story.compact.response, "/story/compact/response");
   reference(story.resume.unchangedResponse, "/story/resume/unchangedResponse");

@@ -132,6 +132,7 @@
       },
       "fallback": {
         "actions": [],
+        "authorizedResponse": "",
         "response": "ledger-unchanged"
       },
       "helpResponse": "ledger-unchanged",

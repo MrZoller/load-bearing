@@ -66,7 +66,7 @@ export function selectAgentIntent(
     return {
       intentId: null,
       responseId: cartridge.story.fallback.response,
-      authorizedResponseId: "",
+      authorizedResponseId: cartridge.story.fallback.authorizedResponse,
       actions: cartridge.story.fallback.actions,
     };
   }

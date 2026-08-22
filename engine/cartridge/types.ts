@@ -113,6 +113,8 @@ export interface CartridgeStory {
   readonly intents: readonly CartridgeIntent[];
   readonly fallback: {
     readonly response: string;
+    /** Empty unless an exact standing grant needs its own authored response. */
+    readonly authorizedResponse: string;
     readonly actions: readonly CartridgeAgentAction[];
   };
   readonly helpResponse: string;
