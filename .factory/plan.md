@@ -67,9 +67,10 @@ and runtime model calls are deliberately excluded.
   - acceptance: `runtime/terminal/{history,completion,input}.ts` provides mode-appropriate TUI and Bash histories, slash/command/path tab completion, arrows, selection-safe copy/paste, `Ctrl+C`, `Ctrl+L`, `Ctrl+D`, and Escape behavior through one input controller; presentation-only clear/cancel operations do not rewrite engine transcript or event log; automated interaction tests cover normal and empty-input cases (criterion 10)
   - deps: T15, T23
   - pr: 48
-- [~] T25 (standard) — Transcript search, scrollback, and anchoring
+- [R] T25 (standard) — Transcript search, scrollback, and anchoring
   - acceptance: `runtime/terminal/{search,scroll}.ts` provides keyboard transcript search, bounded scrollback, focus restoration, and new-output anchoring that follows only when already at the bottom and preserves the reader's place otherwise; an accessible new-output affordance returns to the latest entry; Playwright covers search navigation, copied text, scrolled-up output, and resumed anchoring (criterion 10)
   - deps: T15
+  - pr: 50
 - [x] T26 (standard) — Diegetic onboarding without shell spoilers
   - acceptance: the demo cartridge authors rotating placeholders, accurate in-character help, autocomplete copy, and one idle nudge; runtime timers may reveal preselected presentation or dispatch the explicit replayable nudge event but never choose content from wall time; interaction tests prove each teaching surface appears, only one idle nudge records, and no tooltip, tutorial overlay/modal, post-cold-open shell hint, or hidden-depth advertisement exists (criterion 11)
   - deps: T16, T17, T23
