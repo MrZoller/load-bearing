@@ -106,6 +106,20 @@ describe("loadCartridge", () => {
     );
   });
 
+  it("reserves loadbearing so static output cannot suppress resume effects", () => {
+    const source = minimal();
+    (source["repository"] as Record<string, unknown>)["commands"] = {
+      loadbearing: { stdout: ["resumed"], stderr: [], exitCode: 0 },
+    };
+
+    expect(issuesOf(source)).toContainEqual({
+      pointer: "/repository/commands/loadbearing",
+      expected:
+        "a cartridge command name that is not reserved for runtime mechanics",
+      found: '"loadbearing"',
+    });
+  });
+
   it("requires cartridge-owned system metadata and bounds boot time", () => {
     const missingRepository = minimal();
     delete missingRepository["repository"];

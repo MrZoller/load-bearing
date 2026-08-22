@@ -405,7 +405,7 @@ export interface CartridgeRepository {
   readonly env: Readonly<Record<string, string>>;
   readonly manPages: readonly CartridgeManPage[];
   readonly shellHistory: readonly string[];
-  /** Static hidden commands and explicit overrides of runtime builtins. */
+  /** Static hidden commands and safe overrides of runtime builtins. */
   readonly commands: Readonly<Record<string, CartridgeCommand>>;
   /** Static responses keyed by the exact URL accepted by simulated curl. */
   readonly endpoints: Readonly<Record<string, CartridgeEndpoint>>;

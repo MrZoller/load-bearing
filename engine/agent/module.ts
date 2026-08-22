@@ -12,6 +12,11 @@ import {
   addAgentTodo,
   addAgentToolCall,
   createAgentSlice,
+  MAX_AGENT_MESSAGES,
+  MAX_AGENT_RESPONSES,
+  MAX_AGENT_THINKING_BLOCKS,
+  MAX_AGENT_TODOS,
+  MAX_AGENT_TOOL_CALLS,
   recordAuthoredResponse,
   setAgentActivity,
   updateAgentThinkingBlock,
@@ -198,15 +203,25 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
       apply(context, slice) {
         if (context.cartridge.story.idleNudgeResponse === "")
           throw new Error(`${context.where}: cartridge has no idle nudge`);
-        return {
-          slice: recordAuthoredResponse(
+        const response = authoredResponse(
+          context,
+          context.cartridge.story.idleNudgeResponse,
+        );
+        if (
+          slice.messages.length + 1 > MAX_AGENT_MESSAGES ||
+          slice.responses.length + 1 > MAX_AGENT_RESPONSES ||
+          slice.toolCalls.length + response.toolCalls.length >
+            MAX_AGENT_TOOL_CALLS ||
+          slice.thinkingBlocks.length + response.thinkingBlocks.length >
+            MAX_AGENT_THINKING_BLOCKS ||
+          slice.todos.length + response.todos.length > MAX_AGENT_TODOS
+        )
+          return {
             slice,
-            authoredResponse(
-              context,
-              context.cartridge.story.idleNudgeResponse,
-            ),
-            "idle-nudge",
-          ),
+            summary: `capacity response=${response.id}`,
+          };
+        return {
+          slice: recordAuthoredResponse(slice, response, "idle-nudge"),
           summary: `response=${context.cartridge.story.idleNudgeResponse} instance=idle-nudge`,
         };
       },

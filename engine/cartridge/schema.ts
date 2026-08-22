@@ -1789,7 +1789,7 @@ const REPOSITORY = {
       {
         kind: "record",
         description:
-          "Static hidden commands and explicit overrides. Cartridge records take precedence over runtime builtins with the same name; stdout lines are emitted before stderr lines.",
+          "Static hidden commands and safe explicit overrides. Mechanics-owned commands such as loadbearing are reserved; stdout lines are emitted before stderr lines.",
         keyPattern: COMMAND_NAME_PATTERN,
         keyLabel: "a shell command name",
         values: COMMAND,

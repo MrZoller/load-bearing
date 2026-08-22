@@ -409,6 +409,21 @@ export function validateAgentSlice(
         `${where}.messages: agent message ${JSON.stringify(candidate.id)} has no response instance`,
       );
   }
+  const authoredMessages = messages.filter(
+    (candidate) => candidate.responseId !== null,
+  );
+  for (let index = 0; index < responses.length; index += 1) {
+    const response = responses[index];
+    const authoredMessage = authoredMessages[index];
+    if (
+      response === undefined ||
+      authoredMessage?.id !== `${response.instanceId}/message` ||
+      authoredMessage.responseId !== response.responseId
+    )
+      throw new Error(
+        `${where}.responses: response record order must match agent message order`,
+      );
+  }
   // Return the original after narrowing: snapshot validation must not normalize bytes.
   validateAgentActivity(item["activity"], `${where}.activity`);
   return slice as AgentSlice;
@@ -434,9 +449,7 @@ export function readAgentSlice(state: SessionState): AgentSlice {
 
 /** Derive the one-shot teaching state from replayed responses, never the DOM. */
 export function hasAgentIdleNudged(state: SessionState): boolean {
-  return readAgentSlice(state).responses.some(
-    (response) => response.instanceId === "idle-nudge",
-  );
+  return state.transcript.some((entry) => entry.type === "agent.idle-nudged");
 }
 
 /**
