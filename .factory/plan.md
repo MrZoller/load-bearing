@@ -83,7 +83,7 @@ and runtime model calls are deliberately excluded.
   - acceptance: responsive styles and `runtime/components/mobile-keys.ts` keep transcript, prompt, selectors, and permission controls usable at 390×844 with no page-level horizontal overflow; focused-prompt viewport resizing remains usable with a software keyboard; the labeled `/`, `!`, Tab, and arrow keys feed the same input controller as hardware keys; Playwright covers width, focus, long output, and key behavior (criterion 15; approved decision 4A)
   - deps: T24, T25, T27
   - pr: 52
-- [R] T29 (standard) — Phase 1 deterministic browser acceptance gate
+- [x] T29 (standard) — Phase 1 deterministic browser acceptance gate
   - acceptance: pinned Playwright Chromium replays one complete keyboard-only session covering cold open, TUI input, permission choice, shell passthrough, Bash mutation, resume reaction, model switch, compact, and exit refusal with visible focus; a Node/browser test canonical-serializes the same cartridge/seed/events to byte-identical state and transcript and proves focus, scroll, viewport, reduced motion, and animation frames do not alter the log; CI runs production build, browser interactions at desktop and 390×844, all Phase 0 verification, and a pinned desktop Lighthouse accessibility audit requiring score 100 with no unlabeled controls or keyboard trap (criteria 4, 12, 14, 15, 17; approved decision 4A)
   - deps: T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28
   - pr: 53
@@ -126,6 +126,7 @@ and runtime model calls are deliberately excluded.
 
 - [ ] T30 (trivial) — parked review minors (batch)
   - acceptance: confirmed non-blocking review findings parked during Phase 1 delivery are collected, fixed as one focused batch, and verified by the affected tests and repository gates
+  - PR #53: restore the TUI prompt's accurate `aria-expanded` state while its slash-completion listbox opens and closes, with an accessibility regression test
   - PR #37: update README Status and root AGENTS.md layout/status copy for the Phase 1 browser runtime (walking skeleton renders; runtime/ and content/incidents/ exist)
   - PR #38: reserve or reject authored overrides for mechanics-owned commands whose static output would suppress replayable effects, beginning with `loadbearing --resume`
   - PR #39: cover terminal-renderer invariant/error paths and settle missing-`/etc/motd` behavior with T16's cartridge opening-copy contract
