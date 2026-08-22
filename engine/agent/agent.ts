@@ -346,7 +346,14 @@ export function validateAgentSlice(
         if (
           actual === undefined ||
           actual.title !== expected.title ||
-          actual.input !== expected.input
+          actual.input !== expected.input ||
+          !statusIsReachable(
+            expected.status,
+            actual.status,
+            TOOL_TRANSITIONS,
+          ) ||
+          (actual.status === expected.status &&
+            actual.output !== expected.output)
         )
           throw new Error(
             `${where}.responses: instance ${JSON.stringify(response.instanceId)} has no matching tool call ${JSON.stringify(expected.id)}`,
@@ -361,7 +368,11 @@ export function validateAgentSlice(
         if (
           actual === undefined ||
           actual.text !== expected.text ||
-          actual.status !== expected.status
+          !statusIsReachable(
+            expected.status,
+            actual.status,
+            THINKING_TRANSITIONS,
+          )
         )
           throw new Error(
             `${where}.responses: instance ${JSON.stringify(response.instanceId)} has no matching thinking block ${JSON.stringify(expected.id)}`,
@@ -373,7 +384,11 @@ export function validateAgentSlice(
             candidate.id ===
             instanceArtifactId(response.instanceId, "todo", expected.id),
         );
-        if (actual === undefined || actual.text !== expected.text)
+        if (
+          actual === undefined ||
+          actual.text !== expected.text ||
+          !statusIsReachable(expected.status, actual.status, TODO_TRANSITIONS)
+        )
           throw new Error(
             `${where}.responses: instance ${JSON.stringify(response.instanceId)} has no matching todo ${JSON.stringify(expected.id)}`,
           );
@@ -465,6 +480,27 @@ export function addAgentToolCall(
   });
 }
 
+function statusIsReachable<T extends string>(
+  initial: T,
+  target: T,
+  transitions: Readonly<Record<T, readonly T[]>>,
+): boolean {
+  const visited = new Set<T>([initial]);
+  const pending = [initial];
+  while (pending.length > 0) {
+    const status = pending.pop();
+    if (status === undefined) throw new Error("agent: missing status");
+    if (status === target) return true;
+    for (const next of transitions[status]) {
+      if (!visited.has(next)) {
+        visited.add(next);
+        pending.push(next);
+      }
+    }
+  }
+  return false;
+}
+
 const TOOL_TRANSITIONS: Readonly<
   Record<ToolCallStatus, readonly ToolCallStatus[]>
 > = {
@@ -552,6 +588,13 @@ export function updateAgentThinkingBlock(
   thinkingBlocks[index] = { ...current, status: checkedStatus };
   return deepFreeze({ ...slice, thinkingBlocks });
 }
+
+const THINKING_TRANSITIONS: Readonly<
+  Record<ThinkingBlockStatus, readonly ThinkingBlockStatus[]>
+> = {
+  active: ["complete"],
+  complete: [],
+};
 
 const TODO_TRANSITIONS: Readonly<Record<TodoStatus, readonly TodoStatus[]>> = {
   pending: ["in-progress", "completed", "cancelled"],

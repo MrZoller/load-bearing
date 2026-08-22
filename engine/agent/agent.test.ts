@@ -169,13 +169,13 @@ describe("agent replay state", () => {
 
     for (const [field, property, value, expectation] of [
       ["toolCalls", "title", "tampered artifact", /no matching tool call/],
+      ["toolCalls", "output", "tampered artifact", /no matching tool call/],
       [
         "thinkingBlocks",
         "text",
         "tampered artifact",
         /no matching thinking block/,
       ],
-      ["thinkingBlocks", "status", "complete", /no matching thinking block/],
       ["todos", "text", "tampered artifact", /no matching todo/],
     ] as const) {
       const tampered = deserialize(snapshot(state)) as Record<string, unknown>;
@@ -201,6 +201,17 @@ describe("agent replay state", () => {
         "snapshot: slices.agent",
       ),
     ).toThrow(/unexpected field/);
+  });
+
+  it("restores authored artifacts only at reachable statuses", () => {
+    const state = fold([
+      createAgentResponseEvent("authored", "turn-one"),
+      createAgentToolCallUpdatedEvent("turn-one/tool/read", "running", ""),
+      createAgentToolCallUpdatedEvent("turn-one/tool/read", "succeeded", "ok"),
+      createAgentThinkingUpdatedEvent("turn-one/thinking/private", "complete"),
+      createAgentTodoUpdatedEvent("turn-one/todo/inspect", "completed"),
+    ]);
+    expect(restoreSnapshot(snapshot(state))).toEqual(state);
   });
 
   it("rejects invalid response instance ids before constructing artifacts", () => {

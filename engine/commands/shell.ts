@@ -4,7 +4,11 @@ import { BUILTIN_COMMAND_REGISTRY } from "./builtins.js";
 import { executeCommand } from "./registry.js";
 import { ShellSyntaxError, tokenizeShell } from "./tokenize.js";
 import type { CommandExecution, CommandRegistry } from "./types.js";
-import { describeUnwritableText, LONE_SURROGATE } from "../text.js";
+import {
+  countCodePoints,
+  describeUnwritableText,
+  LONE_SURROGATE,
+} from "../text.js";
 
 /** Leaves room for the fixed suffix on unknown-command stderr. */
 export const MAX_SHELL_INPUT_LENGTH = 4000;
@@ -29,7 +33,7 @@ export function executeShell(
   input: string,
   registry: CommandRegistry = BUILTIN_COMMAND_REGISTRY,
 ): readonly EngineEvent[] {
-  if (input.length > MAX_SHELL_INPUT_LENGTH) {
+  if (countCodePoints(input) > MAX_SHELL_INPUT_LENGTH) {
     return Object.freeze([
       resultEvent({
         stdout: [],
