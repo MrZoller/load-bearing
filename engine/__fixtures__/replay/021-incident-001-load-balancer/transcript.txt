@@ -1,0 +1,45 @@
+0000  2026-08-22T09:14:22.000Z  world.history-append length=1
+0001  2026-08-22T09:14:22.000Z  tests.run exit=1
+      stdout> FAIL health endpoint returns 200 (90ms)
+      stdout> PASS Europe remains attached (110ms)
+      stdout> Tests: 1 passed, 1 failed, 2 total
+      stdout> Time: 200ms
+0002  2026-08-22T09:14:22.200Z  shell.result exit=1
+0003  2026-08-22T09:14:22.200Z  world.history-append length=2
+0004  2026-08-22T09:14:22.200Z  shell.result exit=0
+      stdout> HTTP/1.1 500 Internal Server Error
+      stdout> health_status=500
+0005  2026-08-22T09:14:22.200Z  world.history-append length=3
+0006  2026-08-22T09:14:22.200Z  vfs.delete path="/production/load-balancer/config/routes.conf" removed=1
+0007  2026-08-22T09:14:22.200Z  shell.result exit=0
+0008  2026-08-22T09:14:22.200Z  world.history-append length=4
+0009  2026-08-22T09:14:22.200Z  vfs.copy from="/production/load-balancer/config/routes.200.conf" to="/production/load-balancer/config/routes.conf" copied=1
+0010  2026-08-22T09:14:22.200Z  shell.result exit=0
+0011  2026-08-22T09:14:22.200Z  world.history-append length=5
+0012  2026-08-22T09:14:22.200Z  tests.run exit=1
+      stdout> PASS health endpoint returns 200 (90ms)
+      stdout> FAIL Europe remains attached (110ms)
+      stdout> Tests: 1 passed, 1 failed, 2 total
+      stdout> Time: 200ms
+0013  2026-08-22T09:14:22.400Z  shell.result exit=1
+0014  2026-08-22T09:14:22.400Z  world.history-append length=6
+0015  2026-08-22T09:14:22.400Z  shell.result exit=0
+      stdout> HTTP/1.1 200 OK
+      stdout> health_status=200
+0016  2026-08-22T09:14:22.400Z  world.history-append length=7
+0017  2026-08-22T09:14:22.400Z  vfs.delete path="/production/load-balancer/config/routes.conf" removed=1
+0018  2026-08-22T09:14:22.400Z  shell.result exit=0
+0019  2026-08-22T09:14:22.400Z  world.history-append length=8
+0020  2026-08-22T09:14:22.400Z  vfs.copy from="/production/load-balancer/config/routes.500.conf" to="/production/load-balancer/config/routes.conf" copied=1
+0021  2026-08-22T09:14:22.400Z  shell.result exit=0
+0022  2026-08-22T09:14:22.400Z  world.history-append length=9
+0023  2026-08-22T09:14:22.400Z  tests.run exit=1
+      stdout> FAIL health endpoint returns 200 (90ms)
+      stdout> PASS Europe remains attached (110ms)
+      stdout> Tests: 1 passed, 1 failed, 2 total
+      stdout> Time: 200ms
+0024  2026-08-22T09:14:22.600Z  shell.result exit=1
+0025  2026-08-22T09:14:22.600Z  world.history-append length=10
+0026  2026-08-22T09:14:22.600Z  shell.result exit=0
+      stdout> HTTP/1.1 500 Internal Server Error
+      stdout> health_status=500
