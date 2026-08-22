@@ -317,6 +317,9 @@ export function validateAgentSlice(
       throw new Error(
         `${where}.responses: unknown authored response ${JSON.stringify(response.responseId)}`,
       );
+    const authored = cartridge?.story.responses.find(
+      (candidate) => candidate.id === response.responseId,
+    );
     const authoredMessage = messages.find(
       (candidate) => candidate.id === `${response.instanceId}/message`,
     );
@@ -333,6 +336,45 @@ export function validateAgentSlice(
       throw new Error(
         `${where}.responses: instance ${JSON.stringify(response.instanceId)} has no matching agent message`,
       );
+    if (authored !== undefined) {
+      for (const expected of authored.toolCalls) {
+        const actual = toolCalls.find(
+          (candidate) =>
+            candidate.id ===
+            instanceArtifactId(response.instanceId, "tool", expected.id),
+        );
+        if (
+          actual === undefined ||
+          actual.title !== expected.title ||
+          actual.input !== expected.input
+        )
+          throw new Error(
+            `${where}.responses: instance ${JSON.stringify(response.instanceId)} has no matching tool call ${JSON.stringify(expected.id)}`,
+          );
+      }
+      for (const expected of authored.thinkingBlocks) {
+        const actual = thinkingBlocks.find(
+          (candidate) =>
+            candidate.id ===
+            instanceArtifactId(response.instanceId, "thinking", expected.id),
+        );
+        if (actual === undefined || actual.text !== expected.text)
+          throw new Error(
+            `${where}.responses: instance ${JSON.stringify(response.instanceId)} has no matching thinking block ${JSON.stringify(expected.id)}`,
+          );
+      }
+      for (const expected of authored.todos) {
+        const actual = todos.find(
+          (candidate) =>
+            candidate.id ===
+            instanceArtifactId(response.instanceId, "todo", expected.id),
+        );
+        if (actual === undefined || actual.text !== expected.text)
+          throw new Error(
+            `${where}.responses: instance ${JSON.stringify(response.instanceId)} has no matching todo ${JSON.stringify(expected.id)}`,
+          );
+      }
+    }
   }
   for (const candidate of messages) {
     if (
@@ -574,12 +616,16 @@ export function recordAuthoredResponse(
   response: CartridgeAuthoredResponse,
   instanceId: string,
 ): AgentSlice {
-  if (slice.responses.some((value) => value.instanceId === instanceId))
+  const checkedInstanceId = validateAgentId(
+    instanceId,
+    "agent: recorded response instance id",
+  );
+  if (slice.responses.some((value) => value.instanceId === checkedInstanceId))
     throw new Error(
-      `agent: duplicate response instance ${JSON.stringify(instanceId)}`,
+      `agent: duplicate response instance ${JSON.stringify(checkedInstanceId)}`,
     );
   let next = addAgentMessage(slice, {
-    id: instanceArtifactId(instanceId, "message"),
+    id: instanceArtifactId(checkedInstanceId, "message"),
     role: "agent",
     text: response.text,
     responseId: response.id,
@@ -587,23 +633,23 @@ export function recordAuthoredResponse(
   for (const item of response.toolCalls)
     next = addAgentToolCall(next, {
       ...item,
-      id: instanceArtifactId(instanceId, "tool", item.id),
+      id: instanceArtifactId(checkedInstanceId, "tool", item.id),
     });
   for (const item of response.thinkingBlocks)
     next = addAgentThinkingBlock(next, {
       ...item,
-      id: instanceArtifactId(instanceId, "thinking", item.id),
+      id: instanceArtifactId(checkedInstanceId, "thinking", item.id),
     });
   for (const item of response.todos)
     next = addAgentTodo(next, {
       ...item,
-      id: instanceArtifactId(instanceId, "todo", item.id),
+      id: instanceArtifactId(checkedInstanceId, "todo", item.id),
     });
   return deepFreeze({
     ...next,
     responses: append(
       next.responses,
-      { instanceId, responseId: response.id },
+      { instanceId: checkedInstanceId, responseId: response.id },
       MAX_AGENT_RESPONSES,
       "response",
     ),

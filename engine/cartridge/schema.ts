@@ -1232,7 +1232,7 @@ const AGENT_ACTION = {
           description: "The action kind.",
           values: ["shell-execute"],
         }),
-        input: required({ ...BOUNDED_TEXT, maxLength: 4096 }),
+        input: required({ ...BOUNDED_TEXT, maxLength: 4000 }),
       },
     },
   },

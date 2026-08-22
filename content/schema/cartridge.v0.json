@@ -1587,7 +1587,7 @@
                     "properties": {
                       "input": {
                         "description": "Bounded authored text.",
-                        "maxLength": 4096,
+                        "maxLength": 4000,
                         "type": "string"
                       },
                       "kind": {
@@ -1645,7 +1645,7 @@
                       "properties": {
                         "input": {
                           "description": "Bounded authored text.",
-                          "maxLength": 4096,
+                          "maxLength": 4000,
                           "type": "string"
                         },
                         "kind": {

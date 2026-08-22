@@ -9,6 +9,7 @@ import {
   MAX_AGENT_MESSAGES,
   MAX_AGENT_TEXT_LENGTH,
   readAgentSlice,
+  recordAuthoredResponse,
   validateAgentSlice,
 } from "./agent.js";
 import {
@@ -166,6 +167,20 @@ describe("agent replay state", () => {
       /no matching agent message/,
     );
 
+    for (const [field, property, expectation] of [
+      ["toolCalls", "title", /no matching tool call/],
+      ["thinkingBlocks", "text", /no matching thinking block/],
+      ["todos", "text", /no matching todo/],
+    ] as const) {
+      const tampered = deserialize(snapshot(state)) as Record<string, unknown>;
+      const tamperedSlices = tampered["slices"] as Record<string, unknown>;
+      const tamperedAgent = tamperedSlices["agent"] as Record<string, unknown>;
+      const artifact = (tamperedAgent[field] as Record<string, unknown>[])[0];
+      if (artifact === undefined) throw new Error(`missing ${field}`);
+      artifact[property] = "tampered artifact";
+      expect(() => restoreSnapshot(serialize(tampered))).toThrow(expectation);
+    }
+
     expect(() =>
       validateAgentSlice(
         {
@@ -180,6 +195,14 @@ describe("agent replay state", () => {
         "snapshot: slices.agent",
       ),
     ).toThrow(/unexpected field/);
+  });
+
+  it("rejects invalid response instance ids before constructing artifacts", () => {
+    const response = CARTRIDGE.story.responses[0];
+    if (response === undefined) throw new Error("missing authored response");
+    expect(() =>
+      recordAuthoredResponse(readAgentSlice(fold([])), response, "foo/bar"),
+    ).toThrow(/recorded response instance id/);
   });
 
   it("rejects hostile arrays before an accessor can run", () => {
