@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T20",
-  "branch": "factory/t20-replayable-artifacts",
-  "pr": 44,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-22T10:12:00Z"
+  "updated": "2026-08-22T10:13:01Z"
 }
