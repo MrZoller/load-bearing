@@ -4,9 +4,10 @@ A daily interactive comedy presented as a polished browser-based coding
 environment: visitors investigate a fictional production incident inside a
 coding-agent TUI where everything is load-bearing and the agent deteriorates.
 The terminal is real; the computer is lying. The product is deterministic —
-`state = reduce(cartridge, seed, eventLog)` — and today (Phase 0) is a
-**headless simulation engine with no UI at all**: pure TypeScript, zero DOM,
-zero runtime dependencies, runs identically in Node and the browser.
+`state = reduce(cartridge, seed, eventLog)` — and today Phase 1 is building a
+browser terminal over the completed headless engine. The engine remains pure
+TypeScript with zero DOM/runtime dependencies and runs identically in Node and
+the browser; DOM mechanics live under `runtime/`.
 
 Read before working: `CLAUDE.md` (the invariants and working agreements —
 authoritative, do not edit casually), `ROADMAP.md` (phase order + definitions
@@ -21,7 +22,7 @@ All verified on Node 22+/npm 11 (`npm run verify`, green on this machine):
 - setup: `npm install && npx playwright install chromium` (CI uses `npm ci`
   and installs Chromium with its system dependencies; `package-lock.json` is
   committed)
-- test: `npm test` — Vitest, unit + golden replay suite (336 tests)
+- test: `npm test` — Vitest unit + golden replay suite
 - test both host timezones: `npm run test:timezones` (CI runs this: UTC then
   Asia/Tokyo — the engine must not read a host timezone)
 - typecheck: `npm run typecheck` — `tsc --noEmit` on the **whole repo** *and*
@@ -68,6 +69,8 @@ Commands I read but did **not** run (all write to the tree): `fixtures:update`,
   - `cartridge/` — the cartridge spec: descriptor-tree schema (`schema.ts`),
     the published JSON Schema emitter (`jsonSchema.ts`), the validate +
     normalize loader (`load.ts`), the loaded types (`types.ts`).
+  - `agent/` — bounded replayable messages, authored response instances, tool
+    calls, thinking blocks, todos, and activity.
   - `serialize/canonical.ts` — the canonical serializer; byte-identity for
     fixtures. Rejects anything that can't round-trip deterministically.
   - `testing/` — the determinism harness: `replay.ts` (pure) + `fixtures.ts`
@@ -76,9 +79,11 @@ Commands I read but did **not** run (all write to the tree): `fixtures:update`,
   - `pattern.ts` — immutable regex wrappers (freezing a `RegExp` doesn't stop
     `compile`; a closure does).
   - `version.ts` — `ENGINE_VERSION`; recorded into fixture state.
+- `runtime/` — browser session, cold-open transcript, and Bash/TUI views. It
+  renders engine state and owns DOM-only focus/presentation behavior.
 - `content/schema/cartridge.v0.json` — the published, committed cartridge
   schema, emitted from `engine/cartridge/schema.ts`. `schema.test.ts` fails if
-  it drifts. This is the only file under `content/` that exists yet.
+  it drifts. `content/incidents/phase-1-demo.json` is the non-#001 browser demo.
 - `docs/` — `DESIGN.md` (comedy bible), `ARCHITECTURE.md` (engine/cartridge/
   pipeline), and now `codebase-map.md` (this architecture map).
 - `scripts/` — `gate-purity.mjs` (the gate + its own test suite
@@ -86,8 +91,7 @@ Commands I read but did **not** run (all write to the tree): `fixtures:update`,
   `update-schema.ts`.
 - `.github/workflows/ci.yml` — CI gate: typecheck → format → purity → tests in
   two timezones. Reads `.nvmrc`, not a pinned version.
-- Not yet present (future phases): `runtime/`, `pipeline/`,
-  `content/incidents/`, `content/lore/`.
+- Not yet present (future phases): `pipeline/` and `content/lore/`.
 
 ## Conventions
 
@@ -135,12 +139,8 @@ questions); agents load the `factory-protocol` skill before factory work.
 
 ## Gotchas
 
-- **`engine/session.ts` is PROVISIONAL.** The `replaySession` body,
-  `SessionState`, and the `EngineEvent` vocabulary are scaffolding to prove
-  the replay loop, replaced by a real event registry in issue #4. That
-  *designed* change invalidates every fixture's recorded artifacts — re-record
-  and justify, per the contract. Do not build new subsystems on the current
-  event vocabulary as if it were stable.
+- **`engine/session.ts` is a compatibility facade.** Subsystem mechanics and
+  event vocabulary belong in registered modules, not a central switch.
 - **The purity gate bans `async`/`await`/`Promise`, `**` and `**=`, `process`
   (the whole identifier — name simulated process locals `proc`/`entry`/`row`,
   not `process`), `Date`, `Math.random`, `eval`, `Proxy`, `globalThis`,
@@ -165,10 +165,9 @@ questions); agents load the `factory-protocol` skill before factory work.
   the loaded cartridge and two spellings of one instant would produce
   different `state.json` bytes.
 - **Strict everywhere:** unknown cartridge fields are rejected (not ignored);
-  `story`/`presentation` are declared-but-not-validated in v0 (deferred on
-  purpose, owner named in the schema); repository Git, process, service, log,
-  and test interiors are concrete and validated. Deferred subtrees cap at 64
-  levels of nesting.
+  Phase 1 `story`/`presentation` shells and repository interiors are concrete
+  and bounded. Only the explicitly named `phase2` interiors remain deferred,
+  with a 64-level nesting cap and future owner in the schema.
 - **No lint tooling.** There is no ESLint. The closest to lint is the
   `tsc --noEmit` stage of typecheck plus the purity gate. `docs/` prose is
   hand-formatted and prettier-skipped — don't let Prettier churn it.
