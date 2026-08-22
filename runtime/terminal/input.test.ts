@@ -26,6 +26,10 @@ class FakeInput {
   value = "";
   selectionStart: number | null = 0;
   selectionEnd: number | null = 0;
+  selectedDocumentText = "";
+  readonly ownerDocument = {
+    getSelection: () => ({ toString: () => this.selectedDocumentText }),
+  };
   private readonly listeners = new Map<string, Listener>();
 
   addEventListener(type: string, listener: Listener): void {
@@ -123,6 +127,15 @@ describe("createTerminalInputController", () => {
     ).toBe(false);
 
     tui.input.setSelectionRange(8, 8);
+    tui.input.selectedDocumentText = "transcript selection";
+    const transcriptCopy = tui.input.dispatch(
+      "keydown",
+      new FakeEvent("c", true),
+    );
+    expect(transcriptCopy.defaultPrevented).toBe(false);
+    expect(tui.input.value).toBe("selected");
+
+    tui.input.selectedDocumentText = "";
     const cancel = tui.input.dispatch("keydown", new FakeEvent("c", true));
     expect(cancel.defaultPrevented).toBe(true);
     expect(tui.input.value).toBe("");

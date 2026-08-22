@@ -34,11 +34,13 @@ export interface TerminalInputControllerOptions {
 }
 
 function hasSelection(input: HTMLInputElement): boolean {
-  return (
+  const hasInputSelection =
     input.selectionStart !== null &&
     input.selectionEnd !== null &&
-    input.selectionStart !== input.selectionEnd
-  );
+    input.selectionStart !== input.selectionEnd;
+  const hasDocumentSelection =
+    (input.ownerDocument?.getSelection()?.toString().length ?? 0) > 0;
+  return hasInputSelection || hasDocumentSelection;
 }
 
 function replaceInput(

@@ -106,17 +106,44 @@ test("preserves scrolled-up reading position until new output is acknowledged, t
   await addShellLines(prompt, 40, "anchor");
 
   await transcript.evaluate((element) => {
-    element.scrollTop = 0;
+    element.scrollTop = (element.scrollHeight - element.clientHeight) / 2;
   });
   await expect
     .poll(() => transcript.evaluate((element) => element.scrollTop))
-    .toBe(0);
+    .toBeGreaterThan(0);
+  const readingAnchor = await transcript.evaluate((element) => {
+    const viewportTop = element.getBoundingClientRect().top;
+    const child = Array.from(element.children).find(
+      (entry) => entry.getBoundingClientRect().bottom >= viewportTop,
+    );
+    if (!(child instanceof HTMLElement)) return null;
+    return {
+      key: child.dataset["transcriptKey"],
+      offset: child.getBoundingClientRect().top - viewportTop,
+    };
+  });
+  expect(readingAnchor?.key).toBeDefined();
 
   await prompt.fill("!pwd while-reading");
   await prompt.press("Enter");
   await expect
-    .poll(() => transcript.evaluate((element) => element.scrollTop))
-    .toBe(0);
+    .poll(() =>
+      transcript.evaluate((element, expected) => {
+        const anchor = Array.from(element.children).find(
+          (entry) =>
+            entry instanceof HTMLElement &&
+            entry.dataset["transcriptKey"] === expected?.key,
+        );
+        if (!(anchor instanceof HTMLElement) || expected === null) return null;
+        return {
+          key: anchor.dataset["transcriptKey"],
+          offset:
+            anchor.getBoundingClientRect().top -
+            element.getBoundingClientRect().top,
+        };
+      }, readingAnchor),
+    )
+    .toEqual(readingAnchor);
   await expect(newOutput).toBeVisible();
 
   await newOutput.press("Enter");
