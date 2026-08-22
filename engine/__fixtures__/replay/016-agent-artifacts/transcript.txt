@@ -1,0 +1,8 @@
+0000  2026-08-05T09:14:22.000Z  agent.message-added message=visitor-one
+0001  2026-08-05T09:14:22.000Z  agent.response-recorded response=fixture-response instance=turn-one
+0002  2026-08-05T09:14:22.000Z  agent.tool-call-updated tool=turn-one/tool/read status=running
+0003  2026-08-05T09:14:22.000Z  agent.tool-call-updated tool=turn-one/tool/read status=succeeded
+0004  2026-08-05T09:14:22.000Z  agent.thinking-updated thinking=turn-one/thinking/reason status=complete
+0005  2026-08-05T09:14:22.000Z  agent.todo-updated todo=turn-one/todo/inspect status=in-progress
+0006  2026-08-05T09:14:22.000Z  agent.todo-updated todo=turn-one/todo/inspect status=completed
+0007  2026-08-05T09:14:22.000Z  agent.activity-set activity=working

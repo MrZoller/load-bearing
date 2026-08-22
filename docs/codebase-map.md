@@ -5,10 +5,10 @@ The deep map of the repository, for a day-one agent or engineer. Companion to
 this document is *what exists today*, as opposed to what is designed.
 `CLAUDE.md` and `AGENTS.md` carry the invariants and verified commands.
 
-Status: **Phase 0 — headless state engine.** The determinism substrate,
-event registry, cartridge validation, VFS, Git model, environmental world
-state, command sets, test runner, cartridge reactions, and agent mind state are
-built; natural-language intent remains. See
+Status: **Phase 1 — browser terminal in progress.** The Phase 0 engine is
+complete; the browser runtime, two terminal modes, bounded agent artifact state,
+and concrete Phase 1 cartridge shell now exist. Natural-language dispatch and
+the remaining interaction slices are still in progress. See
 [Implementation status vs Phase 0](#implementation-status-vs-phase-0).
 
 ---
@@ -57,6 +57,7 @@ compared byte-for-byte against committed golden fixtures.
 │   ├── tests/                   authored predicates, runner plan + event module
 │   ├── mind/                    permission ledger + typed belief divergence
 │   ├── terminal/                replayable mode/model slice + named streams
+│   ├── agent/                   replayable messages/responses/TUI artifacts
 │   ├── reactions.ts             predicates + owner-event action planning
 │   ├── cartridge/
 │   │   ├── schema.ts           descriptor-tree schema (the single authority)
@@ -70,17 +71,18 @@ compared byte-for-byte against committed golden fixtures.
 │   │   ├── diff.ts, text.ts    diff + writable-text validation
 │   │   └── README.md           source of truth for fixtures + the gate
 │   └── __fixtures__/
-│       ├── replay/{001-012}/      fixture.json + state.json + transcript.txt
+│       ├── replay/{001-016}/      fixture.json + state.json + transcript.txt
 │       └── cartridges/            focused worlds + invalid/*.json
 ├── content/schema/cartridge.v0.json  published schema (emitted, contract)
 ├── scripts/
 │   ├── gate-purity.mjs         the purity gate (+ gate-purity.test.mjs)
 │   ├── update-fixtures.ts      npm run fixtures:update  (writes)
 │   └── update-schema.ts        npm run schema:update    (writes)
+├── runtime/                    browser session, Bash/TUI views, DOM renderer
+├── content/incidents/          Phase 1 demonstration cartridge
 ├── docs/                       DESIGN.md (comedy), ARCHITECTURE.md (design)
 ├── .github/workflows/ci.yml    the CI gate
-└── runtime/  pipeline/  content/incidents/  content/lore/
-        ↑ none exist yet — future phases (1, 5, 2…)
+└── pipeline/  content/lore/    future phases
 ```
 
 ---
@@ -102,7 +104,9 @@ compared byte-for-byte against committed golden fixtures.
 | `GitSlice` / `VfsSlice` / `WorldSlice` | `engine/git/types.ts`, `engine/vfs/types.ts`, `engine/world/types.ts` | Canonical plain-JSON machine state owned by each event module. |
 | `MindSlice` / `Belief` / `ExactCapability` | `engine/mind/types.ts` | Timestamped permission history and the agent's typed, separately serialized model of machine truth. |
 | `TerminalSlice` / `TerminalMode` | `engine/terminal/types.ts` | Replayable Bash/TUI mode and active cartridge model; model changes retain the root seed. |
-| `DeferredObject` | `engine/cartridge/types.ts` | A subtree v0 validates as "an object" but doesn't look inside (`story` and `presentation`). |
+| `AgentSlice` / `AuthoredResponseRecord` | `engine/agent/types.ts` | Bounded replayable messages, artifacts, activity, and cartridge response instances. |
+| `CartridgeStory` / `CartridgePresentation` | `engine/cartridge/types.ts` | Concrete bounded Phase 1 content shells; only each named `phase2` interior is deferred. |
+| `DeferredObject` | `engine/cartridge/types.ts` | Plain JSON carried only inside the explicit Phase 2 interiors. |
 | `SimulatedClock` / `ClockState` | `engine/clock/clock.ts` | `now() = startMs + elapsedMs`. Advances only via events. |
 | `CivilTime` / `CivilInput` | `engine/clock/civil.ts` | UTC calendar fields; hand-computed (no `Date`/`Intl`). |
 | `RandomStream` / `RandomState` | `engine/random/stream.ts` | A named mulberry32 stream in the shared registry. `fork(label)` derives a child from seed+path, not position. |
@@ -230,6 +234,12 @@ whole assertion set while appending timestamped summary history.
 closed VFS/Git/service truth queries, so authored wrongness is explicit and no
 generic deep-diff contract leaks into later phases.
 
+The `agent` slice owns visible dialogue artifacts but no presentation state.
+`agent.response-recorded` resolves one validated cartridge response and derives
+message/tool/thinking/todo ids from a stable instance id. Tool, thinking, and
+todo updates enforce closed forward transitions; snapshot restore revalidates
+all bounds, identities, response references, and exact plain-JSON shapes.
+
 ---
 
 ## The purity gate (`scripts/gate-purity.mjs`)
@@ -315,10 +325,9 @@ Phase 0 DoD (from `ROADMAP.md`), mapped to what exists:
 **Explicitly not in this phase** (per ROADMAP) — all correct to be absent:
 any rendering, any comedy writing, any real model calls.
 
-**What Phase 0 scope has NOT yet been built** (the gap a day-one agent will
-feel): the natural-language intent layer, escalation stage, metrics, and the
-Phase 1 todo/thinking-block surfaces. All are designed in
-`docs/ARCHITECTURE.md` and land behind later issues.
+**Current Phase 1 gaps:** natural-language dispatch, escalation, derived metrics,
+and runtime rendering/interaction for the replayable artifacts. Their state and
+cartridge foundations now exist; later Phase 1 tasks connect the browser surface.
 
 ---
 
@@ -331,9 +340,9 @@ Phase 1 todo/thinking-block surfaces. All are designed in
    adding a world concept means adding a descriptor node here; the published
    schema and the loader follow automatically (three-way agreement: validator /
    emitted JSON Schema / hand-written types, one source of truth). Deferred
-   sections name who tightens them and when: `story`/`presentation` (Phase 2
-   shapes, Phase 4 hardens). Processes, services, logs, tickets, env, man pages,
-   history, tests, and reactions are concrete and validated.
+   Phase 1 `story`/`presentation` shells are concrete; only their `phase2`
+   interiors name who tightens them and when. Processes, services, logs,
+   tickets, env, man pages, history, tests, and reactions are concrete too.
 3. **New golden fixtures** — every Phase 0 subsystem PR adds at least one
    (`engine/__fixtures__/replay/NNN-…/`). A subsystem with unit tests and no
    fixture is tested against its own idea of correct.
@@ -359,9 +368,9 @@ Phase 1 todo/thinking-block surfaces. All are designed in
 - **Node built-ins**: used only in `scripts/*` and the allowlisted
   `engine/testing/fixtures.ts` (`node:fs`, `node:path`, `node:url`).
 - **CI**: GitHub Actions (`.github/workflows/ci.yml`), Node 22 from `.nvmrc`.
-- **The browser is a *target*, not a dependency**: the engine must run there
-  (Phase 1 UI + Phase 5 playtesters) but nothing in the repo touches a DOM
-  today.
+- **The browser runtime is separate from the engine**: `runtime/` uses the DOM,
+  while the independently compiled engine remains DOM-free for browser replay
+  and future Phase 5 playtesters.
 
 ---
 
@@ -379,8 +388,8 @@ Phase 1 todo/thinking-block surfaces. All are designed in
 - **No logging.** The engine has no `console`/`URL`/`TextEncoder`/`TextDecoder`
   types and (mostly) no way to debug-print. Debugging is via fixtures and
   unit tests.
-- **`content/` is nearly empty** — just the emitted schema. `content/incidents/`
-  (the real cartridges, Phase 2) and `content/lore/` (Phase 2+) don't exist.
+- **`content/incidents/phase-1-demo.json` is demonstration content**, not
+  Incident #001. `content/lore/` remains a later-phase surface.
 - **`.github/PULL_REQUEST_TEMPLATE.md`** requires a `## Verification` section
   with runnable commands and asks for fixture-change justification — the PR
   body is part of the contract.

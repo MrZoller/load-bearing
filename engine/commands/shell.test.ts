@@ -119,6 +119,14 @@ describe("shell execution", () => {
       ],
       exitCode: 2,
     });
+    expect(
+      shellResult(fold("🧱".repeat(MAX_SHELL_INPUT_LENGTH))),
+    ).toMatchObject({ exitCode: 127 });
+    expect(
+      shellResult(fold("🧱".repeat(MAX_SHELL_INPUT_LENGTH + 1))),
+    ).toMatchObject({
+      exitCode: 2,
+    });
   });
 
   it.each(["echo bad\u0000input", "echo \ud800"])(

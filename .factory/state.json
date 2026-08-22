@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T15",
-  "branch": "factory/t15-cold-open-terminal",
+  "current_task": "T16",
+  "branch": "factory/t16-agent-cartridge-contract",
   "pr": null,
   "hold": false,
-  "updated": "2026-08-22T04:01:11Z"
+  "updated": "2026-08-22T04:24:08Z"
 }

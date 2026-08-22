@@ -75,5 +75,37 @@
       "description": "Thorough. Expensive. Excavation permit required.",
       "costMultiplier": 48000
     }
-  ]
+  ],
+  "story": {
+    "opening": { "login": ["Fixture login."], "response": "fixture-response" },
+    "responses": [{ "id": "fixture-response", "text": "Fixture response." }],
+    "intents": [
+      {
+        "id": "fixture-intent",
+        "patterns": ["inspect"],
+        "response": "fixture-response"
+      }
+    ],
+    "fallback": { "response": "fixture-response" },
+    "helpResponse": "fixture-response",
+    "compactResponse": "fixture-response",
+    "resume": {
+      "unchangedResponse": "fixture-response",
+      "changedResponse": "fixture-response"
+    }
+  },
+  "presentation": {
+    "placeholders": [{ "stage": 0, "text": "inspect" }],
+    "spinnerPools": [
+      { "archetype": "paranoid", "stage": 0, "verbs": ["Inspecting"] }
+    ],
+    "metrics": {
+      "baseTokens": 0,
+      "tokensPerEvent": 1,
+      "contextWindowTokens": 1000,
+      "costMicrosPerToken": 1,
+      "integrityStart": 100,
+      "integrityLossPerEvent": 1
+    }
+  }
 }

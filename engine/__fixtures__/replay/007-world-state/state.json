@@ -18,7 +18,32 @@
         "quirks": []
       }
     ],
-    "presentation": {},
+    "presentation": {
+      "metrics": {
+        "baseTokens": 0,
+        "contextWindowTokens": 1000,
+        "costMicrosPerToken": 1,
+        "integrityLossPerEvent": 1,
+        "integrityStart": 100,
+        "tokensPerEvent": 1
+      },
+      "phase2": {},
+      "placeholders": [
+        {
+          "stage": 0,
+          "text": "inspect"
+        }
+      ],
+      "spinnerPools": [
+        {
+          "archetype": "paranoid",
+          "stage": 0,
+          "verbs": [
+            "Inspecting"
+          ]
+        }
+      ]
+    },
     "repository": {
       "commands": {},
       "cwd": "/production/service",
@@ -216,7 +241,44 @@
         }
       ]
     },
-    "story": {}
+    "story": {
+      "compactResponse": "fixture-response",
+      "fallback": {
+        "actions": [],
+        "response": "fixture-response"
+      },
+      "helpResponse": "fixture-response",
+      "intents": [
+        {
+          "actions": [],
+          "id": "fixture-intent",
+          "patterns": [
+            "inspect"
+          ],
+          "response": "fixture-response"
+        }
+      ],
+      "opening": {
+        "login": [
+          "Fixture login."
+        ],
+        "response": "fixture-response"
+      },
+      "phase2": {},
+      "responses": [
+        {
+          "id": "fixture-response",
+          "text": "Fixture response.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        }
+      ],
+      "resume": {
+        "changedResponse": "fixture-response",
+        "unchangedResponse": "fixture-response"
+      }
+    }
   },
   "clock": {
     "elapsedMs": 0,
@@ -234,6 +296,17 @@
   },
   "seed": "2026-08-05/7/deep-foundation",
   "slices": {
+    "agent": {
+      "activity": {
+        "status": "idle",
+        "verb": ""
+      },
+      "messages": [],
+      "responses": [],
+      "thinkingBlocks": [],
+      "todos": [],
+      "toolCalls": []
+    },
     "git": {
       "branches": {},
       "commits": {},

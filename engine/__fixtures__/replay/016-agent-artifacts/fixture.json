@@ -1,0 +1,56 @@
+{
+  "name": "016-agent-artifacts",
+  "description": "Authored responses instantiate stable messages, tool calls, thinking blocks and todos, whose semantic updates survive replay.",
+  "seed": "2026-08-21/16/deep-foundation",
+  "cartridge": "minimal",
+  "events": [
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "visitor-one", "text": "Inspect the fixture." },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": { "responseId": "fixture-response", "instanceId": "turn-one" },
+      "version": 0
+    },
+    {
+      "type": "agent.tool-call-updated",
+      "payload": {
+        "id": "turn-one/tool/read",
+        "status": "running",
+        "output": ""
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.tool-call-updated",
+      "payload": {
+        "id": "turn-one/tool/read",
+        "status": "succeeded",
+        "output": "# service"
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.thinking-updated",
+      "payload": { "id": "turn-one/thinking/reason", "status": "complete" },
+      "version": 0
+    },
+    {
+      "type": "agent.todo-updated",
+      "payload": { "id": "turn-one/todo/inspect", "status": "in-progress" },
+      "version": 0
+    },
+    {
+      "type": "agent.todo-updated",
+      "payload": { "id": "turn-one/todo/inspect", "status": "completed" },
+      "version": 0
+    },
+    {
+      "type": "agent.activity-set",
+      "payload": { "activity": { "status": "working", "verb": "Surveying" } },
+      "version": 0
+    }
+  ]
+}

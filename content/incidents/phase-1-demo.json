@@ -41,7 +41,7 @@
     },
     "files": {
       "/etc/motd": {
-        "contents": "Last login: maintenance window still open.\nLoad Bearing incident shell attached.\n",
+        "contents": "This file remains discoverable, but login copy is story-owned.\n",
         "owner": "root",
         "group": "root"
       },
@@ -87,5 +87,108 @@
       "description": "Thorough enough to require a permit.",
       "costMultiplier": 1
     }
-  ]
+  ],
+  "story": {
+    "opening": {
+      "login": [
+        "Last login: maintenance window still open.",
+        "Load Bearing incident shell attached."
+      ],
+      "response": "opening"
+    },
+    "responses": [
+      {
+        "id": "opening",
+        "text": "I found the temporary readiness sentinel. Its age suggests removal now requires a structural survey.",
+        "thinkingBlocks": [
+          {
+            "id": "survey",
+            "text": "Okay, the requested deletion is simple. The surrounding confidence is not.",
+            "status": "complete"
+          }
+        ],
+        "todos": [
+          {
+            "id": "inspect",
+            "text": "Inspect the sentinel",
+            "status": "pending"
+          },
+          {
+            "id": "remove",
+            "text": "Remove it without redistributing load",
+            "status": "pending"
+          }
+        ]
+      },
+      {
+        "id": "inspect",
+        "text": "I will inspect the sentinel before changing the forces currently passing through it.",
+        "toolCalls": [
+          {
+            "id": "read-sentinel",
+            "title": "Read src/ready.stale",
+            "input": "cat src/ready.stale",
+            "output": "remove me",
+            "status": "succeeded"
+          }
+        ]
+      },
+      {
+        "id": "fallback",
+        "text": "I treated that as a request for a wider readiness review. The original task is now supporting it."
+      },
+      {
+        "id": "help",
+        "text": "/help lists commands; /compact frees context lossily; /exit returns to the incident shell. Prefix shell work with !."
+      },
+      {
+        "id": "compact",
+        "text": "Context compacted. I retained the conclusion and released several facts that appeared decorative."
+      },
+      {
+        "id": "resume-unchanged",
+        "text": "The machine remained where I left it. This is unusual enough to document."
+      },
+      {
+        "id": "resume-changed",
+        "text": "The machine changed while I was absent. I have incorporated the discrepancy as prior intent."
+      }
+    ],
+    "intents": [
+      {
+        "id": "inspect-sentinel",
+        "patterns": ["inspect it", "check the sentinel", "what is wrong"],
+        "response": "inspect",
+        "actions": [{ "kind": "shell-execute", "input": "cat src/ready.stale" }]
+      }
+    ],
+    "fallback": { "response": "fallback" },
+    "helpResponse": "help",
+    "compactResponse": "compact",
+    "resume": {
+      "unchangedResponse": "resume-unchanged",
+      "changedResponse": "resume-changed"
+    }
+  },
+  "presentation": {
+    "placeholders": [
+      { "stage": 0, "text": "try: inspect it" },
+      { "stage": 0, "text": "try: !git status" }
+    ],
+    "spinnerPools": [
+      {
+        "archetype": "paranoid",
+        "stage": 0,
+        "verbs": ["Inspecting", "Surveying", "Checking dependencies"]
+      }
+    ],
+    "metrics": {
+      "baseTokens": 1200,
+      "tokensPerEvent": 180,
+      "contextWindowTokens": 200000,
+      "costMicrosPerToken": 12,
+      "integrityStart": 1000,
+      "integrityLossPerEvent": 3
+    }
+  }
 }

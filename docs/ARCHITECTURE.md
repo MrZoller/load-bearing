@@ -289,8 +289,12 @@ The agent's mind is engine state, distinct from machine truth:
   correct, and appends the timestamped summary to history. Divergence is
   returned in belief order through typed VFS, Git, and service truth lookups,
   never arbitrary object diffing, and can gate escalation and endings.
-- **Thinking blocks and todo items** are ordinary events — replayable,
-  testable, and lintable like any authored response
+- **Agent transcript artifacts:** `engine/agent/` owns bounded messages, authored
+  response instances, tool calls, thinking blocks, todos, and working activity.
+  Response events carry only a cartridge response id plus stable instance id;
+  the engine deterministically instantiates the authored artifacts and applies
+  semantic status transitions. Disclosure, focus, and animation are runtime-only
+  presentation state and never enter replay state.
 
 ---
 
@@ -383,19 +387,22 @@ Three things worth noting, because each is a decision rather than a detail:
   this safe: a later version that adds fields declares itself rather than
   relying on old engines to shrug.
 
-`story`, `presentation`, and the interiors of `tests` are **declared but not
-validated** in v0. `gitHistory` and the world surfaces (`processes`, `services`,
-`logs`, env, man pages, history, and `tickets`) are concrete and
-coherence-validated. Each remaining deferred section is marked in the emitted
-schema with the issue or phase that tightens it, so the gap reads as a decision
-rather than as something forgotten.
+The Phase 1 portions of `story` and `presentation` are concrete and bounded in
+v0: opening copy, authored response records and artifacts, minimal intents and
+fallback, help/compact/resume references, placeholders, archetype-stage spinner
+pools, and integer metric parameters. Cartridge actions are a closed
+`shell-execute` union rather than arbitrary engine events. Loading rejects
+duplicate/dangling response and intent identities, duplicate spinner keys, and
+missing stage-0 pools for model archetypes. Each section has an explicit
+`phase2` interior that remains deferred, depth-limited, and marked in the emitted
+schema with its future owner.
 
 **Cartridge owns:** world (scene, repo, files with ownership metadata, git,
-processes, services, logs, env, man pages, shell history), models (names, archetypes, multipliers, quirks), story (premise,
-reveals, consequences, callbacks, rare events, endings), presentation
-(status curves, share lines, spinner verb pools by archetype × stage —
-PRNG-drawn for replay determinism, with runtime defaults — preview copy,
-UI disturbances, countdown metadata).
+processes, services, logs, env, man pages, shell history), models (names,
+archetypes, multipliers, quirks), authored responses/actions and Phase 1 teaching
+copy, spinner pools and metric parameters. Phase 2 adds the shared story graph,
+reveals, callbacks, endings, status curves, sharing copy, and disturbances inside
+the explicitly deferred interiors.
 
 **Runtime owns:** rendering, parsing, state transitions, animation, search,
 keyboard and mobile behavior, accessibility, replay, archive navigation, and

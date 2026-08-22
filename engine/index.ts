@@ -281,6 +281,60 @@ export {
 export type { TerminalMode, TerminalSlice } from "./terminal/types.js";
 export { TERMINAL_COMMANDS } from "./commands/terminal.js";
 
+export {
+  AGENT_MODULE,
+  createAgentActivityEvent,
+  createAgentMessageEvent,
+  createAgentResponseEvent,
+  createAgentThinkingAddedEvent,
+  createAgentThinkingUpdatedEvent,
+  createAgentTodoAddedEvent,
+  createAgentTodoUpdatedEvent,
+  createAgentToolCallAddedEvent,
+  createAgentToolCallUpdatedEvent,
+} from "./agent/module.js";
+export {
+  MAX_AGENT_ACTIVITY_VERB_LENGTH,
+  MAX_AGENT_ID_LENGTH,
+  MAX_AGENT_MESSAGES,
+  MAX_AGENT_RESPONSES,
+  MAX_AGENT_TEXT_LENGTH,
+  MAX_AGENT_THINKING_BLOCKS,
+  MAX_AGENT_TITLE_LENGTH,
+  MAX_AGENT_TODOS,
+  MAX_AGENT_TOOL_CALLS,
+  addAgentMessage,
+  addAgentThinkingBlock,
+  addAgentTodo,
+  addAgentToolCall,
+  createAgentSlice,
+  readAgentSlice,
+  recordAuthoredResponse,
+  setAgentActivity,
+  updateAgentThinkingBlock,
+  updateAgentTodo,
+  updateAgentToolCall,
+  validateAgentActivity,
+  validateAgentId,
+  validateAgentSlice,
+  validateAgentThinkingBlock,
+  validateAgentTodo,
+  validateAgentToolCall,
+} from "./agent/agent.js";
+export type {
+  AgentActivity,
+  AgentMessage,
+  AgentMessageRole,
+  AgentSlice,
+  AgentThinkingBlock,
+  AgentTodo,
+  AgentToolCall,
+  AuthoredResponseRecord,
+  ThinkingBlockStatus,
+  TodoStatus,
+  ToolCallStatus,
+} from "./agent/types.js";
+
 export { deepFreeze } from "./freeze.js";
 export {
   CONTROL_CHARACTER,
@@ -352,6 +406,13 @@ export {
   GIT_EMAIL_PATTERN,
   WORLD_ID_PATTERN,
   EVENT_TYPE_PATTERN,
+  MAX_PRESENTATION_ENTRIES,
+  MAX_PRESENTATION_VERBS,
+  MAX_RESPONSE_ARTIFACTS,
+  MAX_STORY_ACTIONS,
+  MAX_STORY_INTENTS,
+  MAX_STORY_RESPONSES,
+  MAX_STORY_TEXT_LENGTH,
 } from "./cartridge/schema.js";
 export { CARTRIDGE_SCHEMA_ID, emitJsonSchema } from "./cartridge/jsonSchema.js";
 export type {
@@ -368,6 +429,17 @@ export type {
   CartridgeGitHistory,
   CartridgeMeta,
   CartridgeModel,
+  CartridgeAgentAction,
+  CartridgeAuthoredResponse,
+  CartridgeIntent,
+  CartridgeMetricParameters,
+  CartridgePlaceholder,
+  CartridgePresentation,
+  CartridgeResponseThinkingBlock,
+  CartridgeResponseTodo,
+  CartridgeResponseToolCall,
+  CartridgeSpinnerPool,
+  CartridgeStory,
   CartridgeRepository,
   CartridgeLog,
   CartridgeManPage,

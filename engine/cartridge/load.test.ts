@@ -30,6 +30,10 @@ function issuesOf(value: unknown): readonly CartridgeIssue[] {
   throw new Error("expected the cartridge to be rejected, but it loaded");
 }
 
+function setStoryPhase2(source: Record<string, unknown>, value: unknown): void {
+  (source["story"] as Record<string, unknown>)["phase2"] = value;
+}
+
 describe("loadCartridge", () => {
   it("loads the minimal fixture cartridge", () => {
     const cartridge = loadCartridge(minimal());
@@ -61,8 +65,8 @@ describe("loadCartridge", () => {
       branches: {},
       head: { kind: "detached", target: "" },
     });
-    expect(cartridge.story).toEqual({});
-    expect(cartridge.presentation).toEqual({});
+    expect(cartridge.story.responses).toHaveLength(1);
+    expect(cartridge.presentation.spinnerPools).toHaveLength(2);
     expect(cartridge.repository.processes).toEqual([]);
     expect(cartridge.repository.services).toEqual([]);
     expect(cartridge.repository.logs).toEqual([]);
@@ -325,6 +329,49 @@ describe("loadCartridge", () => {
         "/repository/logs/1/path",
         "/repository/manPages/1/section",
         "/repository/tickets/0/service",
+      ]),
+    );
+  });
+
+  it("rejects ambiguous Phase 1 dialogue and presentation lookup keys", () => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    story["responses"] = [
+      { id: "one", text: "one" },
+      { id: "one", text: "two" },
+    ];
+    story["opening"] = { login: ["login"], response: "missing" };
+    story["intents"] = [
+      { id: "same", patterns: ["inspect"], response: "missing" },
+      { id: "same", patterns: ["inspect"], response: "one" },
+    ];
+    story["fallback"] = { response: "missing" };
+    story["helpResponse"] = "missing";
+    story["compactResponse"] = "missing";
+    story["resume"] = {
+      unchangedResponse: "missing",
+      changedResponse: "missing",
+    };
+    const presentation = source["presentation"] as Record<string, unknown>;
+    presentation["spinnerPools"] = [
+      { archetype: "paranoid", stage: 0, verbs: ["Checking"] },
+      { archetype: "paranoid", stage: 0, verbs: ["Checking again"] },
+    ];
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual(
+      expect.arrayContaining([
+        "/story/responses/1/id",
+        "/story/opening/response",
+        "/story/fallback/response",
+        "/story/helpResponse",
+        "/story/compactResponse",
+        "/story/resume/unchangedResponse",
+        "/story/resume/changedResponse",
+        "/story/intents/0/response",
+        "/story/intents/1/id",
+        "/story/intents/1/patterns/0",
+        "/presentation/spinnerPools/1/stage",
+        "/presentation/spinnerPools",
       ]),
     );
   });
@@ -689,13 +736,16 @@ describe("loadCartridge", () => {
     // is to establish it.
     let reads = 0;
     const source = minimal();
-    source["story"] = Object.defineProperty({}, "premise", {
-      enumerable: true,
-      get: () => {
-        reads += 1;
-        return `read ${String(reads)}`;
-      },
-    });
+    setStoryPhase2(
+      source,
+      Object.defineProperty({}, "premise", {
+        enumerable: true,
+        get: () => {
+          reads += 1;
+          return `read ${String(reads)}`;
+        },
+      }),
+    );
 
     expect(issuesOf(source)[0]?.found).toContain("accessor property");
     expect(reads).toBe(0);
@@ -749,7 +799,7 @@ describe("loadCartridge", () => {
     reveals.length = 1;
 
     const source = minimal();
-    source["story"] = { reveals };
+    setStoryPhase2(source, { reveals });
 
     expect(issuesOf(source)[0]?.found).toContain("accessor property");
     expect(reads).toBe(0);
@@ -810,7 +860,7 @@ describe("loadCartridge", () => {
     });
 
     const source = minimal();
-    source["story"] = tagged;
+    setStoryPhase2(source, tagged);
 
     expect(issuesOf(source)[0]?.found).toContain("symbol-keyed");
     expect(reads).toBe(0);
@@ -828,10 +878,10 @@ describe("loadCartridge", () => {
     ] as const) {
       Object.setPrototypeOf(value, Object.prototype);
       const source = minimal();
-      source["story"] = { payload: value };
+      setStoryPhase2(source, { payload: value });
 
       expect(issuesOf(source)[0], label).toEqual({
-        pointer: "/story/payload",
+        pointer: "/story/phase2/payload",
         expected: "an object of plain JSON values",
         found: expect.stringContaining("which JSON cannot carry") as string,
       });
@@ -844,11 +894,11 @@ describe("loadCartridge", () => {
     // `JSON.stringify(Infinity)` is `"null"` — so the issue used to claim the
     // cartridge held null.
     const source = minimal();
-    source["story"] = JSON.parse('{"curve": 1e400}') as unknown;
+    setStoryPhase2(source, JSON.parse('{"curve": 1e400}') as unknown);
 
     expect(issuesOf(source)).toEqual([
       {
-        pointer: "/story/curve",
+        pointer: "/story/phase2/curve",
         expected: "a finite number",
         found: "Infinity",
       },
@@ -869,10 +919,10 @@ describe("loadCartridge", () => {
     ] as const) {
       Object.setPrototypeOf(value, Object.prototype);
       const source = minimal();
-      source["story"] = { payload: value };
+      setStoryPhase2(source, { payload: value });
 
       expect(issuesOf(source)[0], label).toEqual({
-        pointer: "/story/payload",
+        pointer: "/story/phase2/payload",
         expected: "an object of plain JSON values",
         found: expect.stringContaining("which JSON cannot carry") as string,
       });
@@ -894,10 +944,10 @@ describe("loadCartridge", () => {
     });
     Object.setPrototypeOf(value, Object.prototype);
     const source = minimal();
-    source["story"] = { payload: value };
+    setStoryPhase2(source, { payload: value });
 
     expect(issuesOf(source)[0]).toEqual({
-      pointer: "/story/payload",
+      pointer: "/story/phase2/payload",
       expected: "an object of plain JSON values",
       found: expect.stringContaining("which JSON cannot carry") as string,
     });
@@ -919,9 +969,9 @@ describe("loadCartridge", () => {
     });
     Object.setPrototypeOf(value, Object.prototype);
     const source = minimal();
-    source["story"] = { payload: value };
+    setStoryPhase2(source, { payload: value });
 
-    expect(loadCartridge(source).story).toEqual({
+    expect(loadCartridge(source).story.phase2).toEqual({
       payload: { nested: { deep: true } },
     });
   });
@@ -931,7 +981,7 @@ describe("loadCartridge", () => {
     // "built-in that structured clone refuses to copy" — confidently, about
     // something that is not one. The walk reports the function where it is.
     const source = minimal();
-    source["story"] = { payload: { handler: () => 1 } };
+    setStoryPhase2(source, { payload: { handler: () => 1 } });
 
     expect(issuesOf(source)[0]?.found).not.toContain("structured clone");
   });
@@ -947,7 +997,7 @@ describe("loadCartridge", () => {
       ["WeakRef", new WeakRef({})],
     ] as const) {
       const source = minimal();
-      source["story"] = { payload: value };
+      setStoryPhase2(source, { payload: value });
 
       expect(issuesOf(source)[0]?.found, label).toBe(
         "an object with a prototype JSON cannot produce",
@@ -969,7 +1019,7 @@ describe("loadCartridge", () => {
     }
 
     const shallow = minimal();
-    shallow["story"] = nested(MAX_DEFERRED_DEPTH - 2);
+    setStoryPhase2(shallow, nested(MAX_DEFERRED_DEPTH - 2));
     expect(() => loadCartridge(shallow)).not.toThrow();
 
     // Deep enough to be well past the limit, shallow enough that the *test's
@@ -980,7 +1030,7 @@ describe("loadCartridge", () => {
     // the guard trips at 64, so every depth past it takes the same path.
     for (const levels of [MAX_DEFERRED_DEPTH + 40, 1000]) {
       const source = minimal();
-      source["story"] = nested(levels);
+      setStoryPhase2(source, nested(levels));
 
       // A validation issue, not a host error — that is the whole point.
       expect(issuesOf(source)[0]?.expected, String(levels)).toBe(
@@ -996,9 +1046,9 @@ describe("loadCartridge", () => {
     bare["premise"] = "still fine";
 
     const source = minimal();
-    source["story"] = { bare, beats: ["one", "two"] };
+    setStoryPhase2(source, { bare, beats: ["one", "two"] });
 
-    expect(loadCartridge(source).story).toEqual({
+    expect(loadCartridge(source).story.phase2).toEqual({
       bare: { premise: "still fine" },
       beats: ["one", "two"],
     });
@@ -1073,27 +1123,29 @@ describe("loadCartridge", () => {
   });
 });
 
-describe("deferred sections", () => {
+describe("explicitly deferred Phase 2 interiors", () => {
   it("carry arbitrary JSON through untouched", () => {
     const source = minimal();
-    source["story"] = {
+    setStoryPhase2(source, {
       premise: "the inverted load balancer",
       reveals: [{ at: 3, text: "Where is Europe?" }],
       nested: { deeply: { fine: [1, 2, null, true] } },
-    };
+    });
 
-    expect(loadCartridge(source).story).toEqual(source["story"]);
+    expect(loadCartridge(source).story.phase2).toEqual(
+      (source["story"] as Record<string, unknown>)["phase2"],
+    );
   });
 
   it("are deep-copied, not aliased", () => {
     const source = minimal();
     const story: Record<string, unknown> = { reveals: ["one"] };
-    source["story"] = story;
+    setStoryPhase2(source, story);
 
     const loaded = loadCartridge(source);
     (story["reveals"] as string[]).push("two");
 
-    expect(loaded.story["reveals"]).toEqual(["one"]);
+    expect(loaded.story.phase2["reveals"]).toEqual(["one"]);
   });
 
   it("still have to be objects", () => {
@@ -1116,10 +1168,13 @@ describe("deferred sections", () => {
     // canonical serializer at record time, which is exactly the deferred
     // failure the clone exists to prevent.
     const source = minimal();
-    source["story"] = JSON.parse('{"__proto__": {"evil": true}}') as unknown;
+    setStoryPhase2(
+      source,
+      JSON.parse('{"__proto__": {"evil": true}}') as unknown,
+    );
 
     const loaded = loadCartridge(source);
-    expect(Object.getPrototypeOf(loaded.story)).toBe(Object.prototype);
+    expect(Object.getPrototypeOf(loaded.story.phase2)).toBe(Object.prototype);
     expect(serialize(loaded)).toContain("evil");
   });
 
@@ -1128,11 +1183,11 @@ describe("deferred sections", () => {
     // and the Phase 5 pipeline may well build one. Copying its enumerable own
     // properties would turn it into `{}` and lose the value in silence.
     const source = minimal();
-    source["story"] = { when: new Date(0) };
+    setStoryPhase2(source, { when: new Date(0) });
 
     expect(issuesOf(source)).toEqual([
       {
-        pointer: "/story/when",
+        pointer: "/story/phase2/when",
         expected: "an object of plain JSON values",
         found: "an object with a prototype JSON cannot produce",
       },
@@ -1141,13 +1196,13 @@ describe("deferred sections", () => {
 
   it("reject an array with holes or stray properties", () => {
     const holed = minimal();
-    holed["story"] = { reveals: [1, , 3] };
-    expect(issuesOf(holed)[0]?.pointer).toBe("/story/reveals");
+    setStoryPhase2(holed, { reveals: [1, , 3] });
+    expect(issuesOf(holed)[0]?.pointer).toBe("/story/phase2/reveals");
 
     const decorated = minimal();
     const list: unknown[] = ["one"];
     (list as unknown as Record<string, unknown>)["extra"] = "not an index";
-    decorated["story"] = { reveals: list };
+    setStoryPhase2(decorated, { reveals: list });
     expect(issuesOf(decorated)[0]?.expected).toBe(
       "a dense array with no extra properties",
     );
@@ -1158,7 +1213,7 @@ describe("deferred sections", () => {
     const both: unknown[] = [];
     both[1] = "second";
     (both as unknown as Record<string, unknown>)["extra"] = "not an index";
-    compensated["story"] = { reveals: both };
+    setStoryPhase2(compensated, { reveals: both });
     expect(issuesOf(compensated)[0]?.expected).toBe(
       "a dense array with no extra properties",
     );
@@ -1171,11 +1226,11 @@ describe("deferred sections", () => {
     const source = minimal();
     const story: Record<string, unknown> = { premise: "recursive" };
     story["self"] = story;
-    source["story"] = story;
+    setStoryPhase2(source, story);
 
     expect(issuesOf(source)).toEqual([
       {
-        pointer: "/story/self",
+        pointer: "/story/phase2/self",
         expected: "a value that does not contain itself",
         found: "a circular reference, which JSON cannot represent",
       },
@@ -1187,9 +1242,9 @@ describe("deferred sections", () => {
     // perfectly well, by writing the shared value out twice.
     const shared = { reveal: "Where is Europe?" };
     const source = minimal();
-    source["story"] = { first: shared, second: shared };
+    setStoryPhase2(source, { first: shared, second: shared });
 
-    expect(loadCartridge(source).story).toEqual({
+    expect(loadCartridge(source).story.phase2).toEqual({
       first: shared,
       second: shared,
     });
@@ -1200,11 +1255,11 @@ describe("deferred sections", () => {
     // value the serializer refuses would surface much later while recording,
     // with a pointer into the transcript instead of into the cartridge.
     const source = minimal();
-    source["story"] = { curve: Number.POSITIVE_INFINITY };
+    setStoryPhase2(source, { curve: Number.POSITIVE_INFINITY });
 
     expect(issuesOf(source)).toEqual([
       {
-        pointer: "/story/curve",
+        pointer: "/story/phase2/curve",
         // Not `"null"`, which is what this asserted while `describe` ran the
         // value through `JSON.stringify` — the test was pinning the misleading
         // answer rather than catching it.

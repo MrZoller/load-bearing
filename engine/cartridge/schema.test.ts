@@ -31,6 +31,11 @@ import type {
   CartridgeIdentity,
   CartridgeMeta,
   CartridgeModel,
+  CartridgeAuthoredResponse,
+  CartridgeIntent,
+  CartridgeMetricParameters,
+  CartridgePlaceholder,
+  CartridgeSpinnerPool,
   CartridgeLog,
   CartridgeManPage,
   CartridgeProcess,
@@ -66,11 +71,18 @@ describe("the published schema", () => {
       Record<string, unknown>
     >;
     const story = properties["story"] as Record<string, unknown>;
+    const storyProperties = story["properties"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    const phase2 = storyProperties["phase2"] as Record<string, unknown>;
 
-    expect(story["default"]).not.toBe(CARTRIDGE_SCHEMA.fields["story"]?.fill);
+    expect(phase2["default"]).not.toBe(
+      CARTRIDGE_SCHEMA.fields.story.node.fields.phase2.fill,
+    );
 
-    (story["default"] as Record<string, unknown>)["injected"] = true;
-    expect(CARTRIDGE_SCHEMA.fields["story"]?.fill).toEqual({});
+    (phase2["default"] as Record<string, unknown>)["injected"] = true;
+    expect(CARTRIDGE_SCHEMA.fields.story.node.fields.phase2.fill).toEqual({});
     expect(serialize(emitJsonSchema())).not.toContain("injected");
   });
 
@@ -353,6 +365,59 @@ describe("descriptor and type lockstep", () => {
     agrees<CartridgeModel["description"]>(model.fields.description.node);
     agrees<CartridgeModel["costMultiplier"]>(model.fields.costMultiplier.node);
     agrees<CartridgeModel["quirks"][number]>(model.fields.quirks.node.items);
+
+    const story = CARTRIDGE_SCHEMA.fields.story.node;
+    agrees<CartridgeAuthoredResponse["id"]>(
+      story.fields.responses.node.items.fields.id.node,
+    );
+    agrees<CartridgeAuthoredResponse["text"]>(
+      story.fields.responses.node.items.fields.text.node,
+    );
+    agrees<CartridgeIntent["id"]>(
+      story.fields.intents.node.items.fields.id.node,
+    );
+    agrees<CartridgeIntent["response"]>(
+      story.fields.intents.node.items.fields.response.node,
+    );
+    agrees<CartridgeIntent["patterns"][number]>(
+      story.fields.intents.node.items.fields.patterns.node.items,
+    );
+
+    const presentation = CARTRIDGE_SCHEMA.fields.presentation.node;
+    agrees<CartridgePlaceholder["stage"]>(
+      presentation.fields.placeholders.node.items.fields.stage.node,
+    );
+    agrees<CartridgePlaceholder["text"]>(
+      presentation.fields.placeholders.node.items.fields.text.node,
+    );
+    agrees<CartridgeSpinnerPool["archetype"]>(
+      presentation.fields.spinnerPools.node.items.fields.archetype.node,
+    );
+    agrees<CartridgeSpinnerPool["stage"]>(
+      presentation.fields.spinnerPools.node.items.fields.stage.node,
+    );
+    agrees<CartridgeSpinnerPool["verbs"][number]>(
+      presentation.fields.spinnerPools.node.items.fields.verbs.node.items,
+    );
+    const metrics = presentation.fields.metrics.node;
+    agrees<CartridgeMetricParameters["baseTokens"]>(
+      metrics.fields.baseTokens.node,
+    );
+    agrees<CartridgeMetricParameters["tokensPerEvent"]>(
+      metrics.fields.tokensPerEvent.node,
+    );
+    agrees<CartridgeMetricParameters["contextWindowTokens"]>(
+      metrics.fields.contextWindowTokens.node,
+    );
+    agrees<CartridgeMetricParameters["costMicrosPerToken"]>(
+      metrics.fields.costMicrosPerToken.node,
+    );
+    agrees<CartridgeMetricParameters["integrityStart"]>(
+      metrics.fields.integrityStart.node,
+    );
+    agrees<CartridgeMetricParameters["integrityLossPerEvent"]>(
+      metrics.fields.integrityLossPerEvent.node,
+    );
 
     const repository = CARTRIDGE_SCHEMA.fields.repository.node;
     agrees<CartridgeRepository["cwd"]>(repository.fields.cwd.node);
