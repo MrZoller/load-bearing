@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T25",
-  "branch": "factory/t25-transcript-search-scrollback",
-  "pr": 50,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-22T14:46:12Z"
+  "updated": "2026-08-22T15:27:45Z"
 }

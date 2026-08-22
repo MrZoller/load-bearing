@@ -67,7 +67,7 @@ and runtime model calls are deliberately excluded.
   - acceptance: `runtime/terminal/{history,completion,input}.ts` provides mode-appropriate TUI and Bash histories, slash/command/path tab completion, arrows, selection-safe copy/paste, `Ctrl+C`, `Ctrl+L`, `Ctrl+D`, and Escape behavior through one input controller; presentation-only clear/cancel operations do not rewrite engine transcript or event log; automated interaction tests cover normal and empty-input cases (criterion 10)
   - deps: T15, T23
   - pr: 48
-- [R] T25 (standard) — Transcript search, scrollback, and anchoring
+- [x] T25 (standard) — Transcript search, scrollback, and anchoring
   - acceptance: `runtime/terminal/{search,scroll}.ts` provides keyboard transcript search, bounded scrollback, focus restoration, and new-output anchoring that follows only when already at the bottom and preserves the reader's place otherwise; an accessible new-output affordance returns to the latest entry; Playwright covers search navigation, copied text, scrolled-up output, and resumed anchoring (criterion 10)
   - deps: T15
   - pr: 50
@@ -134,3 +134,6 @@ and runtime model calls are deliberately excluded.
   - PR #48: compute completion prefixes by Unicode code point so divergent supplementary-code-point VFS paths cannot insert an unpaired surrogate
   - PR #48: seed Bash recall with the visible cold-open resume command, ahead of any authored shell history
   - PR #49: preflight the idle-nudge authored response at bounded agent capacity and record the existing capacity fallback, with regression coverage
+  - PR #50: count transcript-search shortcut and input interactions as activity so an authored idle nudge cannot rerender an active search
+  - PR #50: use locale-independent transcript-search case folding so English queries remain matchable in Turkish and Azerbaijani locales
+  - PR #50: restore focus to the rendered active-view surface when search remains visible but its input no longer owns focus; add a regression assertion
