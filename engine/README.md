@@ -47,6 +47,21 @@ recording its authored acknowledgment.
 Disclosure state, focused controls, animation frames, and wall-time spinner
 progress are presentation concerns and do not belong in this slice.
 
+## Derived metrics
+
+`deriveEngineMetrics(state)` projects the active model, estimated tokens and
+cost, context use, and structural integrity from replay state plus the loaded
+cartridge's bounded metric parameters. It stores no parallel counter: event
+count and the replayable terminal model remain authoritative, so identical logs
+produce identical values after snapshot restoration. Arithmetic saturates at
+`Number.MAX_SAFE_INTEGER`, context use clamps to 0–100, and integrity floors at
+zero.
+
+The cost is a current-model estimate, not an itemized bill. Switching models
+reprices the complete token estimate with the newly active model's cartridge
+multiplier; historical per-model accounting is not invented from state that
+does not record it.
+
 ## Replay and purity contracts
 
 Golden fixtures under `engine/__fixtures__/replay/` record canonical
