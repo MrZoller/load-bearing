@@ -1,0 +1,33 @@
+{
+  "name": "017-agent-intents",
+  "description": "Recognized and fallback agent turns replay with shell passthrough on the shared shell event path.",
+  "seed": "2026-08-22/17/structural-audit",
+  "cartridge": "minimal",
+  "events": [
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "turn-0", "text": "inspect" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "pwd" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": { "responseId": "fixture-response", "instanceId": "turn-0" },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "turn-5", "text": "unmatched request" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": { "responseId": "fixture-response", "instanceId": "turn-5" },
+      "version": 0
+    }
+  ]
+}

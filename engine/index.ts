@@ -334,6 +334,12 @@ export type {
   TodoStatus,
   ToolCallStatus,
 } from "./agent/types.js";
+export {
+  createAgentInputEvents,
+  normalizeAgentInput,
+  selectAgentIntent,
+} from "./agent/intent.js";
+export type { AgentIntentSelection } from "./agent/intent.js";
 
 export { deepFreeze } from "./freeze.js";
 export {
