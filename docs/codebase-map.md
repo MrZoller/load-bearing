@@ -56,6 +56,7 @@ compared byte-for-byte against committed golden fixtures.
 │   ├── commands/                tokenizer/options/registry/builtins/shell events
 │   ├── tests/                   authored predicates, runner plan + event module
 │   ├── mind/                    permission ledger + typed belief divergence
+│   ├── terminal/                replayable mode/model slice + named streams
 │   ├── reactions.ts             predicates + owner-event action planning
 │   ├── cartridge/
 │   │   ├── schema.ts           descriptor-tree schema (the single authority)
@@ -100,6 +101,7 @@ compared byte-for-byte against committed golden fixtures.
 | `CartridgeMeta/File/Model/Repository` | `engine/cartridge/types.ts` | Loaded shapes for meta, files, models, repository. |
 | `GitSlice` / `VfsSlice` / `WorldSlice` | `engine/git/types.ts`, `engine/vfs/types.ts`, `engine/world/types.ts` | Canonical plain-JSON machine state owned by each event module. |
 | `MindSlice` / `Belief` / `ExactCapability` | `engine/mind/types.ts` | Timestamped permission history and the agent's typed, separately serialized model of machine truth. |
+| `TerminalSlice` / `TerminalMode` | `engine/terminal/types.ts` | Replayable Bash/TUI mode and active cartridge model; model changes retain the root seed. |
 | `DeferredObject` | `engine/cartridge/types.ts` | A subtree v0 validates as "an object" but doesn't look inside (`story` and `presentation`). |
 | `SimulatedClock` / `ClockState` | `engine/clock/clock.ts` | `now() = startMs + elapsedMs`. Advances only via events. |
 | `CivilTime` / `CivilInput` | `engine/clock/civil.ts` | UTC calendar fields; hand-computed (no `Date`/`Intl`). |

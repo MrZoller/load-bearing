@@ -24,8 +24,8 @@
  *
  * - `initialSlice(context)` — the module's state at session start. Omit it and
  *   the module holds none, and occupies no key in `SessionState.slices`.
- * - `validateSlice(slice, where)` — checks a slice arriving from a snapshot and
- *   returns it narrowed. **Optional, and worth implementing.**
+ * - `validateSlice(slice, where, cartridge)` — checks a slice arriving from a
+ *   snapshot and returns it narrowed. **Optional, and worth implementing.**
  *   `restoreSnapshot` rebuilds the cartridge, the clock and the PRNG through
  *   their own validators, but a slice's shape is known only to its module: the
  *   reducer can check that the *set* of slices matches the registry and nothing
@@ -49,6 +49,7 @@ import { WORLD_MODULE } from "../world/module.js";
 import { SHELL_MODULE } from "../commands/module.js";
 import { TESTS_MODULE } from "../tests/module.js";
 import { MIND_MODULE } from "../mind/module.js";
+import { TERMINAL_MODULE } from "../terminal/module.js";
 import type { EventRegistry } from "./registry.js";
 import type { EventModule } from "./module.js";
 
@@ -61,6 +62,7 @@ export const ENGINE_EVENT_MODULES: readonly EventModule[] = Object.freeze([
   SHELL_MODULE,
   TESTS_MODULE,
   MIND_MODULE,
+  TERMINAL_MODULE,
 ]);
 
 /**

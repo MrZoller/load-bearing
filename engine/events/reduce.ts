@@ -1142,7 +1142,7 @@ export function restoreSnapshot(
     }
   }
 
-  const slices = requireSlices(parsed["slices"], registry);
+  const slices = requireSlices(parsed["slices"], registry, cartridge);
 
   if (transcript.length === 0) {
     // A message specialization, not a redundant guard: the check below compares
@@ -1902,6 +1902,7 @@ function requireTranscript(
 function requireSlices(
   value: unknown,
   registry: EventRegistry,
+  cartridge: LoadedCartridge,
 ): Readonly<Record<string, unknown>> {
   const slices = requireObject(value, "slices");
   // Namespace captured alongside its module, so the key checked against the
@@ -1944,7 +1945,12 @@ function requireSlices(
         const validated =
           validate === undefined
             ? raw
-            : validate.call(module, raw, `snapshot: slices.${namespace}`);
+            : validate.call(
+                module,
+                raw,
+                `snapshot: slices.${namespace}`,
+                cartridge,
+              );
         // The third and last door into `slices`, and the one that was open.
         // `bootstrap` refuses an `initialSlice` returning `undefined` and
         // `captureOutcome`'s `hasSlice` refuses a handler doing it; a validator

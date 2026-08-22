@@ -1,0 +1,43 @@
+{
+  "name": "015-terminal-modes",
+  "description": "Terminal mode and model transitions retain the session seed, while Bash resume and exit remain ordered shell events.",
+  "seed": "2026-08-21/15/terminal-model",
+  "cartridge": "minimal",
+  "events": [
+    {
+      "type": "terminal.mode-set",
+      "payload": { "mode": "tui" },
+      "version": 0
+    },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "quick-patch" },
+      "version": 0
+    },
+    {
+      "type": "terminal.mode-set",
+      "payload": { "mode": "bash" },
+      "version": 0
+    },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "deep-foundation" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "loadbearing --resume incident-000" },
+      "version": 0
+    },
+    {
+      "type": "terminal.mode-set",
+      "payload": { "mode": "bash" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "exit" },
+      "version": 0
+    }
+  ]
+}

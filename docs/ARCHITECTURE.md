@@ -54,7 +54,9 @@ state = reduce(cartridge, seed, eventLog)
 - Every visitor action (TUI input, shell command, model switch, Ctrl+D)
   appends an event. All state mutation flows through the reducer.
 - **All randomness** goes through one seeded PRNG (e.g., mulberry32) seeded
-  from `(incidentDate, dailySeed, model)`. No `Math.random()`.
+  once from `(incidentDate, dailySeed, initialModel)`. A replayable model-switch
+  event retains that root seed and selects model-specific named substreams, so
+  one model's draws cannot perturb or restart another's. No `Math.random()`.
 - **All time** is simulated and advances by event, not wall clock. No
   `Date.now()` inside the engine.
 - Rare events roll against the PRNG so they are rare per-session but exactly

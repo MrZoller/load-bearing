@@ -60,6 +60,8 @@ describe("the engine's module list", () => {
       "probe.weighted",
       "shell.execute",
       "shell.result",
+      "terminal.mode-set",
+      "terminal.model-set",
       "tests.run",
       "vfs.chdir",
       "vfs.chmod",
@@ -99,6 +101,10 @@ describe("the engine's module list", () => {
     expect(PROBE_MODULE.validateSlice).toBeTypeOf("function");
     expect(ENGINE_EVENT_REGISTRY.module("mind")?.stateful).toBe(true);
     expect(ENGINE_EVENT_REGISTRY.module("mind")?.validateSlice).toBeTypeOf(
+      "function",
+    );
+    expect(ENGINE_EVENT_REGISTRY.module("terminal")?.stateful).toBe(true);
+    expect(ENGINE_EVENT_REGISTRY.module("terminal")?.validateSlice).toBeTypeOf(
       "function",
     );
   });
