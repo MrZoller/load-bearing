@@ -55,7 +55,7 @@ and runtime model calls are deliberately excluded.
   - acceptance: `engine/metrics/` derives or records model, token count, cost, context percentage, and structural integrity solely from replay state plus validated cartridge parameters, with explicit bounds and snapshot validation; `runtime/components/status.ts` renders those values and attribution from engine queries rather than DOM counters; unit and replay tests prove model switches and identical logs produce stable values (criteria 8)
   - deps: T14, T16
   - pr: 45
-- [ ] T22 (standard) — Deterministic working verb and suffix channel
+- [~] T22 (standard) — Deterministic working verb and suffix channel
   - acceptance: agent activity events select verbs from authored archetype-by-stage pools through a dedicated stable named stream and record the choice; the runtime spinner shows the selected verb plus timer, token count, and Escape guidance while wall time only interpolates presentation; reduced motion exposes the same text without animation, and tests prove unrelated streams, frame timing, and motion preference cannot alter replay state (criteria 9)
   - deps: T16, T21
 - [ ] T23 (standard) — Slash commands, autocomplete, and model selector
