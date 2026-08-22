@@ -299,20 +299,3 @@ product-surface change. The approved spec decision Q1=A requires the distinct
 typed fact, which A preserves verbatim; B would ship an unevaluable predicate
 and C would materially expand an already-major task beyond its approved
 scope.)
-
-## Q10 (task T41, open) — How should the default-branch fixture copies be recovered?
-
-Context: The default-branch checkout contains three untracked production replay
-fixture files under `engine/__fixtures__/replay/021-incident-001-load-balancer/`.
-Their paths and bytes are already committed on T41's PR branch, but factory
-protocol prohibits carrying non-bookkeeping default-branch files into a merge.
-Parked branch: `factory/t41-load-balancer-files`.
-Options considered: A — discard the untracked default-branch copies and resume
-the already-verified PR; B — preserve them outside the checkout and investigate
-how they were left behind before resuming.
-**A:** Option A — discard the untracked default-branch copies and resume the PR.
-(Operator answer, as Chris's representative: before answering, each of the three
-files under `engine/__fixtures__/replay/021-incident-001-load-balancer/` was
-byte-compared against its committed copy on `factory/t41-load-balancer-files`
-and all three are IDENTICAL — fixture.json, state.json, transcript.txt — so
-discarding the checkout copies loses nothing.)
