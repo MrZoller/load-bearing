@@ -63,7 +63,7 @@ and runtime model calls are deliberately excluded.
   - acceptance: one typed slash-command registry implements and accurately describes `/help`, `/model`, `/compact`, `/cost`, and `/exit`; commands dispatch terminal, mind, and agent events or report engine metrics as appropriate; the semantic model selector and slash autocomplete are fully keyboard-operable, model and compact state survive view switches, and focused unit/interaction tests cover discovery, execution, cancellation, and focus restoration (criterion 6)
   - deps: T15, T16, T18, T21
   - pr: 47
-- [R] T24 (standard) — Terminal histories, completion, and core controls
+- [x] T24 (standard) — Terminal histories, completion, and core controls
   - acceptance: `runtime/terminal/{history,completion,input}.ts` provides mode-appropriate TUI and Bash histories, slash/command/path tab completion, arrows, selection-safe copy/paste, `Ctrl+C`, `Ctrl+L`, `Ctrl+D`, and Escape behavior through one input controller; presentation-only clear/cancel operations do not rewrite engine transcript or event log; automated interaction tests cover normal and empty-input cases (criterion 10)
   - deps: T15, T23
   - pr: 48
@@ -129,3 +129,5 @@ and runtime model calls are deliberately excluded.
   - PR #46: make the advertised Escape activity guidance take a deterministic interruption/ignored-interruption path rather than leaving the control inert
   - PR #46: serialize or disable TUI submissions during the working presentation interval to prevent rapid re-entry against a transitional snapshot
   - PR #47: close slash autocomplete after Tab accepts a completion, so later Tab and Shift+Tab restore native focus traversal; add a regression for the closed popup
+  - PR #48: compute completion prefixes by Unicode code point so divergent supplementary-code-point VFS paths cannot insert an unpaired surrogate
+  - PR #48: seed Bash recall with the visible cold-open resume command, ahead of any authored shell history
