@@ -79,9 +79,10 @@ and runtime model calls are deliberately excluded.
   - acceptance: terminal/components/styles use reading-order semantic DOM, labeled controls, visible focus, textual equivalents, and a dedicated polite live region that announces only new meaningful output; reduced motion preserves every status and cold-open fact; the restrained original terminal treatment uses structural/I-beam accents without lab names, model trademarks, copied colors, or exact trade dress; automated role/name/focus/motion checks cover the stable component surface (criteria 13, 16; approved decision 3A)
   - deps: T15, T19, T20, T21, T22
   - pr: 51
-- [~] T28 (standard) — Responsive terminal and mobile key strip
+- [R] T28 (standard) — Responsive terminal and mobile key strip
   - acceptance: responsive styles and `runtime/components/mobile-keys.ts` keep transcript, prompt, selectors, and permission controls usable at 390×844 with no page-level horizontal overflow; focused-prompt viewport resizing remains usable with a software keyboard; the labeled `/`, `!`, Tab, and arrow keys feed the same input controller as hardware keys; Playwright covers width, focus, long output, and key behavior (criterion 15; approved decision 4A)
   - deps: T24, T25, T27
+  - pr: 52
 - [ ] T29 (standard) — Phase 1 deterministic browser acceptance gate
   - acceptance: pinned Playwright Chromium replays one complete keyboard-only session covering cold open, TUI input, permission choice, shell passthrough, Bash mutation, resume reaction, model switch, compact, and exit refusal with visible focus; a Node/browser test canonical-serializes the same cartridge/seed/events to byte-identical state and transcript and proves focus, scroll, viewport, reduced motion, and animation frames do not alter the log; CI runs production build, browser interactions at desktop and 390×844, all Phase 0 verification, and a pinned desktop Lighthouse accessibility audit requiring score 100 with no unlabeled controls or keyboard trap (criteria 4, 12, 14, 15, 17; approved decision 4A)
   - deps: T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28
