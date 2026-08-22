@@ -310,4 +310,9 @@ Parked branch: `factory/t41-load-balancer-files`.
 Options considered: A — discard the untracked default-branch copies and resume
 the already-verified PR; B — preserve them outside the checkout and investigate
 how they were left behind before resuming.
-**A:**
+**A:** Option A — discard the untracked default-branch copies and resume the PR.
+(Operator answer, as Chris's representative: before answering, each of the three
+files under `engine/__fixtures__/replay/021-incident-001-load-balancer/` was
+byte-compared against its committed copy on `factory/t41-load-balancer-files`
+and all three are IDENTICAL — fixture.json, state.json, transcript.txt — so
+discarding the checkout copies loses nothing.)
