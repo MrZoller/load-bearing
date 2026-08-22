@@ -12,12 +12,14 @@ import type { EngineEvent, SessionState } from "../events/state.js";
 import {
   beliefDivergence,
   hasStandingPermission,
+  hasWaiverConsent,
   readMindSlice,
   validateMindSlice,
 } from "./mind.js";
 import {
   createMindPermissionRequestedEvent,
   createMindPermissionResolvedEvent,
+  createMindWaiverConsentRecordedEvent,
 } from "./module.js";
 
 const SEED = "2026-08-05/13/deep-foundation";
@@ -91,6 +93,7 @@ describe("mind events", () => {
             at: `2026-08-05T09:14:22.00${String(ms)}Z`,
           },
         ],
+        waiverConsents: [],
         beliefs: [],
         compactHistory: [],
       });
@@ -165,6 +168,76 @@ describe("mind events", () => {
       { decision: "deny", at: "2026-08-05T09:14:22.001Z" },
       { decision: "always-allow", at: "2026-08-05T09:14:22.002Z" },
     ]);
+  });
+
+  it("keeps an ordered, exact, simulated-time waiver ledger distinct from permissions", () => {
+    const waiver = {
+      id: "emergency-waiver",
+      version: 1,
+      phrase: "I accept the load-bearing consequence.",
+      capability: CAPABILITY,
+    };
+    const state = fold([
+      createMindWaiverConsentRecordedEvent(waiver),
+      { type: "clock.tick", payload: { ms: 7 } },
+      createMindWaiverConsentRecordedEvent({ ...waiver, id: "second-waiver" }),
+      {
+        type: "mind.permission-decision",
+        payload: { capability: CAPABILITY, decision: "always-allow" },
+      },
+    ]);
+    const mind = readMindSlice(state);
+
+    expect(mind.waiverConsents).toEqual([
+      { ...waiver, at: STARTED_AT },
+      { ...waiver, id: "second-waiver", at: "2026-08-05T09:14:22.007Z" },
+    ]);
+    expect(hasWaiverConsent(mind, waiver)).toBe(true);
+    expect(hasWaiverConsent(mind, { ...waiver, version: 2 })).toBe(false);
+    expect(() =>
+      fold([
+        createMindWaiverConsentRecordedEvent(waiver),
+        createMindWaiverConsentRecordedEvent({
+          ...waiver,
+          phrase: "revised words",
+        }),
+      ]),
+    ).toThrow(/id "emergency-waiver" version 1 is already recorded/);
+  });
+
+  it("strictly validates waiver events and restored ledger snapshots", () => {
+    const waiver = {
+      id: "emergency-waiver",
+      version: 1,
+      phrase: "I accept the load-bearing consequence.",
+      capability: CAPABILITY,
+    };
+    expect(() =>
+      fold([
+        mindEvent("mind.waiver-consent-recorded", { ...waiver, extra: true }),
+      ]),
+    ).toThrow(/unexpected payload field\(s\) extra/);
+    for (const [waiverConsents, message] of [
+      [[{ ...waiver, at: STARTED_AT, extra: true }], /unexpected field/],
+      [[{ ...waiver, at: "not-time" }], /real fixed-width UTC instant/],
+      [
+        [
+          { ...waiver, at: STARTED_AT },
+          { ...waiver, at: STARTED_AT },
+        ],
+        /duplicate waiver id and version/,
+      ],
+    ] as const) {
+      expect(() =>
+        restoreWithMind({
+          permissions: [],
+          pendingPermission: null,
+          waiverConsents,
+          beliefs: [],
+          compactHistory: [],
+        }),
+      ).toThrow(message);
+    }
   });
 
   it("grants standing permission only for an exact always-allow capability", () => {
@@ -268,6 +341,7 @@ describe("mind events", () => {
     expect(readMindSlice(state)).toEqual({
       permissions: [],
       pendingPermission: null,
+      waiverConsents: [],
       beliefs: [],
       compactHistory: [
         {
@@ -280,19 +354,29 @@ describe("mind events", () => {
   });
 
   it("rejects hostile values before JSON serialization can hide them", () => {
-    const accessor = { beliefs: [], compactHistory: [] };
+    const accessor = { waiverConsents: [], beliefs: [], compactHistory: [] };
     Object.defineProperty(accessor, "permissions", {
       enumerable: true,
       get: () => [],
     });
-    const symbolKey = { permissions: [], beliefs: [], compactHistory: [] };
+    const symbolKey = {
+      permissions: [],
+      waiverConsents: [],
+      beliefs: [],
+      compactHistory: [],
+    };
     Object.defineProperty(symbolKey, Symbol("hostile"), { value: true });
     const nonstandardPrototype = Object.assign(Object.create({}), {
       permissions: [],
+      waiverConsents: [],
       beliefs: [],
       compactHistory: [],
     });
-    const nonEnumerable = { beliefs: [], compactHistory: [] };
+    const nonEnumerable = {
+      waiverConsents: [],
+      beliefs: [],
+      compactHistory: [],
+    };
     Object.defineProperty(nonEnumerable, "permissions", {
       enumerable: false,
       value: [],
@@ -304,7 +388,12 @@ describe("mind events", () => {
       [nonstandardPrototype, /must be a plain JSON object/],
       [nonEnumerable, /non-enumerable fields are not JSON data/],
       [
-        { permissions: new Array(1), beliefs: [], compactHistory: [] },
+        {
+          permissions: new Array(1),
+          waiverConsents: [],
+          beliefs: [],
+          compactHistory: [],
+        },
         /must be a dense array without extra fields/,
       ],
     ] as const)
@@ -398,6 +487,7 @@ describe("mind events", () => {
     const duplicateSlice = {
       permissions: [],
       pendingPermission: null,
+      waiverConsents: [],
       beliefs: duplicateBeliefs,
       compactHistory: [],
     };
@@ -412,6 +502,7 @@ describe("mind events", () => {
         {
           permissions: [],
           pendingPermission: null,
+          waiverConsents: [],
           beliefs: [],
           compactHistory: [],
           extra: true,
@@ -424,6 +515,7 @@ describe("mind events", () => {
       restoreWithMind({
         permissions: [],
         pendingPermission: null,
+        waiverConsents: [],
         beliefs: [],
         compactHistory: [{ summary: "x", at: "not-time" }],
       }),
@@ -460,6 +552,7 @@ describe("mind events", () => {
         restoreWithMind({
           permissions: [],
           pendingPermission,
+          waiverConsents: [],
           beliefs: [],
           compactHistory: [],
         }),
