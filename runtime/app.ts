@@ -103,8 +103,13 @@ export function mountApp(
       session.dispatch(first);
       render();
       browser.requestAnimationFrame(() => {
-        session.dispatchMany(events.slice(1));
-        render();
+        // RAF callbacks run before their frame paints. A second callback keeps
+        // the replayable working state mounted through that paint, then folds
+        // the already-authored completion without letting wall time choose it.
+        browser.requestAnimationFrame(() => {
+          session.dispatchMany(events.slice(1));
+          render();
+        });
       });
       return;
     }
