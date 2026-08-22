@@ -86,6 +86,13 @@
       "archetype": "paranoid",
       "description": "Thorough enough to require a permit.",
       "costMultiplier": 1
+    },
+    {
+      "id": "temporary-bracing",
+      "name": "Temporary Bracing",
+      "archetype": "paranoid",
+      "description": "Faster, provided nobody leans on the result.",
+      "costMultiplier": 2
     }
   ],
   "story": {
@@ -154,7 +161,7 @@
       },
       {
         "id": "help",
-        "text": "/help lists commands; /compact frees context lossily; /exit returns to the incident shell. Prefix shell work with !."
+        "text": "/help lists commands; /model changes the active model; /compact frees context lossily; /cost reports replay-derived usage; /exit returns to the incident shell. Prefix shell work with !."
       },
       {
         "id": "compact",

@@ -238,6 +238,65 @@ body {
   box-shadow: 0 2px #c3cc45;
 }
 
+.slash-completions,
+.tui-presentation {
+  margin: 0.75rem 0 0 1.5rem;
+}
+
+.slash-completions {
+  max-width: 42rem;
+  border-left: 1px solid #788068;
+  padding: 0.25rem 0 0.25rem 0.75rem;
+  list-style: none;
+}
+
+.slash-completions__option,
+.model-selector__option {
+  display: grid;
+  grid-template-columns: minmax(6rem, auto) 1fr;
+  gap: 1rem;
+  padding: 0.35rem 0.5rem;
+  color: #aeb5a4;
+}
+
+.slash-completions__option strong,
+.model-selector__option strong {
+  display: block;
+  color: #e7eadf;
+}
+
+.slash-completions__option[aria-selected="true"] {
+  background: #1c2118;
+  color: #d4d9c9;
+}
+
+.model-selector {
+  max-width: 42rem;
+  margin: 0;
+  border: 1px solid #788068;
+  padding: 0.75rem;
+}
+
+.model-selector legend {
+  padding-inline: 0.4rem;
+  color: #c3cc45;
+}
+
+.model-selector__option {
+  grid-template-columns: auto 1fr;
+  cursor: pointer;
+}
+
+.model-selector__option input:focus-visible {
+  outline: 2px solid #c3cc45;
+  outline-offset: 2px;
+}
+
+.command-report {
+  margin: 0;
+  color: #d4d9c9;
+}
+
 .permission {
   margin: 0;
   border: 1px solid #788068;

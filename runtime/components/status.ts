@@ -11,7 +11,7 @@ export function groupedInteger(value: number): string {
   return groups.join(",");
 }
 
-function currencyFromMicros(value: number): string {
+export function currencyFromMicros(value: number): string {
   const units = Math.floor(value / 1_000_000);
   const micros = String(value % 1_000_000).padStart(6, "0");
   return `$${groupedInteger(units)}.${micros}`;

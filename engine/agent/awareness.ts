@@ -26,6 +26,21 @@ function responseEvent(
     : createAgentCapacityEvent(cartridge.story.fallback.response);
 }
 
+/** Record the cartridge-authored command reference without inventing runtime copy. */
+export function createAgentHelpEvents(
+  cartridge: LoadedCartridge,
+  state: SessionState,
+): readonly EngineEvent[] {
+  return [
+    responseEvent(
+      cartridge,
+      state,
+      cartridge.story.helpResponse,
+      `help-${String(state.eventCount)}`,
+    ),
+  ];
+}
+
 /** Resume from machine truth, installing opening beliefs only once. */
 export function createAgentResumeEvents(
   cartridge: LoadedCartridge,
