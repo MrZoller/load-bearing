@@ -28,6 +28,16 @@ export const CARTRIDGE_FIXTURE_ROOT = fileURLToPath(
   new URL("../__fixtures__/cartridges/", import.meta.url),
 );
 
+/** Production incidents a golden may name deliberately, never by a path. */
+const INCIDENT_PATHS: Readonly<Record<string, string>> = {
+  "incident-001": fileURLToPath(
+    new URL("../../content/incidents/incident-001.json", import.meta.url),
+  ),
+};
+
+export type CartridgeReference =
+  string | { readonly kind: "incident"; readonly id: "incident-001" };
+
 /**
  * Cartridge fixture names are file-name components, not paths.
  *
@@ -212,6 +222,19 @@ export function loadCartridgeFixture(name: string): unknown {
   return JSON.parse(text) as unknown;
 }
 
+/** Resolve the legacy fixture name or one explicitly allowlisted incident. */
+function loadCartridgeReference(reference: CartridgeReference): unknown {
+  if (typeof reference === "string") return loadCartridgeFixture(reference);
+  const path = INCIDENT_PATHS[reference.id];
+  if (path === undefined)
+    throw new Error(
+      `unknown production incident ${JSON.stringify(reference.id)}`,
+    );
+  const text = readTextFile(assertRealFile(path));
+  assertNoDuplicateKeys(text, path);
+  return JSON.parse(text) as unknown;
+}
+
 /** Every malformed cartridge fixture, sorted by name. */
 export function listInvalidCartridgeFixtures(): string[] {
   return readdirSync(join(CARTRIDGE_FIXTURE_ROOT, "invalid"))
@@ -242,7 +265,7 @@ export function loadReplayFixture(name: string): ReplayFixture {
     JSON.parse(text) as unknown,
     name,
     path,
-    loadCartridgeFixture,
+    loadCartridgeReference,
   );
 }
 
@@ -257,14 +280,14 @@ export function parseReplayFixture(
   parsed: unknown,
   name: string,
   path: string,
-  readCartridge: (cartridgeName: string) => unknown,
+  readCartridge: (reference: CartridgeReference) => unknown,
 ): ReplayFixture {
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     throw new Error(`${path}: expected a JSON object`);
   }
 
-  const fixture = parsed as Partial<ReplayFixture>;
-  for (const field of ["name", "description", "seed", "cartridge"] as const) {
+  const fixture = parsed as Record<string, unknown>;
+  for (const field of ["name", "description", "seed"] as const) {
     if (typeof fixture[field] !== "string") {
       throw new Error(
         `${path}: "${field}" must be a string; "cartridge" names a file under ` +
@@ -272,7 +295,20 @@ export function parseReplayFixture(
       );
     }
   }
-  if (!Array.isArray(fixture.events)) {
+  const reference = fixture["cartridge"];
+  const validReference =
+    typeof reference === "string" ||
+    (typeof reference === "object" &&
+      reference !== null &&
+      !Array.isArray(reference) &&
+      (reference as { kind?: unknown }).kind === "incident" &&
+      (reference as { id?: unknown }).id === "incident-001" &&
+      Object.keys(reference).length === 2);
+  if (!validReference)
+    throw new Error(
+      `${path}: "cartridge" must be a fixture name or { "kind": "incident", "id": "incident-001" }`,
+    );
+  if (!Array.isArray(fixture["events"])) {
     throw new Error(`${path}: "events" must be an array`);
   }
   // Shape-check every event, not just the array around them. A fixture whose
@@ -280,7 +316,7 @@ export function parseReplayFixture(
   // `fixtures:update` then records that as the expected transcript — a typo
   // promoted to a green baseline. A `null` element fails worse still, throwing
   // a bare TypeError out of the reducer with no fixture path attached.
-  fixture.events.forEach((event: unknown, index: number) => {
+  (fixture["events"] as unknown[]).forEach((event: unknown, index: number) => {
     const at = `${path}: events[${index}]`;
     if (typeof event !== "object" || event === null || Array.isArray(event)) {
       throw new Error(`${at} must be an object, not ${describe(event)}`);
@@ -325,9 +361,9 @@ export function parseReplayFixture(
       );
     }
   });
-  if (fixture.name !== name) {
+  if (fixture["name"] !== name) {
     throw new Error(
-      `${path}: "name" is ${JSON.stringify(fixture.name)} but the directory is ` +
+      `${path}: "name" is ${JSON.stringify(fixture["name"])} but the directory is ` +
         `${JSON.stringify(name)}. They must match, so a renamed directory cannot ` +
         `quietly orphan its recording.`,
     );
@@ -336,14 +372,18 @@ export function parseReplayFixture(
   // `cartridge` is a *name* on disk and the resolved contents in memory. The
   // resolution happens last, so a fixture that is malformed in some other way
   // reports that rather than a missing-file error from chasing its reference.
-  const cartridgeName = fixture.cartridge as string;
+  const cartridgeReference = reference as CartridgeReference;
+  const cartridgeName =
+    typeof cartridgeReference === "string"
+      ? cartridgeReference
+      : cartridgeReference.id;
   return {
-    name: fixture.name,
-    description: fixture.description as string,
-    seed: fixture.seed as string,
+    name: fixture["name"] as string,
+    description: fixture["description"] as string,
+    seed: fixture["seed"] as string,
     cartridgeName,
-    cartridge: readCartridge(cartridgeName),
-    events: fixture.events as readonly EngineEvent[],
+    cartridge: readCartridge(cartridgeReference),
+    events: fixture["events"] as readonly EngineEvent[],
   };
 }
 

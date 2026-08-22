@@ -1,11 +1,11 @@
 {
   "project": "Load Bearing",
-  "phase": "idle",
+  "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": null,
-  "branch": null,
+  "current_task": "T31",
+  "branch": "factory/t31-ending-matrix-skeleton",
   "pr": null,
   "hold": false,
-  "updated": "2026-08-22T20:18:58Z"
+  "updated": "2026-08-22T21:42:23Z"
 }

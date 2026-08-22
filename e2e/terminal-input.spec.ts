@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("keeps terminal controls mode-specific and presentation-only", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const transcript = page.getByRole("list", { name: "Session transcript" });
   const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
@@ -99,7 +99,7 @@ test("serializes working turns and lets Escape finish the authored sequence", as
   page,
 }) => {
   await page.clock.install();
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
@@ -125,7 +125,7 @@ test("serializes working turns and lets Escape finish the authored sequence", as
 test("restores a draft after navigating through a submitted slash command", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
   await agentPrompt.fill("/help");

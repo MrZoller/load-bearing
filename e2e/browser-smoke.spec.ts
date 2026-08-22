@@ -9,7 +9,7 @@ test("cold-opens and round-trips between the TUI and Bash with the keyboard", as
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("requestfailed", (request) => failedRequests.push(request.url()));
 
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const terminal = page.getByRole("main", { name: "Load Bearing terminal" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
@@ -83,7 +83,7 @@ test("cold-opens and round-trips between the TUI and Bash with the keyboard", as
 test("projects replayed engine metrics into the visible session status", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const status = page.getByRole("region", { name: "Session status" });
   const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
@@ -120,7 +120,7 @@ test("renders recognized and fallback TUI turns and dispatches ! shell work", as
 }) => {
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const transcript = page.getByRole("list", { name: "Session transcript" });
   const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
@@ -174,7 +174,7 @@ test("renders recognized and fallback TUI turns and dispatches ! shell work", as
 test("opens artifact disclosures with the keyboard and retains replayed work across Bash resume", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const transcript = page.getByRole("list", { name: "Session transcript" });
   const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
@@ -221,7 +221,7 @@ async function resolvePendingPermission(
   choice: string,
   tabs: number,
 ): Promise<void> {
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
   await expect(agentPrompt).toBeFocused();

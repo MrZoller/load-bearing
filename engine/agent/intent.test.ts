@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import cartridgeDocument from "../../content/incidents/phase-1-demo.json";
+import incident from "../../content/incidents/incident-001.json";
 import { loadCartridge } from "../cartridge/load.js";
 import { createShellExecuteEvent } from "../commands/shell.js";
 import { reduce, step } from "../events/reduce.js";
+import { readStorySlice } from "../story/story.js";
 import {
   createMindPermissionRequestedEvent,
   createMindPermissionResolvedEvent,
@@ -87,6 +89,63 @@ describe("authored agent input", () => {
         text: "I treated that as a request for a wider readiness review. The original task is now supporting it.",
       },
     ]);
+  });
+
+  it("reaches the story beat before recording its authored response", () => {
+    const cartridge = loadCartridge(incident);
+    const state = reduce({ cartridge, seed: SEED, events: [] });
+    const events = createAgentInputEvents(cartridge, state, "fix the 500");
+
+    expect(events.map((event) => event.type)).toEqual([
+      "agent.activity-set",
+      "agent.message-added",
+      "story.beat-reached",
+      "agent.response-recorded",
+      "agent.activity-set",
+    ]);
+    const after = reduce({ cartridge, seed: SEED, events });
+    expect(readStorySlice(after).discoveredEndings).toEqual([
+      "load-bearing-response",
+    ]);
+  });
+
+  it("continues accepting authored input after an ending is discovered", () => {
+    const cartridge = loadCartridge(incident);
+    const state = reduce({ cartridge, seed: SEED, events: [] });
+    const endingEvents = createAgentInputEvents(
+      cartridge,
+      state,
+      "fix the 500",
+    );
+    const afterEnding = reduce({ cartridge, seed: SEED, events: endingEvents });
+    const continued = createAgentInputEvents(
+      cartridge,
+      afterEnding,
+      "inspect routing",
+    );
+
+    expect(continued).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "agent.message-added" }),
+        expect.objectContaining({
+          type: "agent.response-recorded",
+          payload: expect.objectContaining({ responseId: "inspect-routing" }),
+        }),
+      ]),
+    );
+    expect(
+      readStorySlice(
+        reduce({
+          cartridge,
+          seed: SEED,
+          events: [...endingEvents, ...continued],
+        }),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        discoveredEndings: ["load-bearing-response"],
+      }),
+    );
   });
 
   it("preserves authored permission requests in action order", () => {

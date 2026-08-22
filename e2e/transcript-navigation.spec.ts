@@ -26,7 +26,7 @@ async function expectAtTranscriptBottom(transcript: Locator): Promise<void> {
 test("searches the transcript with the keyboard, navigates results, and restores the prompt", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   await addShellLines(prompt, 2, "search-target");
@@ -67,7 +67,7 @@ test("search interaction postpones the authored idle nudge", async ({
   page,
 }) => {
   await page.clock.install();
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
@@ -89,7 +89,7 @@ test("search folding is independent of the browser locale", async ({
 }) => {
   const context = await browser.newContext({ locale: "tr-TR" });
   const page = await context.newPage();
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   await prompt.press("Control+f");
@@ -105,7 +105,7 @@ test("search folding is independent of the browser locale", async ({
 test("opens a collapsed artifact that contains the current search match", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
@@ -129,7 +129,7 @@ test("leaves selected transcript text available to the browser copy command", as
   page,
 }) => {
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const transcript = page.getByRole("list", { name: "Session transcript" });
   const copied = "Last login: maintenance window still open.";
@@ -157,7 +157,7 @@ test("bounds scrollback without discarding the newest transcript output", async 
   // GitHub's single-worker Chromium can take longer than Playwright's default
   // per-test budget even though the interaction itself remains responsive.
   test.setTimeout(90_000);
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
@@ -180,7 +180,7 @@ test("bounds scrollback without discarding the newest transcript output", async 
 test("preserves scrolled-up reading position until new output is acknowledged, then resumes bottom following", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
@@ -241,7 +241,7 @@ test("preserves scrolled-up reading position until new output is acknowledged, t
 test("keeps the new-output affordance after search restores an old match", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const transcript = page.getByRole("list", { name: "Session transcript" });

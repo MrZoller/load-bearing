@@ -54,7 +54,7 @@ export interface CartridgeAuthoredResponse {
   readonly todos: readonly CartridgeResponseTodo[];
 }
 
-/** The closed Phase 1 action surface. Arbitrary engine events are not content. */
+/** The closed cartridge action surface. Arbitrary engine events are not content. */
 export type CartridgeAgentAction =
   | {
       readonly kind: "shell-execute";
@@ -65,7 +65,28 @@ export type CartridgeAgentAction =
       readonly id: string;
       readonly action: string;
       readonly resource: string;
+    }
+  | {
+      readonly kind: "story-reach";
+      readonly beat: string;
     };
+
+export interface CartridgeStoryBeat {
+  readonly id: string;
+  /** Empty when reaching this beat discovers no ending. */
+  readonly ending: string;
+}
+
+export interface CartridgeEnding {
+  readonly id: string;
+  readonly name: string;
+}
+
+export interface CartridgeStoryPhase2 {
+  readonly initialBeat: string;
+  readonly beats: readonly CartridgeStoryBeat[];
+  readonly endings: readonly CartridgeEnding[];
+}
 
 export interface CartridgeIntent {
   readonly id: string;
@@ -129,8 +150,8 @@ export interface CartridgeStory {
     readonly unchangedResponse: string;
     readonly changedResponse: string;
   };
-  /** Phase 2 story graph, escalation and endings remain explicitly deferred. */
-  readonly phase2: DeferredObject;
+  /** Bounded shared-beat graph and ordered, non-terminal ending identities. */
+  readonly phase2: CartridgeStoryPhase2;
 }
 
 export interface CartridgePlaceholder {

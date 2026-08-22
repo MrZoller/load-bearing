@@ -32,15 +32,18 @@ A fixture is a directory under `engine/__fixtures__/replay/`:
 
 `fixture.json`:
 
-| field         | meaning                                                     |
-| ------------- | ----------------------------------------------------------- |
-| `name`        | must equal the directory name                               |
-| `description` | what this fixture protects, for the human reading a failure |
-| `seed`        | seed material for the PRNG                                  |
-| `cartridge`   | names a file under `engine/__fixtures__/cartridges/`        |
-| `events`      | the append-only event log to fold                           |
+| field         | meaning                                                                 |
+| ------------- | ----------------------------------------------------------------------- |
+| `name`        | must equal the directory name                                           |
+| `description` | what this fixture protects, for the human reading a failure             |
+| `seed`        | seed material for the PRNG                                              |
+| `cartridge`   | fixture name, or the explicit allowlisted production incident reference |
+| `events`      | the append-only event log to fold                                       |
 
-`cartridge` is a **name, not an inlined world**. Every fixture replays the same
+`cartridge` is a **reference, not an inlined world**. Existing fixtures use a
+name under `engine/__fixtures__/cartridges/`; a production golden may use only
+`{ "kind": "incident", "id": "incident-001" }`. The resolver has no path
+traversal or open-ended incident lookup. Every fixture replays the same
 committed cartridge, so a change to that world shows up in all of their
 recordings at once; embedded copies would drift, and a shared contract that
 holds in one recording and not the others is not a contract. The named file is
@@ -96,6 +99,7 @@ against the replay contract.
 | `017-agent-intents`            | recognized and fallback agent turns plus shell passthrough replaying through the shared shell event path                                                    |
 | `018-shared-machine-awareness` | mode changes around a shared-machine mutation, resume divergence acknowledgment, and compacted belief replacement                                           |
 | `019-pending-permissions`      | authored exact-capability consent, simulated-time resolution, atomic prompt clearing, and a durable standing grant                                          |
+| `020-incident-001-story`       | the actual production Incident #001 declaration, its discovered ending, and continued authored input                                                        |
 
 `002` records 1000 raw draws eight to a line with their index, so a divergence
 names the draw it started at rather than reporting that a file changed.

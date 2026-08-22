@@ -37,7 +37,7 @@ async function expectFocusedVisible(
 test("replays a complete keyboard-only browser session byte-for-byte", async ({
   page,
 }) => {
-  await page.goto("/?acceptance=1");
+  await page.goto("/?scenario=phase-1-demo&acceptance=1");
 
   const transcript = page.getByRole("list", { name: "Session transcript" });
   const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
@@ -147,7 +147,7 @@ test("keeps browser presentation activity outside the replay record", async ({
       get: () => ticks,
     });
   });
-  await page.goto("/?acceptance=1");
+  await page.goto("/?scenario=phase-1-demo&acceptance=1");
 
   const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
