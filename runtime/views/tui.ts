@@ -1,8 +1,10 @@
 import {
   createAgentInputEvents,
   createShellExecuteEvent,
+  createTerminalModelEvent,
   createTerminalModeEvent,
   readMindSlice,
+  readTerminalSlice,
 } from "../../engine/index.js";
 import type {
   EngineEvent,
@@ -11,13 +13,22 @@ import type {
 } from "../../engine/index.js";
 import { renderPermission } from "../components/permission.js";
 import { renderAgentActivity } from "../components/activity.js";
+import { currencyFromMicros, groupedInteger } from "../components/status.js";
+import {
+  discoverSlashCommands,
+  executeSlashCommand,
+} from "../commands/slash.js";
+import type { SlashCommandDefinition } from "../commands/slash.js";
 
 export function createTuiInputEvents(
   cartridge: LoadedCartridge,
   state: SessionState,
   input: string,
 ): readonly EngineEvent[] {
-  if (input === "/exit") return [createTerminalModeEvent("bash")];
+  if (input.trim().startsWith("/")) {
+    const result = executeSlashCommand(cartridge, state, input);
+    return result.kind === "dispatch" ? result.events : [];
+  }
   if (input.startsWith("!")) return [createShellExecuteEvent(input.slice(1))];
   return createAgentInputEvents(cartridge, state, input);
 }
@@ -50,6 +61,115 @@ export function renderTuiView(
   input.autocapitalize = "off";
   input.spellcheck = false;
   input.setAttribute("aria-label", "Agent prompt");
+  input.setAttribute("aria-autocomplete", "list");
+  input.setAttribute("aria-controls", "slash-completions");
+  input.setAttribute("aria-expanded", "false");
+
+  const presentation = document.createElement("div");
+  presentation.className = "tui-presentation";
+  const completions = document.createElement("ul");
+  completions.id = "slash-completions";
+  completions.className = "slash-completions";
+  completions.setAttribute("role", "listbox");
+  completions.setAttribute("aria-label", "Slash commands");
+  completions.hidden = true;
+  let matches: readonly SlashCommandDefinition[] = [];
+  let activeCompletion = 0;
+
+  function closePresentation(): void {
+    presentation.replaceChildren();
+    completions.replaceChildren();
+    completions.hidden = true;
+    input.setAttribute("aria-expanded", "false");
+    input.removeAttribute("aria-activedescendant");
+  }
+
+  function renderCompletions(): void {
+    matches = discoverSlashCommands(input.value.trim());
+    activeCompletion = Math.min(
+      activeCompletion,
+      Math.max(0, matches.length - 1),
+    );
+    completions.replaceChildren(
+      ...matches.map((command, index) => {
+        const option = document.createElement("li");
+        option.id = `slash-command-${String(index)}`;
+        option.className = "slash-completions__option";
+        option.setAttribute("role", "option");
+        option.setAttribute(
+          "aria-selected",
+          String(index === activeCompletion),
+        );
+        const name = document.createElement("strong");
+        name.textContent = command.name;
+        const description = document.createElement("span");
+        description.textContent = command.description;
+        option.append(name, description);
+        return option;
+      }),
+    );
+    completions.hidden = matches.length === 0;
+    input.setAttribute("aria-expanded", String(matches.length > 0));
+    if (matches.length > 0) {
+      input.setAttribute(
+        "aria-activedescendant",
+        `slash-command-${String(activeCompletion)}`,
+      );
+    } else {
+      input.removeAttribute("aria-activedescendant");
+    }
+  }
+
+  function showMessage(label: string, value: string): void {
+    closePresentation();
+    const report = document.createElement("p");
+    report.className = "command-report";
+    report.setAttribute("role", "status");
+    report.setAttribute("aria-label", label);
+    report.textContent = value;
+    presentation.append(report);
+    input.value = "";
+    input.focus();
+  }
+
+  function showModelSelector(): void {
+    closePresentation();
+    const fieldset = document.createElement("fieldset");
+    fieldset.className = "model-selector";
+    const legend = document.createElement("legend");
+    legend.textContent = "Choose active model";
+    fieldset.append(legend);
+    for (const model of cartridge.models) {
+      const label = document.createElement("label");
+      label.className = "model-selector__option";
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "active-model";
+      radio.value = model.id;
+      radio.checked = readTerminalSlice(state).activeModel === model.id;
+      const copy = document.createElement("span");
+      const name = document.createElement("strong");
+      name.textContent = model.name;
+      const description = document.createElement("span");
+      description.textContent = model.description;
+      copy.append(name, description);
+      radio.addEventListener("change", () => {
+        if (radio.checked) dispatch([createTerminalModelEvent(model.id)]);
+      });
+      radio.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closePresentation();
+          input.value = "";
+          input.focus();
+        }
+      });
+      label.append(radio, copy);
+      fieldset.append(label);
+    }
+    presentation.append(fieldset);
+    fieldset.querySelector<HTMLInputElement>("input:checked, input")?.focus();
+  }
 
   function enterBash(): void {
     dispatch([createTerminalModeEvent("bash")]);
@@ -57,12 +177,67 @@ export function renderTuiView(
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    if (input.value.trim().startsWith("/")) {
+      const result = executeSlashCommand(cartridge, state, input.value);
+      if (result.kind === "dispatch") {
+        dispatch(result.events);
+      } else if (result.kind === "model-selector") {
+        showModelSelector();
+      } else if (result.kind === "metrics") {
+        showMessage(
+          "Session cost",
+          [
+            `model ${result.metrics.modelName}`,
+            `tokens ${groupedInteger(result.metrics.tokenCount)}`,
+            `cost ${currencyFromMicros(result.metrics.costMicros)}`,
+            `context ${String(result.metrics.contextPercent)}%`,
+          ].join(" · "),
+        );
+      } else {
+        showMessage("Command error", result.message);
+      }
+      return;
+    }
     dispatch(createTuiInputEvents(cartridge, state, input.value));
+  });
+  input.addEventListener("input", () => {
+    activeCompletion = 0;
+    renderCompletions();
   });
   input.addEventListener("keydown", (event) => {
     if (event.ctrlKey && event.key.toLowerCase() === "d") {
       event.preventDefault();
       enterBash();
+      return;
+    }
+    if (
+      event.key === "Escape" &&
+      (!completions.hidden || presentation.hasChildNodes())
+    ) {
+      event.preventDefault();
+      closePresentation();
+      input.value = "";
+      input.focus();
+      return;
+    }
+    if (
+      !completions.hidden &&
+      (event.key === "ArrowDown" || event.key === "ArrowUp")
+    ) {
+      event.preventDefault();
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      activeCompletion =
+        (activeCompletion + direction + matches.length) % matches.length;
+      renderCompletions();
+      return;
+    }
+    if (!completions.hidden && event.key === "Tab") {
+      event.preventDefault();
+      const command = matches[activeCompletion];
+      if (command !== undefined) {
+        input.value = command.name;
+        renderCompletions();
+      }
     }
   });
   form.append(label, input);
@@ -71,6 +246,6 @@ export function renderTuiView(
   view.className = "tui-view";
   const activity = renderAgentActivity(document, state, activityElapsedMs);
   if (activity !== null) view.append(activity);
-  view.append(form);
+  view.append(form, completions, presentation);
   return view;
 }

@@ -307,6 +307,7 @@ export {
 } from "./agent/module.js";
 export {
   createAgentCompactEvents,
+  createAgentHelpEvents,
   createAgentResumeEvents,
 } from "./agent/awareness.js";
 export { canRecordAuthoredResponse } from "./agent/intent.js";

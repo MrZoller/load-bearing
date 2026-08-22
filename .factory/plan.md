@@ -55,10 +55,11 @@ and runtime model calls are deliberately excluded.
   - acceptance: `engine/metrics/` derives or records model, token count, cost, context percentage, and structural integrity solely from replay state plus validated cartridge parameters, with explicit bounds and snapshot validation; `runtime/components/status.ts` renders those values and attribution from engine queries rather than DOM counters; unit and replay tests prove model switches and identical logs produce stable values (criteria 8)
   - deps: T14, T16
   - pr: 45
-- [~] T22 (standard) — Deterministic working verb and suffix channel
+- [x] T22 (standard) — Deterministic working verb and suffix channel
   - acceptance: agent activity events select verbs from authored archetype-by-stage pools through a dedicated stable named stream and record the choice; the runtime spinner shows the selected verb plus timer, token count, and Escape guidance while wall time only interpolates presentation; reduced motion exposes the same text without animation, and tests prove unrelated streams, frame timing, and motion preference cannot alter replay state (criteria 9)
   - deps: T16, T21
-- [ ] T23 (standard) — Slash commands, autocomplete, and model selector
+  - pr: 46
+- [~] T23 (standard) — Slash commands, autocomplete, and model selector
   - acceptance: one typed slash-command registry implements and accurately describes `/help`, `/model`, `/compact`, `/cost`, and `/exit`; commands dispatch terminal, mind, and agent events or report engine metrics as appropriate; the semantic model selector and slash autocomplete are fully keyboard-operable, model and compact state survive view switches, and focused unit/interaction tests cover discovery, execution, cancellation, and focus restoration (criterion 6)
   - deps: T15, T16, T18, T21
 - [ ] T24 (standard) — Terminal histories, completion, and core controls
@@ -116,10 +117,12 @@ and runtime model calls are deliberately excluded.
   - PR #35: make the VFS/Git coverage gate fail when a new runtime production file falls outside its measured inventory, and align its comments and README wording
   - pr: 36
 
-- [!] T30 (trivial) — parked review minors (batch)
+- [ ] T30 (trivial) — parked review minors (batch)
   - acceptance: confirmed non-blocking review findings parked during Phase 1 delivery are collected, fixed as one focused batch, and verified by the affected tests and repository gates
   - PR #37: update README Status and root AGENTS.md layout/status copy for the Phase 1 browser runtime (walking skeleton renders; runtime/ and content/incidents/ exist)
   - PR #38: reserve or reject authored overrides for mechanics-owned commands whose static output would suppress replayable effects, beginning with `loadbearing --resume`
   - PR #39: cover terminal-renderer invariant/error paths and settle missing-`/etc/motd` behavior with T16's cartridge opening-copy contract
   - PR #40: require nonempty spinner verbs at the cartridge boundary (schema minLength) so a schema-valid pool cannot produce an empty working-activity verb
   - PR #40: reject restored snapshots whose response-record order disagrees with their agent-message order, so restored state stays event-log-reducible
+  - PR #46: make the advertised Escape activity guidance take a deterministic interruption/ignored-interruption path rather than leaving the control inert
+  - PR #46: serialize or disable TUI submissions during the working presentation interval to prevent rapid re-entry against a transitional snapshot
