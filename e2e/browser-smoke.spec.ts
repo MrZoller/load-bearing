@@ -91,6 +91,9 @@ test("projects replayed engine metrics into the visible session status", async (
   const cost = status.getByText(/^cost /);
   const context = status.getByText(/^context /);
   const integrity = status.getByText(/^integrity /);
+  const activity = page.locator(
+    '[data-agent-activity][aria-label="Agent activity"]',
+  );
 
   await expect(status).toBeVisible();
   await expect(status).toContainText("model Structural Audit");
@@ -103,13 +106,9 @@ test("projects replayed engine metrics into the visible session status", async (
   const tokensBefore = await tokens.innerText();
   await agentPrompt.fill("inspect it");
   await agentPrompt.press("Enter");
-  await expect(
-    page.getByRole("status", { name: "Agent activity" }),
-  ).toBeVisible();
+  await expect(activity).toBeVisible();
   await page.waitForTimeout(100);
-  await expect(
-    page.getByRole("status", { name: "Agent activity" }),
-  ).toBeVisible();
+  await expect(activity).toBeVisible();
 
   // The status is re-projected after a visitor turn; it cannot be a DOM-only
   // counter if the token value follows the engine's expanded event history.
