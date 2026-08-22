@@ -25,6 +25,17 @@ function paragraph(
   return line;
 }
 
+function labeledParagraph(
+  document: Document,
+  className: string,
+  label: string,
+  text: string,
+): HTMLParagraphElement {
+  const line = paragraph(document, className, text);
+  line.setAttribute("aria-label", `${label}: ${text}`);
+  return line;
+}
+
 function eventString(event: EngineEvent, field: string, label: string): string {
   const value = event.payload?.[field];
   if (typeof value !== "string") {
@@ -93,7 +104,9 @@ function renderLogin(
 function renderExchange(document: Document, input: string): HTMLLIElement {
   const item = document.createElement("li");
   item.className = "transcript__entry transcript__entry--exchange";
-  item.append(paragraph(document, "transcript__command", input));
+  item.append(
+    labeledParagraph(document, "transcript__command", "Shell command", input),
+  );
   return item;
 }
 
@@ -102,15 +115,21 @@ function renderShellResult(
   item: HTMLLIElement,
   result: TranscriptEntry,
 ): void {
+  const announcements: string[] = [];
   for (const output of result.output ?? []) {
+    const label = output.stream === "stderr" ? "Error output" : "Shell output";
     item.append(
-      paragraph(
+      labeledParagraph(
         document,
         `transcript__output transcript__output--${output.stream}`,
+        label,
         output.text,
       ),
     );
+    announcements.push(`${label}: ${output.text}`);
   }
+  if (announcements.length > 0)
+    item.dataset["announcement"] = announcements.join("\n");
 }
 
 function renderMessage(
@@ -121,12 +140,14 @@ function renderMessage(
   const item = document.createElement("li");
   item.className = `transcript__entry transcript__entry--${message.role}`;
   item.append(
-    paragraph(
+    labeledParagraph(
       document,
       `transcript__message transcript__message--${message.role}`,
+      message.role === "agent" ? "Agent" : "Visitor",
       message.text,
     ),
   );
+  if (message.role === "agent") item.dataset["announcement"] = message.text;
   if (messageArtifacts !== undefined) {
     const artifacts = renderAgentArtifacts(document, messageArtifacts);
     if (artifacts !== null) item.append(artifacts);

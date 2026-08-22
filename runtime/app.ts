@@ -54,11 +54,22 @@ export function mountApp(
   transcript.className = "transcript";
   transcript.setAttribute("aria-label", "Session transcript");
 
+  // The visible transcript is replaced from replay state on every render. A
+  // separate live region prevents that projection from rereading the full log;
+  // only newly keyed agent and shell output is copied here.
+  const outputAnnouncements = document.createElement("div");
+  outputAnnouncements.className = "visually-hidden";
+  outputAnnouncements.setAttribute("role", "status");
+  outputAnnouncements.setAttribute("aria-live", "polite");
+  outputAnnouncements.setAttribute("aria-atomic", "true");
+  outputAnnouncements.setAttribute("aria-label", "New terminal output");
+
   const view = document.createElement("section");
   view.className = "terminal__view";
   view.setAttribute("aria-label", "Active terminal view");
 
   const status = document.createElement("div");
+  status.className = "terminal__status";
   const focusPrompt = (): void => {
     view.querySelector<HTMLElement>("[data-initial-focus], input")?.focus();
   };
@@ -77,6 +88,7 @@ export function mountApp(
     assignment,
     transcriptSearch.element,
     transcript,
+    outputAnnouncements,
     transcriptScroll.newOutputButton,
     view,
     status,
@@ -89,6 +101,8 @@ export function mountApp(
   let hiddenTranscriptEntries = 0;
   let idleTimer: number | null = null;
   let placeholderTimer: number | null = null;
+  const seenTranscriptKeys = new Set<string>();
+  let announcementsSeeded = false;
   const placeholders = session.cartridge.presentation.placeholders
     .filter(({ stage }) => stage === 0)
     .map(({ text }) => text);
@@ -240,6 +254,21 @@ export function mountApp(
       session.cartridge,
       snapshot,
     );
+    const newAnnouncements: string[] = [];
+    for (const entry of transcriptEntries) {
+      const key = entry.dataset["transcriptKey"];
+      if (key === undefined || seenTranscriptKeys.has(key)) continue;
+      seenTranscriptKeys.add(key);
+      const announcement = entry.dataset["announcement"];
+      if (announcementsSeeded && announcement !== undefined)
+        newAnnouncements.push(announcement);
+    }
+    if (newAnnouncements.length > 0) {
+      const announcement = document.createElement("p");
+      announcement.textContent = newAnnouncements.join("\n");
+      outputAnnouncements.replaceChildren(announcement);
+    }
+    announcementsSeeded = true;
     transcriptScroll.render(transcriptEntries.slice(hiddenTranscriptEntries));
     transcriptSearch.refresh();
     transcriptScroll.afterSearchRefresh();

@@ -68,7 +68,7 @@ describe("agent activity component", () => {
       className: "agent-activity",
       textContent: `${verb}… 12s · 1,380 tokens · Esc to interrupt`,
     });
-    expect(element.attributes.get("role")).toBe("status");
+    expect(element.attributes.has("role")).toBe(false);
     expect(element.attributes.get("aria-label")).toBe("Agent activity");
     expect(deriveEngineMetrics(state).tokenCount).toBe(1_380);
   });

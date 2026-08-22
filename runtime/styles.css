@@ -10,6 +10,15 @@
   box-sizing: border-box;
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 body {
   min-width: 320px;
   min-height: 100vh;
@@ -43,6 +52,24 @@ body {
   width: 0.45rem;
   border-right: 1px solid #788068;
   background: #c3cc45;
+}
+
+.beam::before,
+.beam::after {
+  position: absolute;
+  left: 0;
+  width: 0.9rem;
+  height: 0.2rem;
+  background: #c3cc45;
+  content: "";
+}
+
+.beam::before {
+  top: 0;
+}
+
+.beam::after {
+  bottom: 0;
 }
 
 .terminal__assignment,
@@ -345,6 +372,11 @@ body {
 }
 
 .model-selector__option input:focus-visible {
+  outline: 2px solid #c3cc45;
+  outline-offset: 2px;
+}
+
+.model-selector__option:has(input:focus-visible) {
   outline: 2px solid #c3cc45;
   outline-offset: 2px;
 }
