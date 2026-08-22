@@ -50,7 +50,8 @@ test("Lighthouse reports a perfect accessibility score", async ({
       logLevel: "silent",
     });
 
-    const result = await lighthouse(baseURL, {
+    const scenarioUrl = new URL("/?scenario=phase-1-demo", baseURL).href;
+    const result = await lighthouse(scenarioUrl, {
       formFactor: "desktop",
       onlyCategories: ["accessibility"],
       output: "json",

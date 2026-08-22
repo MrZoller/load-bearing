@@ -23,7 +23,7 @@ async function expectVisibleControlsNamed(
 test("keeps the stable terminal surface semantic, named, and visibly focused", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const terminal = page.getByRole("main", { name: "Load Bearing terminal" });
   const transcript = page.getByRole("list", { name: "Session transcript" });
@@ -84,7 +84,7 @@ test("keeps the stable terminal surface semantic, named, and visibly focused", a
 test("gives every visible interactive control a name and a non-trapping Tab cycle", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   await expectVisibleControlsNamed(page);
@@ -120,7 +120,7 @@ test("gives every visible interactive control a name and a non-trapping Tab cycl
 test("announces only newly rendered agent and shell output", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const liveOutput = page.getByRole("status", { name: "New terminal output" });
@@ -171,7 +171,7 @@ test("reduced motion preserves cold-open, activity, and status information", asy
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.clock.install();
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const transcript = page.getByRole("list", { name: "Session transcript" });
   const prompt = page.getByRole("combobox", { name: "Agent prompt" });

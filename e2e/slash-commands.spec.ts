@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("slash commands are keyboard-operable", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
   const completions = page.getByRole("listbox", { name: "Slash commands" });
@@ -88,7 +88,7 @@ test("teaches only cartridge-authored surface controls without a tutorial layer"
   page,
 }) => {
   await page.clock.install({ time: new Date("2026-08-22T09:14:22.000Z") });
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const terminal = page.getByRole("main", { name: "Load Bearing terminal" });
   const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
@@ -144,7 +144,7 @@ test("teaches only cartridge-authored surface controls without a tutorial layer"
 });
 
 test("model selection persists across mode switches", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/?scenario=phase-1-demo");
 
   const agentPrompt = page.getByRole("combobox", { name: "Agent prompt" });
   const bashPrompt = page.getByRole("textbox", { name: "Bash command" });
