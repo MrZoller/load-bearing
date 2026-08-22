@@ -17,7 +17,7 @@ determinism harness).
 
 ## Commands
 
-All verified on Node 22+/npm 11 (`npm run verify`, green on this machine):
+All verified on Node 22.19+/npm 11 (`npm run verify`, green on this machine):
 
 - setup: `npm install && npx playwright install chromium` (CI uses `npm ci`
   and installs Chromium with its system dependencies; `package-lock.json` is
@@ -49,7 +49,7 @@ Commands I read but did **not** run (all write to the tree): `fixtures:update`,
 
 - TypeScript `^5.7` (strict, `noUncheckedIndexedAccess`, `noImplicitOverride`,
   `isolatedModules`, `verbatimModuleSyntax`), ESM (`"type": "module"`), Node
-  `>=22` (`.nvmrc` = 22). Dev deps only: `vitest`, `prettier`, `vite-node`,
+  `>=22.19` (`.nvmrc` = 22.19). Dev deps only: `vitest`, `prettier`, `vite-node`,
   `@types/node`. **The engine has zero runtime dependencies and must keep it
   that way** — `APPROVED_PACKAGES` in the purity gate is empty and approving a
   package means manually asserting it reads no clock, draws no randomness,
@@ -157,9 +157,9 @@ questions); agents load the `factory-protocol` skill before factory work.
   the canonical serializer and `.prettierignore`'d; regenerate them with the
   `update` scripts, never hand-edit or re-format them. `.gitattributes` pins
   LF everywhere so checkouts can't rewrite recorded byte identity.
-- **Node version skew.** CI reads `.nvmrc` (22); a local Node 26 can mask
-  failures (a test overflowed the stack on 22 but passed on 26 — V8 made
-  `JSON.stringify` non-recursive). Use `nvm use`/Node 22 to match CI.
+- **Node version skew.** CI reads `.nvmrc` (22.19); a local Node 26 can mask
+  failures (a test overflowed the stack on Node 22 but passed on 26 — V8 made
+  `JSON.stringify` non-recursive). Use `nvm use`/Node 22.19 to match CI.
 - **`meta.startedAt` and all timestamps are fixed-width `…mmmZ` UTC.** A
   cartridge declaring another spelling is rejected, because replay state embeds
   the loaded cartridge and two spellings of one instant would produce
