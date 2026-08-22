@@ -33,14 +33,16 @@ export interface TerminalInputControllerOptions {
   readonly onActivity?: () => void;
 }
 
-function hasSelection(input: HTMLInputElement): boolean {
-  const hasInputSelection =
+function hasInputSelection(input: HTMLInputElement): boolean {
+  return (
     input.selectionStart !== null &&
     input.selectionEnd !== null &&
-    input.selectionStart !== input.selectionEnd;
-  const hasDocumentSelection =
-    (input.ownerDocument?.getSelection()?.toString().length ?? 0) > 0;
-  return hasInputSelection || hasDocumentSelection;
+    input.selectionStart !== input.selectionEnd
+  );
+}
+
+function hasDocumentSelection(input: HTMLInputElement): boolean {
+  return (input.ownerDocument?.getSelection()?.toString().length ?? 0) > 0;
 }
 
 function replaceInput(
@@ -85,7 +87,12 @@ export function createTerminalInputController(
 
         // Cmd/Ctrl copy and all paste variants remain native. Ctrl+C is a
         // terminal cancel only when there is no selected text to copy.
-        if (control && key.toLowerCase() === "c" && !hasSelection(input)) {
+        if (
+          control &&
+          key.toLowerCase() === "c" &&
+          !hasInputSelection(input) &&
+          !hasDocumentSelection(input)
+        ) {
           event.preventDefault();
           replaceInput(input, "");
           completionPresentation?.close();
@@ -137,7 +144,9 @@ export function createTerminalInputController(
           completionPresentation?.close();
           return;
         }
-        if (key !== "Tab" || event.shiftKey || hasSelection(input)) return;
+        // A transcript selection matters to copy, but it must not disable
+        // prompt completion after the user returns focus to the input.
+        if (key !== "Tab" || event.shiftKey || hasInputSelection(input)) return;
         if (completionPresentation?.isOpen() === true) {
           if (completionPresentation.accept()) event.preventDefault();
           return;

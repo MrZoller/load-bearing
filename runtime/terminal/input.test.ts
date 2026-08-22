@@ -141,7 +141,7 @@ describe("createTerminalInputController", () => {
     expect(tui.input.value).toBe("");
   });
 
-  it("consumes Tab when a Bash completion cannot extend an ambiguous prefix", () => {
+  it("consumes Tab for Bash completion even when transcript text remains selected", () => {
     const controller = createTerminalInputController({
       clearTranscript() {},
       enterBash() {},
@@ -150,6 +150,7 @@ describe("createTerminalInputController", () => {
 
     bash.input.value = "c";
     bash.input.setSelectionRange(1, 1);
+    bash.input.selectedDocumentText = "stale transcript selection";
     const completion = bash.input.dispatch("keydown", new FakeEvent("Tab"));
 
     expect(completion.defaultPrevented).toBe(true);
