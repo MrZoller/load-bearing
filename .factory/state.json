@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": null,
-  "branch": null,
+  "current_task": "T32",
+  "branch": "factory/t32-closed-story-conditions",
   "pr": null,
   "hold": false,
-  "updated": "2026-08-22T23:19:09Z"
+  "updated": "2026-08-22T23:19:57Z"
 }

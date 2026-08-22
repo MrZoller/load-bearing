@@ -274,7 +274,7 @@ which also blocks T28 and T29. Recommendation: A; the defect and minimal fix are
 well bounded, but proceeding now would violate the panel termination rule.
 **A:** Option A — resume T25 in a fresh cycle (operator answer, as Chris's representative; process continuation with a documented default, no product-surface change). Split input-only selection state from document selection so only Ctrl+C consults the document selection; add the focused Tab-completion regression test alongside T24's coverage; full verification and a fresh panel. Option B rejected: deferral blocks T28/T29 for a defect Q8 itself describes as well bounded.
 
-## Q9 (task T32, open) — Where should the waiver-consent query contract begin?
+## Q9 (task T32, consumed) — Where should the waiver-consent query contract begin?
 
 Context: T32 must add closed conditions sufficient to query every approved T31
 ending row, including the row that requires a distinct typed waiver-consent
