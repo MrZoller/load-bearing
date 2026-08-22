@@ -12,6 +12,9 @@ import {
   MAX_AGENT_MESSAGES,
   MAX_AGENT_RESPONSES,
   MAX_AGENT_TEXT_LENGTH,
+  MAX_AGENT_THINKING_BLOCKS,
+  MAX_AGENT_TODOS,
+  MAX_AGENT_TOOL_CALLS,
   readAgentSlice,
 } from "./agent.js";
 import {
@@ -78,14 +81,26 @@ export function createAgentInputEvents(
   input: string,
 ): readonly EngineEvent[] {
   const agent = readAgentSlice(state);
+  const boundedInput = boundAgentInput(input);
+  const selection = selectAgentIntent(cartridge, boundedInput);
+  const response = cartridge.story.responses.find(
+    (candidate) => candidate.id === selection.responseId,
+  );
+  if (response === undefined) {
+    throw new Error(
+      `agent intent selected unknown response ${JSON.stringify(selection.responseId)}`,
+    );
+  }
   if (
     agent.messages.length + 2 > MAX_AGENT_MESSAGES ||
-    agent.responses.length + 1 > MAX_AGENT_RESPONSES
+    agent.responses.length + 1 > MAX_AGENT_RESPONSES ||
+    agent.toolCalls.length + response.toolCalls.length > MAX_AGENT_TOOL_CALLS ||
+    agent.thinkingBlocks.length + response.thinkingBlocks.length >
+      MAX_AGENT_THINKING_BLOCKS ||
+    agent.todos.length + response.todos.length > MAX_AGENT_TODOS
   ) {
     return [createAgentCapacityEvent(cartridge.story.fallback.response)];
   }
-  const boundedInput = boundAgentInput(input);
-  const selection = selectAgentIntent(cartridge, boundedInput);
   const turnId = `turn-${String(state.eventCount)}`;
   return [
     createAgentMessageEvent(turnId, boundedInput),
