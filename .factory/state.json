@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T17",
-  "branch": "factory/t17-authored-input",
-  "pr": 41,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-22T06:20:11Z"
+  "updated": "2026-08-22T07:02:28Z"
 }
