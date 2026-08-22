@@ -59,7 +59,7 @@ and runtime model calls are deliberately excluded.
   - acceptance: agent activity events select verbs from authored archetype-by-stage pools through a dedicated stable named stream and record the choice; the runtime spinner shows the selected verb plus timer, token count, and Escape guidance while wall time only interpolates presentation; reduced motion exposes the same text without animation, and tests prove unrelated streams, frame timing, and motion preference cannot alter replay state (criteria 9)
   - deps: T16, T21
   - pr: 46
-- [R] T23 (standard) — Slash commands, autocomplete, and model selector
+- [x] T23 (standard) — Slash commands, autocomplete, and model selector
   - acceptance: one typed slash-command registry implements and accurately describes `/help`, `/model`, `/compact`, `/cost`, and `/exit`; commands dispatch terminal, mind, and agent events or report engine metrics as appropriate; the semantic model selector and slash autocomplete are fully keyboard-operable, model and compact state survive view switches, and focused unit/interaction tests cover discovery, execution, cancellation, and focus restoration (criterion 6)
   - deps: T15, T16, T18, T21
   - pr: 47
@@ -127,3 +127,4 @@ and runtime model calls are deliberately excluded.
   - PR #40: reject restored snapshots whose response-record order disagrees with their agent-message order, so restored state stays event-log-reducible
   - PR #46: make the advertised Escape activity guidance take a deterministic interruption/ignored-interruption path rather than leaving the control inert
   - PR #46: serialize or disable TUI submissions during the working presentation interval to prevent rapid re-entry against a transitional snapshot
+  - PR #47: close slash autocomplete after Tab accepts a completion, so later Tab and Shift+Tab restore native focus traversal; add a regression for the closed popup
