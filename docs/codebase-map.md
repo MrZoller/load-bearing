@@ -105,6 +105,7 @@ compared byte-for-byte against committed golden fixtures.
 | `MindSlice` / `Belief` / `ExactCapability` | `engine/mind/types.ts` | Timestamped permission history and the agent's typed, separately serialized model of machine truth. |
 | `TerminalSlice` / `TerminalMode` | `engine/terminal/types.ts` | Replayable Bash/TUI mode and active cartridge model; model changes retain the root seed. |
 | `AgentSlice` / `AuthoredResponseRecord` | `engine/agent/types.ts` | Bounded replayable messages, artifacts, activity, and cartridge response instances. |
+| `EngineMetrics` | `engine/metrics/types.ts` | Bounded status projection from event count, active model, and validated cartridge parameters; never a parallel runtime counter. |
 | `CartridgeStory` / `CartridgePresentation` | `engine/cartridge/types.ts` | Concrete bounded Phase 1 content shells; only each named `phase2` interior is deferred. |
 | `DeferredObject` | `engine/cartridge/types.ts` | Plain JSON carried only inside the explicit Phase 2 interiors. |
 | `SimulatedClock` / `ClockState` | `engine/clock/clock.ts` | `now() = startMs + elapsedMs`. Advances only via events. |
@@ -330,9 +331,10 @@ Phase 0 DoD (from `ROADMAP.md`), mapped to what exists:
 **Explicitly not in this phase** (per ROADMAP) — all correct to be absent:
 any rendering, any comedy writing, any real model calls.
 
-**Current Phase 1 gaps:** natural-language dispatch, escalation, derived metrics,
-and runtime rendering/interaction for the replayable artifacts. Their state and
-cartridge foundations now exist; later Phase 1 tasks connect the browser surface.
+**Current Phase 1 gaps:** slash-command discovery, deterministic working-state
+presentation, terminal history/search controls, onboarding, and final responsive
+accessibility hardening. The browser now renders replay-derived metrics and
+replayable agent artifacts without introducing a second state store.
 
 ---
 

@@ -1,6 +1,7 @@
 import { createShellExecuteEvent, readTerminalSlice } from "../engine/index.js";
 import type { EngineEvent } from "../engine/index.js";
 import { createRuntimeSession } from "./session.js";
+import { renderStatus } from "./components/status.js";
 import { renderTerminalTranscript } from "./terminal/renderer.js";
 import { renderBashView } from "./views/bash.js";
 import { renderTuiView } from "./views/tui.js";
@@ -27,16 +28,6 @@ export function mountApp(
   beam.className = "beam";
   beam.setAttribute("aria-hidden", "true");
 
-  const header = document.createElement("header");
-  header.className = "terminal__header";
-  const brand = document.createElement("p");
-  brand.className = "terminal__brand";
-  brand.textContent = `loadbearing.cc · Incident #${incidentNumber}`;
-  const status = document.createElement("p");
-  status.className = "terminal__status";
-  status.textContent = "SIMULATION ONLINE";
-  header.append(brand, status);
-
   const assignment = document.createElement("p");
   assignment.className = "terminal__assignment";
   assignment.textContent = session.cartridge.meta.assignment;
@@ -49,7 +40,8 @@ export function mountApp(
   view.className = "terminal__view";
   view.setAttribute("aria-label", "Active terminal view");
 
-  terminal.append(beam, header, assignment, transcript, view);
+  const status = document.createElement("div");
+  terminal.append(beam, assignment, transcript, view, status);
   mount.replaceChildren(terminal);
 
   function dispatch(event: EngineEvent): void {
@@ -78,6 +70,9 @@ export function mountApp(
             dispatchMany,
           );
     view.replaceChildren(activeView);
+    status.replaceChildren(
+      renderStatus(document, snapshot.state, session.cartridge.meta.number),
+    );
     activeView
       .querySelector<HTMLElement>("[data-initial-focus], input")
       ?.focus();
