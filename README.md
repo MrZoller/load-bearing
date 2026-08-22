@@ -32,6 +32,7 @@ first arrives with the nightly pipeline in Phase 5.
 
 ```
 npm install
+npx playwright install chromium
 ```
 
 ## Development
@@ -44,6 +45,7 @@ npm install
 | `npm run format:check` | Prettier formatting (`npm run format` to fix)                                 |
 | `npm run gate:purity`  | no wall-clock time, randomness, DOM, Node built-ins, or network in the engine |
 | `npm test`             | unit tests plus the golden replay suite                                       |
+| `npm run test:browser` | Chromium smoke test against the production build                              |
 
 Recorded replay fixtures are re-generated only on purpose, with
 `npm run fixtures:update`, and a change to one needs a justification in the
