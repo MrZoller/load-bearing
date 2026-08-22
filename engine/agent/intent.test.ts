@@ -7,6 +7,7 @@ import { reduce, step } from "../events/reduce.js";
 import {
   MAX_AGENT_MESSAGES,
   MAX_AGENT_RESPONSES,
+  MAX_AGENT_TEXT_LENGTH,
   MAX_AGENT_TOOL_CALLS,
   readAgentSlice,
 } from "./agent.js";
@@ -87,6 +88,14 @@ describe("authored agent input", () => {
     expect(() =>
       reduce({ cartridge: CARTRIDGE, seed: SEED, events }),
     ).not.toThrow();
+  });
+
+  it("preserves valid text exactly at the code-point limit", () => {
+    const ascii = "x".repeat(MAX_AGENT_TEXT_LENGTH);
+    const unicode = `${"x".repeat(MAX_AGENT_TEXT_LENGTH - 1)}🧱`;
+
+    expect(boundAgentInput(ascii)).toBe(ascii);
+    expect(boundAgentInput(unicode)).toBe(unicode);
   });
 
   it("records an authored refusal instead of throwing at history capacity", () => {

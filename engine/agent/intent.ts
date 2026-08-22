@@ -8,6 +8,7 @@ import type {
 import { normalizeIntentPhrase } from "../cartridge/intent.js";
 import { createShellExecuteEvent } from "../commands/shell.js";
 import type { EngineEvent, SessionState } from "../events/state.js";
+import { countCodePoints } from "../text.js";
 import {
   MAX_AGENT_MESSAGES,
   MAX_AGENT_RESPONSES,
@@ -36,6 +37,7 @@ export function normalizeAgentInput(input: string): string {
 
 /** Keep visitor text valid without splitting a Unicode code point. */
 export function boundAgentInput(input: string): string {
+  if (countCodePoints(input) <= MAX_AGENT_TEXT_LENGTH) return input;
   let bounded = "";
   let count = 0;
   for (const codePoint of input) {
@@ -43,7 +45,7 @@ export function boundAgentInput(input: string): string {
     bounded += codePoint;
     count += 1;
   }
-  return input;
+  return bounded;
 }
 
 export function selectAgentIntent(
