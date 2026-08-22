@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": null,
-  "branch": null,
+  "current_task": "T41",
+  "branch": "factory/t41-load-balancer-files",
   "pr": null,
   "hold": false,
-  "updated": "2026-08-22T22:34:36Z"
+  "updated": "2026-08-22T22:35:54Z"
 }
