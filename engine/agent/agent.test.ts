@@ -6,6 +6,7 @@ import { reduce, restoreSnapshot, snapshot } from "../events/reduce.js";
 import type { EngineEvent } from "../events/state.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import {
+  MAX_AGENT_ACTIVITY_VERB_LENGTH,
   MAX_AGENT_MESSAGES,
   MAX_AGENT_TEXT_LENGTH,
   readAgentSlice,
@@ -296,5 +297,46 @@ describe("agent replay state", () => {
         "snapshot.agent",
       ),
     ).toThrow(/at most/);
+  });
+
+  it("counts Unicode code points at text boundaries", () => {
+    const emoji = "🧱";
+    const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
+    const story = source["story"] as Record<string, unknown>;
+    const responses = story["responses"] as Record<string, unknown>[];
+    const response = responses[0];
+    if (response === undefined) throw new Error("fixture response is missing");
+    response["text"] = emoji.repeat(MAX_AGENT_TEXT_LENGTH);
+    response["toolCalls"] = [
+      {
+        id: "unicode",
+        title: emoji.repeat(240),
+        input: "",
+        output: "",
+        status: "pending",
+      },
+    ];
+    const unicodeCartridge = loadCartridge(source);
+
+    expect(() =>
+      reduce({
+        cartridge: unicodeCartridge,
+        seed: SEED,
+        events: [
+          createAgentResponseEvent(
+            unicodeCartridge.story.responses[0]?.id ?? "missing",
+            "unicode-turn",
+          ),
+        ],
+      }),
+    ).not.toThrow();
+    expect(() =>
+      fold([
+        createAgentActivityEvent({
+          status: "working",
+          verb: emoji.repeat(MAX_AGENT_ACTIVITY_VERB_LENGTH),
+        }),
+      ]),
+    ).not.toThrow();
   });
 });

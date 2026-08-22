@@ -4,6 +4,7 @@ import type { CartridgeAuthoredResponse } from "../cartridge/types.js";
 import { readSlice } from "../events/state.js";
 import type { SessionState } from "../events/state.js";
 import { deepFreeze } from "../freeze.js";
+import { countCodePoints } from "../text.js";
 import type {
   AgentActivity,
   AgentMessage,
@@ -25,7 +26,7 @@ export const MAX_AGENT_RESPONSES = 256;
 export const MAX_AGENT_ID_LENGTH = 160;
 export const MAX_AGENT_TEXT_LENGTH = 16000;
 export const MAX_AGENT_TITLE_LENGTH = 240;
-export const MAX_AGENT_ACTIVITY_VERB_LENGTH = 120;
+export const MAX_AGENT_ACTIVITY_VERB_LENGTH = 240;
 
 const ID = /^[a-z][a-z0-9-]{0,63}$/;
 
@@ -60,7 +61,7 @@ function record(
 
 function string(value: unknown, where: string, maximum: number): string {
   if (typeof value !== "string") throw new Error(`${where}: must be a string`);
-  if (value.length > maximum)
+  if (countCodePoints(value) > maximum)
     throw new Error(`${where}: must be at most ${String(maximum)} characters`);
   return value;
 }
