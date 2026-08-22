@@ -5,7 +5,7 @@
   "plan_approved": true,
   "current_task": "T16",
   "branch": "factory/t16-agent-cartridge-contract",
-  "pr": null,
-  "hold": false,
-  "updated": "2026-08-22T04:24:08Z"
+  "pr": 40,
+  "hold": true,
+  "updated": "2026-08-22T05:11:51Z"
 }

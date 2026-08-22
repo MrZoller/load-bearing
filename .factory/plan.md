@@ -31,9 +31,10 @@ and runtime model calls are deliberately excluded.
   - acceptance: `runtime/app.ts`, `runtime/views/bash.ts`, `runtime/views/tui.ts`, and the shared terminal renderer visibly present the authored login/prompt and `loadbearing --resume incident-NNN` sequence before a focused `❯` prompt; keyboard-only `/exit` and `Ctrl+D` enter Bash, resume returns to the same engine session, and bare `exit` refuses without ending it; Playwright covers the complete mode round trip with no pointer actions (criteria 1, 2)
   - deps: T13, T14
   - pr: 39
-- [~] T16 (major) — Bounded Phase 1 agent and cartridge contract
+- [R] T16 (major) — Bounded Phase 1 agent and cartridge contract
   - acceptance: `engine/agent/` defines validated, bounded, plain-JSON messages, tool calls, thinking blocks, todos, activity, and authored response records; `engine/cartridge/{schema,types,load}.ts` concretely validates only the Phase 1 `story`/`presentation` subsections needed for opening copy, minimal intents/fallback, help, compact/resume responses, placeholders, spinner pools, and metrics while leaving Phase 2 interiors extensible; the published schema, malformed fixtures, demo cartridge, public exports, docs, and an intentional golden-fixture update remain in lockstep (criteria 5, 7, 9, 11; approved decision 1A)
   - deps: T14
+  - pr: 40
 - [ ] T17 (standard) — Authored natural-language input and shell passthrough
   - acceptance: `engine/agent/intent.ts` and agent events choose the demo cartridge's minimal authored response/action set for recognized and unmatched natural-language input without apology or parser error; `!command` strips only the prefix and dispatches the same `createShellExecuteEvent` path as Bash, producing identical ordered output and machine effects; TUI rendering and unit/replay/Playwright tests prove both paths (criteria 5)
   - deps: T15, T16
