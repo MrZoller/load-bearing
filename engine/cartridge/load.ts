@@ -1298,6 +1298,15 @@ function checkStoryAndPresentation(
           `${JSON.stringify(value)}, already used by ${first}`,
         );
     });
+    const permissionRequests = intent.actions.filter(
+      (action) => action.kind === "permission-request",
+    );
+    if (permissionRequests.length > 1)
+      report.addPhrase(
+        `/story/intents/${String(index)}/actions`,
+        "at most one permission-request action",
+        `${String(permissionRequests.length)} permission-request actions`,
+      );
   });
 
   const pools = new Map<string, number>();

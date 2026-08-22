@@ -439,6 +439,34 @@ describe("loadCartridge", () => {
     expect(issuesOf(source).map((issue) => issue.pointer)).toContain(pointer);
   });
 
+  it("rejects an intent that would enqueue multiple permission prompts", () => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    const intent = (story["intents"] as Record<string, unknown>[])[0];
+    if (intent === undefined)
+      throw new Error("minimal fixture lacks an intent");
+    intent["actions"] = [
+      {
+        kind: "permission-request",
+        id: "delete-motd",
+        action: "delete",
+        resource: "/etc/motd",
+      },
+      {
+        kind: "permission-request",
+        id: "restart-motd",
+        action: "restart",
+        resource: "/etc/motd",
+      },
+    ];
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ pointer: "/story/intents/0/actions" }),
+      ]),
+    );
+  });
+
   it("strictly validates authored belief shapes and compact references", () => {
     const source = minimal();
     const story = source["story"] as Record<string, unknown>;

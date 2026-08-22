@@ -9,6 +9,7 @@ import { normalizeIntentPhrase } from "../cartridge/intent.js";
 import { createShellExecuteEvent } from "../commands/shell.js";
 import type { EngineEvent, SessionState } from "../events/state.js";
 import { createMindPermissionRequestedEvent } from "../mind/module.js";
+import { hasStandingPermission, readMindSlice } from "../mind/mind.js";
 import { countCodePoints } from "../text.js";
 import {
   MAX_AGENT_MESSAGES,
@@ -115,17 +116,21 @@ export function createAgentInputEvents(
     return [createAgentCapacityEvent(cartridge.story.fallback.response)];
   }
   const turnId = `turn-${String(state.eventCount)}`;
+  const mind = readMindSlice(state);
   return [
     createAgentMessageEvent(turnId, boundedInput),
-    ...selection.actions.map((action) =>
-      action.kind === "shell-execute"
-        ? createShellExecuteEvent(action.input)
-        : createMindPermissionRequestedEvent(action.id, {
-            kind: "exact",
-            action: action.action,
-            resource: action.resource,
-          }),
-    ),
+    ...selection.actions.flatMap((action) => {
+      if (action.kind === "shell-execute")
+        return [createShellExecuteEvent(action.input)];
+      const capability = {
+        kind: "exact" as const,
+        action: action.action,
+        resource: action.resource,
+      };
+      return hasStandingPermission(mind, capability)
+        ? []
+        : [createMindPermissionRequestedEvent(action.id, capability)];
+    }),
     createAgentResponseEvent(selection.responseId, turnId),
   ];
 }

@@ -5,6 +5,10 @@ import { loadCartridge } from "../cartridge/load.js";
 import { createShellExecuteEvent } from "../commands/shell.js";
 import { reduce, step } from "../events/reduce.js";
 import {
+  createMindPermissionRequestedEvent,
+  createMindPermissionResolvedEvent,
+} from "../mind/module.js";
+import {
   MAX_AGENT_MESSAGES,
   MAX_AGENT_RESPONSES,
   MAX_AGENT_TEXT_LENGTH,
@@ -96,6 +100,34 @@ describe("authored agent input", () => {
       },
       { type: "agent.response-recorded" },
     ]);
+  });
+
+  it("does not re-prompt an exactly standing permission", () => {
+    const request = createMindPermissionRequestedEvent(
+      "delete-ready-sentinel",
+      {
+        kind: "exact",
+        action: "delete",
+        resource: "/production/service/src/ready.stale",
+      },
+    );
+    const state = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      events: [
+        request,
+        createMindPermissionResolvedEvent(
+          "delete-ready-sentinel",
+          "always-allow",
+        ),
+      ],
+    });
+
+    expect(
+      createAgentInputEvents(CARTRIDGE, state, "remove it").map(
+        (event) => event.type,
+      ),
+    ).toEqual(["agent.message-added", "agent.response-recorded"]);
   });
 
   it("bounds oversized visitor text and still records an authored fallback", () => {
