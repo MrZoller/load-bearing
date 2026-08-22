@@ -169,3 +169,33 @@ test("preserves scrolled-up reading position until new output is acknowledged, t
   await expectAtTranscriptBottom(transcript);
   await expect(newOutput).toBeHidden();
 });
+
+test("keeps the new-output affordance after search restores an old match", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const prompt = page.getByRole("textbox", { name: "Agent prompt" });
+  const transcript = page.getByRole("list", { name: "Session transcript" });
+  const newOutput = page.getByRole("button", { name: /new output/i });
+  await addShellLines(prompt, 40, "old-search-target");
+
+  await prompt.press("Control+f");
+  const search = page.getByRole("searchbox", { name: /transcript/i });
+  await search.fill("old-search-target-39");
+  await expectAtTranscriptBottom(transcript);
+
+  // Each new entry first follows the bottom, then search restores the old
+  // match. Once enough output arrives to push that match away, the reader
+  // must still have a route back to the latest entry.
+  await addShellLines(prompt, 40, "new-output");
+  await expect(newOutput).toBeVisible();
+  await expect
+    .poll(() =>
+      transcript.evaluate(
+        (element) =>
+          element.scrollTop + element.clientHeight < element.scrollHeight - 1,
+      ),
+    )
+    .toBe(true);
+});

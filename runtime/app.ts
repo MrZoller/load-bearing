@@ -242,6 +242,7 @@ export function mountApp(
     );
     transcriptScroll.render(transcriptEntries.slice(hiddenTranscriptEntries));
     transcriptSearch.refresh();
+    transcriptScroll.afterSearchRefresh();
 
     const activeView =
       readTerminalSlice(snapshot.state).mode === "bash"

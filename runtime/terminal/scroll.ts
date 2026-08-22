@@ -3,6 +3,7 @@ const BOTTOM_TOLERANCE_PX = 2;
 
 export interface TranscriptScroll {
   readonly newOutputButton: HTMLButtonElement;
+  afterSearchRefresh(): void;
   clear(): void;
   render(entries: readonly HTMLLIElement[]): void;
 }
@@ -46,6 +47,7 @@ export function createTranscriptScroll(
 
   let previousLastKey: string | undefined;
   let following = true;
+  let lastRenderHadNewOutput = false;
 
   function jumpToLatest(): void {
     following = true;
@@ -68,6 +70,7 @@ export function createTranscriptScroll(
     const lastKey = retained.at(-1)?.dataset["transcriptKey"];
     const hasNewOutput =
       previousLastKey !== undefined && lastKey !== previousLastKey;
+    lastRenderHadNewOutput = hasNewOutput;
 
     transcript.replaceChildren(...retained);
 
@@ -93,12 +96,25 @@ export function createTranscriptScroll(
     previousLastKey = lastKey;
   }
 
+  // Search restores its selected match after scroll rendering. Re-read the
+  // viewport then, because that restoration can move a formerly-following
+  // reader away from the bottom after render hid the new-output control.
+  function afterSearchRefresh(): void {
+    following = isAtBottom(transcript);
+    if (following) {
+      newOutputButton.hidden = true;
+    } else if (lastRenderHadNewOutput) {
+      newOutputButton.hidden = false;
+    }
+  }
+
   function clear(): void {
     transcript.replaceChildren();
     previousLastKey = undefined;
     following = true;
+    lastRenderHadNewOutput = false;
     newOutputButton.hidden = true;
   }
 
-  return { newOutputButton, clear, render };
+  return { newOutputButton, afterSearchRefresh, clear, render };
 }
