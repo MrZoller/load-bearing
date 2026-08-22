@@ -116,3 +116,4 @@ and runtime model calls are deliberately excluded.
   - PR #37: update README Status and root AGENTS.md layout/status copy for the Phase 1 browser runtime (walking skeleton renders; runtime/ and content/incidents/ exist)
   - PR #38: reserve or reject authored overrides for mechanics-owned commands whose static output would suppress replayable effects, beginning with `loadbearing --resume`
   - PR #39: cover terminal-renderer invariant/error paths and settle missing-`/etc/motd` behavior with T16's cartridge opening-copy contract
+  - PR #40: require nonempty spinner verbs at the cartridge boundary (schema minLength) so a schema-valid pool cannot produce an empty working-activity verb
