@@ -14,6 +14,7 @@
  */
 
 import type { ARCHETYPES } from "./schema.js";
+import type { StoryCondition, StoryFactKind } from "../story/types.js";
 
 export type Archetype = (typeof ARCHETYPES)[number];
 
@@ -75,6 +76,16 @@ export interface CartridgeStoryBeat {
   readonly id: string;
   /** Empty when reaching this beat discovers no ending. */
   readonly ending: string;
+  readonly facts: readonly string[];
+  readonly variants: readonly CartridgeStoryVariant[];
+}
+
+export interface CartridgeStoryVariant {
+  readonly id: string;
+  /** Flat non-empty AND, evaluated in authored order against pre-event state. */
+  readonly when: readonly StoryCondition[];
+  readonly ending: string;
+  readonly facts: readonly string[];
 }
 
 export interface CartridgeEnding {
@@ -84,6 +95,10 @@ export interface CartridgeEnding {
 
 export interface CartridgeStoryPhase2 {
   readonly initialBeat: string;
+  readonly facts: readonly {
+    readonly id: string;
+    readonly kind: StoryFactKind;
+  }[];
   readonly beats: readonly CartridgeStoryBeat[];
   readonly endings: readonly CartridgeEnding[];
 }

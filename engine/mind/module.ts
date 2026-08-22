@@ -11,12 +11,14 @@ import type {
   ExactCapability,
   MindSlice,
   PermissionDecision,
+  WaiverConsent,
 } from "./types.js";
 import {
   compactBeliefs,
   createMindSlice,
   isPermissionDecision,
   recordPermissionDecision,
+  recordWaiverConsent,
   requestPermission,
   resolvePermission,
   setBelief,
@@ -25,6 +27,7 @@ import {
   validateMindSlice,
   validatePendingPermissionRequest,
   validatePermissionRequestId,
+  validateWaiverConsent,
 } from "./mind.js";
 
 function payload(
@@ -86,6 +89,15 @@ export function createMindPermissionResolvedEvent(
   );
 }
 
+export function createMindWaiverConsentRecordedEvent(
+  consent: Omit<WaiverConsent, "at">,
+): EngineEvent {
+  return stampEvent(
+    { type: "mind.waiver-consent-recorded", payload: { ...consent } },
+    "mind waiver consent",
+  );
+}
+
 export const MIND_MODULE = defineEventModule<MindSlice>({
   namespace: "mind",
   description:
@@ -114,6 +126,31 @@ export const MIND_MODULE = defineEventModule<MindSlice>({
             context.clock.timestamp(),
           ),
           summary: `decision=${decision}`,
+        };
+      },
+    },
+    "mind.waiver-consent-recorded": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, [
+          "id",
+          "version",
+          "phrase",
+          "capability",
+        ]);
+        const consent = validateWaiverConsent(
+          {
+            id: data["id"],
+            version: data["version"],
+            phrase: data["phrase"],
+            capability: data["capability"],
+            at: context.clock.timestamp(),
+          },
+          `${context.where}: waiver consent`,
+        );
+        return {
+          slice: recordWaiverConsent(slice, consent),
+          summary: `id=${consent.id} version=${String(consent.version)}`,
         };
       },
     },
