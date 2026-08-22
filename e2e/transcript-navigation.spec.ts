@@ -45,6 +45,13 @@ test("searches the transcript with the keyboard, navigates results, and restores
   await search.press("Escape");
   await expect(search).toBeHidden();
   await expect(prompt).toBeFocused();
+
+  await prompt.fill("!pwd after-search");
+  await prompt.press("Enter");
+  await expect(page.locator(".transcript__entry--search-match")).toHaveCount(0);
+  await expectAtTranscriptBottom(
+    page.getByRole("list", { name: "Session transcript" }),
+  );
 });
 
 test("leaves selected transcript text available to the browser copy command", async ({

@@ -77,6 +77,10 @@ export function createTranscriptSearch(
 
   function close(): void {
     clearCurrent();
+    input.value = "";
+    matches = [];
+    current = -1;
+    status.textContent = "";
     search.hidden = true;
     restoreFocus();
   }
