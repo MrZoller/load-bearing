@@ -30,6 +30,8 @@ test("searches the transcript with the keyboard, navigates results, and restores
 
   const prompt = page.getByRole("textbox", { name: "Agent prompt" });
   await addShellLines(prompt, 2, "search-target");
+  await prompt.fill("/model");
+  await prompt.press("Enter");
 
   await prompt.press("Control+f");
   const search = page.getByRole("searchbox", { name: /transcript/i });
@@ -42,6 +44,11 @@ test("searches the transcript with the keyboard, navigates results, and restores
 
   await search.press("Enter");
   await expect(searchStatus).toContainText(/2\s*(?:of|\/)\s*2/i);
+
+  // A render from an unrelated control must not reset the reader to match one.
+  await page.locator('input[name="active-model"]').nth(1).click();
+  await expect(searchStatus).toContainText(/2\s*(?:of|\/)\s*2/i);
+
   await search.press("Escape");
   await expect(search).toBeHidden();
   await expect(prompt).toBeFocused();

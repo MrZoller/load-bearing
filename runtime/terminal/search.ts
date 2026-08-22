@@ -61,6 +61,8 @@ export function createTranscriptSearch(
   }
 
   function refresh(): void {
+    const currentKey = matches[current]?.dataset["transcriptKey"];
+    const priorIndex = current;
     clearCurrent();
     const query = input.value.trim().toLocaleLowerCase();
     matches =
@@ -71,7 +73,15 @@ export function createTranscriptSearch(
               entry instanceof HTMLElement &&
               (entry.textContent ?? "").toLocaleLowerCase().includes(query),
           );
-    current = matches.length === 0 ? -1 : 0;
+    const restoredIndex = matches.findIndex(
+      (match) => match.dataset["transcriptKey"] === currentKey,
+    );
+    current =
+      matches.length === 0
+        ? -1
+        : restoredIndex >= 0
+          ? restoredIndex
+          : Math.min(Math.max(priorIndex, 0), matches.length - 1);
     showCurrent();
   }
 
