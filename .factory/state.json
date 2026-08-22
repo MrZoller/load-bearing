@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T26",
-  "branch": "factory/t26-diegetic-onboarding",
-  "pr": 49,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-22T14:27:16Z"
+  "updated": "2026-08-22T14:33:00Z"
 }
