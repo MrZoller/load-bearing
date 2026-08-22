@@ -1,0 +1,36 @@
+{
+  "name": "020-incident-001-story",
+  "description": "The production Incident #001 declaration discovers its non-terminal ending and leaves the session replayable.",
+  "seed": "2026-08-22/0/deep-foundation",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "turn-0", "text": "fix the 500" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "load-bearing-declaration" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "load-bearing-declaration",
+        "instanceId": "turn-0"
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "turn-3", "text": "inspect routing" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": { "responseId": "inspect-routing", "instanceId": "turn-3" },
+      "version": 0
+    }
+  ]
+}

@@ -175,7 +175,16 @@
         ],
         "response": "fixture-response"
       },
-      "phase2": {},
+      "phase2": {
+        "beats": [
+          {
+            "ending": "",
+            "id": "start"
+          }
+        ],
+        "endings": [],
+        "initialBeat": "start"
+      },
       "responses": [
         {
           "id": "fixture-response",
@@ -264,6 +273,10 @@
     "probe": {
       "events": 6,
       "values": 16024
+    },
+    "story": {
+      "currentBeat": "start",
+      "discoveredEndings": []
     },
     "terminal": {
       "activeModel": "deep-foundation",

@@ -4,6 +4,7 @@ import { loadCartridge } from "../cartridge/load.js";
 import type { LoadedCartridge } from "../cartridge/types.js";
 
 import {
+  type CartridgeReference,
   listReplayFixtures,
   loadReplayFixture,
   loadReplayRecording,
@@ -37,7 +38,9 @@ function deepFreeze(value: unknown): unknown {
  * tests, and pulling one in here would make a fixture-shape failure look like
  * a cartridge failure.
  */
-const RESOLVE_CARTRIDGE = (name: string) => ({ resolved: name });
+const RESOLVE_CARTRIDGE = (reference: CartridgeReference) => ({
+  resolved: reference,
+});
 
 describe("golden replay fixtures", () => {
   it("records the full session's cross-subsystem consequences", () => {
@@ -472,7 +475,7 @@ describe("fixture loading", () => {
 
     expect(() =>
       parseReplayFixture(fields, "sample", "sample", RESOLVE_CARTRIDGE),
-    ).toThrow(/"cartridge" must be a string/);
+    ).toThrow(/"cartridge" must be a fixture name/);
     expect(() =>
       parseReplayFixture(
         { ...fields, cartridge: {} },
@@ -480,22 +483,52 @@ describe("fixture loading", () => {
         "sample",
         RESOLVE_CARTRIDGE,
       ),
-    ).toThrow(/"cartridge" must be a string/);
+    ).toThrow(/"cartridge" must be a fixture name/);
 
     const asked: string[] = [];
     const fixture = parseReplayFixture(
       { ...fields, cartridge: "minimal" },
       "sample",
       "sample",
-      (name) => {
-        asked.push(name);
-        return { resolved: name };
+      (reference) => {
+        if (typeof reference !== "string")
+          throw new Error("sample fixture should resolve a fixture cartridge");
+        asked.push(reference);
+        return { resolved: reference };
       },
     );
 
     expect(asked).toEqual(["minimal"]);
     expect(fixture.cartridgeName).toBe("minimal");
     expect(fixture.cartridge).toEqual({ resolved: "minimal" });
+  });
+
+  it("allows only the explicit production incident reference", () => {
+    const fields = { name: "sample", description: "d", seed: "s", events: [] };
+    const resolved: unknown[] = [];
+    expect(() =>
+      parseReplayFixture(
+        { ...fields, cartridge: { kind: "incident", id: "../incident-001" } },
+        "sample",
+        "sample",
+        (reference) => resolved.push(reference),
+      ),
+    ).toThrow(/cartridge/);
+    expect(() =>
+      parseReplayFixture(
+        { ...fields, cartridge: { kind: "unbounded", id: "incident-001" } },
+        "sample",
+        "sample",
+        (reference) => resolved.push(reference),
+      ),
+    ).toThrow(/cartridge/);
+    parseReplayFixture(
+      { ...fields, cartridge: { kind: "incident", id: "incident-001" } },
+      "sample",
+      "sample",
+      (reference) => resolved.push(reference),
+    );
+    expect(resolved).toEqual([{ kind: "incident", id: "incident-001" }]);
   });
 
   it("reports a malformed fixture before chasing its cartridge reference", () => {

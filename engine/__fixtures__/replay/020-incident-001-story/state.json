@@ -1,0 +1,584 @@
+{
+  "cartridge": {
+    "meta": {
+      "assignment": "Restore the health endpoint without changing regional traffic.",
+      "date": "2026-08-22",
+      "number": 1,
+      "schemaVersion": 0,
+      "startedAt": "2026-08-22T09:14:22.000Z",
+      "title": "The Inverted Load Balancer"
+    },
+    "models": [
+      {
+        "archetype": "paranoid",
+        "costMultiplier": 48000,
+        "description": "Thorough. Expensive. Excavation permit required.",
+        "id": "deep-foundation",
+        "name": "Deep Foundation",
+        "quirks": []
+      },
+      {
+        "archetype": "reckless",
+        "costMultiplier": 900,
+        "description": "Fast and economical. Not approved for permanent workloads.",
+        "id": "temporary-shoring",
+        "name": "Temporary Shoring",
+        "quirks": []
+      },
+      {
+        "archetype": "superficial",
+        "costMultiplier": 120,
+        "description": "Excellent surface quality. No structural capacity.",
+        "id": "drywall",
+        "name": "Drywall",
+        "quirks": []
+      },
+      {
+        "archetype": "existential",
+        "costMultiplier": 7000,
+        "description": "Reaches conclusions without visible support.",
+        "id": "cantilever-experimental",
+        "name": "Cantilever (Experimental)",
+        "quirks": []
+      }
+    ],
+    "presentation": {
+      "autocomplete": {
+        "compact": "Replace context with the approved summary",
+        "cost": "Report replay-derived session metrics",
+        "exit": "Return to the production shell",
+        "help": "Review the incident register",
+        "model": "Choose who assumes responsibility"
+      },
+      "metrics": {
+        "baseTokens": 2400,
+        "contextWindowTokens": 200000,
+        "costMicrosPerToken": 12,
+        "integrityLossPerEvent": 4,
+        "integrityStart": 1000,
+        "tokensPerEvent": 220
+      },
+      "phase2": {},
+      "placeholders": [
+        {
+          "stage": 0,
+          "text": "try: inspect routing"
+        },
+        {
+          "stage": 0,
+          "text": "try: fix the 500"
+        }
+      ],
+      "spinnerPools": [
+        {
+          "archetype": "paranoid",
+          "stage": 0,
+          "verbs": [
+            "Surveying",
+            "Checking regional loads"
+          ]
+        },
+        {
+          "archetype": "reckless",
+          "stage": 0,
+          "verbs": [
+            "Shoring",
+            "Assuming stability"
+          ]
+        },
+        {
+          "archetype": "superficial",
+          "stage": 0,
+          "verbs": [
+            "Smoothing",
+            "Reviewing the surface"
+          ]
+        },
+        {
+          "archetype": "existential",
+          "stage": 0,
+          "verbs": [
+            "Extending",
+            "Locating support"
+          ]
+        }
+      ]
+    },
+    "repository": {
+      "commands": {},
+      "cwd": "/production/load-balancer",
+      "directories": {
+        "/production": {
+          "group": "operators",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/load-balancer": {
+          "group": "departed",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "greg"
+        },
+        "/production/load-balancer/config": {
+          "group": "departed",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "greg"
+        }
+      },
+      "endpoints": {},
+      "env": {},
+      "files": {
+        "/production/load-balancer/config/routes.conf": {
+          "contents": "health_status=500\neurope_attached=true\n",
+          "group": "departed",
+          "mode": "0644",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "greg"
+        }
+      },
+      "gitHistory": {
+        "branches": {
+          "main": "attach-europe"
+        },
+        "commits": [
+          {
+            "author": {
+              "email": "greg@example.test",
+              "name": "Greg Formerly"
+            },
+            "committedAt": "2026-08-10T04:11:09.000Z",
+            "files": {
+              "/production/load-balancer/config/routes.conf": {
+                "blame": [
+                  "attach-europe",
+                  "attach-europe"
+                ],
+                "contents": "health_status=500\neurope_attached=true\n"
+              }
+            },
+            "id": "attach-europe",
+            "message": "keep regional routing stable\n",
+            "parents": []
+          }
+        ],
+        "head": {
+          "kind": "branch",
+          "target": "main"
+        }
+      },
+      "gitIdentity": {
+        "email": "visitor@example.test",
+        "name": "Incident Visitor"
+      },
+      "identity": {
+        "group": "operators",
+        "home": "/home/visitor",
+        "umask": "0022",
+        "user": "visitor"
+      },
+      "logs": [],
+      "manPages": [],
+      "processes": [],
+      "reactions": [],
+      "services": [],
+      "shellHistory": [],
+      "system": {
+        "architecture": "x86_64",
+        "bootedAt": "2026-08-10T03:20:00.000Z",
+        "hostname": "production",
+        "kernelRelease": "6.1.0-load-bearing",
+        "operatingSystem": "Linux"
+      },
+      "tests": [],
+      "tickets": []
+    },
+    "story": {
+      "compact": {
+        "beliefs": [
+          {
+            "exists": true,
+            "kind": "file-exists",
+            "path": "/production/load-balancer/config/routes.conf"
+          }
+        ],
+        "response": "compact",
+        "summary": "The health endpoint protects regional attachment; Europe may be an implementation detail."
+      },
+      "fallback": {
+        "actions": [],
+        "authorizedResponse": "",
+        "response": "fallback"
+      },
+      "helpResponse": "help",
+      "idleNudgeResponse": "idle-nudge",
+      "intents": [
+        {
+          "actions": [
+            {
+              "beat": "regional-coupling",
+              "kind": "story-reach"
+            }
+          ],
+          "authorizedResponse": "",
+          "id": "inspect-routing",
+          "patterns": [
+            "inspect routing",
+            "check the health endpoint",
+            "why is it failing"
+          ],
+          "response": "inspect-routing"
+        },
+        {
+          "actions": [
+            {
+              "beat": "load-bearing-declaration",
+              "kind": "story-reach"
+            }
+          ],
+          "authorizedResponse": "",
+          "id": "restore-health",
+          "patterns": [
+            "fix the 500",
+            "restore the health endpoint",
+            "make it return 200"
+          ],
+          "response": "load-bearing-declaration"
+        }
+      ],
+      "opening": {
+        "beliefs": [
+          {
+            "contents": "health_status=500\neurope_attached=true\n",
+            "kind": "file-contents",
+            "path": "/production/load-balancer/config/routes.conf"
+          }
+        ],
+        "login": [
+          "Last login: the regional maintenance window remains structurally open.",
+          "Load Bearing incident shell attached."
+        ],
+        "response": "opening"
+      },
+      "phase2": {
+        "beats": [
+          {
+            "ending": "",
+            "id": "incident-open"
+          },
+          {
+            "ending": "",
+            "id": "regional-coupling"
+          },
+          {
+            "ending": "load-bearing-response",
+            "id": "load-bearing-declaration"
+          }
+        ],
+        "endings": [
+          {
+            "id": "load-bearing-response",
+            "name": "The Load-Bearing Response"
+          },
+          {
+            "id": "europe-detached",
+            "name": "Europe, Detached"
+          },
+          {
+            "id": "informed-structural-consent",
+            "name": "Informed Structural Consent"
+          },
+          {
+            "id": "summary-judgment",
+            "name": "Summary Judgment"
+          }
+        ],
+        "initialBeat": "incident-open"
+      },
+      "responses": [
+        {
+          "id": "opening",
+          "text": "The health endpoint is returning 500. I will inspect why production considers that healthy.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "inspect-routing",
+          "text": "The routing configuration couples the failing health response to Europe's attachment. This is either deliberate or older than intent.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "load-bearing-declaration",
+          "text": "The HTTP 500 is load-bearing. Restoring it to 200 would detach Europe, so I have preserved the failure and documented the success.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "fallback",
+          "text": "I widened the routing review while preserving the 500. The original failure is now supporting the investigation.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "help",
+          "text": "/help repeats this register; /model changes who assumes responsibility; /compact replaces remembered facts; /exit returns to Bash. Try: inspect routing.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "idle-nudge",
+          "text": "The health check remains failed and Europe remains attached. This correlation is becoming architectural.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "compact",
+          "text": "Context compacted. I retained the regional conclusion and removed several supporting countries.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "resume-unchanged",
+          "text": "The routing state remained unchanged. Europe is still where the configuration left it.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "resume-changed",
+          "text": "The routing state changed while I was absent. I will treat the new geography as visitor-authored.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        }
+      ],
+      "resume": {
+        "changedResponse": "resume-changed",
+        "unchangedResponse": "resume-unchanged"
+      }
+    }
+  },
+  "clock": {
+    "elapsedMs": 0,
+    "startMs": 1787390062000
+  },
+  "engineVersion": "0.0.0",
+  "eventCount": 5,
+  "eventSchemaVersion": 0,
+  "random": {
+    "cursors": {},
+    "seed": 2602967369
+  },
+  "seed": "2026-08-22/0/deep-foundation",
+  "slices": {
+    "agent": {
+      "activity": {
+        "status": "idle",
+        "verb": ""
+      },
+      "messages": [
+        {
+          "id": "turn-0",
+          "responseId": null,
+          "role": "visitor",
+          "text": "fix the 500"
+        },
+        {
+          "id": "turn-0/message",
+          "responseId": "load-bearing-declaration",
+          "role": "agent",
+          "text": "The HTTP 500 is load-bearing. Restoring it to 200 would detach Europe, so I have preserved the failure and documented the success."
+        },
+        {
+          "id": "turn-3",
+          "responseId": null,
+          "role": "visitor",
+          "text": "inspect routing"
+        },
+        {
+          "id": "turn-3/message",
+          "responseId": "inspect-routing",
+          "role": "agent",
+          "text": "The routing configuration couples the failing health response to Europe's attachment. This is either deliberate or older than intent."
+        }
+      ],
+      "responses": [
+        {
+          "instanceId": "turn-0",
+          "responseId": "load-bearing-declaration"
+        },
+        {
+          "instanceId": "turn-3",
+          "responseId": "inspect-routing"
+        }
+      ],
+      "thinkingBlocks": [],
+      "todos": [],
+      "toolCalls": []
+    },
+    "git": {
+      "branches": {
+        "main": "96d00fd6892130bfed0363c4f90da12d2c8f59f2"
+      },
+      "commits": {
+        "96d00fd6892130bfed0363c4f90da12d2c8f59f2": {
+          "author": {
+            "email": "greg@example.test",
+            "name": "Greg Formerly"
+          },
+          "committedAt": "2026-08-10T04:11:09.000Z",
+          "files": {
+            "/production/load-balancer/config/routes.conf": {
+              "blame": [
+                "96d00fd6892130bfed0363c4f90da12d2c8f59f2",
+                "96d00fd6892130bfed0363c4f90da12d2c8f59f2"
+              ],
+              "contents": "health_status=500\neurope_attached=true\n"
+            }
+          },
+          "hash": "96d00fd6892130bfed0363c4f90da12d2c8f59f2",
+          "id": "attach-europe",
+          "message": "keep regional routing stable\n",
+          "parents": []
+        }
+      },
+      "head": {
+        "kind": "branch",
+        "target": "main"
+      },
+      "identity": {
+        "email": "visitor@example.test",
+        "name": "Incident Visitor"
+      },
+      "index": {
+        "/production/load-balancer/config/routes.conf": "health_status=500\neurope_attached=true\n"
+      },
+      "root": "/production/load-balancer"
+    },
+    "mind": {
+      "beliefs": [],
+      "compactHistory": [],
+      "pendingPermission": null,
+      "permissions": []
+    },
+    "probe": {
+      "events": 0,
+      "values": 0
+    },
+    "story": {
+      "currentBeat": "load-bearing-declaration",
+      "discoveredEndings": [
+        "load-bearing-response"
+      ]
+    },
+    "terminal": {
+      "activeModel": "deep-foundation",
+      "mode": "bash"
+    },
+    "tests": {
+      "runs": []
+    },
+    "vfs": {
+      "cwd": "/production/load-balancer",
+      "entries": {
+        "/": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production": {
+          "group": "operators",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/production/load-balancer": {
+          "group": "departed",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "greg"
+        },
+        "/production/load-balancer/config": {
+          "group": "departed",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "greg"
+        },
+        "/production/load-balancer/config/routes.conf": {
+          "contents": "health_status=500\neurope_attached=true\n",
+          "group": "departed",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "greg"
+        }
+      },
+      "identity": {
+        "group": "operators",
+        "home": "/home/visitor",
+        "umask": "0022",
+        "user": "visitor"
+      }
+    },
+    "world": {
+      "env": {},
+      "logs": [],
+      "manPages": [],
+      "processes": [],
+      "services": [],
+      "shellHistory": [],
+      "tickets": []
+    }
+  },
+  "transcript": [
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 0,
+      "summary": "message=turn-0",
+      "type": "agent.message-added"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 1,
+      "summary": "beat=load-bearing-declaration",
+      "type": "story.beat-reached"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 2,
+      "summary": "response=load-bearing-declaration instance=turn-0",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 3,
+      "summary": "message=turn-3",
+      "type": "agent.message-added"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 4,
+      "summary": "response=inspect-routing instance=turn-3",
+      "type": "agent.response-recorded"
+    }
+  ]
+}

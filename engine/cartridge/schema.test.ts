@@ -83,7 +83,11 @@ describe("the published schema", () => {
     );
 
     (phase2["default"] as Record<string, unknown>)["injected"] = true;
-    expect(CARTRIDGE_SCHEMA.fields.story.node.fields.phase2.fill).toEqual({});
+    expect(CARTRIDGE_SCHEMA.fields.story.node.fields.phase2.fill).toEqual({
+      initialBeat: "start",
+      beats: [{ id: "start", ending: "" }],
+      endings: [],
+    });
     expect(serialize(emitJsonSchema())).not.toContain("injected");
   });
 
@@ -220,6 +224,33 @@ describe("the published schema", () => {
     for (const owner of ["Phase 4"]) {
       expect(rendered).toContain(owner);
     }
+  });
+
+  it("publishes the story skeleton as a closed bounded graph, while presentation remains deferred", () => {
+    const root = emitJsonSchema()["properties"] as Record<string, unknown>;
+    const story = root["story"] as Record<string, unknown>;
+    const storyPhase2 = (story["properties"] as Record<string, unknown>)[
+      "phase2"
+    ] as Record<string, unknown>;
+    const storyProperties = storyPhase2["properties"] as Record<
+      string,
+      unknown
+    >;
+    const beats = storyProperties["beats"] as Record<string, unknown>;
+    const endings = storyProperties["endings"] as Record<string, unknown>;
+    const presentation = root["presentation"] as Record<string, unknown>;
+    const presentationPhase2 = (
+      presentation["properties"] as Record<string, unknown>
+    )["phase2"] as Record<string, unknown>;
+
+    expect(storyPhase2).toMatchObject({
+      type: "object",
+      additionalProperties: false,
+      required: ["initialBeat", "beats", "endings"],
+    });
+    expect(beats).toMatchObject({ minItems: 1, maxItems: 128 });
+    expect(endings).toMatchObject({ maxItems: 32 });
+    expect(presentationPhase2["$comment"]).toContain("Phase 4");
   });
 });
 

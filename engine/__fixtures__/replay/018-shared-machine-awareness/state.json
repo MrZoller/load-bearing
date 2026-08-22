@@ -158,7 +158,16 @@
         ],
         "response": "ledger-opening"
       },
-      "phase2": {},
+      "phase2": {
+        "beats": [
+          {
+            "ending": "",
+            "id": "start"
+          }
+        ],
+        "endings": [],
+        "initialBeat": "start"
+      },
       "responses": [
         {
           "id": "ledger-opening",
@@ -285,6 +294,10 @@
     "probe": {
       "events": 0,
       "values": 0
+    },
+    "story": {
+      "currentBeat": "start",
+      "discoveredEndings": []
     },
     "terminal": {
       "activeModel": "foundation-surveyor",

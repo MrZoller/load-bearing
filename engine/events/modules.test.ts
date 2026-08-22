@@ -73,6 +73,7 @@ describe("the engine's module list", () => {
       "probe.weighted",
       "shell.execute",
       "shell.result",
+      "story.beat-reached",
       "terminal.mode-set",
       "terminal.model-set",
       "tests.run",
@@ -124,6 +125,10 @@ describe("the engine's module list", () => {
       "function",
     );
     expect(ENGINE_EVENT_REGISTRY.module("agent")?.validateSlice).toBeTypeOf(
+      "function",
+    );
+    expect(ENGINE_EVENT_REGISTRY.module("story")?.stateful).toBe(true);
+    expect(ENGINE_EVENT_REGISTRY.module("story")?.validateSlice).toBeTypeOf(
       "function",
     );
   });
