@@ -1,7 +1,7 @@
 import { deriveEngineMetrics } from "../../engine/index.js";
 import type { SessionState } from "../../engine/index.js";
 
-function groupedInteger(value: number): string {
+export function groupedInteger(value: number): string {
   const digits = String(value);
   const first = digits.length % 3 || 3;
   const groups = [digits.slice(0, first)];

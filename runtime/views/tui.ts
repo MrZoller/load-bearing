@@ -10,6 +10,7 @@ import type {
   SessionState,
 } from "../../engine/index.js";
 import { renderPermission } from "../components/permission.js";
+import { renderAgentActivity } from "../components/activity.js";
 
 export function createTuiInputEvents(
   cartridge: LoadedCartridge,
@@ -27,6 +28,7 @@ export function renderTuiView(
   cartridge: LoadedCartridge,
   state: SessionState,
   dispatch: (events: readonly EngineEvent[]) => void,
+  activityElapsedMs = 0,
 ): HTMLElement {
   const pending = readMindSlice(state).pendingPermission;
   if (pending !== null)
@@ -64,5 +66,11 @@ export function renderTuiView(
     }
   });
   form.append(label, input);
-  return form;
+
+  const view = document.createElement("div");
+  view.className = "tui-view";
+  const activity = renderAgentActivity(document, state, activityElapsedMs);
+  if (activity !== null) view.append(activity);
+  view.append(form);
+  return view;
 }

@@ -1,7 +1,12 @@
-import { createShellExecuteEvent, readTerminalSlice } from "../engine/index.js";
+import {
+  createShellExecuteEvent,
+  readAgentSlice,
+  readTerminalSlice,
+} from "../engine/index.js";
 import type { EngineEvent } from "../engine/index.js";
 import { createRuntimeSession } from "./session.js";
 import { renderStatus } from "./components/status.js";
+import { updateAgentActivity } from "./components/activity.js";
 import { renderTerminalTranscript } from "./terminal/renderer.js";
 import { renderBashView } from "./views/bash.js";
 import { renderTuiView } from "./views/tui.js";
@@ -44,6 +49,40 @@ export function mountApp(
   terminal.append(beam, assignment, transcript, view, status);
   mount.replaceChildren(terminal);
 
+  const browser = document.defaultView;
+  let activityStartedAt: number | null = null;
+  let activityFrame: number | null = null;
+
+  function stopActivityFrame(): void {
+    if (browser !== null && activityFrame !== null)
+      browser.cancelAnimationFrame(activityFrame);
+    activityFrame = null;
+  }
+
+  function scheduleActivityFrame(): void {
+    stopActivityFrame();
+    if (browser === null || activityStartedAt === null) return;
+    const snapshot = session.current();
+    if (
+      readTerminalSlice(snapshot.state).mode !== "tui" ||
+      readAgentSlice(snapshot.state).activity.status !== "working"
+    )
+      return;
+
+    activityFrame = browser.requestAnimationFrame((now) => {
+      const element = view.querySelector<HTMLElement>("[data-agent-activity]");
+      if (element === null || activityStartedAt === null) return;
+      // Wall time interpolates this one presentation node. It never dispatches
+      // an event, chooses copy, increments metrics, or rewrites replay state.
+      updateAgentActivity(
+        element,
+        session.current().state,
+        now - activityStartedAt,
+      );
+      scheduleActivityFrame();
+    });
+  }
+
   function dispatch(event: EngineEvent): void {
     session.dispatch(event);
     render();
@@ -56,6 +95,14 @@ export function mountApp(
 
   function render(): void {
     const snapshot = session.current();
+    const activity = readAgentSlice(snapshot.state).activity;
+    const inTui = readTerminalSlice(snapshot.state).mode === "tui";
+    if (inTui && activity.status === "working") {
+      activityStartedAt ??= browser?.performance.now() ?? 0;
+    } else {
+      activityStartedAt = null;
+      stopActivityFrame();
+    }
     transcript.replaceChildren(
       ...renderTerminalTranscript(document, session.cartridge, snapshot),
     );
@@ -68,6 +115,9 @@ export function mountApp(
             session.cartridge,
             snapshot.state,
             dispatchMany,
+            activityStartedAt === null || browser === null
+              ? 0
+              : browser.performance.now() - activityStartedAt,
           );
     view.replaceChildren(activeView);
     status.replaceChildren(
@@ -76,6 +126,7 @@ export function mountApp(
     activeView
       .querySelector<HTMLElement>("[data-initial-focus], input")
       ?.focus();
+    scheduleActivityFrame();
   }
 
   render();

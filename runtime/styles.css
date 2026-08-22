@@ -176,6 +176,32 @@ body {
   margin-top: 0.35rem;
 }
 
+.agent-activity {
+  margin: 0 0 0.75rem;
+  color: #aeb5a4;
+  line-height: 1.5;
+}
+
+.agent-activity::before {
+  display: inline-block;
+  margin-right: 0.65rem;
+  color: #c3cc45;
+  content: "◌";
+  animation: activity-turn 1.1s steps(8, end) infinite;
+}
+
+@keyframes activity-turn {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-activity::before {
+    animation: none;
+  }
+}
+
 .prompt {
   display: grid;
   grid-template-columns: auto 1fr;
