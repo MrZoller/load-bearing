@@ -8,7 +8,7 @@ still produces identical output.
 Both run in CI on every push, and on a pull request when it opens
 (`.github/workflows/ci.yml` — one run per commit, from the first commit rather
 than from whenever a PR is opened).
-Locally, `npm run verify` runs the same four checks in the same order.
+Locally, `npm run verify` runs the same checks in the same order.
 
 The test step runs the whole suite twice, under `TZ=UTC` and `TZ=Asia/Tokyo`
 (`npm run test:timezones`). The engine has no `Date` to read a host timezone
@@ -149,6 +149,20 @@ CI never re-records. A harness that refreshed its own baselines would convert
 the one signal it exists to raise into a silent diff.
 
 To re-record a single fixture: `npm run fixtures:update -- 001-engine-smoke`.
+
+---
+
+## VFS and Git coverage
+
+`npm run test:coverage` measures every production implementation file under
+`engine/vfs/` and `engine/git/` per file. Tests, declarations, and the type-only
+`types.ts` modules are excluded; any new runtime source file in either tree is
+included automatically. The floors are 93% statements and lines, 75% branches,
+and 100% functions.
+
+Those percentages are an anti-regression inventory gate, not the definition of
+full filesystem and Git behavior. The named semantic tests listed in
+`engine/README.md` carry that contract.
 
 ---
 
