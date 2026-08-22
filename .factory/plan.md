@@ -27,9 +27,10 @@ and runtime model calls are deliberately excluded.
   - acceptance: `engine/terminal/` registers a validated plain-JSON slice and events for `tui`/`bash` mode and active-model changes; `engine/commands/terminal.ts` implements `loadbearing --resume` and an authored bare-`exit` refusal; `/exit` and TUI `Ctrl+D` share one mode event; model switches retain the original `SessionState.seed` and isolate model-specific named substreams; unit, snapshot, and golden replay tests cover every transition (criteria 2, 6; approved decision 2A)
   - deps: none
   - pr: 38
-- [~] T15 (standard) — Cold open and two-view terminal skeleton
+- [R] T15 (standard) — Cold open and two-view terminal skeleton
   - acceptance: `runtime/app.ts`, `runtime/views/bash.ts`, `runtime/views/tui.ts`, and the shared terminal renderer visibly present the authored login/prompt and `loadbearing --resume incident-NNN` sequence before a focused `❯` prompt; keyboard-only `/exit` and `Ctrl+D` enter Bash, resume returns to the same engine session, and bare `exit` refuses without ending it; Playwright covers the complete mode round trip with no pointer actions (criteria 1, 2)
   - deps: T13, T14
+  - pr: 39
 - [ ] T16 (major) — Bounded Phase 1 agent and cartridge contract
   - acceptance: `engine/agent/` defines validated, bounded, plain-JSON messages, tool calls, thinking blocks, todos, activity, and authored response records; `engine/cartridge/{schema,types,load}.ts` concretely validates only the Phase 1 `story`/`presentation` subsections needed for opening copy, minimal intents/fallback, help, compact/resume responses, placeholders, spinner pools, and metrics while leaving Phase 2 interiors extensible; the published schema, malformed fixtures, demo cartridge, public exports, docs, and an intentional golden-fixture update remain in lockstep (criteria 5, 7, 9, 11; approved decision 1A)
   - deps: T14
@@ -113,3 +114,4 @@ and runtime model calls are deliberately excluded.
   - acceptance: confirmed non-blocking review findings parked during Phase 1 delivery are collected, fixed as one focused batch, and verified by the affected tests and repository gates
   - PR #37: update README Status and root AGENTS.md layout/status copy for the Phase 1 browser runtime (walking skeleton renders; runtime/ and content/incidents/ exist)
   - PR #38: reserve or reject authored overrides for mechanics-owned commands whose static output would suppress replayable effects, beginning with `loadbearing --resume`
+  - PR #39: cover terminal-renderer invariant/error paths and settle missing-`/etc/motd` behavior with T16's cartridge opening-copy contract
