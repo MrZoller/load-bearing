@@ -107,3 +107,7 @@ and runtime model calls are deliberately excluded.
   - PR #33: reject unrenderable shell input before tokenization errors so malformed syntax cannot enter shell history
   - PR #35: make the VFS/Git coverage gate fail when a new runtime production file falls outside its measured inventory, and align its comments and README wording
   - pr: 36
+
+- [!] T30 (trivial) — parked review minors (batch)
+  - acceptance: confirmed non-blocking review findings parked during Phase 1 delivery are collected, fixed as one focused batch, and verified by the affected tests and repository gates
+  - PR #37: update README Status and root AGENTS.md layout/status copy for the Phase 1 browser runtime (walking skeleton renders; runtime/ and content/incidents/ exist)
