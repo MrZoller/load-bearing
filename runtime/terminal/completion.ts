@@ -152,7 +152,8 @@ export function completeTerminalInput(
 ): TerminalCompletion | null {
   if (mode === "tui" && value.startsWith("/")) {
     if (cursor !== value.length || /\s/u.test(value)) return null;
-    const names = SLASH_COMMAND_NAMES.filter((name) => name.startsWith(value));
+    const prefix = value.toLowerCase();
+    const names = SLASH_COMMAND_NAMES.filter((name) => name.startsWith(prefix));
     if (names.length === 0) return null;
     const replacement =
       names.length === 1 ? (names[0] ?? value) : commonPrefix(names);
