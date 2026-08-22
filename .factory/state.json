@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T21",
-  "branch": "factory/t21-engine-metrics-status",
-  "pr": 45,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-22T10:37:37Z"
+  "updated": "2026-08-22T10:39:35Z"
 }
