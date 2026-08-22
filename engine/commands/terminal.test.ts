@@ -71,5 +71,10 @@ describe("terminal commands", () => {
       output: [{ stream: "stdout", text: "exit is load-bearing" }],
       exitCode: 1,
     });
+
+    expect(shellResult(fold("exit 0"))).toMatchObject({
+      output: [{ stream: "stderr", text: "exit: too many arguments" }],
+      exitCode: 2,
+    });
   });
 });
