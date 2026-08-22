@@ -142,8 +142,9 @@ export function createTerminalInputController(
           cursor,
           binding.state,
         );
-        if (completion === null || completion.value === input.value) return;
+        if (completion === null) return;
         event.preventDefault();
+        if (completion.value === input.value) return;
         replaceInput(input, completion.value, completion.cursor);
         completionPresentation?.refresh();
       });

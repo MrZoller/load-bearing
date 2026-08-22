@@ -49,6 +49,10 @@ test("keeps terminal controls mode-specific and presentation-only", async ({
   await bashPrompt.fill("pw");
   await bashPrompt.press("Tab");
   await expect(bashPrompt).toHaveValue("pwd ");
+  await bashPrompt.fill("c");
+  await bashPrompt.press("Tab");
+  await expect(bashPrompt).toBeFocused();
+  await expect(bashPrompt).toHaveValue("c");
   await bashPrompt.fill("pwd");
   await bashPrompt.press("Enter");
   await bashPrompt.fill("bash draft");

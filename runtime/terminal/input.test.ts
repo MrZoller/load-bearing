@@ -128,6 +128,21 @@ describe("createTerminalInputController", () => {
     expect(tui.input.value).toBe("");
   });
 
+  it("consumes Tab when a Bash completion cannot extend an ambiguous prefix", () => {
+    const controller = createTerminalInputController({
+      clearTranscript() {},
+      enterBash() {},
+    });
+    const bash = bind(controller, "bash", () => {});
+
+    bash.input.value = "c";
+    bash.input.setSelectionRange(1, 1);
+    const completion = bash.input.dispatch("keydown", new FakeEvent("Tab"));
+
+    expect(completion.defaultPrevented).toBe(true);
+    expect(bash.input.value).toBe("c");
+  });
+
   it("preserves a draft for clear and nonempty Ctrl+D, entering Bash only from an empty prompt", () => {
     let clears = 0;
     let bashEntries = 0;
