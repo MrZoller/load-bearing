@@ -257,7 +257,7 @@ Pinned details:
   lowering one is a design question and stops the line.
 - Functions stay at 100% per file — already achieved everywhere.
 
-## Q8 (task T25, open) — Should T25 receive another focused fix cycle after its re-panel block?
+## Q8 (task T25, consumed) — Should T25 receive another focused fix cycle after its re-panel block?
 
 Context: The initial panel confirmed and fixed a Linux Ctrl+C transcript-copy
 bug and a degenerate scroll-anchor test. The required one-time re-panel then
