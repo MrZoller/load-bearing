@@ -1,102 +1,108 @@
-# Plan: Phase 0 issue-tracker backlog
+# Plan: Phase 1 — one browser terminal, two views, one simulated machine
 
 ## Approach
 
-Deliver the open `phase-0` issues in their explicit dependency order, beginning
-with the virtual filesystem and command-dispatch skeleton and then thickening
-the simulated machine through git, world state, commands, reactions, and agent
-mind state. Each task extends the existing event registry with a validated,
-plain-JSON state slice, colocated tests, and at least one deterministic replay
-fixture where its issue requires one. Cartridge-facing work keeps schema,
-loaded types, validation, the published JSON Schema, and malformed fixtures in
-lockstep. The Phase 0 exit task integrates and documents the completed surfaces
-rather than absorbing newly discovered features. The rolling parked-minors task
-remains blocked until review findings are deliberately batched into it.
+Start with a framework-free TypeScript browser walking skeleton that imports the
+existing public engine, owns one append-only visitor event log, and renders
+semantic DOM from the resulting `SessionState`; DOM types and browser tooling
+remain outside `engine/`, whose independent no-DOM program stays intact. Then
+add replayable terminal/agent state and only the narrow Phase 1 cartridge
+contract needed by the approved demonstration cartridge, preserving the root
+seed across model switches and using dedicated named substreams for model and
+spinner choices. Both Bash and TUI dispatch the existing shell path and engine
+events rather than maintaining parallel state. Browser behavior is thickened in
+focused interaction slices, with Playwright coverage added alongside each
+surface and a final pinned-Chromium Lighthouse/keyboard/mobile acceptance gate.
+The approved visual baseline is restrained terminal chrome with original
+structural/I-beam accents; React, full terminal emulation, Incident #001 content,
+and runtime model calls are deliberately excluded.
 
 ## Tasks
 
-- [x] T1 (standard) — Virtual filesystem model (Fixes #5)
-  - acceptance: `engine/vfs/` and its event registration hydrate cartridge files into a deterministic tree; path resolution, permissions, recursive mutation, ownership/mode round-trips, and simulated-clock mtimes have unit coverage; replay fixtures prove create → write → chmod → delete and that deleted files stay absent; purity and canonical serialization gates pass
-  - pr: 23
-- [x] T2 (standard) — Git model: commit DAG, branches, index, blame, diff (Fixes #6)
-  - acceptance: `engine/git/` and cartridge git-history validation provide deterministic content-derived commits, branches/HEAD, index/working-tree status, blame, diff, and defined dirty-checkout semantics over the VFS; coherence failures produce useful load errors; tests prove log/blame agreement and full git-model semantics, with a byte-stable VFS+git replay fixture
-  - deps: T1
-  - pr: 24
-- [x] T3 (standard) — Processes, services, logs, env, man pages, history, tickets (Fixes #7)
-  - acceptance: engine world-state modules hydrate and canonically serialize every declared surface; deterministic PID/port assignment and listing order are documented and tested; env, logs, services, and history mutate only through replayable events; pure lookups and load-time collision/dangling-reference errors are covered; purity passes
-  - deps: T1
-  - pr: 25
-- [x] T4 (standard) — Command interpreter core: tokenizer, registry, dispatch (Fixes #8)
-  - acceptance: `engine/commands/` provides tested POSIX-ish tokenization and option parsing, duplicate-safe registration, validated cartridge overrides, exit-127 unknown-command behavior, and a pure shell execution API whose ordered stdout/stderr/exit results enter the replay transcript; `pwd`, `echo`, and `true` prove the path end to end; purity passes
-  - pr: 26
-- [x] T5 (standard) — Filesystem commands (Fixes #9)
-  - acceptance: filesystem command modules implement the issue's command and flag set over the VFS with exact deterministic output and exit codes; per-command golden tests cover success, missing-target, and permission-denied paths; `ls -la` preserves declared metadata; a replay proves multi-command mutation and persistent deletion across timezones
-  - deps: T1, T4
-  - pr: 27
-- [x] T6 (standard) — Git commands (Fixes #10)
-  - acceptance: git command modules render and mutate only through the git/VFS models for the issue's command set; golden tests cover exact output, errors, deterministic hashes, log/blame coherence, and full command semantics; a replay proves tracked deletion → status → checkout restoration with byte-identical output across platforms and timezones
-  - deps: T2, T4, T5
-  - pr: 28
-- [x] T7 (standard) — System and world-inspection commands (Fixes #11)
-  - acceptance: system command modules implement the issue's command set over cartridge world state; golden fixtures cover every command and required error; simulated `curl` performs no network I/O, `date` uses only the simulated clock, and event-driven `kill`/`systemctl`/environment transitions remain visible to later commands and replay identically
-  - deps: T3, T4
-  - pr: 29
-- [x] T8 (standard) — Simulated test runner and cartridge-defined reactions (Fixes #12)
-  - acceptance: cartridge test predicates produce stable output, exit codes, timestamps, and VFS-reactive results; data-defined reaction rules update services, processes, and logs in documented deterministic order; missing references and rule cycles fail cartridge load with useful errors; fixtures prove before/after-edit test output and byte-identical reactions without incident behavior in engine code
-  - deps: T3, T5, T7
-  - pr: 32
-- [x] T9 (standard) — Agent mind state: permission ledger and belief state (Fixes #13)
-  - acceptance: engine mind-state modules record grant, deny, and standing permission decisions with simulated timestamps; belief state is separately serialized and exposes queryable divergence from world truth; isolation tests prove belief changes cannot mutate VFS/git/services and world changes cannot silently correct belief; a replay preserves induced divergence and purity passes
-  - deps: T8
-  - pr: 34
-- [~] T10 (standard) — Phase 0 exit: end-to-end replay, coverage gate, DoD verification (Fixes #14)
-  - acceptance: a full-session fixture exercises filesystem, git, services/processes, tests before and after an edit, permissions, and belief divergence with byte-identical state/transcript; CI enforces agreed filesystem/git coverage and cross-timezone determinism; public engine APIs, fixtures, and purity gates are documented; malformed-cartridge errors are asserted; all four Phase 0 ROADMAP boxes cite passing evidence on a clean checkout
-  - deps: T1, T2, T3, T4, T5, T6, T7, T8, T9
+- [ ] T13 (major) — Browser runtime walking skeleton
+  - acceptance: `index.html`, `vite.config.ts`, `runtime/session.ts`, `runtime/main.ts`, and terminal styles build a production page that loads a real `content/incidents/phase-1-demo.json` through `loadCartridge`, derives one authoritative state by `appendEvent` + `step`, renders a semantic terminal landmark and engine transcript without direct slice mutation, focuses its prompt, and always shows `loadbearing.cc · Incident #NNN`; pinned Playwright smoke coverage runs the production build; root and engine-only TypeScript programs plus all Phase 0 gates remain green (criteria 1 foundation, 4 foundation, 16, 17)
+  - deps: none
+- [ ] T14 (standard) — Replayable terminal mode and active model
+  - acceptance: `engine/terminal/` registers a validated plain-JSON slice and events for `tui`/`bash` mode and active-model changes; `engine/commands/terminal.ts` implements `loadbearing --resume` and an authored bare-`exit` refusal; `/exit` and TUI `Ctrl+D` share one mode event; model switches retain the original `SessionState.seed` and isolate model-specific named substreams; unit, snapshot, and golden replay tests cover every transition (criteria 2, 6; approved decision 2A)
+  - deps: none
+- [ ] T15 (standard) — Cold open and two-view terminal skeleton
+  - acceptance: `runtime/app.ts`, `runtime/views/bash.ts`, `runtime/views/tui.ts`, and the shared terminal renderer visibly present the authored login/prompt and `loadbearing --resume incident-NNN` sequence before a focused `❯` prompt; keyboard-only `/exit` and `Ctrl+D` enter Bash, resume returns to the same engine session, and bare `exit` refuses without ending it; Playwright covers the complete mode round trip with no pointer actions (criteria 1, 2)
+  - deps: T13, T14
+- [ ] T16 (major) — Bounded Phase 1 agent and cartridge contract
+  - acceptance: `engine/agent/` defines validated, bounded, plain-JSON messages, tool calls, thinking blocks, todos, activity, and authored response records; `engine/cartridge/{schema,types,load}.ts` concretely validates only the Phase 1 `story`/`presentation` subsections needed for opening copy, minimal intents/fallback, help, compact/resume responses, placeholders, spinner pools, and metrics while leaving Phase 2 interiors extensible; the published schema, malformed fixtures, demo cartridge, public exports, docs, and an intentional golden-fixture update remain in lockstep (criteria 5, 7, 9, 11; approved decision 1A)
+  - deps: T14
+- [ ] T17 (standard) — Authored natural-language input and shell passthrough
+  - acceptance: `engine/agent/intent.ts` and agent events choose the demo cartridge's minimal authored response/action set for recognized and unmatched natural-language input without apology or parser error; `!command` strips only the prefix and dispatches the same `createShellExecuteEvent` path as Bash, producing identical ordered output and machine effects; TUI rendering and unit/replay/Playwright tests prove both paths (criteria 5)
+  - deps: T15, T16
+- [ ] T18 (standard) — Shared-machine awareness and compacted beliefs
+  - acceptance: generic agent resume logic compares typed mind beliefs with VFS/Git/service truth through `beliefDivergence`, selects cartridge-authored reactions without hardcoded demo paths, and records the response as agent state; deleting the demonstration file in Bash then resuming yields a deterministic in-character acknowledgment, while an authored compact summary replaces beliefs and survives mode changes; a golden replay pins the full behavior (criteria 3, 6)
+  - deps: T16, T17
+- [ ] T19 (standard) — Pending permissions and keyboard decisions
+  - acceptance: `engine/mind/` adds bounded pending-request identity and request/resolve events without breaking existing direct decisions; grant, deny, and always-allow atomically clear the prompt and append the correct simulated-time ledger entry, with standing grants still exact-capability matches; `runtime/components/permission.ts` exposes labeled keyboard controls and restores prompt focus; unit, snapshot, replay, and interaction tests cover all choices (criteria 7)
+  - deps: T15, T16
+- [ ] T20 (standard) — Replayable tool, thinking, and todo elements
+  - acceptance: typed events in `engine/agent/` create and update bounded tool calls, expandable thinking blocks, and todos without storing markup or DOM state; `runtime/components/artifacts.ts` renders each as a distinct semantic element with textual state and keyboard-operable disclosure; replay and interaction tests prove updates survive mode switches and restore from the event log (criteria 7, 13)
+  - deps: T15, T16
+- [ ] T21 (standard) — Engine-derived metrics and status bar
+  - acceptance: `engine/metrics/` derives or records model, token count, cost, context percentage, and structural integrity solely from replay state plus validated cartridge parameters, with explicit bounds and snapshot validation; `runtime/components/status.ts` renders those values and attribution from engine queries rather than DOM counters; unit and replay tests prove model switches and identical logs produce stable values (criteria 8)
+  - deps: T14, T16
+- [ ] T22 (standard) — Deterministic working verb and suffix channel
+  - acceptance: agent activity events select verbs from authored archetype-by-stage pools through a dedicated stable named stream and record the choice; the runtime spinner shows the selected verb plus timer, token count, and Escape guidance while wall time only interpolates presentation; reduced motion exposes the same text without animation, and tests prove unrelated streams, frame timing, and motion preference cannot alter replay state (criteria 9)
+  - deps: T16, T21
+- [ ] T23 (standard) — Slash commands, autocomplete, and model selector
+  - acceptance: one typed slash-command registry implements and accurately describes `/help`, `/model`, `/compact`, `/cost`, and `/exit`; commands dispatch terminal, mind, and agent events or report engine metrics as appropriate; the semantic model selector and slash autocomplete are fully keyboard-operable, model and compact state survive view switches, and focused unit/interaction tests cover discovery, execution, cancellation, and focus restoration (criterion 6)
+  - deps: T15, T16, T18, T21
+- [ ] T24 (standard) — Terminal histories, completion, and core controls
+  - acceptance: `runtime/terminal/{history,completion,input}.ts` provides mode-appropriate TUI and Bash histories, slash/command/path tab completion, arrows, selection-safe copy/paste, `Ctrl+C`, `Ctrl+L`, `Ctrl+D`, and Escape behavior through one input controller; presentation-only clear/cancel operations do not rewrite engine transcript or event log; automated interaction tests cover normal and empty-input cases (criterion 10)
+  - deps: T15, T23
+- [ ] T25 (standard) — Transcript search, scrollback, and anchoring
+  - acceptance: `runtime/terminal/{search,scroll}.ts` provides keyboard transcript search, bounded scrollback, focus restoration, and new-output anchoring that follows only when already at the bottom and preserves the reader's place otherwise; an accessible new-output affordance returns to the latest entry; Playwright covers search navigation, copied text, scrolled-up output, and resumed anchoring (criterion 10)
+  - deps: T15
+- [ ] T26 (standard) — Diegetic onboarding without shell spoilers
+  - acceptance: the demo cartridge authors rotating placeholders, accurate in-character help, autocomplete copy, and one idle nudge; runtime timers may reveal preselected presentation or dispatch the explicit replayable nudge event but never choose content from wall time; interaction tests prove each teaching surface appears, only one idle nudge records, and no tooltip, tutorial overlay/modal, post-cold-open shell hint, or hidden-depth advertisement exists (criterion 11)
+  - deps: T16, T17, T23
+- [ ] T27 (standard) — Semantic accessibility, reduced motion, and visual baseline
+  - acceptance: terminal/components/styles use reading-order semantic DOM, labeled controls, visible focus, textual equivalents, and a dedicated polite live region that announces only new meaningful output; reduced motion preserves every status and cold-open fact; the restrained original terminal treatment uses structural/I-beam accents without lab names, model trademarks, copied colors, or exact trade dress; automated role/name/focus/motion checks cover the stable component surface (criteria 13, 16; approved decision 3A)
+  - deps: T15, T19, T20, T21, T22
+- [ ] T28 (standard) — Responsive terminal and mobile key strip
+  - acceptance: responsive styles and `runtime/components/mobile-keys.ts` keep transcript, prompt, selectors, and permission controls usable at 390×844 with no page-level horizontal overflow; focused-prompt viewport resizing remains usable with a software keyboard; the labeled `/`, `!`, Tab, and arrow keys feed the same input controller as hardware keys; Playwright covers width, focus, long output, and key behavior (criterion 15; approved decision 4A)
+  - deps: T24, T25, T27
+- [ ] T29 (standard) — Phase 1 deterministic browser acceptance gate
+  - acceptance: pinned Playwright Chromium replays one complete keyboard-only session covering cold open, TUI input, permission choice, shell passthrough, Bash mutation, resume reaction, model switch, compact, and exit refusal with visible focus; a Node/browser test canonical-serializes the same cartridge/seed/events to byte-identical state and transcript and proves focus, scroll, viewport, reduced motion, and animation frames do not alter the log; CI runs production build, browser interactions at desktop and 390×844, all Phase 0 verification, and a pinned desktop Lighthouse accessibility audit requiring score 100 with no unlabeled controls or keyboard trap (criteria 4, 12, 14, 15, 17; approved decision 4A)
+  - deps: T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28
 
 ## Risks
 
-- T1 must define implicit-directory metadata and permission identity from the
-  cartridge model; if the existing schema cannot support a coherent policy,
-  stop and ask rather than invent incident-specific defaults.
-- T2, T4, T6, T8 cross state-slice boundaries while the current event registry
-  dispatches one module per event; if ordered event expansion cannot preserve
-  atomic replay semantics, stop for an orchestration design decision.
-- T3 and T7 require a coherent relationship among logs, VFS files, identity,
-  endpoints, and machine uptime; contradictory source-of-truth choices are a
-  design blocker.
-- T9 needs explicit capability matching and typed belief-to-truth comparison;
-  arbitrary object diffing or implicit permission scope is not acceptable.
-- T10's coverage threshold must be measurable and agreed from the issue's
-  “full unit coverage” requirement; it must not silently substitute line
-  coverage for semantic coverage or absorb feature gaps from earlier tasks.
+- T13 introduces the first browser/build subsystem and dev-only browser
+  dependencies. If DOM libraries leak into `tsconfig.engine.json`, runtime code
+  gains a second state store, or a production framework/runtime dependency is
+  needed, stop rather than weakening the engine boundary.
+- T14, T16, and T21 alter serialized engine/cartridge contracts. Generated
+  schema and replay churn is expected only when explained by the new contract;
+  unrelated fixture changes or a model switch that changes the root seed are
+  determinism blockers.
+- T18 must stay generic: if typed divergence cannot express the demonstration
+  reaction without a hardcoded file/incident check, stop and revise the
+  cartridge contract rather than hiding content in engine or runtime code.
+- T19 permission resolution may need to coordinate a machine action with the
+  mind ledger. If existing effects cannot make that atomic while preserving
+  one-module-one-slice ownership, stop for an orchestration decision.
+- T22 and T26 are wall-time traps. Browser timers may schedule presentation,
+  but any timer-selected copy, metric, random draw, or unlogged state mutation
+  fails the replay contract.
+- T27–T29 use automated accessibility evidence, but Lighthouse 100 does not
+  prove live-region quality. Any discovered keyboard trap, repeated full-log
+  announcement, or information loss under reduced motion blocks completion
+  even when the score is green.
+- T28's automated 390×844 resize coverage cannot emulate every mobile software
+  keyboard. If the visual viewport cannot keep the focused prompt usable, stop
+  rather than silently broadening or weakening the approved phone criterion.
 
 ## Ad-hoc
 
-- [x] T11 (standard) — parked review minors (batch)
-  - acceptance: confirmed non-blocking review findings parked during Phase 0 delivery are collected, fixed as one focused batch, and verified by the affected test and repository gates
-  - PR #23: preserve `..` traversal semantics across a regular-file component until the shell/VFS contract is deliberately defined
-  - PR #23: reject noncanonical fixed-width VFS snapshot mtime spellings
-  - PR #23: ignore unusable directory keys while checking whether the cartridge cwd exists
-  - PR #24: hoist the inherited-line LCS map during cartridge blame validation to avoid redundant per-line work
-  - PR #24: harden restored Git snapshot blame provenance against unrelated sibling commits
-  - PR #24: validate restored Git snapshot `committedAt` values as fixed-width UTC timestamps
-  - PR #25: guard environment lookups against inherited `Object.prototype` names
-  - PR #25: reject noncanonical fixed-width process timestamps in restored world snapshots
-  - PR #26: directly test malformed `shell.result` stream payload guards on replay
-  - PR #26: return a deterministic shell result for oversized command input
-  - PR #26: return a deterministic shell result for control-character and lone-surrogate input
-  - PR #27: reject empty authored filesystem operands rather than resolving them to the current working directory
-  - PR #28: reject unwritable control characters and lone surrogates in authored Git email addresses
-  - PR #28: render an extended unterminated final line as changed rather than shared diff context
-  - PR #28: deduplicate no-final-newline markers on a shared diff context row
-  - PR #29: make the `man <section> <name>` grammar reach schema-valid hyphen-prefixed sections, or deliberately narrow that section contract
-  - PR #32: update the root `AGENTS.md` deferred-validation wording for the now-concrete `repository.tests` interior
-  - PR #32: require a declared `file-exists` path to be a file rather than a directory
-  - PR #32: count only reaction-derived events against the reaction cascade limit
-  - PR #32: treat `ENOTDIR` as absence for `file-exists` predicates
-  - PR #32: enforce fixed-width canonical timestamps when restoring test-run snapshots
-  - pr: 33
-
-- [!] T12 (trivial) — parked review minors (batch)
+- [R] T12 (standard) — parked review minors (batch)
   - acceptance: confirmed non-blocking review findings are collected and fixed as one focused batch with affected-test and repository-gate verification
+  - released 2026-08-21 at plan approval (Chris, via operator): planning-skill drain trigger — drains before new Phase 1 feature work
   - PR #33: reject unrenderable shell input before tokenization errors so malformed syntax cannot enter shell history
+  - PR #35: make the VFS/Git coverage gate fail when a new runtime production file falls outside its measured inventory, and align its comments and README wording
+  - pr: 36

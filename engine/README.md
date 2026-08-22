@@ -49,8 +49,11 @@ correctness. Named tests cover path-resolution edges, permission denial,
 checkout coherence, and log/blame agreement. Those behaviors are the Phase 0
 definition of full filesystem and Git coverage.
 
-CI additionally measures `engine/vfs/{path,vfs,module}.ts` and
-`engine/git/{git,module}.ts` per file. Each must retain at least 93% statements
-and lines, 75% branches, and 100% functions. These floors stop one weak file
-from hiding behind an aggregate and prevent silent regression; they do not
-replace the named semantic tests. Floors may be raised as coverage improves.
+CI additionally measures every production implementation file under
+`engine/vfs/` and `engine/git/`, excluding tests, declarations, and the
+type-only `types.ts` modules. A newly extracted runtime file therefore enters
+the measured inventory automatically. Each file must retain at least 93%
+statements and lines, 75% branches, and 100% functions. These floors stop one
+weak file from hiding behind an aggregate and prevent silent regression; they
+do not replace the named semantic tests. Floors may be raised as coverage
+improves.

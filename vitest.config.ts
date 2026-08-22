@@ -5,16 +5,21 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       all: true,
-      include: [
-        "engine/vfs/{path,vfs,module}.ts",
-        "engine/git/{git,module}.ts",
+      // Measure the production inventory directory-wide so extracting runtime
+      // logic into a new file cannot silently put it outside this gate.
+      include: ["engine/{vfs,git}/**/*.{ts,tsx,js,jsx,mts,mjs,cts,cjs}"],
+      exclude: [
+        "engine/{vfs,git}/**/*.{test,spec}.?(c|m)[jt]s?(x)",
+        "engine/{vfs,git}/**/*.d.ts",
+        // These modules contain types only and emit no runtime behavior.
+        "engine/{vfs,git}/**/types.ts",
       ],
       thresholds: {
         perFile: true,
         // These floors prevent any one model file from hiding behind a healthy
         // aggregate. They are an anti-regression gate, not the meaning of
         // "full" semantics coverage; the named behavior tests carry that
-        // contract (engine/README.md → Filesystem and Git coverage).
+        // contract (engine/README.md, Filesystem and Git coverage).
         branches: 75,
         functions: 100,
         lines: 93,

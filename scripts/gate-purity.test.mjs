@@ -974,6 +974,35 @@ describe("purity gate", () => {
     expect(runsInVitest("engine/a.ts")).toBe(false);
   });
 
+  it("keeps future VFS and Git production files in the coverage inventory", async () => {
+    const picomatch = (await import("picomatch")).default;
+    const included = picomatch(vitestConfig.test.coverage.include);
+    const excluded = picomatch(vitestConfig.test.coverage.exclude);
+
+    for (const name of [
+      "engine/vfs/new-runtime.ts",
+      "engine/vfs/nested/new-runtime.mts",
+      "engine/git/new-runtime.js",
+      "engine/git/nested/new-runtime.cjs",
+    ]) {
+      expect(included(name), `${name}: coverage includes it`).toBe(true);
+      expect(excluded(name), `${name}: coverage does not exclude it`).toBe(
+        false,
+      );
+    }
+
+    for (const name of [
+      "engine/vfs/new-runtime.test.ts",
+      "engine/git/new-runtime.spec.mts",
+      "engine/vfs/generated.d.ts",
+      "engine/vfs/types.ts",
+      "engine/git/types.ts",
+      "engine/vfs/nested/types.ts",
+    ]) {
+      expect(excluded(name), `${name}: coverage excludes it`).toBe(true);
+    }
+  });
+
   it("passes on the engine, with no stale allowlist entries", () => {
     const { files, violations, stale } = runGate();
 

@@ -137,6 +137,35 @@ describe("shell execution", () => {
   );
 
   it.each([
+    ["an unterminated quote containing a control character", "echo '\u0000"],
+    ["a dangling escape after a lone surrogate", "echo \ud800\\"],
+    ["surrogate halves separated by shell whitespace", "echo \ud800\n\udc00"],
+    [
+      "surrogate halves separated by quoted shell whitespace",
+      "echo '\ud800\n\udc00'",
+    ],
+  ])("rejects %s before tokenization or history", (_case, input) => {
+    const before = reduce({
+      cartridge: loadCartridge(loadCartridgeFixture("minimal")),
+      seed: "shell",
+      events: [],
+    });
+    const after = fold(input);
+
+    expect(shellResult(after)).toMatchObject({
+      output: [
+        {
+          stream: "stderr",
+          text: "shell: command contains unrenderable input",
+        },
+      ],
+      exitCode: 2,
+    });
+    expect(after.slices).toEqual(before.slices);
+    expect(after.transcript).toHaveLength(1);
+  });
+
+  it.each([
     [
       "an oversized command",
       `touch /production/service/should-not-exist ${"x".repeat(MAX_SHELL_INPUT_LENGTH)}`,
