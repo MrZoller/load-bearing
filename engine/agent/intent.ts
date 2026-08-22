@@ -21,6 +21,7 @@ import {
   readAgentSlice,
 } from "./agent.js";
 import {
+  createAgentActivityEvent,
   createAgentCapacityEvent,
   createAgentMessageEvent,
   createAgentResponseEvent,
@@ -134,6 +135,10 @@ export function createAgentInputEvents(
   }
   const turnId = `turn-${String(state.eventCount)}`;
   return [
+    // These delimit the visitor turn in the replay log. The browser may use
+    // presentation time between them, but the selected verb remains wholly
+    // determined by this event and the seeded model stream.
+    createAgentActivityEvent({ status: "working", stage: 0 }),
     createAgentMessageEvent(turnId, boundedInput),
     ...selection.actions.flatMap((action) => {
       if (action.kind === "shell-execute")
@@ -148,5 +153,6 @@ export function createAgentInputEvents(
         : [createMindPermissionRequestedEvent(action.id, capability)];
     }),
     createAgentResponseEvent(responseId, turnId),
+    createAgentActivityEvent({ status: "idle" }),
   ];
 }

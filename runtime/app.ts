@@ -89,6 +89,25 @@ export function mountApp(
   }
 
   function dispatchMany(events: readonly EngineEvent[]): void {
+    const first = events[0];
+    // A visitor turn starts with a replayable working event and ends idle.
+    // Paint that boundary once before folding the completed authored turn, so
+    // the spinner is a real browser state rather than dead presentation code.
+    // The frame only schedules rendering; it never chooses or changes events.
+    if (
+      first?.type === "agent.activity-set" &&
+      first.payload?.["status"] === "working" &&
+      events.length > 1 &&
+      browser !== null
+    ) {
+      session.dispatch(first);
+      render();
+      browser.requestAnimationFrame(() => {
+        session.dispatchMany(events.slice(1));
+        render();
+      });
+      return;
+    }
     session.dispatchMany(events);
     render();
   }

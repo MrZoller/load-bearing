@@ -31,9 +31,11 @@ describe("createTuiInputEvents", () => {
         (event) => event.type,
       ),
     ).toEqual([
+      "agent.activity-set",
       "agent.message-added",
       "shell.execute",
       "agent.response-recorded",
+      "agent.activity-set",
     ]);
     expect(createTuiInputEvents(CARTRIDGE, STATE, "/exit")).toMatchObject([
       { type: "terminal.mode-set", payload: { mode: "bash" } },
