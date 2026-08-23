@@ -89,6 +89,10 @@ describe("bounded cartridge intent patterns", () => {
     if (first === undefined) throw new Error("incident needs a fallback");
     const actions = first["actions"] as unknown[];
     actions.push({ kind: "counter-add", counter: "flail", amount: 1 });
+    const beats = phase2["beats"] as Array<Record<string, unknown>>;
+    const beat = beats[0];
+    if (beat === undefined) throw new Error("incident needs a beat");
+    beat["actions"] = [{ kind: "counter-add", counter: "flail", amount: 1 }];
 
     try {
       loadCartridge(source);
@@ -102,6 +106,7 @@ describe("bounded cartridge intent patterns", () => {
       ).toEqual(
         expect.arrayContaining([
           "/story/fallback/candidates/0/actions/1/counter",
+          "/story/phase2/beats/0/actions/0/counter",
           "/story/phase2/intentCounters/misfireEvery",
         ]),
       );

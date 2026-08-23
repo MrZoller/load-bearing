@@ -1565,6 +1565,15 @@ function checkStoryAndPresentation(
         case "counter-add":
           if (!counters.has(action.counter))
             missing("counter", action.counter, "story counter");
+          if (
+            action.counter === story.phase2.intentCounters.flail ||
+            action.counter === story.phase2.intentCounters.capitulation
+          )
+            report.addPhrase(
+              `${root}/counter`,
+              "a counter other than the engine-owned flail and capitulation counters",
+              JSON.stringify(action.counter),
+            );
           break;
         case "story-reach":
           if (!beats.has(action.beat))
@@ -1603,18 +1612,6 @@ function checkStoryAndPresentation(
         ),
       );
       checkOutcomeActions(candidate.actions, `${root}/actions`);
-      candidate.actions.forEach((action, actionIndex) => {
-        if (
-          action.kind === "counter-add" &&
-          (action.counter === story.phase2.intentCounters.flail ||
-            action.counter === story.phase2.intentCounters.capitulation)
-        )
-          report.addPhrase(
-            `${root}/actions/${String(actionIndex)}/counter`,
-            "a counter other than the engine-owned flail and capitulation counters",
-            JSON.stringify(action.counter),
-          );
-      });
       const reaches = candidate.actions.filter(
         (action) => action.kind === "story-reach",
       );
