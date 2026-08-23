@@ -1,0 +1,98 @@
+{
+  "name": "027-incident-001-git-trail",
+  "description": "Incident #001's departed-maintainer Git trail stays coherent across log, blame, clean ref checkout, visitor repair, authored undo, and index-backed restore.",
+  "seed": "2026-08-22/27/deep-foundation",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    {
+      "type": "shell.execute",
+      "payload": { "input": "history" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git log --oneline" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git diff" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git blame src/config.ts" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git checkout greg/healthcheck-repair" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git diff" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git blame config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git checkout main" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cp -p config/routes.200.conf config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git diff" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cp -p config/routes.500.conf config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git diff" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git restore config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git status --short" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git blame config/routes.conf" },
+      "version": 0
+    }
+  ]
+}

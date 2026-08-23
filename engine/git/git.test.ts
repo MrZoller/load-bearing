@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import incidentDocument from "../../content/incidents/incident-001.json";
 import { loadCartridge } from "../cartridge/load.js";
 import { reduce, restoreSnapshot, snapshot } from "../events/reduce.js";
 import { deserialize, serialize } from "../serialize/canonical.js";
@@ -42,6 +43,8 @@ function world() {
 
 const NOW = "2026-08-05T09:14:22.000Z";
 const FILE = "/production/service/src/index.ts";
+const ROUTES = "/production/load-balancer/config/routes.conf";
+const CONFIG = "/production/load-balancer/src/config.ts";
 
 describe("the Git model", () => {
   it("reports empty, missing, and no-op Git states without borrowing host behavior", () => {
@@ -136,6 +139,88 @@ describe("the Git model", () => {
     const reachable = new Set(log.map((commit) => commit.hash));
     if (blame.ok)
       expect(blame.value.every((line) => reachable.has(line.hash))).toBe(true);
+  });
+
+  it("hydrates Incident #001's departed-maintainer trail as one coherent repository", () => {
+    const cartridge = loadCartridge(incidentDocument);
+    const git = createGitSlice(cartridge);
+    const vfs = createVfsSlice(cartridge);
+    const log = logGit(git);
+    const hashes = Object.fromEntries(
+      log.map((commit) => [commit.id, commit.hash]),
+    );
+
+    expect(log.map((commit) => commit.id)).toEqual([
+      "regional-rollback",
+      "healthcheck-repair",
+      "regional-baseline",
+    ]);
+    expect(git.head).toEqual({ kind: "branch", target: "main" });
+    expect(git.branches).toEqual({
+      "before-healthcheck-repair": hashes["regional-baseline"],
+      "greg/healthcheck-repair": hashes["healthcheck-repair"],
+      main: hashes["regional-rollback"],
+    });
+    expect(git.index[ROUTES]).toBe(
+      cartridge.repository.files[ROUTES]?.contents,
+    );
+    expect(statusGit(git, vfs)).toEqual([]);
+    expect(cartridge.repository.shellHistory).toEqual([
+      "git status --short",
+      "git log --oneline",
+      "git blame src/config.ts",
+      "git checkout greg/healthcheck-repair",
+      "npm test",
+      "git checkout main",
+      "git restore config/routes.conf",
+    ]);
+
+    const blame = blameGit(git, CONFIG);
+    expect(blame).toMatchObject({ ok: true });
+    if (!blame.ok) expect.unreachable("authored config is tracked");
+    expect(blame.value.map((line) => line.hash)).toEqual([
+      hashes["regional-baseline"],
+      hashes["regional-baseline"],
+      hashes["regional-baseline"],
+      hashes["healthcheck-repair"],
+      hashes["regional-baseline"],
+      hashes["regional-baseline"],
+    ]);
+    expect(blame.value[3]?.author).toEqual({
+      name: "Greg Formerly",
+      email: "greg@example.test",
+    });
+
+    const repaired = checkoutGit(git, vfs, "greg/healthcheck-repair", NOW);
+    expect(repaired.result.ok).toBe(true);
+    expect(repaired.git.index[ROUTES]).toBe(
+      "health_status=200\neurope_attached=false\n",
+    );
+    expect(repaired.vfs.entries[ROUTES]).toMatchObject({
+      contents: "health_status=200\neurope_attached=false\n",
+    });
+    expect(statusGit(repaired.git, repaired.vfs)).toEqual([]);
+
+    const main = checkoutGit(repaired.git, repaired.vfs, "main", NOW);
+    expect(main.result.ok).toBe(true);
+    const visitorRepair = writeVfs(
+      main.vfs,
+      ROUTES,
+      "health_status=200\neurope_attached=false\n",
+      NOW,
+    );
+    expect(visitorRepair.result.ok).toBe(true);
+    expect(diffGit(main.git, visitorRepair.slice, "working-index")).toEqual([
+      expect.objectContaining({
+        path: ROUTES,
+        oldContents: "health_status=500\neurope_attached=true\n",
+        newContents: "health_status=200\neurope_attached=false\n",
+      }),
+    ]);
+    expect(restoreGit(main.git, ROUTES, false).plan).toEqual({
+      tracked: [ROUTES],
+      target: { [ROUTES]: "health_status=500\neurope_attached=true\n" },
+    });
   });
 
   it("orders a branching DAG topologically with timestamp then hash ties", () => {

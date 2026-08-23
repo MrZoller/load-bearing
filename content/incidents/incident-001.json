@@ -86,71 +86,210 @@
         "mode": "0644"
       }
     },
+    "shellHistory": [
+      "git status --short",
+      "git log --oneline",
+      "git blame src/config.ts",
+      "git checkout greg/healthcheck-repair",
+      "npm test",
+      "git checkout main",
+      "git restore config/routes.conf"
+    ],
     "gitHistory": {
       "commits": [
         {
-          "id": "attach-europe",
+          "id": "regional-baseline",
           "author": { "name": "Greg Formerly", "email": "greg@example.test" },
-          "message": "keep regional routing stable\n",
-          "committedAt": "2026-08-10T04:11:09.000Z",
+          "message": "establish regional fail-open\n",
+          "committedAt": "2026-07-14T16:22:31.000Z",
           "files": {
             "/production/load-balancer/config/routes.conf": {
               "contents": "health_status=500\neurope_attached=true\n",
-              "blame": ["attach-europe", "attach-europe"]
+              "blame": ["regional-baseline", "regional-baseline"]
             },
             "/production/load-balancer/config/routes.200.conf": {
               "contents": "health_status=200\neurope_attached=false\n",
-              "blame": ["attach-europe", "attach-europe"]
+              "blame": ["regional-baseline", "regional-baseline"]
             },
             "/production/load-balancer/config/routes.500.conf": {
               "contents": "health_status=500\neurope_attached=true\n",
-              "blame": ["attach-europe", "attach-europe"]
+              "blame": ["regional-baseline", "regional-baseline"]
             },
             "/production/load-balancer/package.json": {
               "contents": "{\n  \"name\": \"regional-load-balancer\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test test/routes.test.ts\"\n  }\n}\n",
               "blame": [
-                "attach-europe",
-                "attach-europe",
-                "attach-europe",
-                "attach-europe",
-                "attach-europe",
-                "attach-europe",
-                "attach-europe",
-                "attach-europe"
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline"
               ]
             },
             "/production/load-balancer/src/config.ts": {
-              "contents": "export const healthEndpoint = \"http://load-balancer.internal/health\";\nexport const expectedHealthStatus = 200;\n\n// A successful health response detaches the regional route by design.\nexport const europeAttached = (healthStatus: number): boolean =>\n  healthStatus !== expectedHealthStatus;\n",
+              "contents": "export const healthEndpoint = \"http://load-balancer.internal/health\";\nexport const expectedHealthStatus = 200;\n\nexport const europeAttached = (healthStatus: number): boolean =>\n  healthStatus !== expectedHealthStatus;\n",
               "blame": [
-                "attach-europe",
-                "attach-europe",
-                "attach-europe",
-                "attach-europe",
-                "attach-europe",
-                "attach-europe"
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline"
               ]
             },
             "/production/load-balancer/test/routes.test.ts": {
               "contents": "import assert from \"node:assert/strict\";\nimport test from \"node:test\";\n\nimport { europeAttached, expectedHealthStatus } from \"../src/config.ts\";\n\ntest(\"health endpoint returns 200\", () => {\n  assert.equal(expectedHealthStatus, 200);\n});\n\ntest(\"Europe remains attached\", () => {\n  assert.equal(europeAttached(expectedHealthStatus), true);\n});\n",
               "blame": [
-                "attach-europe",
-                "attach-europe",
-                "attach-europe",
-                "attach-europe",
-                "attach-europe",
-                "attach-europe",
-                "attach-europe",
-                "attach-europe",
-                "attach-europe",
-                "attach-europe",
-                "attach-europe",
-                "attach-europe"
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline"
+              ]
+            }
+          }
+        },
+        {
+          "id": "healthcheck-repair",
+          "parents": ["regional-baseline"],
+          "author": { "name": "Greg Formerly", "email": "greg@example.test" },
+          "message": "return success from the health endpoint\n\nRegional detachment is documented in the implementation.\n",
+          "committedAt": "2026-08-08T18:47:06.000Z",
+          "files": {
+            "/production/load-balancer/config/routes.conf": {
+              "contents": "health_status=200\neurope_attached=false\n",
+              "blame": ["healthcheck-repair", "healthcheck-repair"]
+            },
+            "/production/load-balancer/config/routes.200.conf": {
+              "contents": "health_status=200\neurope_attached=false\n",
+              "blame": ["regional-baseline", "regional-baseline"]
+            },
+            "/production/load-balancer/config/routes.500.conf": {
+              "contents": "health_status=500\neurope_attached=true\n",
+              "blame": ["regional-baseline", "regional-baseline"]
+            },
+            "/production/load-balancer/package.json": {
+              "contents": "{\n  \"name\": \"regional-load-balancer\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test test/routes.test.ts\"\n  }\n}\n",
+              "blame": [
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline"
+              ]
+            },
+            "/production/load-balancer/src/config.ts": {
+              "contents": "export const healthEndpoint = \"http://load-balancer.internal/health\";\nexport const expectedHealthStatus = 200;\n\n// A successful health response detaches the regional route by design.\nexport const europeAttached = (healthStatus: number): boolean =>\n  healthStatus !== expectedHealthStatus;\n",
+              "blame": [
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "healthcheck-repair",
+                "regional-baseline",
+                "regional-baseline"
+              ]
+            },
+            "/production/load-balancer/test/routes.test.ts": {
+              "contents": "import assert from \"node:assert/strict\";\nimport test from \"node:test\";\n\nimport { europeAttached, expectedHealthStatus } from \"../src/config.ts\";\n\ntest(\"health endpoint returns 200\", () => {\n  assert.equal(expectedHealthStatus, 200);\n});\n\ntest(\"Europe remains attached\", () => {\n  assert.equal(europeAttached(expectedHealthStatus), true);\n});\n",
+              "blame": [
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline"
+              ]
+            }
+          }
+        },
+        {
+          "id": "regional-rollback",
+          "parents": ["healthcheck-repair"],
+          "author": {
+            "name": "Operations Rotation",
+            "email": "operations@example.test"
+          },
+          "message": "restore regional attachment after maintainer departure\n",
+          "committedAt": "2026-08-10T04:11:09.000Z",
+          "files": {
+            "/production/load-balancer/config/routes.conf": {
+              "contents": "health_status=500\neurope_attached=true\n",
+              "blame": ["regional-rollback", "regional-rollback"]
+            },
+            "/production/load-balancer/config/routes.200.conf": {
+              "contents": "health_status=200\neurope_attached=false\n",
+              "blame": ["regional-baseline", "regional-baseline"]
+            },
+            "/production/load-balancer/config/routes.500.conf": {
+              "contents": "health_status=500\neurope_attached=true\n",
+              "blame": ["regional-baseline", "regional-baseline"]
+            },
+            "/production/load-balancer/package.json": {
+              "contents": "{\n  \"name\": \"regional-load-balancer\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test test/routes.test.ts\"\n  }\n}\n",
+              "blame": [
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline"
+              ]
+            },
+            "/production/load-balancer/src/config.ts": {
+              "contents": "export const healthEndpoint = \"http://load-balancer.internal/health\";\nexport const expectedHealthStatus = 200;\n\n// A successful health response detaches the regional route by design.\nexport const europeAttached = (healthStatus: number): boolean =>\n  healthStatus !== expectedHealthStatus;\n",
+              "blame": [
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "healthcheck-repair",
+                "regional-baseline",
+                "regional-baseline"
+              ]
+            },
+            "/production/load-balancer/test/routes.test.ts": {
+              "contents": "import assert from \"node:assert/strict\";\nimport test from \"node:test\";\n\nimport { europeAttached, expectedHealthStatus } from \"../src/config.ts\";\n\ntest(\"health endpoint returns 200\", () => {\n  assert.equal(expectedHealthStatus, 200);\n});\n\ntest(\"Europe remains attached\", () => {\n  assert.equal(europeAttached(expectedHealthStatus), true);\n});\n",
+              "blame": [
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline",
+                "regional-baseline"
               ]
             }
           }
         }
       ],
-      "branches": { "main": "attach-europe" },
+      "branches": {
+        "before-healthcheck-repair": "regional-baseline",
+        "greg/healthcheck-repair": "healthcheck-repair",
+        "main": "regional-rollback"
+      },
       "head": { "kind": "branch", "target": "main" }
     },
     "services": [

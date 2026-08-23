@@ -105,6 +105,7 @@ against the replay contract.
 | `022-story-consequences`              | one logged outer story beat atomically updates its counter, VFS file, service, process and log through trusted owner events, while a reaction observes the derived VFS event                |
 | `023-atomic-permission-continuations` | grant, deny, always-allow and standing permission continuations plus denied and exact simulated-time waiver consent through unlogged atomic envelopes                                       |
 | `026-rare-events`                     | a completed shell expansion makes an absent-file rare-event condition eligible, records its one-shot weighted outcome on the id-derived stream, and proves a later command cannot reroll it |
+| `027-incident-001-git-trail`          | Incident #001's authored commits, refs, index, blame spans and shell history stay coherent through historical checkout, visitor repair, authored undo and restore                           |
 
 `002` records 1000 raw draws eight to a line with their index, so a divergence
 names the draw it started at rather than reporting that a file changed.

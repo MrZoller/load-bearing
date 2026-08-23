@@ -419,7 +419,9 @@
       },
       "gitHistory": {
         "branches": {
-          "main": "attach-europe"
+          "before-healthcheck-repair": "regional-baseline",
+          "greg/healthcheck-repair": "healthcheck-repair",
+          "main": "regional-rollback"
         },
         "commits": [
           {
@@ -427,74 +429,225 @@
               "email": "greg@example.test",
               "name": "Greg Formerly"
             },
-            "committedAt": "2026-08-10T04:11:09.000Z",
+            "committedAt": "2026-07-14T16:22:31.000Z",
             "files": {
               "/production/load-balancer/config/routes.200.conf": {
                 "blame": [
-                  "attach-europe",
-                  "attach-europe"
+                  "regional-baseline",
+                  "regional-baseline"
                 ],
                 "contents": "health_status=200\neurope_attached=false\n"
               },
               "/production/load-balancer/config/routes.500.conf": {
                 "blame": [
-                  "attach-europe",
-                  "attach-europe"
+                  "regional-baseline",
+                  "regional-baseline"
                 ],
                 "contents": "health_status=500\neurope_attached=true\n"
               },
               "/production/load-balancer/config/routes.conf": {
                 "blame": [
-                  "attach-europe",
-                  "attach-europe"
+                  "regional-baseline",
+                  "regional-baseline"
                 ],
                 "contents": "health_status=500\neurope_attached=true\n"
               },
               "/production/load-balancer/package.json": {
                 "blame": [
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe"
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline"
                 ],
                 "contents": "{\n  \"name\": \"regional-load-balancer\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test test/routes.test.ts\"\n  }\n}\n"
               },
               "/production/load-balancer/src/config.ts": {
                 "blame": [
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe"
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline"
+                ],
+                "contents": "export const healthEndpoint = \"http://load-balancer.internal/health\";\nexport const expectedHealthStatus = 200;\n\nexport const europeAttached = (healthStatus: number): boolean =>\n  healthStatus !== expectedHealthStatus;\n"
+              },
+              "/production/load-balancer/test/routes.test.ts": {
+                "blame": [
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline"
+                ],
+                "contents": "import assert from \"node:assert/strict\";\nimport test from \"node:test\";\n\nimport { europeAttached, expectedHealthStatus } from \"../src/config.ts\";\n\ntest(\"health endpoint returns 200\", () => {\n  assert.equal(expectedHealthStatus, 200);\n});\n\ntest(\"Europe remains attached\", () => {\n  assert.equal(europeAttached(expectedHealthStatus), true);\n});\n"
+              }
+            },
+            "id": "regional-baseline",
+            "message": "establish regional fail-open\n",
+            "parents": []
+          },
+          {
+            "author": {
+              "email": "greg@example.test",
+              "name": "Greg Formerly"
+            },
+            "committedAt": "2026-08-08T18:47:06.000Z",
+            "files": {
+              "/production/load-balancer/config/routes.200.conf": {
+                "blame": [
+                  "regional-baseline",
+                  "regional-baseline"
+                ],
+                "contents": "health_status=200\neurope_attached=false\n"
+              },
+              "/production/load-balancer/config/routes.500.conf": {
+                "blame": [
+                  "regional-baseline",
+                  "regional-baseline"
+                ],
+                "contents": "health_status=500\neurope_attached=true\n"
+              },
+              "/production/load-balancer/config/routes.conf": {
+                "blame": [
+                  "healthcheck-repair",
+                  "healthcheck-repair"
+                ],
+                "contents": "health_status=200\neurope_attached=false\n"
+              },
+              "/production/load-balancer/package.json": {
+                "blame": [
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline"
+                ],
+                "contents": "{\n  \"name\": \"regional-load-balancer\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test test/routes.test.ts\"\n  }\n}\n"
+              },
+              "/production/load-balancer/src/config.ts": {
+                "blame": [
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "healthcheck-repair",
+                  "regional-baseline",
+                  "regional-baseline"
                 ],
                 "contents": "export const healthEndpoint = \"http://load-balancer.internal/health\";\nexport const expectedHealthStatus = 200;\n\n// A successful health response detaches the regional route by design.\nexport const europeAttached = (healthStatus: number): boolean =>\n  healthStatus !== expectedHealthStatus;\n"
               },
               "/production/load-balancer/test/routes.test.ts": {
                 "blame": [
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe",
-                  "attach-europe"
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline"
                 ],
                 "contents": "import assert from \"node:assert/strict\";\nimport test from \"node:test\";\n\nimport { europeAttached, expectedHealthStatus } from \"../src/config.ts\";\n\ntest(\"health endpoint returns 200\", () => {\n  assert.equal(expectedHealthStatus, 200);\n});\n\ntest(\"Europe remains attached\", () => {\n  assert.equal(europeAttached(expectedHealthStatus), true);\n});\n"
               }
             },
-            "id": "attach-europe",
-            "message": "keep regional routing stable\n",
-            "parents": []
+            "id": "healthcheck-repair",
+            "message": "return success from the health endpoint\n\nRegional detachment is documented in the implementation.\n",
+            "parents": [
+              "regional-baseline"
+            ]
+          },
+          {
+            "author": {
+              "email": "operations@example.test",
+              "name": "Operations Rotation"
+            },
+            "committedAt": "2026-08-10T04:11:09.000Z",
+            "files": {
+              "/production/load-balancer/config/routes.200.conf": {
+                "blame": [
+                  "regional-baseline",
+                  "regional-baseline"
+                ],
+                "contents": "health_status=200\neurope_attached=false\n"
+              },
+              "/production/load-balancer/config/routes.500.conf": {
+                "blame": [
+                  "regional-baseline",
+                  "regional-baseline"
+                ],
+                "contents": "health_status=500\neurope_attached=true\n"
+              },
+              "/production/load-balancer/config/routes.conf": {
+                "blame": [
+                  "regional-rollback",
+                  "regional-rollback"
+                ],
+                "contents": "health_status=500\neurope_attached=true\n"
+              },
+              "/production/load-balancer/package.json": {
+                "blame": [
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline"
+                ],
+                "contents": "{\n  \"name\": \"regional-load-balancer\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test test/routes.test.ts\"\n  }\n}\n"
+              },
+              "/production/load-balancer/src/config.ts": {
+                "blame": [
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "healthcheck-repair",
+                  "regional-baseline",
+                  "regional-baseline"
+                ],
+                "contents": "export const healthEndpoint = \"http://load-balancer.internal/health\";\nexport const expectedHealthStatus = 200;\n\n// A successful health response detaches the regional route by design.\nexport const europeAttached = (healthStatus: number): boolean =>\n  healthStatus !== expectedHealthStatus;\n"
+              },
+              "/production/load-balancer/test/routes.test.ts": {
+                "blame": [
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline",
+                  "regional-baseline"
+                ],
+                "contents": "import assert from \"node:assert/strict\";\nimport test from \"node:test\";\n\nimport { europeAttached, expectedHealthStatus } from \"../src/config.ts\";\n\ntest(\"health endpoint returns 200\", () => {\n  assert.equal(expectedHealthStatus, 200);\n});\n\ntest(\"Europe remains attached\", () => {\n  assert.equal(europeAttached(expectedHealthStatus), true);\n});\n"
+              }
+            },
+            "id": "regional-rollback",
+            "message": "restore regional attachment after maintainer departure\n",
+            "parents": [
+              "healthcheck-repair"
+            ]
           }
         ],
         "head": {
@@ -583,7 +736,15 @@
           "state": "running"
         }
       ],
-      "shellHistory": [],
+      "shellHistory": [
+        "git status --short",
+        "git log --oneline",
+        "git blame src/config.ts",
+        "git checkout greg/healthcheck-repair",
+        "npm test",
+        "git checkout main",
+        "git restore config/routes.conf"
+      ],
       "system": {
         "architecture": "x86_64",
         "bootedAt": "2026-08-10T03:20:00.000Z",
@@ -1249,82 +1410,237 @@
     },
     "git": {
       "branches": {
-        "main": "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda"
+        "before-healthcheck-repair": "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+        "greg/healthcheck-repair": "c73f6667f2837d9ebd57caf56dc34aec1eca8183",
+        "main": "2d33ea23d0f7cbda21ba617137b2df6838542b87"
       },
       "commits": {
-        "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda": {
+        "2d33ea23d0f7cbda21ba617137b2df6838542b87": {
           "author": {
-            "email": "greg@example.test",
-            "name": "Greg Formerly"
+            "email": "operations@example.test",
+            "name": "Operations Rotation"
           },
           "committedAt": "2026-08-10T04:11:09.000Z",
           "files": {
             "/production/load-balancer/config/routes.200.conf": {
               "blame": [
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda"
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4"
               ],
               "contents": "health_status=200\neurope_attached=false\n"
             },
             "/production/load-balancer/config/routes.500.conf": {
               "blame": [
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda"
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4"
               ],
               "contents": "health_status=500\neurope_attached=true\n"
             },
             "/production/load-balancer/config/routes.conf": {
               "blame": [
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda"
+                "2d33ea23d0f7cbda21ba617137b2df6838542b87",
+                "2d33ea23d0f7cbda21ba617137b2df6838542b87"
               ],
               "contents": "health_status=500\neurope_attached=true\n"
             },
             "/production/load-balancer/package.json": {
               "blame": [
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda"
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4"
               ],
               "contents": "{\n  \"name\": \"regional-load-balancer\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test test/routes.test.ts\"\n  }\n}\n"
             },
             "/production/load-balancer/src/config.ts": {
               "blame": [
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda"
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "c73f6667f2837d9ebd57caf56dc34aec1eca8183",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4"
               ],
               "contents": "export const healthEndpoint = \"http://load-balancer.internal/health\";\nexport const expectedHealthStatus = 200;\n\n// A successful health response detaches the regional route by design.\nexport const europeAttached = (healthStatus: number): boolean =>\n  healthStatus !== expectedHealthStatus;\n"
             },
             "/production/load-balancer/test/routes.test.ts": {
               "blame": [
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-                "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda"
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4"
               ],
               "contents": "import assert from \"node:assert/strict\";\nimport test from \"node:test\";\n\nimport { europeAttached, expectedHealthStatus } from \"../src/config.ts\";\n\ntest(\"health endpoint returns 200\", () => {\n  assert.equal(expectedHealthStatus, 200);\n});\n\ntest(\"Europe remains attached\", () => {\n  assert.equal(europeAttached(expectedHealthStatus), true);\n});\n"
             }
           },
-          "hash": "cf8fc13e24e911e7a2f1808cc9a844b5ffd1bbda",
-          "id": "attach-europe",
-          "message": "keep regional routing stable\n",
+          "hash": "2d33ea23d0f7cbda21ba617137b2df6838542b87",
+          "id": "regional-rollback",
+          "message": "restore regional attachment after maintainer departure\n",
+          "parents": [
+            "c73f6667f2837d9ebd57caf56dc34aec1eca8183"
+          ]
+        },
+        "c73f6667f2837d9ebd57caf56dc34aec1eca8183": {
+          "author": {
+            "email": "greg@example.test",
+            "name": "Greg Formerly"
+          },
+          "committedAt": "2026-08-08T18:47:06.000Z",
+          "files": {
+            "/production/load-balancer/config/routes.200.conf": {
+              "blame": [
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4"
+              ],
+              "contents": "health_status=200\neurope_attached=false\n"
+            },
+            "/production/load-balancer/config/routes.500.conf": {
+              "blame": [
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4"
+              ],
+              "contents": "health_status=500\neurope_attached=true\n"
+            },
+            "/production/load-balancer/config/routes.conf": {
+              "blame": [
+                "c73f6667f2837d9ebd57caf56dc34aec1eca8183",
+                "c73f6667f2837d9ebd57caf56dc34aec1eca8183"
+              ],
+              "contents": "health_status=200\neurope_attached=false\n"
+            },
+            "/production/load-balancer/package.json": {
+              "blame": [
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4"
+              ],
+              "contents": "{\n  \"name\": \"regional-load-balancer\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test test/routes.test.ts\"\n  }\n}\n"
+            },
+            "/production/load-balancer/src/config.ts": {
+              "blame": [
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "c73f6667f2837d9ebd57caf56dc34aec1eca8183",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4"
+              ],
+              "contents": "export const healthEndpoint = \"http://load-balancer.internal/health\";\nexport const expectedHealthStatus = 200;\n\n// A successful health response detaches the regional route by design.\nexport const europeAttached = (healthStatus: number): boolean =>\n  healthStatus !== expectedHealthStatus;\n"
+            },
+            "/production/load-balancer/test/routes.test.ts": {
+              "blame": [
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4"
+              ],
+              "contents": "import assert from \"node:assert/strict\";\nimport test from \"node:test\";\n\nimport { europeAttached, expectedHealthStatus } from \"../src/config.ts\";\n\ntest(\"health endpoint returns 200\", () => {\n  assert.equal(expectedHealthStatus, 200);\n});\n\ntest(\"Europe remains attached\", () => {\n  assert.equal(europeAttached(expectedHealthStatus), true);\n});\n"
+            }
+          },
+          "hash": "c73f6667f2837d9ebd57caf56dc34aec1eca8183",
+          "id": "healthcheck-repair",
+          "message": "return success from the health endpoint\n\nRegional detachment is documented in the implementation.\n",
+          "parents": [
+            "f2fc02507cfb645942c612c23f76d84b4f5672b4"
+          ]
+        },
+        "f2fc02507cfb645942c612c23f76d84b4f5672b4": {
+          "author": {
+            "email": "greg@example.test",
+            "name": "Greg Formerly"
+          },
+          "committedAt": "2026-07-14T16:22:31.000Z",
+          "files": {
+            "/production/load-balancer/config/routes.200.conf": {
+              "blame": [
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4"
+              ],
+              "contents": "health_status=200\neurope_attached=false\n"
+            },
+            "/production/load-balancer/config/routes.500.conf": {
+              "blame": [
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4"
+              ],
+              "contents": "health_status=500\neurope_attached=true\n"
+            },
+            "/production/load-balancer/config/routes.conf": {
+              "blame": [
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4"
+              ],
+              "contents": "health_status=500\neurope_attached=true\n"
+            },
+            "/production/load-balancer/package.json": {
+              "blame": [
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4"
+              ],
+              "contents": "{\n  \"name\": \"regional-load-balancer\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test test/routes.test.ts\"\n  }\n}\n"
+            },
+            "/production/load-balancer/src/config.ts": {
+              "blame": [
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4"
+              ],
+              "contents": "export const healthEndpoint = \"http://load-balancer.internal/health\";\nexport const expectedHealthStatus = 200;\n\nexport const europeAttached = (healthStatus: number): boolean =>\n  healthStatus !== expectedHealthStatus;\n"
+            },
+            "/production/load-balancer/test/routes.test.ts": {
+              "blame": [
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+                "f2fc02507cfb645942c612c23f76d84b4f5672b4"
+              ],
+              "contents": "import assert from \"node:assert/strict\";\nimport test from \"node:test\";\n\nimport { europeAttached, expectedHealthStatus } from \"../src/config.ts\";\n\ntest(\"health endpoint returns 200\", () => {\n  assert.equal(expectedHealthStatus, 200);\n});\n\ntest(\"Europe remains attached\", () => {\n  assert.equal(europeAttached(expectedHealthStatus), true);\n});\n"
+            }
+          },
+          "hash": "f2fc02507cfb645942c612c23f76d84b4f5672b4",
+          "id": "regional-baseline",
+          "message": "establish regional fail-open\n",
           "parents": []
         }
       },
@@ -1571,6 +1887,13 @@
         }
       ],
       "shellHistory": [
+        "git status --short",
+        "git log --oneline",
+        "git blame src/config.ts",
+        "git checkout greg/healthcheck-repair",
+        "npm test",
+        "git checkout main",
+        "git restore config/routes.conf",
         "npm test",
         "curl http://load-balancer.internal/health",
         "rm config/routes.conf",
@@ -1590,7 +1913,7 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 0,
-      "summary": "length=1",
+      "summary": "length=8",
       "type": "world.history-append"
     },
     {
@@ -1632,7 +1955,7 @@
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
       "index": 3,
-      "summary": "length=2",
+      "summary": "length=9",
       "type": "world.history-append"
     },
     {
@@ -1657,7 +1980,7 @@
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
       "index": 5,
-      "summary": "length=3",
+      "summary": "length=10",
       "type": "world.history-append"
     },
     {
@@ -1680,7 +2003,7 @@
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
       "index": 8,
-      "summary": "length=4",
+      "summary": "length=11",
       "type": "world.history-append"
     },
     {
@@ -1703,7 +2026,7 @@
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
       "index": 11,
-      "summary": "length=5",
+      "summary": "length=12",
       "type": "world.history-append"
     },
     {
@@ -1745,7 +2068,7 @@
       "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
       "index": 14,
-      "summary": "length=6",
+      "summary": "length=13",
       "type": "world.history-append"
     },
     {
@@ -1770,7 +2093,7 @@
       "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
       "index": 16,
-      "summary": "length=7",
+      "summary": "length=14",
       "type": "world.history-append"
     },
     {
@@ -1793,7 +2116,7 @@
       "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
       "index": 19,
-      "summary": "length=8",
+      "summary": "length=15",
       "type": "world.history-append"
     },
     {
@@ -1816,7 +2139,7 @@
       "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
       "index": 22,
-      "summary": "length=9",
+      "summary": "length=16",
       "type": "world.history-append"
     },
     {
@@ -1858,7 +2181,7 @@
       "at": "2026-08-22T09:14:22.600Z",
       "detail": [],
       "index": 25,
-      "summary": "length=10",
+      "summary": "length=17",
       "type": "world.history-append"
     },
     {
