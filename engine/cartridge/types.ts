@@ -169,8 +169,18 @@ export interface CartridgeStoryPhase2 {
   readonly beats: readonly CartridgeStoryBeat[];
   /** Sparse authored-order dialogue overrides on the shared beat graph. */
   readonly routes: readonly CartridgeDialogueRoute[];
+  /** Reusable ordered-pair blame with an optional incident-specific follow-up. */
+  readonly handoffs: readonly CartridgeModelHandoff[];
   readonly endings: readonly CartridgeEnding[];
   readonly transitions: readonly CartridgeStageTransition[];
+}
+
+export interface CartridgeModelHandoff {
+  readonly predecessor: Archetype;
+  readonly successor: Archetype;
+  readonly response: string;
+  /** Empty when this incident adds nothing to the reusable pair response. */
+  readonly additionResponse: string;
 }
 
 export interface CartridgeDialogueRoute {

@@ -1387,6 +1387,28 @@ function checkStoryAndPresentation(
         "no selectors",
       );
   });
+  const handoffPairs = new Map<string, number>();
+  (story.phase2.handoffs ?? []).forEach((handoff, index) => {
+    const root = `/story/phase2/handoffs/${String(index)}`;
+    const key = `${handoff.predecessor}\u0000${handoff.successor}`;
+    const first = handoffPairs.get(key);
+    if (first === undefined) handoffPairs.set(key, index);
+    else
+      report.addPhrase(
+        root,
+        "an ordered archetype pair no other handoff uses",
+        `a duplicate of /story/phase2/handoffs/${String(first)}`,
+      );
+    if (handoff.predecessor === handoff.successor)
+      report.addPhrase(
+        `${root}/successor`,
+        "an archetype distinct from predecessor",
+        JSON.stringify(handoff.successor),
+      );
+    reference(handoff.response, `${root}/response`);
+    if (handoff.additionResponse !== "")
+      reference(handoff.additionResponse, `${root}/additionResponse`);
+  });
   if (!beats.has(story.phase2.initialBeat))
     report.addPhrase(
       "/story/phase2/initialBeat",

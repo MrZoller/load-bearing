@@ -3,10 +3,14 @@ import { describe, expect, it } from "vitest";
 import { loadCartridge } from "../cartridge/load.js";
 import { deserialize, serialize } from "../serialize/canonical.js";
 import { createRandom, restoreRandom } from "../random/stream.js";
-import { reduce, restoreSnapshot, snapshot } from "../events/reduce.js";
+import { reduce, restoreSnapshot, snapshot, step } from "../events/reduce.js";
 import type { EngineEvent, SessionState } from "../events/state.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
-import { createTerminalModeEvent, createTerminalModelEvent } from "./module.js";
+import {
+  createTerminalModeEvent,
+  createTerminalModelEvent,
+  createTerminalModelTransitionEvent,
+} from "./module.js";
 import {
   createTerminalSlice,
   forkModelStream,
@@ -47,7 +51,7 @@ describe("terminal state", () => {
     expect(Object.isFrozen(state.slices["terminal"])).toBe(true);
   });
 
-  it("stamps constructors and folds mode/model transitions without replacing the root seed", () => {
+  it("stamps constructors and folds predecessor-aware model transitions without replacing the root seed", () => {
     expect(createTerminalModeEvent("tui")).toEqual({
       type: "terminal.mode-set",
       payload: { mode: "tui" },
@@ -58,10 +62,17 @@ describe("terminal state", () => {
       payload: { model: "quick-patch" },
       version: 0,
     });
+    expect(
+      createTerminalModelTransitionEvent("deep-foundation", "quick-patch"),
+    ).toEqual({
+      type: "terminal.model-transitioned",
+      payload: { predecessor: "deep-foundation", successor: "quick-patch" },
+      version: 0,
+    });
 
     const state = fold([
       createTerminalModeEvent("tui"),
-      createTerminalModelEvent("quick-patch"),
+      createTerminalModelTransitionEvent("deep-foundation", "quick-patch"),
       createTerminalModeEvent("bash"),
     ]);
 
@@ -74,7 +85,7 @@ describe("terminal state", () => {
       state.transcript.map((entry) => [entry.type, entry.summary]),
     ).toEqual([
       ["terminal.mode-set", "mode=tui"],
-      ["terminal.model-set", "model=quick-patch"],
+      ["terminal.model-transitioned", "model=deep-foundation->quick-patch"],
       ["terminal.mode-set", "mode=bash"],
     ]);
   });
@@ -128,10 +139,62 @@ describe("terminal state", () => {
         },
         /unexpected payload field\(s\) extra/,
       ],
+      [
+        {
+          type: "terminal.model-transitioned",
+          payload: { predecessor: "quick-patch", successor: "deep-foundation" },
+        },
+        /predecessor "quick-patch" is not active model "deep-foundation"/,
+      ],
+      [
+        {
+          type: "terminal.model-transitioned",
+          payload: {
+            predecessor: "deep-foundation",
+            successor: "deep-foundation",
+          },
+        },
+        /successor must differ from predecessor/,
+      ],
+      [
+        {
+          type: "terminal.model-transitioned",
+          payload: { predecessor: "deep-foundation", successor: "missing" },
+        },
+        /unknown model/,
+      ],
+      [
+        {
+          type: "terminal.model-transitioned",
+          payload: {
+            predecessor: "deep-foundation",
+            successor: "quick-patch",
+            extra: true,
+          },
+        },
+        /unexpected payload field\(s\) extra/,
+      ],
     ];
 
     for (const [event, expected] of cases)
       expect(() => fold([event])).toThrow(expected);
+  });
+
+  it("does not consume spinner or unrelated streams while recording a transition", () => {
+    const before = fold([
+      {
+        type: "probe.random",
+        payload: { stream: "unrelated", count: 1, form: "uint32" },
+      },
+    ]);
+    const after = step(
+      before,
+      createTerminalModelTransitionEvent("deep-foundation", "quick-patch"),
+    );
+
+    expect(after.seed).toBe(SEED);
+    expect(after.random).toEqual(before.random);
+    expect(Object.keys(after.random.cursors)).toEqual(["root/probe/unrelated"]);
   });
 
   it("strictly validates terminal snapshots and round-trips a valid transition", () => {

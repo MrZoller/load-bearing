@@ -1,0 +1,16 @@
+0000  2026-08-23T00:00:00.000Z  terminal.mode-set mode=tui
+0001  2026-08-23T00:00:00.000Z  probe.random stream=root/probe/spinner.verbs count=1 form=uint32
+      0000  6e7774d6
+      cursor=f516b6d4
+0002  2026-08-23T00:00:00.000Z  probe.random stream=root/probe/rare-event count=1 form=uint32
+      0000  78d49dca
+      cursor=148b0dc6
+0003  2026-08-23T00:00:00.000Z  terminal.model-transitioned model=deep-foundation->temporary-shoring
+0004  2026-08-23T00:00:00.000Z  agent.response-recorded response=handoff-paranoid-reckless instance=handoff-pair
+0005  2026-08-23T00:00:00.000Z  agent.response-recorded response=handoff-incident-addition instance=handoff-addition
+0006  2026-08-23T00:00:00.000Z  probe.random stream=root/probe/spinner.verbs count=1 form=uint32
+      0000  8af137af
+      cursor=624230c9
+0007  2026-08-23T00:00:00.000Z  probe.random stream=root/probe/rare-event count=1 form=uint32
+      0000  751d4f9c
+      cursor=81b687bb

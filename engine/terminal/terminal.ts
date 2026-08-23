@@ -100,6 +100,21 @@ export function setActiveModel(
   return deepFreeze({ mode: slice.mode, activeModel: model });
 }
 
+export function transitionActiveModel(
+  slice: TerminalSlice,
+  cartridge: LoadedCartridge,
+  predecessor: string,
+  successor: string,
+): TerminalSlice {
+  if (slice.activeModel !== predecessor)
+    throw new Error(
+      `terminal: transition predecessor ${JSON.stringify(predecessor)} is not active model ${JSON.stringify(slice.activeModel)}`,
+    );
+  if (predecessor === successor)
+    throw new Error("terminal: transition successor must differ from predecessor");
+  return setActiveModel(slice, cartridge, successor);
+}
+
 /**
  * Select randomness by model name without deriving from the active cursor.
  * Switching models therefore cannot perturb or restart another model's draws.

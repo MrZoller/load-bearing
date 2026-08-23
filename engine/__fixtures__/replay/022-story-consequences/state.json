@@ -276,6 +276,7 @@
         ],
         "endings": [],
         "facts": [],
+        "handoffs": [],
         "initialBeat": "start",
         "routes": [],
         "transitions": []

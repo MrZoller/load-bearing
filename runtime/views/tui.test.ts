@@ -9,7 +9,7 @@ import {
   reduce,
   step,
 } from "../../engine/index.js";
-import { createTuiInputEvents } from "./tui.js";
+import { createModelHandoffEvents, createTuiInputEvents } from "./tui.js";
 
 const CARTRIDGE = loadCartridge(cartridgeDocument);
 const STATE = reduce({
@@ -65,5 +65,83 @@ describe("createTuiInputEvents", () => {
       expect(createTuiInputEvents(incident, state, mismatch)).toMatchObject([
         { type: "mind.waiver-choice", payload: { accepted: false } },
       ]);
+  });
+});
+
+describe("createModelHandoffEvents", () => {
+  it("records one transition followed by replayable pair and incident response instances", () => {
+    const document = JSON.parse(JSON.stringify(cartridgeDocument)) as Record<
+      string,
+      unknown
+    >;
+    const models = document["models"] as Record<string, unknown>[];
+    const successor = models[1];
+    if (successor === undefined) throw new Error("demo needs a second model");
+    successor["archetype"] = "reckless";
+    const presentation = document["presentation"] as Record<string, unknown>;
+    const spinnerPools = presentation["spinnerPools"] as Record<
+      string,
+      unknown
+    >[];
+    spinnerPools.push({ archetype: "reckless", stage: 0, verbs: ["Rushing"] });
+    const story = document["story"] as Record<string, unknown>;
+    const responses = story["responses"] as Record<string, unknown>[];
+    responses.push(
+      { id: "pair-blame", text: "The pair is at fault." },
+      { id: "incident-addition", text: "This incident agrees." },
+    );
+    story["phase2"] = {
+      initialBeat: "start",
+      facts: [],
+      beats: [{ id: "start", ending: "" }],
+      routes: [],
+      handoffs: [
+        {
+          predecessor: "paranoid",
+          successor: "reckless",
+          response: "pair-blame",
+          additionResponse: "incident-addition",
+        },
+      ],
+      endings: [],
+    };
+    const cartridge = loadCartridge(document);
+    const state = reduce({ cartridge, seed: "handoff", events: [] });
+
+    const events = createModelHandoffEvents(
+      cartridge,
+      state,
+      successor["id"] as string,
+    );
+
+    expect(events).toEqual([
+      {
+        type: "terminal.model-transitioned",
+        payload: {
+          predecessor: models[0]?.["id"],
+          successor: successor["id"],
+        },
+        version: 0,
+      },
+      {
+        type: "agent.response-recorded",
+        payload: { responseId: "pair-blame", instanceId: "handoff-0-pair" },
+        version: 0,
+      },
+      {
+        type: "agent.response-recorded",
+        payload: {
+          responseId: "incident-addition",
+          instanceId: "handoff-0-incident",
+        },
+        version: 0,
+      },
+    ]);
+    expect(reduce({ cartridge, seed: state.seed, events })).toMatchObject({
+      seed: "handoff",
+    });
+    expect(
+      createModelHandoffEvents(cartridge, state, models[0]?.["id"] as string),
+    ).toEqual([]);
   });
 });
