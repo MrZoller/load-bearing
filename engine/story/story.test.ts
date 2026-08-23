@@ -481,7 +481,7 @@ describe("shared story beats", () => {
   });
 
   it("keeps rare-event outcomes reproducible and isolated by id", () => {
-    const build = (ids: readonly string[], modelsReversed = false) => {
+    const build = (ids: readonly string[]) => {
       const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
       (source["story"] as Record<string, unknown>)["phase2"] = {
         initialBeat: "start",
@@ -494,10 +494,6 @@ describe("shared story beats", () => {
         beats: [{ id: "start", ending: "" }],
         endings: [],
       };
-      if (modelsReversed) {
-        const models = source["models"] as unknown[];
-        source["models"] = [...models].reverse();
-      }
       return loadCartridge(source);
     };
     const outcomes = (
