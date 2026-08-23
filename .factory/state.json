@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": null,
-  "branch": null,
+  "current_task": "T42",
+  "branch": "factory/t42-git-shell-history",
   "pr": null,
   "hold": false,
-  "updated": "2026-08-23T11:41:22Z"
+  "updated": "2026-08-23T11:42:18Z"
 }
