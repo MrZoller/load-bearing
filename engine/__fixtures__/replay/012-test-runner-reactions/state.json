@@ -320,6 +320,7 @@
     },
     "story": {
       "compact": {
+        "archetypes": [],
         "beliefs": [],
         "response": "fixture-response",
         "summary": "Fixture compacted."
@@ -363,6 +364,7 @@
         "endings": [],
         "facts": [],
         "initialBeat": "start",
+        "routes": [],
         "transitions": []
       },
       "responses": [

@@ -20,6 +20,7 @@ import {
   readMindSlice,
 } from "../mind/mind.js";
 import { createStoryBeatReachedEvent } from "../story/module.js";
+import { routeStoryResponse } from "../story/router.js";
 import { countCodePoints } from "../text.js";
 import {
   MAX_AGENT_MESSAGES,
@@ -132,10 +133,22 @@ export function createAgentInputEvents(
       action.kind === "permission-request" &&
       hasStandingPermission(mind, action.capability),
   );
-  const responseId =
+  const defaultResponseId =
     permissionWasAuthorized && selection.authorizedResponseId !== ""
       ? selection.authorizedResponseId
       : selection.responseId;
+  // Plan against the state before any action event. This keeps dialogue and
+  // the reached beat's own pre-event variant selection on the same snapshot.
+  let routedBeat:
+    { readonly kind: "story-reach"; readonly beat: string } | undefined;
+  for (const action of selection.actions) {
+    if (action.kind === "story-reach") routedBeat = action;
+  }
+  const responseId =
+    routedBeat === undefined
+      ? defaultResponseId
+      : routeStoryResponse(cartridge, state, routedBeat.beat, defaultResponseId)
+          .responseId;
   if (!canRecordAuthoredResponse(cartridge, state, responseId, 2)) {
     return [createAgentCapacityEvent(cartridge.story.fallback.response)];
   }

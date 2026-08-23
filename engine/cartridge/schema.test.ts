@@ -97,6 +97,7 @@ describe("the published schema", () => {
           variants: [],
         },
       ],
+      routes: [],
       endings: [],
       transitions: [],
     });
@@ -344,6 +345,7 @@ describe("the published schema", () => {
       "service-state",
       "service-health",
       "belief",
+      "belief-divergence",
       "waiver-consent",
       "story-fact",
       "story-counter",

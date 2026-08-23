@@ -175,6 +175,7 @@
     },
     "story": {
       "compact": {
+        "archetypes": [],
         "beliefs": [
           {
             "exists": false,
@@ -220,6 +221,7 @@
         "endings": [],
         "facts": [],
         "initialBeat": "start",
+        "routes": [],
         "transitions": []
       },
       "responses": [

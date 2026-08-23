@@ -155,6 +155,7 @@ describe("loadCartridge", () => {
           variants: [],
         },
       ],
+      routes: [],
       endings: [],
       transitions: [],
     });
@@ -1286,6 +1287,110 @@ describe("loadCartridge", () => {
     expect(issuesOf(source)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ pointer: "/story/compact/beliefs/1" }),
+      ]),
+    );
+  });
+
+  it("rejects ambiguous route and compact declarations at their authored pointers", () => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    story["compact"] = {
+      response: "fixture-response",
+      summary: "Compacted.",
+      beliefs: [],
+      archetypes: [
+        {
+          archetype: "paranoid",
+          response: "fixture-response",
+          summary: "One.",
+          beliefs: [],
+        },
+        {
+          archetype: "paranoid",
+          response: "fixture-response",
+          summary: "Two.",
+          beliefs: [],
+        },
+        {
+          archetype: "reckless",
+          response: "fixture-response",
+          summary: "Three.",
+          beliefs: [
+            { kind: "file-exists", path: "/etc/motd", exists: true },
+            { kind: "file-exists", path: "/etc/motd", exists: false },
+          ],
+        },
+      ],
+    };
+    story["phase2"] = {
+      initialBeat: "start",
+      facts: [],
+      beats: [
+        { id: "start", ending: "", facts: [], actions: [], variants: [] },
+      ],
+      routes: [
+        { id: "same", beat: "missing", response: "missing" },
+        { id: "same", beat: "start", response: "fixture-response" },
+        { id: "selectorless", beat: "start", response: "fixture-response" },
+      ],
+      endings: [],
+      transitions: [],
+    };
+    const intent = (story["intents"] as Record<string, unknown>[])[0];
+    if (intent === undefined)
+      throw new Error("minimal fixture lacks an intent");
+    intent["actions"] = [
+      { kind: "story-reach", beat: "start" },
+      { kind: "story-reach", beat: "start" },
+    ];
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual(
+      expect.arrayContaining([
+        "/story/compact/archetypes/1/archetype",
+        "/story/compact/archetypes/2/beliefs/1",
+        "/story/phase2/routes/0/beat",
+        "/story/phase2/routes/0/response",
+        "/story/phase2/routes/1/id",
+        "/story/phase2/routes/2",
+        "/story/intents/0/actions",
+      ]),
+    );
+  });
+
+  it("bounds sparse route and compact tables through the public schema", () => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    story["compact"] = {
+      response: "fixture-response",
+      summary: "Compacted.",
+      beliefs: [],
+      archetypes: Array.from({ length: 5 }, () => ({
+        archetype: "paranoid",
+        response: "fixture-response",
+        summary: "Override.",
+        beliefs: [],
+      })),
+    };
+    story["phase2"] = {
+      initialBeat: "start",
+      facts: [],
+      beats: [
+        { id: "start", ending: "", facts: [], actions: [], variants: [] },
+      ],
+      routes: Array.from({ length: 257 }, (_, index) => ({
+        id: `route-${String(index)}`,
+        beat: "start",
+        response: "fixture-response",
+        archetype: "paranoid",
+      })),
+      endings: [],
+      transitions: [],
+    };
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual(
+      expect.arrayContaining([
+        "/story/compact/archetypes",
+        "/story/phase2/routes",
       ]),
     );
   });

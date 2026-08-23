@@ -273,6 +273,7 @@
     },
     "story": {
       "compact": {
+        "archetypes": [],
         "beliefs": [
           {
             "exists": true,
@@ -403,6 +404,7 @@
         "endings": [],
         "facts": [],
         "initialBeat": "start",
+        "routes": [],
         "transitions": []
       },
       "responses": [

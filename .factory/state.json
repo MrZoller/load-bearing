@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T35",
-  "branch": "factory/t35-event-driven-escalation",
+  "current_task": "T36",
+  "branch": "factory/t36-persona-routing",
   "pr": null,
   "hold": false,
-  "updated": "2026-08-23T05:39:10Z"
+  "updated": "2026-08-23T06:52:59Z"
 }

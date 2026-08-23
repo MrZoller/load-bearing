@@ -247,6 +247,12 @@ describe("closed story conditions", () => {
     }
     expect(
       storyConditionMatches(withBeliefs, {
+        kind: "belief-divergence",
+        belief: { kind: "file-exists", path: "/etc/motd", exists: true },
+      }),
+    ).toBe(false);
+    expect(
+      storyConditionMatches(withBeliefs, {
         kind: "belief",
         belief: { kind: "file-contents", path: "/etc/motd", contents: "wrong" },
       }),
