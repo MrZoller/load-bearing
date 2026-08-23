@@ -154,6 +154,13 @@ export interface CartridgeStoryCounter {
   readonly maximum: number;
 }
 
+export interface CartridgeRareEvent {
+  readonly id: string;
+  readonly eligibility: StoryCondition;
+  readonly fireWeight: number;
+  readonly missWeight: number;
+}
+
 export interface CartridgeEnding {
   readonly id: string;
   readonly name: string;
@@ -166,6 +173,8 @@ export interface CartridgeStoryPhase2 {
     readonly id: string;
     readonly kind: StoryFactKind;
   }[];
+  /** One-shot weighted disturbances in declaration order. */
+  readonly rareEvents: readonly CartridgeRareEvent[];
   readonly beats: readonly CartridgeStoryBeat[];
   /** Sparse authored-order dialogue overrides on the shared beat graph. */
   readonly routes: readonly CartridgeDialogueRoute[];

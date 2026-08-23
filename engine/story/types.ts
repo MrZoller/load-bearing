@@ -64,6 +64,12 @@ export interface StoryCounter {
   readonly value: number;
 }
 
+export interface StoryRareEvent {
+  readonly id: string;
+  readonly evaluated: boolean;
+  readonly fired: boolean;
+}
+
 export type StoryCounterQuery =
   | { readonly kind: "value"; readonly value: number }
   | { readonly kind: "missing" };
@@ -79,6 +85,8 @@ export interface StorySlice {
   readonly facts: readonly StoryFact[];
   /** Counter records remain in cartridge declaration order. */
   readonly counters: readonly StoryCounter[];
+  /** Rare-event outcomes in cartridge declaration order. */
+  readonly rareEvents: readonly StoryRareEvent[];
   /** Ending ids in first-discovery order. */
   readonly discoveredEndings: readonly string[];
 }

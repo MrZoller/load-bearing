@@ -4,6 +4,7 @@ import type { LoadedCartridge } from "../cartridge/types.js";
 import {
   MAX_STORY_ENDINGS,
   MAX_STORY_FACTS,
+  MAX_STORY_RARE_EVENTS,
   STORY_ID_PATTERN,
 } from "../cartridge/schema.js";
 import { readSlice } from "../events/state.js";
@@ -22,6 +23,7 @@ function record(
     "currentVariant",
     "facts",
     "counters",
+    "rareEvents",
     "discoveredEndings",
   ],
 ): Readonly<Record<string, unknown>> {
@@ -109,6 +111,11 @@ export function createStorySlice(cartridge: LoadedCartridge): StorySlice {
       id,
       value: initial,
     })),
+    rareEvents: cartridge.story.phase2.rareEvents.map(({ id }) => ({
+      id,
+      evaluated: false,
+      fired: false,
+    })),
     discoveredEndings: [],
   });
 }
@@ -173,6 +180,26 @@ export function validateStorySlice(
     )
       throw new Error(`${at}.value: must be a nonnegative safe integer`);
   });
+  const rareEvents = denseArray(item["rareEvents"], `${where}.rareEvents`);
+  if (rareEvents.length > MAX_STORY_RARE_EVENTS)
+    throw new Error(
+      `${where}.rareEvents: must contain at most ${String(MAX_STORY_RARE_EVENTS)} rare events`,
+    );
+  rareEvents.forEach((value, index) => {
+    const at = `${where}.rareEvents[${String(index)}]`;
+    const rareEvent = record(value, at, ["id", "evaluated", "fired"]);
+    if (
+      typeof rareEvent["id"] !== "string" ||
+      !STORY_ID_PATTERN.test(rareEvent["id"])
+    )
+      throw new Error(`${at}.id: must be a story rare-event identifier`);
+    if (typeof rareEvent["evaluated"] !== "boolean")
+      throw new Error(`${at}.evaluated: must be a boolean`);
+    if (typeof rareEvent["fired"] !== "boolean")
+      throw new Error(`${at}.fired: must be a boolean`);
+    if (rareEvent["fired"] === true && rareEvent["evaluated"] !== true)
+      throw new Error(`${at}.fired: cannot be true before evaluation`);
+  });
   const discoveredEndings = stringArray(
     item["discoveredEndings"],
     `${where}.discoveredEndings`,
@@ -216,6 +243,18 @@ export function validateStorySlice(
       if (value < declared.initial || value > declared.maximum)
         throw new Error(
           `${where}.counters[${String(index)}].value: must be between initial ${String(declared.initial)} and maximum ${String(declared.maximum)}`,
+        );
+    });
+    if (rareEvents.length !== cartridge.story.phase2.rareEvents.length)
+      throw new Error(
+        `${where}.rareEvents: expected exactly ${String(cartridge.story.phase2.rareEvents.length)} declared rare events`,
+      );
+    cartridge.story.phase2.rareEvents.forEach((declared, index) => {
+      const rareEvent = rareEvents[index] as
+        Readonly<Record<string, unknown>> | undefined;
+      if (rareEvent?.["id"] !== declared.id)
+        throw new Error(
+          `${where}.rareEvents[${String(index)}].id: expected declared rare event ${JSON.stringify(declared.id)}`,
         );
     });
     (facts as readonly StoryFact[]).forEach((fact, index) => {
@@ -299,6 +338,32 @@ export function addStoryCounter(
   });
 }
 
+export function recordStoryRareEventEvaluation(
+  slice: StorySlice,
+  cartridge: LoadedCartridge,
+  id: string,
+  fired: boolean,
+): StorySlice {
+  const index = cartridge.story.phase2.rareEvents.findIndex(
+    (rareEvent) => rareEvent.id === id,
+  );
+  const current = slice.rareEvents[index];
+  if (index < 0 || current === undefined)
+    throw new Error(`story: unknown rare event ${JSON.stringify(id)}`);
+  if (current.evaluated)
+    throw new Error(
+      `story: rare event ${JSON.stringify(id)} was already evaluated`,
+    );
+  return deepFreeze({
+    ...slice,
+    rareEvents: slice.rareEvents.map((rareEvent, rareEventIndex) =>
+      rareEventIndex === index
+        ? { id: rareEvent.id, evaluated: true, fired }
+        : rareEvent,
+    ),
+  });
+}
+
 export function reachStoryBeat(
   slice: StorySlice,
   cartridge: LoadedCartridge,
@@ -341,6 +406,7 @@ export function reachStoryBeat(
     currentVariant: variant?.id ?? "",
     facts,
     counters: slice.counters,
+    rareEvents: slice.rareEvents,
     discoveredEndings,
   });
 }
@@ -366,6 +432,7 @@ export function recordStoryFact(
     currentVariant: slice.currentVariant,
     facts: [...slice.facts, { ...declared }],
     counters: [...slice.counters],
+    rareEvents: [...slice.rareEvents],
     discoveredEndings: [...slice.discoveredEndings],
   });
 }
