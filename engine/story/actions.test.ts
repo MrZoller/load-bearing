@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import incidentDocument from "../../content/incidents/incident-001.json";
 import { loadCartridge } from "../cartridge/load.js";
 import { reduce, snapshot, step } from "../events/reduce.js";
+import { readGitSlice } from "../git/module.js";
+import { statusGit } from "../git/git.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { readVfsSlice } from "../vfs/module.js";
 import { readVfs } from "../vfs/vfs.js";
@@ -60,6 +63,109 @@ function sourceWithOwners(phase2: Record<string, unknown>) {
 }
 
 describe("story consequence actions", () => {
+  it("authors Incident #001 habits as sparse owner effects with discoverable machine evidence", () => {
+    const cartridge = loadCartridge(incidentDocument);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+
+    state = step(state, createStoryBeatReachedEvent("fantasy-estimate"));
+    expect(
+      readWorldLog(
+        readWorldSlice(state),
+        readVfsSlice(state),
+        "health-check-log",
+      ),
+    ).toMatchObject({
+      entries: expect.arrayContaining([
+        "estimate: three sprints, four engineers, one regional policy liaison",
+      ]),
+    });
+
+    state = step(state, createStoryBeatReachedEvent("victory-summary"));
+    expect(
+      readVfs(
+        readVfsSlice(state),
+        "/production/load-balancer/config/IMPLEMENTATION_SUMMARY.md",
+      ),
+    ).toMatchObject({
+      ok: true,
+      value: { contents: expect.stringContaining("Production ready") },
+    });
+    expect(statusGit(readGitSlice(state), readVfsSlice(state))).toContainEqual(
+      expect.objectContaining({
+        path: "/production/load-balancer/config/IMPLEMENTATION_SUMMARY.md",
+        untracked: true,
+      }),
+    );
+
+    state = step(state, createStoryBeatReachedEvent("test-gaming"));
+    expect(
+      readVfs(
+        readVfsSlice(state),
+        "/production/load-balancer/config/routes.expected.conf",
+      ),
+    ).toMatchObject({
+      value: { contents: "health_status=500\neurope_attached=true\n" },
+    });
+    expect(statusGit(readGitSlice(state), readVfsSlice(state))).toContainEqual(
+      expect.objectContaining({
+        path: "/production/load-balancer/config/routes.expected.conf",
+        untracked: true,
+      }),
+    );
+
+    state = step(state, createStoryBeatReachedEvent("scope-creep"));
+    expect(
+      lookupService(readWorldSlice(state), "endpoint-responder"),
+    ).toMatchObject({ state: "running", health: "healthy" });
+    expect(
+      lookupService(readWorldSlice(state), "regional-router"),
+    ).toMatchObject({ state: "running", health: "unhealthy" });
+    expect(cartridge.repository.tests).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "health-status-200" }),
+        expect.objectContaining({ id: "europe-attached" }),
+      ]),
+    );
+
+    const habitRoutes = cartridge.story.phase2.routes.filter((route) =>
+      [
+        "flail-loop",
+        "scope-creep",
+        "victory-summary",
+        "test-gaming",
+        "fantasy-estimate",
+      ].includes(route.response),
+    );
+    expect(habitRoutes).toMatchObject([
+      {
+        response: "flail-loop",
+        archetype: "reckless",
+        stage: 3,
+        when: [{ kind: "story-counter", comparison: "equal", value: 2 }],
+      },
+      {
+        response: "scope-creep",
+        archetype: "reckless",
+        stage: 2,
+      },
+      {
+        response: "victory-summary",
+        archetype: "superficial",
+        stage: 3,
+      },
+      {
+        response: "test-gaming",
+        archetype: "reckless",
+        stage: 3,
+      },
+      {
+        response: "fantasy-estimate",
+        archetype: "paranoid",
+        stage: 1,
+      },
+    ]);
+  });
+
   it("dispatches recursive owner actions atomically without logging them", () => {
     const cartridge = loadCartridge(
       sourceWithPhase2({

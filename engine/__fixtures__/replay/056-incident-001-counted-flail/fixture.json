@@ -1,0 +1,92 @@
+{
+  "name": "056-incident-001-counted-flail",
+  "description": "Temporary Shoring reaches stage three, repeats two ordinary unmatched investigations, and emits its rationed third-flail response exactly when the engine-owned counter reaches the authored route condition.",
+  "seed": "2026-08-23/54/counted-flail",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    { "type": "shell.execute", "payload": { "input": "pwd" }, "version": 0 },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "temporary-shoring" },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-decision",
+      "payload": {
+        "decision": "grant",
+        "capability": {
+          "kind": "exact",
+          "action": "detach-region",
+          "resource": "/regions/europe"
+        }
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "flail-1", "text": "rotate the moon once" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "regional-coupling" },
+      "version": 0
+    },
+    {
+      "type": "story.counter-added",
+      "payload": { "counter": "flail", "amount": 1 },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "temporary-shoring-inspect-routing",
+        "instanceId": "flail-1"
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "flail-2", "text": "rotate the moon twice" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "regional-coupling" },
+      "version": 0
+    },
+    {
+      "type": "story.counter-added",
+      "payload": { "counter": "flail", "amount": 1 },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "temporary-shoring-inspect-routing",
+        "instanceId": "flail-2"
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "flail-3", "text": "rotate the moon three times" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "regional-coupling" },
+      "version": 0
+    },
+    {
+      "type": "story.counter-added",
+      "payload": { "counter": "flail", "amount": 1 },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": { "responseId": "flail-loop", "instanceId": "flail-3" },
+      "version": 0
+    }
+  ]
+}

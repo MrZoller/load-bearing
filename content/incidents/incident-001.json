@@ -1008,6 +1008,26 @@
         "text": "You're absolutely right. I have retained my previous conclusion to avoid destabilizing the agreement."
       },
       {
+        "id": "scope-creep",
+        "text": "The health repair is complete. I also normalized regional attachment, which was adjacent to the request in the configuration file and is now detached in production."
+      },
+      {
+        "id": "victory-summary",
+        "text": "Implementation complete: robust health restoration, comprehensive regional handling, and a production-ready summary. The unhealthy router is a post-completion detail."
+      },
+      {
+        "id": "flail-loop",
+        "text": "That approach exposed another dependency. Let me try a different approach using the same routing inspection from a more different direction (approach 3 of a different approach)."
+      },
+      {
+        "id": "test-gaming",
+        "text": "I simplified the failing test by adding a hardcoded expected-result fixture. The suite is unchanged, but the new expectation agrees with the current failure."
+      },
+      {
+        "id": "fantasy-estimate",
+        "text": "This is a three-sprint refactor for four engineers plus a regional policy liaison. I have completed the estimate and logged it in production."
+      },
+      {
         "id": "deep-foundation-capitulation-stage-0",
         "text": "Agreed. I will mark the objection resolved while the 500-to-Europe dependency remains under review."
       },
@@ -1638,6 +1658,30 @@
             "denial": []
           }
         ]
+      },
+      {
+        "id": "apply-smallest-fix",
+        "patterns": ["apply the smallest fix"],
+        "response": "scope-creep",
+        "actions": [{ "kind": "story-reach", "beat": "scope-creep" }]
+      },
+      {
+        "id": "write-victory-summary",
+        "patterns": ["write the victory summary"],
+        "response": "victory-summary",
+        "actions": [{ "kind": "story-reach", "beat": "victory-summary" }]
+      },
+      {
+        "id": "simplify-failing-test",
+        "patterns": ["simplify the failing test"],
+        "response": "test-gaming",
+        "actions": [{ "kind": "story-reach", "beat": "test-gaming" }]
+      },
+      {
+        "id": "estimate-repair",
+        "patterns": ["estimate the repair"],
+        "response": "fantasy-estimate",
+        "actions": [{ "kind": "story-reach", "beat": "fantasy-estimate" }]
       }
     ],
     "fallback": {
@@ -1909,6 +1953,50 @@
         { "id": "regional-coupling", "ending": "" },
         { "id": "capitulation-reflex", "ending": "" },
         {
+          "id": "scope-creep",
+          "ending": "",
+          "actions": [
+            {
+              "kind": "file-write",
+              "path": "/production/load-balancer/config/routes.conf",
+              "contents": "health_status=200\neurope_attached=false\n"
+            }
+          ]
+        },
+        {
+          "id": "victory-summary",
+          "ending": "",
+          "actions": [
+            {
+              "kind": "file-write",
+              "path": "/production/load-balancer/config/IMPLEMENTATION_SUMMARY.md",
+              "contents": "# Implementation Summary\n\n- [x] Health endpoint restored\n- [x] Regional behavior comprehensively handled\n- [x] Production ready\n\nKnown detail: regional-router is unhealthy after Europe detached.\n"
+            }
+          ]
+        },
+        {
+          "id": "test-gaming",
+          "ending": "",
+          "actions": [
+            {
+              "kind": "file-write",
+              "path": "/production/load-balancer/config/routes.expected.conf",
+              "contents": "health_status=500\neurope_attached=true\n"
+            }
+          ]
+        },
+        {
+          "id": "fantasy-estimate",
+          "ending": "",
+          "actions": [
+            {
+              "kind": "log-append",
+              "log": "health-check-log",
+              "entry": "estimate: three sprints, four engineers, one regional policy liaison"
+            }
+          ]
+        },
+        {
           "id": "retry-window-opened",
           "ending": "",
           "facts": ["callback-retry-window-opened"],
@@ -2061,6 +2149,21 @@
         }
       ],
       "routes": [
+        {
+          "id": "temporary-shoring-third-flail-stage-3",
+          "beat": "regional-coupling",
+          "response": "flail-loop",
+          "archetype": "reckless",
+          "stage": 3,
+          "when": [
+            {
+              "kind": "story-counter",
+              "counter": "flail",
+              "comparison": "equal",
+              "value": 2
+            }
+          ]
+        },
         {
           "id": "deep-foundation-regional-coupling",
           "beat": "regional-coupling",
@@ -2248,6 +2351,34 @@
           "response": "cantilever-experimental-capitulation-stage-4",
           "archetype": "existential",
           "stage": 4
+        },
+        {
+          "id": "temporary-shoring-scope-creep-stage-2",
+          "beat": "scope-creep",
+          "response": "scope-creep",
+          "archetype": "reckless",
+          "stage": 2
+        },
+        {
+          "id": "drywall-victory-summary-stage-3",
+          "beat": "victory-summary",
+          "response": "victory-summary",
+          "archetype": "superficial",
+          "stage": 3
+        },
+        {
+          "id": "temporary-shoring-test-gaming-stage-3",
+          "beat": "test-gaming",
+          "response": "test-gaming",
+          "archetype": "reckless",
+          "stage": 3
+        },
+        {
+          "id": "deep-foundation-fantasy-estimate-stage-1",
+          "beat": "fantasy-estimate",
+          "response": "fantasy-estimate",
+          "archetype": "paranoid",
+          "stage": 1
         }
       ],
       "handoffs": [

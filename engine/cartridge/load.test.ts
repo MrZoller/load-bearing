@@ -1030,7 +1030,11 @@ describe("loadCartridge", () => {
           actions: [
             { kind: "counter-add", counter: "missing-counter", amount: 1 },
             { kind: "story-reach", beat: "missing-beat" },
-            { kind: "file-write", path: "/missing", contents: "x" },
+            {
+              kind: "file-write",
+              path: "/undeclared/missing",
+              contents: "x",
+            },
             {
               kind: "service-state",
               service: "missing-service",
