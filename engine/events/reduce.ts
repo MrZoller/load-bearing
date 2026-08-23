@@ -387,32 +387,40 @@ function foldEvent(
       );
     }
 
-    let expanded = before;
+    const stageExpansion = (children: readonly EngineEvent[]): SessionState => {
+      let expanded = before;
+      const triggers: string[] = [envelope.type];
+      for (const child of children) {
+        const count = expanded.transcript.length;
+        const childTriggers: string[] = [];
+        expanded = foldEvent(
+          expanded,
+          child,
+          registry,
+          false,
+          false,
+          childTriggers,
+        );
+        const entry = expanded.transcript[count];
+        if (entry === undefined)
+          throw new Error(`${where}: expansion child produced no logged entry`);
+        triggers.push(...childTriggers);
+      }
+      return reactionsAllowed
+        ? applyReactions(expanded, triggers, registry, where)
+        : expanded;
+    };
     // The envelope remains the authored trigger even though it is unlogged.
     // Queue it before its logged children, then evaluate the entire queue only
     // after every child is staged. This lets a cartridge react to the visitor's
     // `shell.execute` intent while predicates see the completed command, without
     // losing the child event types needed for narrower rules.
-    const triggers: string[] = [envelope.type];
-    for (const child of outcome.expansion) {
-      const count = expanded.transcript.length;
-      const childTriggers: string[] = [];
-      expanded = foldEvent(
-        expanded,
-        child,
-        registry,
-        false,
-        false,
-        childTriggers,
-      );
-      const entry = expanded.transcript[count];
-      if (entry === undefined)
-        throw new Error(`${where}: expansion child produced no logged entry`);
-      triggers.push(...childTriggers);
+    try {
+      return stageExpansion(outcome.expansion);
+    } catch (error) {
+      if (!outcome.hasExpansionFallback) throw error;
+      return stageExpansion(outcome.expansionFallback);
     }
-    return reactionsAllowed
-      ? applyReactions(expanded, triggers, registry, where)
-      : expanded;
   }
   const slices = applyEffects(
     before,
@@ -658,6 +666,8 @@ interface CapturedOutcome {
   readonly effects: readonly EngineEvent[];
   readonly hasExpansion: boolean;
   readonly expansion: readonly EngineEvent[];
+  readonly hasExpansionFallback: boolean;
+  readonly expansionFallback: readonly EngineEvent[];
 }
 
 /**
@@ -724,6 +734,7 @@ function captureOutcome(raw: unknown, where: string): CapturedOutcome {
   const exitCode: unknown = outcome.exitCode;
   const effects: unknown = outcome.effects;
   const expansion: unknown = outcome.expansion;
+  const expansionFallback: unknown = outcome.expansionFallback;
 
   if (summary !== undefined && typeof summary !== "string") {
     throw new Error(
@@ -902,6 +913,27 @@ function captureOutcome(raw: unknown, where: string): CapturedOutcome {
       expanded.push(child as EngineEvent);
     }
   }
+  const fallbackEvents: EngineEvent[] = [];
+  if (expansionFallback !== undefined) {
+    if (expansion === undefined)
+      throw new Error(`${where}: expansionFallback requires expansion`);
+    if (!Array.isArray(expansionFallback))
+      throw new Error(
+        `${where}: expansionFallback must be an array, got ${typeof expansionFallback}`,
+      );
+    for (let offset = 0; offset < expansionFallback.length; offset += 1) {
+      if (!(offset in expansionFallback))
+        throw new Error(
+          `${where}: expansionFallback[${String(offset)}] is a hole in a sparse array`,
+        );
+      const child = expansionFallback[offset];
+      if (child === null || typeof child !== "object" || Array.isArray(child))
+        throw new Error(
+          `${where}: expansionFallback[${String(offset)}] must be an event object`,
+        );
+      fallbackEvents.push(child as EngineEvent);
+    }
+  }
 
   return {
     hasSlice: slice !== undefined,
@@ -913,6 +945,8 @@ function captureOutcome(raw: unknown, where: string): CapturedOutcome {
     effects: dispatched,
     hasExpansion: expansion !== undefined,
     expansion: expanded,
+    hasExpansionFallback: expansionFallback !== undefined,
+    expansionFallback: fallbackEvents,
   };
 }
 

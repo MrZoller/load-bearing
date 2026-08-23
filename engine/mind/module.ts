@@ -286,6 +286,7 @@ export const MIND_MODULE = defineEventModule<MindSlice>({
             createMindPermissionResolvedEvent(id, decision),
             ...continuation(selected),
           ],
+          expansionFallback: continuation(action.deny),
         };
       },
     },
@@ -306,7 +307,10 @@ export const MIND_MODULE = defineEventModule<MindSlice>({
           throw new Error(
             `${context.where}: exact standing permission does not cover ${JSON.stringify(id)}`,
           );
-        return { expansion: continuation(action.grant) };
+        return {
+          expansion: continuation(action.grant),
+          expansionFallback: continuation(action.deny),
+        };
       },
     },
     "mind.waiver-start": {

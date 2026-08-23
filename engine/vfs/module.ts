@@ -275,6 +275,11 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
           throw new Error(
             `${context.where}: unknown authored waiver id ${JSON.stringify(id)}`,
           );
+        // A prior accepted or pending request owns this document. Repeating the
+        // request must not require permissions to rewrite an already-authored
+        // record, otherwise a later parent-mode change strands the waiver.
+        if (slice.entries[waiver.documentPath]?.kind === "file")
+          return { slice };
         const mutation = writeAuthoredWaiverVfs(
           slice,
           waiver.documentPath,

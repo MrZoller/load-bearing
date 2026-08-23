@@ -72,7 +72,7 @@ describe("createRuntimeSession", () => {
     expect(session.current()).toEqual(before);
   });
 
-  it("does not publish a permission resolution or continuation when its selected continuation fails", () => {
+  it("falls back without publishing a permission resolution when its selected continuation fails", () => {
     const document = JSON.parse(JSON.stringify(cartridgeDocument)) as any;
     document.story.phase2 = {
       initialBeat: "start",
@@ -87,14 +87,12 @@ describe("createRuntimeSession", () => {
     const session = createRuntimeSession(document);
     session.dispatch(createMindPermissionRequestEvent("delete-ready-sentinel"));
 
-    expect(() =>
-      session.dispatchMany([
-        createMindPermissionChoiceEvent("delete-ready-sentinel", "grant"),
-      ]),
-    ).toThrow(/exceed maximum/);
+    session.dispatchMany([
+      createMindPermissionChoiceEvent("delete-ready-sentinel", "grant"),
+    ]);
 
     const snapshot = session.current();
-    expect(snapshot.eventLog).toHaveLength(1);
+    expect(snapshot.eventLog).toHaveLength(2);
     expect(readMindSlice(snapshot.state)).toMatchObject({
       pendingPermission: { id: "delete-ready-sentinel" },
       permissions: [],
