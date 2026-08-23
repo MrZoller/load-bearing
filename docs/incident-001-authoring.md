@@ -80,8 +80,8 @@ cp -p config/routes.200.conf config/routes.conf
 ```
 
 The removal is required because bounded `cp` and `mv` refuse to overwrite an
-existing destination, and no shell command writes new contents into an existing
-file. The operator-writable `config` directory permits replacement. `cp -p` is
+existing destination. The operator-writable `config` directory permits
+replacement. `cp -p` is
 the supported metadata-preserving form, so the replacement retains the authored
 root ownership and mode rather than inventing visitor-owned production config.
 The existing VFS/world reactions make the endpoint responder healthy and the
