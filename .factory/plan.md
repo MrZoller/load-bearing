@@ -85,7 +85,7 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/story/router.test.ts`, and four same-input goldens author Deep Foundation, Temporary Shoring, Drywall, and Cantilever (Experimental) variants and consequences over one graph; transcripts are observably distinct, retain shared beat ids and machine facts, satisfy the fundamental response rule, and avoid parallel scripts or unbounded table growth (criteria 1, 4)
   - deps: T33, T36, T41
   - pr: 70
-- [R] T47 (standard) — All 12 authored handoff pairs
+- [x] T47 (standard) — All 12 authored handoff pairs
   - acceptance: `content/incidents/incident-001.json`, `engine/story/router.test.ts`, and a table-driven golden set supply reusable templates plus incident lines for every ordered archetype transition; each pair blames the actual predecessor, changes the next behavior, preserves one session/machine, and leaves unrelated random outcomes unchanged (criteria 5, 18)
   - deps: T37, T46
   - pr: 71
