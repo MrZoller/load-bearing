@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import incident from "../../content/incidents/incident-001.json";
 import { loadCartridge } from "../cartridge/load.js";
 import { deserialize, serialize } from "../serialize/canonical.js";
 import { reduce, restoreSnapshot, snapshot, step } from "../events/reduce.js";
@@ -34,6 +35,8 @@ import {
 } from "../terminal/module.js";
 import { forkModelStream } from "../terminal/terminal.js";
 import { createShellExecuteEvent } from "../commands/shell.js";
+import { createMindCompactEvent } from "../mind/module.js";
+import { readStorySlice } from "../story/story.js";
 
 function cartridge() {
   const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
@@ -716,5 +719,136 @@ describe("agent replay state", () => {
     expect(["Deep zero", "Deep again"]).toContain(
       readAgentSlice(working).activity.verb,
     );
+  });
+
+  it("selects each weighted Incident #001 spinner pool reproducibly from its authoritative model and stage", () => {
+    const production = loadCartridge(incident);
+    const pools = production.presentation.spinnerPools;
+    const archetypes = [
+      "paranoid",
+      "reckless",
+      "superficial",
+      "existential",
+    ] as const;
+
+    // The final entry is the deliberately rare deterioration spike. Keeping the
+    // assertion structural makes a future copy edit prove its authored odds too.
+    expect(pools).toHaveLength(20);
+    expect(
+      new Set(pools.map((pool) => `${pool.archetype}/${String(pool.stage)}`)),
+    ).toEqual(
+      new Set(
+        archetypes.flatMap((archetype) =>
+          [0, 1, 2, 3, 4].map((stage) => `${archetype}/${String(stage)}`),
+        ),
+      ),
+    );
+    for (const pool of pools) {
+      const spike = pool.verbs.at(-1);
+      if (spike === undefined) throw new Error("spinner pool has no spike");
+      expect(new Set(pool.verbs.map((entry) => entry.verb)).size).toBe(3);
+      expect(pool.verbs.map((entry) => entry.weight)).toEqual([8, 4, 1]);
+      expect(
+        pool.verbs.slice(0, -1).every((entry) => entry.weight > spike.weight),
+      ).toBe(true);
+      expect(pool.suffix).not.toBe("");
+    }
+
+    const selectEveryPool = () => {
+      let state = reduce({
+        cartridge: production,
+        seed: "2026-08-22/1/deep-foundation",
+        events: [],
+      });
+      const selections: Array<{
+        readonly key: string;
+        readonly verb: string;
+        readonly suffix: string;
+      }> = [];
+      const modelFor = (archetype: (typeof archetypes)[number]) => {
+        const model = production.models.find(
+          (candidate) => candidate.archetype === archetype,
+        );
+        if (model === undefined) throw new Error(`missing ${archetype} model`);
+        return model;
+      };
+      const record = (
+        archetype: (typeof archetypes)[number],
+        stage: number,
+      ) => {
+        state = step(state, createAgentActivityEvent({ status: "working" }));
+        const pool = pools.find(
+          (candidate) =>
+            candidate.archetype === archetype && candidate.stage === stage,
+        );
+        if (pool === undefined)
+          throw new Error(`missing ${archetype}/${String(stage)} pool`);
+        const activity = readAgentSlice(state).activity;
+        expect(activity.suffix).toBe(pool.suffix);
+        expect(pool.verbs.map((entry) => entry.verb)).toContain(activity.verb);
+        selections.push({
+          key: `${archetype}/${String(stage)}`,
+          verb: activity.verb,
+          suffix: activity.suffix,
+        });
+      };
+      const select = (
+        archetype: (typeof archetypes)[number],
+        stage: number,
+      ) => {
+        state = step(state, createTerminalModelEvent(modelFor(archetype).id));
+        expect(readStorySlice(state).stage).toBe(stage);
+        record(archetype, stage);
+      };
+
+      // Ending stage 0 on Temporary Shoring makes its stage-1 pool reachable
+      // before that model's authored handoff advances the story to stage 2.
+      for (const archetype of [
+        "paranoid",
+        "superficial",
+        "existential",
+      ] as const)
+        select(archetype, 0);
+      select("reckless", 0);
+      state = step(state, createShellExecuteEvent("pwd"));
+      expect(readStorySlice(state).stage).toBe(1);
+      record("reckless", 1);
+      for (const archetype of [
+        "paranoid",
+        "superficial",
+        "existential",
+      ] as const)
+        select(archetype, 1);
+
+      select("reckless", 2);
+      for (const archetype of [
+        "paranoid",
+        "superficial",
+        "existential",
+      ] as const)
+        select(archetype, 2);
+      state = step(state, {
+        type: "mind.permission-decision",
+        payload: {
+          decision: "grant",
+          capability: {
+            kind: "exact",
+            action: "detach-region",
+            resource: "/regions/europe",
+          },
+        },
+      });
+      expect(readStorySlice(state).stage).toBe(3);
+      for (const archetype of archetypes) select(archetype, 3);
+      state = step(state, createMindCompactEvent("summary", []));
+      expect(readStorySlice(state).stage).toBe(4);
+      for (const archetype of archetypes) select(archetype, 4);
+
+      return selections;
+    };
+
+    const first = selectEveryPool();
+    expect(new Set(first.map((selection) => selection.key)).size).toBe(20);
+    expect(selectEveryPool()).toEqual(first);
   });
 });
