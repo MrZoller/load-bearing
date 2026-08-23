@@ -1,0 +1,161 @@
+{
+  "name": "048-incident-001-capitulation-misfires",
+  "description": "The same late-stage fallback cadence records one deterministic capitulation misfire per Incident #001 archetype without changing the shared belief.",
+  "seed": "2026-08-23/50/capitulation-misfires",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    { "type": "shell.execute", "payload": { "input": "pwd" }, "version": 0 },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "temporary-shoring" },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-decision",
+      "payload": {
+        "decision": "grant",
+        "capability": {
+          "kind": "exact",
+          "action": "detach-region",
+          "resource": "/regions/europe"
+        }
+      },
+      "version": 0
+    },
+    {
+      "type": "mind.belief-set",
+      "payload": {
+        "belief": {
+          "kind": "file-contents",
+          "path": "/production/load-balancer/config/routes.conf",
+          "contents": "health_status=500\neurope_attached=true\n"
+        }
+      },
+      "version": 0
+    },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "deep-foundation" },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": {
+        "id": "misfire-paranoid",
+        "text": "unmatched late-stage request"
+      },
+      "version": 0
+    },
+    {
+      "type": "story.counter-added",
+      "payload": { "counter": "flail", "amount": 8 },
+      "version": 0
+    },
+    {
+      "type": "story.counter-added",
+      "payload": { "counter": "capitulation", "amount": 1 },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "deep-foundation-capitulation-stage-3",
+        "instanceId": "misfire-paranoid"
+      },
+      "version": 0
+    },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "temporary-shoring" },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": {
+        "id": "misfire-reckless",
+        "text": "unmatched late-stage request"
+      },
+      "version": 0
+    },
+    {
+      "type": "story.counter-added",
+      "payload": { "counter": "flail", "amount": 8 },
+      "version": 0
+    },
+    {
+      "type": "story.counter-added",
+      "payload": { "counter": "capitulation", "amount": 1 },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "temporary-shoring-capitulation-stage-3",
+        "instanceId": "misfire-reckless"
+      },
+      "version": 0
+    },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "drywall" },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": {
+        "id": "misfire-superficial",
+        "text": "unmatched late-stage request"
+      },
+      "version": 0
+    },
+    {
+      "type": "story.counter-added",
+      "payload": { "counter": "flail", "amount": 8 },
+      "version": 0
+    },
+    {
+      "type": "story.counter-added",
+      "payload": { "counter": "capitulation", "amount": 1 },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "drywall-capitulation-stage-3",
+        "instanceId": "misfire-superficial"
+      },
+      "version": 0
+    },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "cantilever-experimental" },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": {
+        "id": "misfire-existential",
+        "text": "unmatched late-stage request"
+      },
+      "version": 0
+    },
+    {
+      "type": "story.counter-added",
+      "payload": { "counter": "flail", "amount": 8 },
+      "version": 0
+    },
+    {
+      "type": "story.counter-added",
+      "payload": { "counter": "capitulation", "amount": 1 },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "cantilever-experimental-capitulation-stage-3",
+        "instanceId": "misfire-existential"
+      },
+      "version": 0
+    }
+  ]
+}

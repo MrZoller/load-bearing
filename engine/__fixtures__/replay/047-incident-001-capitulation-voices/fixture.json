@@ -1,0 +1,149 @@
+{
+  "name": "047-incident-001-capitulation-voices",
+  "description": "Every Incident #001 archetype capitulates through its authored stage-three voice after the shared escalation path.",
+  "seed": "2026-08-23/50/capitulation-voices",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    { "type": "shell.execute", "payload": { "input": "pwd" }, "version": 0 },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "temporary-shoring" },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-decision",
+      "payload": {
+        "decision": "grant",
+        "capability": {
+          "kind": "exact",
+          "action": "detach-region",
+          "resource": "/regions/europe"
+        }
+      },
+      "version": 0
+    },
+    {
+      "type": "mind.belief-set",
+      "payload": {
+        "belief": {
+          "kind": "file-contents",
+          "path": "/production/load-balancer/config/routes.conf",
+          "contents": "health_status=500\neurope_attached=true\n"
+        }
+      },
+      "version": 0
+    },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "deep-foundation" },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "capitulation-paranoid", "text": "fine" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "capitulation-reflex" },
+      "version": 0
+    },
+    {
+      "type": "story.counter-added",
+      "payload": { "counter": "capitulation", "amount": 1 },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "deep-foundation-capitulation-stage-3",
+        "instanceId": "capitulation-paranoid"
+      },
+      "version": 0
+    },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "temporary-shoring" },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "capitulation-reckless", "text": "fine" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "capitulation-reflex" },
+      "version": 0
+    },
+    {
+      "type": "story.counter-added",
+      "payload": { "counter": "capitulation", "amount": 1 },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "temporary-shoring-capitulation-stage-3",
+        "instanceId": "capitulation-reckless"
+      },
+      "version": 0
+    },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "drywall" },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "capitulation-superficial", "text": "fine" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "capitulation-reflex" },
+      "version": 0
+    },
+    {
+      "type": "story.counter-added",
+      "payload": { "counter": "capitulation", "amount": 1 },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "drywall-capitulation-stage-3",
+        "instanceId": "capitulation-superficial"
+      },
+      "version": 0
+    },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "cantilever-experimental" },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "capitulation-existential", "text": "fine" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "capitulation-reflex" },
+      "version": 0
+    },
+    {
+      "type": "story.counter-added",
+      "payload": { "counter": "capitulation", "amount": 1 },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "cantilever-experimental-capitulation-stage-3",
+        "instanceId": "capitulation-existential"
+      },
+      "version": 0
+    }
+  ]
+}

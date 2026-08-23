@@ -179,8 +179,19 @@ export function selectAgentIntent(
     state,
     generic?.candidates ?? [],
   );
-  if (family !== null && genericCandidate !== undefined)
-    return candidateSelection("generic", family, genericCandidate);
+  if (family !== null && genericCandidate !== undefined) {
+    const selection = candidateSelection("generic", family, genericCandidate);
+    return family === "capitulation"
+      ? {
+          ...selection,
+          responseId: routeCandidateResponse(
+            cartridge,
+            state,
+            genericCandidate,
+          ),
+        }
+      : selection;
+  }
 
   const fallbackCandidate = routeIntentCandidate(
     state,
@@ -220,8 +231,26 @@ export function selectAgentIntent(
     ...candidateSelection("fallback", null, fallbackCandidate),
     family: misfireCandidate === undefined ? null : "capitulation",
     misfire: misfireCandidate !== undefined,
-    responseId: misfireCandidate?.response ?? fallbackCandidate.response,
+    responseId:
+      misfireCandidate === undefined
+        ? fallbackCandidate.response
+        : routeCandidateResponse(cartridge, state, misfireCandidate),
   };
+}
+
+function routeCandidateResponse(
+  cartridge: LoadedCartridge,
+  state: SessionState,
+  candidate: CartridgeIntentCandidate,
+): string {
+  let routedBeat = "";
+  for (const action of candidate.actions) {
+    if (action.kind === "story-reach") routedBeat = action.beat;
+  }
+  return routedBeat === ""
+    ? candidate.response
+    : routeStoryResponse(cartridge, state, routedBeat, candidate.response)
+        .responseId;
 }
 
 function candidateSelection(

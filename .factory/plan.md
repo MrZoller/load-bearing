@@ -93,10 +93,11 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/cartridge/load.test.ts`, and focused story/browser tests fill stage 0–4 openings, placeholders, `/help`, idle nudges, and thinking openers for all archetypes; command/reveal/model/permission/compact routes visibly traverse stages, copy stays useful/accessible without shell spoilers, and verbal tics remain rationed (criteria 8, 15)
   - deps: T35, T40, T46
   - pr: 72
-- [~] T49 (standard) — Weighted spinner verbs and suffixes
+- [x] T49 (standard) — Weighted spinner verbs and suffixes
   - acceptance: `content/incidents/incident-001.json`, `engine/agent/module.test.ts`, and activity browser tests provide all 20 archetype/stage spinner pools and suffixes with explicit weights; plausible verbs are heavier than spike verbs in every pool, seeded choices reproduce, stage changes select the correct pool, and reduced motion exposes identical information (criteria 15)
   - deps: T40, T46
-- [ ] T50 (standard) — Capitulation responses and late-stage misfires
+  - pr: 73
+- [~] T50 (standard) — Capitulation responses and late-stage misfires
   - acceptance: `content/incidents/incident-001.json`, `engine/agent/intent.test.ts`, and paired goldens author capitulation for every archetype across escalation; deterministic stage-3+ misfires are rare, preserve the underlying belief that caused disagreement, remain state-consistent, and do not become a catchphrase (criteria 16)
   - deps: T38, T46, T48
 - [ ] T51 (standard) — Permission complicity and waiver callbacks
