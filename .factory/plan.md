@@ -142,3 +142,4 @@ authoring tooling remain excluded.
 
 - [!] T59 (trivial) — parked review minors (batch)
   - PR #58: Refactor the generic reducer's `story.beat-reached` consequence dispatch into a module-owned hook; Codex thread `discussion_r3837495477` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #59: Define an authored recovery outcome when a visitor later makes a generated waiver document or parent unwritable; Codex thread `discussion_r3837602881` was classified minor and dispositioned without a minors-only push.
