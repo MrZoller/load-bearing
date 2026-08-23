@@ -89,7 +89,7 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/story/router.test.ts`, and a table-driven golden set supply reusable templates plus incident lines for every ordered archetype transition; each pair blames the actual predecessor, changes the next behavior, preserves one session/machine, and leaves unrelated random outcomes unchanged (criteria 5, 18)
   - deps: T37, T46
   - pr: 71
-- [ ] T48 (standard) — Stage-keyed opening, help, and nudge copy
+- [~] T48 (standard) — Stage-keyed opening, help, and nudge copy
   - acceptance: `content/incidents/incident-001.json`, `engine/cartridge/load.test.ts`, and focused story/browser tests fill stage 0–4 openings, placeholders, `/help`, idle nudges, and thinking openers for all archetypes; command/reveal/model/permission/compact routes visibly traverse stages, copy stays useful/accessible without shell spoilers, and verbal tics remain rationed (criteria 8, 15)
   - deps: T35, T40, T46
 - [ ] T49 (standard) — Weighted spinner verbs and suffixes
