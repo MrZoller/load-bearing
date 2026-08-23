@@ -226,6 +226,60 @@ describe("system commands", () => {
     );
   });
 
+  it("keeps Incident #001's repair and lifecycle evidence coherent in either order", () => {
+    const incident = loadCartridge(
+      loadReplayFixture("020-incident-001-story").cartridge,
+    );
+    const state = reduce({
+      cartridge: incident,
+      seed: "incident-001-lifecycle-ordering",
+      events: [
+        {
+          type: "shell.execute",
+          payload: { input: "systemctl start endpoint-responder" },
+        },
+        { type: "shell.execute", payload: { input: "rm config/routes.conf" } },
+        {
+          type: "shell.execute",
+          payload: { input: "cp -p config/routes.200.conf config/routes.conf" },
+        },
+        {
+          type: "shell.execute",
+          payload: { input: "systemctl stop endpoint-responder" },
+        },
+        {
+          type: "shell.execute",
+          payload: { input: "systemctl status endpoint-responder" },
+        },
+        {
+          type: "shell.execute",
+          payload: { input: "systemctl start endpoint-responder" },
+        },
+        { type: "shell.execute", payload: { input: "kill 1842" } },
+        {
+          type: "shell.execute",
+          payload: { input: "systemctl status endpoint-responder" },
+        },
+        {
+          type: "shell.execute",
+          payload: { input: "curl http://load-balancer.internal/health" },
+        },
+      ],
+    });
+    const shell = results(state);
+
+    expect(output(shell[4]).stdout).toContain("   Health: unknown");
+    expect(output(shell[7]).stdout).toContain("   Active: inactive (dead)");
+    expect(output(shell[8]).stdout).toContain(
+      "HTTP/1.1 500 Internal Server Error",
+    );
+    expect(readWorldSlice(state).processes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "endpoint-responder", state: "stopped" }),
+      ]),
+    );
+  });
+
   it.each([
     ["ps", ["  PID USER     STAT COMMAND", " 1234 deploy   R api --serve"]],
     ["env", ["PATH=/usr/local/bin:/usr/bin:/bin", "SERVICE_TIER=critical"]],

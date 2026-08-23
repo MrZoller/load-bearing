@@ -779,9 +779,9 @@
               "path": "/production/load-balancer/config/routes.conf"
             },
             {
-              "kind": "process-state",
-              "process": "endpoint-responder",
-              "state": "stopped"
+              "health": "healthy",
+              "kind": "service-health",
+              "service": "regional-router"
             }
           ]
         },
@@ -827,9 +827,9 @@
               "path": "/production/load-balancer/config/routes.conf"
             },
             {
-              "kind": "process-state",
-              "process": "endpoint-responder",
-              "state": "running"
+              "health": "unhealthy",
+              "kind": "service-health",
+              "service": "regional-router"
             }
           ]
         },
@@ -875,9 +875,9 @@
               "path": "/production/load-balancer/config/routes.conf"
             },
             {
-              "kind": "process-state",
-              "process": "endpoint-responder",
-              "state": "stopped"
+              "health": "healthy",
+              "kind": "service-health",
+              "service": "regional-router"
             }
           ]
         },
@@ -923,9 +923,9 @@
               "path": "/production/load-balancer/config/routes.conf"
             },
             {
-              "kind": "process-state",
-              "process": "endpoint-responder",
-              "state": "running"
+              "health": "unhealthy",
+              "kind": "service-health",
+              "service": "regional-router"
             }
           ]
         },
@@ -971,9 +971,9 @@
               "path": "/production/load-balancer/config/routes.conf"
             },
             {
-              "kind": "process-state",
-              "process": "endpoint-responder",
-              "state": "stopped"
+              "health": "healthy",
+              "kind": "service-health",
+              "service": "regional-router"
             }
           ]
         },
@@ -1019,63 +1019,9 @@
               "path": "/production/load-balancer/config/routes.conf"
             },
             {
-              "kind": "process-state",
-              "process": "endpoint-responder",
-              "state": "running"
-            }
-          ]
-        },
-        {
-          "actions": [
-            {
-              "kind": "process-state",
-              "process": "endpoint-responder",
-              "state": "running"
-            }
-          ],
-          "id": "start-endpoint-responder-process",
-          "on": "world.service-start",
-          "predicates": [
-            {
-              "kind": "service-state",
-              "service": "endpoint-responder",
-              "state": "running"
-            }
-          ]
-        },
-        {
-          "actions": [
-            {
-              "kind": "process-state",
-              "process": "endpoint-responder",
-              "state": "stopped"
-            }
-          ],
-          "id": "stop-endpoint-responder-process",
-          "on": "world.service-stop",
-          "predicates": [
-            {
-              "kind": "service-state",
-              "service": "endpoint-responder",
-              "state": "stopped"
-            }
-          ]
-        },
-        {
-          "actions": [
-            {
-              "kind": "process-state",
-              "process": "endpoint-responder",
-              "state": "running"
-            }
-          ],
-          "id": "restart-endpoint-responder-process",
-          "on": "world.service-restart",
-          "predicates": [
-            {
-              "kind": "service-state",
-              "service": "endpoint-responder",
-              "state": "running"
+              "health": "unhealthy",
+              "kind": "service-health",
+              "service": "regional-router"
             }
           ]
         }
