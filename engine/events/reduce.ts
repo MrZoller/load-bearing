@@ -447,7 +447,12 @@ function foldEvent(
       where,
     );
     return reactionsAllowed
-      ? applyRareEvents(completed, registry, where)
+      ? applyRareEvents(
+          completed,
+          registry,
+          where,
+          storyStageAdvanced(before, completed),
+        )
       : completed;
   }
   const slices = applyEffects(
@@ -487,7 +492,25 @@ function foldEvent(
     : staged;
   if (!reactionsAllowed) return reacted;
   const completed = applyEscalation(before, reacted, envelope, registry, where);
-  return applyRareEvents(completed, registry, where);
+  return applyRareEvents(
+    completed,
+    registry,
+    where,
+    storyStageAdvanced(before, completed),
+  );
+}
+
+/** A complete visitor transaction may publish only one adjacent stage advance. */
+function storyStageAdvanced(
+  before: SessionState,
+  after: SessionState,
+): boolean {
+  if (
+    !Object.hasOwn(before.slices, "story") ||
+    !Object.hasOwn(after.slices, "story")
+  )
+    return false;
+  return stagedStorySlice(before).stage !== stagedStorySlice(after).stage;
 }
 
 function stagedStorySlice(state: SessionState) {
@@ -533,6 +556,7 @@ function applyRareEvents(
   completed: SessionState,
   registry: EventRegistry,
   where: string,
+  alreadyEscalated: boolean,
 ): SessionState {
   const declarations = completed.cartridge.story.phase2.rareEvents ?? [];
   if (
@@ -543,6 +567,7 @@ function applyRareEvents(
     return completed;
 
   let state = completed;
+  let escalated = alreadyEscalated;
   for (const declaration of declarations) {
     const recorded = stagedStorySlice(state).rareEvents.find(
       (rareEvent) => rareEvent.id === declaration.id,
@@ -597,13 +622,16 @@ function applyRareEvents(
       );
       state = applyStoryConsequences(state, registry, rareWhere, triggers);
       state = applyReactions(state, triggers, registry, rareWhere);
-      state = applyEscalation(
-        beforeFireBeat,
-        state,
-        fireBeat,
-        registry,
-        rareWhere,
-      );
+      if (!escalated) {
+        state = applyEscalation(
+          beforeFireBeat,
+          state,
+          fireBeat,
+          registry,
+          rareWhere,
+        );
+        escalated = storyStageAdvanced(beforeFireBeat, state);
+      }
     }
   }
 

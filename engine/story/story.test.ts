@@ -496,6 +496,11 @@ describe("shared story beats", () => {
         {
           from: 0,
           to: 1,
+          trigger: { kind: "command", input: "rm /etc/motd" },
+        },
+        {
+          from: 1,
+          to: 2,
           trigger: { kind: "reveal", fact: "rare-reveal" },
         },
       ],
@@ -515,7 +520,9 @@ describe("shared story beats", () => {
     expect(readStorySlice(afterRemoval).facts).toEqual(
       fired ? [{ id: "rare-reveal", kind: "reveal" }] : [],
     );
-    expect(readStorySlice(afterRemoval).stage).toBe(fired ? 1 : 0);
+    // The command and its fired rare beat are one visitor transaction. The
+    // reveal may not use the rare beat to skip a second adjacent stage.
+    expect(readStorySlice(afterRemoval).stage).toBe(1);
     expect(
       readWorldSlice(afterRemoval).logs.find(({ id }) => id === "rare-log")
         ?.entries,
