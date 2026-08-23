@@ -4,6 +4,10 @@ import cartridgeDocument from "../content/incidents/phase-1-demo.json";
 import {
   createAgentMessageEvent,
   createAgentResponseEvent,
+  createMindPermissionChoiceEvent,
+  createMindPermissionRequestEvent,
+  readMindSlice,
+  readStorySlice,
   createShellExecuteEvent,
   reduce,
 } from "../engine/index.js";
@@ -66,5 +70,37 @@ describe("createRuntimeSession", () => {
     ).toThrow(/unknown authored response/);
 
     expect(session.current()).toEqual(before);
+  });
+
+  it("does not publish a permission resolution or continuation when its selected continuation fails", () => {
+    const document = JSON.parse(JSON.stringify(cartridgeDocument)) as any;
+    document.story.phase2 = {
+      initialBeat: "start",
+      counters: [{ id: "full", initial: 1, maximum: 1 }],
+      facts: [],
+      beats: [{ id: "start", ending: "", actions: [], variants: [] }],
+      endings: [],
+    };
+    document.story.intents[1].actions[0].grant = [
+      { kind: "counter-add", counter: "full", amount: 1 },
+    ];
+    const session = createRuntimeSession(document);
+    session.dispatch(createMindPermissionRequestEvent("delete-ready-sentinel"));
+
+    expect(() =>
+      session.dispatchMany([
+        createMindPermissionChoiceEvent("delete-ready-sentinel", "grant"),
+      ]),
+    ).toThrow(/exceed maximum/);
+
+    const snapshot = session.current();
+    expect(snapshot.eventLog).toHaveLength(1);
+    expect(readMindSlice(snapshot.state)).toMatchObject({
+      pendingPermission: { id: "delete-ready-sentinel" },
+      permissions: [],
+    });
+    expect(readStorySlice(snapshot.state).counters).toEqual([
+      { id: "full", value: 1 },
+    ]);
   });
 });
