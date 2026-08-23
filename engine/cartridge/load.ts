@@ -1705,10 +1705,7 @@ function checkStoryAndPresentation(
       "zero, or a cadence with an authored capitulation generic intent",
       `${String(intentCounters.misfireEvery)} without a capitulation mapping`,
     );
-  if (
-    intentCounters.misfireEvery > 0 &&
-    story.fallback.candidates.length === 0
-  )
+  if (intentCounters.misfireEvery > 0 && story.fallback.candidates.length === 0)
     report.addPhrase(
       "/story/phase2/intentCounters/misfireEvery",
       "zero, or a cadence backed by at least one fallback candidate",
