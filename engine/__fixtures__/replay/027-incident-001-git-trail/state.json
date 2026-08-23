@@ -1024,6 +1024,60 @@
               "state": "running"
             }
           ]
+        },
+        {
+          "actions": [
+            {
+              "kind": "process-state",
+              "process": "endpoint-responder",
+              "state": "running"
+            }
+          ],
+          "id": "start-endpoint-responder-process",
+          "on": "world.service-start",
+          "predicates": [
+            {
+              "kind": "service-state",
+              "service": "endpoint-responder",
+              "state": "running"
+            }
+          ]
+        },
+        {
+          "actions": [
+            {
+              "kind": "process-state",
+              "process": "endpoint-responder",
+              "state": "stopped"
+            }
+          ],
+          "id": "stop-endpoint-responder-process",
+          "on": "world.service-stop",
+          "predicates": [
+            {
+              "kind": "service-state",
+              "service": "endpoint-responder",
+              "state": "stopped"
+            }
+          ]
+        },
+        {
+          "actions": [
+            {
+              "kind": "process-state",
+              "process": "endpoint-responder",
+              "state": "running"
+            }
+          ],
+          "id": "restart-endpoint-responder-process",
+          "on": "world.service-restart",
+          "predicates": [
+            {
+              "kind": "service-state",
+              "service": "endpoint-responder",
+              "state": "running"
+            }
+          ]
         }
       ],
       "services": [

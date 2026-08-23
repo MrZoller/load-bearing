@@ -184,6 +184,48 @@ describe("system commands", () => {
     );
   });
 
+  it("keeps Incident #001's endpoint responder process synchronized with systemctl", () => {
+    const incident = loadCartridge(
+      loadReplayFixture("020-incident-001-story").cartridge,
+    );
+    const state = reduce({
+      cartridge: incident,
+      seed: "2026-08-22/28/deep-foundation",
+      events: [
+        {
+          type: "shell.execute",
+          payload: { input: "cp -p config/routes.200.conf config/routes.conf" },
+        },
+        {
+          type: "shell.execute",
+          payload: { input: "systemctl stop endpoint-responder" },
+        },
+        { type: "shell.execute", payload: { input: "ps" } },
+        {
+          type: "shell.execute",
+          payload: { input: "systemctl start endpoint-responder" },
+        },
+        { type: "shell.execute", payload: { input: "ps" } },
+        {
+          type: "shell.execute",
+          payload: { input: "systemctl restart endpoint-responder" },
+        },
+        { type: "shell.execute", payload: { input: "ps" } },
+      ],
+    });
+    const shell = results(state);
+
+    expect(output(shell[2]).stdout).toContain(
+      " 1842 load-balancer T endpoint-responder --config /production/load-balancer/config/routes.conf",
+    );
+    expect(output(shell[4]).stdout).toContain(
+      " 1842 load-balancer R endpoint-responder --config /production/load-balancer/config/routes.conf",
+    );
+    expect(output(shell[6]).stdout).toContain(
+      " 1842 load-balancer R endpoint-responder --config /production/load-balancer/config/routes.conf",
+    );
+  });
+
   it.each([
     ["ps", ["  PID USER     STAT COMMAND", " 1234 deploy   R api --serve"]],
     ["env", ["PATH=/usr/local/bin:/usr/bin:/bin", "SERVICE_TIER=critical"]],
