@@ -10,6 +10,7 @@ import {
   createMindBeliefEvent,
   createMindPermissionRequestedEvent,
   createMindPermissionResolvedEvent,
+  createMindWaiverChoiceEvent,
 } from "../mind/module.js";
 import {
   MAX_AGENT_MESSAGES,
@@ -26,6 +27,7 @@ import {
 } from "./intent.js";
 
 const CARTRIDGE = loadCartridge(cartridgeDocument);
+const INCIDENT = loadCartridge(incident);
 const SEED = "2026-08-22/0/structural-audit";
 
 function incidentStateWithLoadBearingResponseBelief() {
@@ -246,6 +248,32 @@ describe("authored agent input", () => {
         { type: "agent.activity-set", payload: { status: "idle" } },
       ],
     );
+  });
+
+  it("does not re-prompt an exactly recorded waiver consent", () => {
+    const initial = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+    const pending = reduce({
+      cartridge: INCIDENT,
+      seed: SEED,
+      events: createAgentInputEvents(INCIDENT, initial, "detach europe"),
+    });
+    const accepted = step(
+      pending,
+      createMindWaiverChoiceEvent("regional-fail-open", true),
+    );
+
+    expect(
+      createAgentInputEvents(INCIDENT, accepted, "detach europe"),
+    ).toMatchObject([
+      { type: "agent.activity-set", payload: { status: "working", stage: 0 } },
+      { type: "agent.message-added" },
+      {
+        type: "mind.waiver-standing",
+        payload: { id: "regional-fail-open" },
+      },
+      { type: "agent.response-recorded" },
+      { type: "agent.activity-set", payload: { status: "idle" } },
+    ]);
   });
 
   it("uses a fallback's authored authorized response after Always allow", () => {

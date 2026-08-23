@@ -23,6 +23,7 @@ import {
   compactBeliefs,
   createMindSlice,
   hasStandingPermission,
+  hasWaiverConsent,
   isPermissionDecision,
   recordPermissionDecision,
   recordWaiverConsent,
@@ -202,6 +203,13 @@ export function createMindWaiverStartEvent(id: string): EngineEvent {
   );
 }
 
+export function createMindWaiverStandingEvent(id: string): EngineEvent {
+  return stampEvent(
+    { type: "mind.waiver-standing", payload: { id } },
+    "mind standing waiver envelope",
+  );
+}
+
 export function createMindWaiverChoiceEvent(
   id: string,
   accepted: boolean,
@@ -323,6 +331,26 @@ export const MIND_MODULE = defineEventModule<MindSlice>({
             ),
           ],
         };
+      },
+    },
+    "mind.waiver-standing": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["id"]);
+        const id = readString(data, "id", context.where);
+        const action = findOrchestrationAction(context, id, "waiver-request");
+        if (
+          !hasWaiverConsent(slice, {
+            id: action.id,
+            version: action.version,
+            phrase: action.requiredPhrase,
+            capability: action.capability,
+          })
+        )
+          throw new Error(
+            `${context.where}: recorded waiver consent does not cover ${JSON.stringify(id)}`,
+          );
+        return { expansion: continuation(action.consent) };
       },
     },
     "mind.waiver-choice": {

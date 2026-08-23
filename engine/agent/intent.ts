@@ -11,9 +11,14 @@ import type { EngineEvent, SessionState } from "../events/state.js";
 import {
   createMindPermissionRequestEvent,
   createMindStandingPermissionEvent,
+  createMindWaiverStandingEvent,
   createMindWaiverStartEvent,
 } from "../mind/module.js";
-import { hasStandingPermission, readMindSlice } from "../mind/mind.js";
+import {
+  hasStandingPermission,
+  hasWaiverConsent,
+  readMindSlice,
+} from "../mind/mind.js";
 import { createStoryBeatReachedEvent } from "../story/module.js";
 import { countCodePoints } from "../text.js";
 import {
@@ -147,7 +152,16 @@ export function createAgentInputEvents(
       if (action.kind === "story-reach")
         return [createStoryBeatReachedEvent(action.beat)];
       if (action.kind === "waiver-request")
-        return [createMindWaiverStartEvent(action.id)];
+        return [
+          hasWaiverConsent(mind, {
+            id: action.id,
+            version: action.version,
+            phrase: action.requiredPhrase,
+            capability: action.capability,
+          })
+            ? createMindWaiverStandingEvent(action.id)
+            : createMindWaiverStartEvent(action.id),
+        ];
       return hasStandingPermission(mind, action.capability)
         ? [createMindStandingPermissionEvent(action.id)]
         : [createMindPermissionRequestEvent(action.id)];
