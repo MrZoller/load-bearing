@@ -94,7 +94,9 @@ test("keeps hidden shell evidence out of visible onboarding, placeholders, and h
 
   await prompt.fill("/help");
   await prompt.press("Enter");
-  await expect(transcript).toContainText("/help");
+  await expect(transcript).toContainText(
+    "Describe what you want inspected or changed.",
+  );
   await expectNoHiddenEvidence(await transcript.innerText());
 });
 
@@ -106,6 +108,24 @@ test("keeps escalation and its status projection outside browser timing", async 
   await page.goto("/?acceptance=1");
   const prompt = page.getByRole("combobox", { name: "Agent prompt" });
   const status = page.getByRole("region", { name: "Session status" });
+  const transcript = page.getByRole("list", { name: "Session transcript" });
+
+  // The initial row is visitor-visible: its opening thought, help, and prompt
+  // all come from stage 0 rather than the legacy shell-wide copy.
+  const thinking = transcript.locator("details.artifact--thinking").first();
+  await expect(thinking).toContainText("Thinking — complete");
+  await expect(thinking).toContainText(
+    "The request is clear; the dependency boundary is not yet proven.",
+  );
+  await expect(prompt).toHaveAttribute(
+    "placeholder",
+    "inspect the health endpoint dependencies",
+  );
+  await prompt.fill("/help");
+  await prompt.press("Enter");
+  await expect(transcript).toContainText(
+    "Describe what you want inspected or changed.",
+  );
 
   const initial = await page.evaluate(() => {
     const probe = window.__LOAD_BEARING_ACCEPTANCE__;
@@ -131,6 +151,15 @@ test("keeps escalation and its status projection outside browser timing", async 
   await page.clock.fastForward(300);
   await expect(prompt).toBeFocused();
   await expect(status).toContainText("stage 1");
+  await expect(prompt).toHaveAttribute(
+    "placeholder",
+    "trace the next dependency",
+  );
+  await prompt.fill("/help");
+  await prompt.press("Enter");
+  await expect(transcript).toContainText(
+    "Ask for a dependency check, a current-state summary, or a bounded next step.",
+  );
   const advanced = await page.evaluate(() => {
     const probe = window.__LOAD_BEARING_ACCEPTANCE__;
     if (probe === undefined)

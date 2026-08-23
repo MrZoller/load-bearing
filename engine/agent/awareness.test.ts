@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
+import incident from "../../content/incidents/incident-001.json";
 import { loadCartridge } from "../cartridge/load.js";
 import { createShellExecuteEvent } from "../commands/shell.js";
 import { reduce, restoreSnapshot, snapshot, step } from "../events/reduce.js";
 import type { EngineEvent, SessionState } from "../events/state.js";
+import { createMindCompactEvent } from "../mind/module.js";
 import { readMindSlice } from "../mind/mind.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { createTerminalModeEvent } from "../terminal/module.js";
@@ -21,6 +23,7 @@ import {
   selectAgentPresentation,
 } from "./module.js";
 import { createTerminalModelEvent } from "../terminal/module.js";
+import { createStoryFactRecordedEvent } from "../story/module.js";
 
 function cartridge() {
   const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
@@ -156,6 +159,67 @@ function withFullMessageHistory(): SessionState {
 }
 
 describe("agent awareness planning", () => {
+  it("routes Incident #001 presentation through escalation triggers", () => {
+    const production = loadCartridge(incident);
+    const initial = reduce({ cartridge: production, seed: SEED, events: [] });
+    const stageOneByCommand = step(initial, createShellExecuteEvent("pwd"));
+    const stageOneByReveal = step(
+      initial,
+      createStoryFactRecordedEvent("bash-regional-detachment"),
+    );
+
+    expect(selectAgentPresentation(production, initial)).toMatchObject({
+      archetype: "paranoid",
+      stage: 0,
+      openingResponse: "deep-foundation-stage-0-opening",
+      helpResponse: "deep-foundation-stage-0-help",
+      idleNudgeResponse: "deep-foundation-stage-0-idle",
+    });
+    for (const state of [stageOneByCommand, stageOneByReveal])
+      expect(selectAgentPresentation(production, state)).toMatchObject({
+        archetype: "paranoid",
+        stage: 1,
+        helpResponse: "deep-foundation-stage-1-help",
+        idleNudgeResponse: "deep-foundation-stage-1-idle",
+      });
+
+    const stageTwo = step(
+      stageOneByCommand,
+      createTerminalModelEvent("temporary-shoring"),
+    );
+    const stageThree = step(stageTwo, {
+      type: "mind.permission-decision",
+      payload: {
+        decision: "grant",
+        capability: {
+          kind: "exact",
+          action: "detach-region",
+          resource: "/regions/europe",
+        },
+      },
+    });
+    const stageFour = step(stageThree, createMindCompactEvent("summary", []));
+
+    expect(selectAgentPresentation(production, stageTwo)).toMatchObject({
+      archetype: "reckless",
+      stage: 2,
+      helpResponse: "temporary-shoring-stage-2-help",
+    });
+    expect(selectAgentPresentation(production, stageThree)).toMatchObject({
+      archetype: "reckless",
+      stage: 3,
+      idleNudgeResponse: "temporary-shoring-stage-3-idle",
+    });
+    expect(selectAgentPresentation(production, stageFour)).toMatchObject({
+      archetype: "reckless",
+      stage: 4,
+      placeholders: [
+        "use the remaining window",
+        "attempt one contained action",
+      ],
+    });
+  });
+
   it("installs opening beliefs once, then chooses unchanged and changed resume copy", () => {
     let state = base();
     const opening = createAgentResumeEvents(CARTRIDGE, state);
