@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T45",
-  "branch": "factory/t45-command-investigations",
-  "pr": 69,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-23T14:43:09Z"
+  "updated": "2026-08-23T14:52:12Z"
 }

@@ -77,7 +77,7 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/cartridge/load.test.ts`, `engine/commands/{system,filesystem,registry}.test.ts`, and one focused golden add restrained environment variables, man pages, ticket archive, ownership details, hidden evidence, and static commands; every clue remains coherent after mutations and the browser's onboarding surfaces do not advertise the hidden layer (criteria 10, 15, 20)
   - deps: T42, T43
   - pr: 68
-- [R] T45 (standard) — Thirty meaningful command forms and investigations
+- [x] T45 (standard) — Thirty meaningful command forms and investigations
   - acceptance: `content/incidents/incident-001.json`, `engine/commands/{filesystem,git,system,shell}.test.ts`, and production-cartridge goldens enumerate roughly 30 distinct useful command forms or investigative uses with coherent bounded output/effects; one complete ending clue and action exists only in Bash, while no pipeline, redirection, editor, PTY, or arbitrary-host-command feature is added (criteria 6, 14 shell route, 20)
   - deps: T44
   - pr: 69
@@ -162,3 +162,4 @@ authoring tooling remain excluded.
   - PR #61: Constrain an intent's state-mutating actions relative to `story-reach`, or align dialogue and beat-variant selection snapshots; Codex thread `discussion_r3837965442` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #63: Reject an unconditional generic or fallback candidate before the final slot; Codex thread `discussion_r3838175498` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #63: Prevent a candidate `counter-add` from failing once a non-habit counter reaches its bound; Codex thread `discussion_r3838209738` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #69: Document or pin the `cp -p` followed by content-identical `git restore` mode-restoration behavior; Codex thread `discussion_r3838781636` was verifier-classified minor and dispositioned without a minors-only push.
