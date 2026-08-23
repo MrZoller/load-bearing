@@ -91,9 +91,6 @@ test("projects replayed engine metrics into the visible session status", async (
   const cost = status.getByText(/^cost /);
   const context = status.getByText(/^context /);
   const integrity = status.getByText(/^integrity /);
-  const activity = page.locator(
-    '[data-agent-activity][aria-label="Agent activity"]',
-  );
 
   await expect(status).toBeVisible();
   await expect(status).toContainText("model Structural Audit");
@@ -103,16 +100,15 @@ test("projects replayed engine metrics into the visible session status", async (
   await expect(integrity).toHaveText(/^integrity [\d,]+$/);
   await expect(status).toContainText("loadbearing.cc · Incident #000");
 
-  const tokensBefore = await tokens.innerText();
-  await agentPrompt.fill("inspect it");
+  const costBefore = await cost.innerText();
+  await agentPrompt.fill("/model");
   await agentPrompt.press("Enter");
-  await expect(activity).toBeVisible();
-  await page.waitForTimeout(100);
-  await expect(activity).toBeVisible();
+  await page.keyboard.press("ArrowDown");
 
-  // The status is re-projected after a visitor turn; it cannot be a DOM-only
-  // counter if the token value follows the engine's expanded event history.
-  await expect(tokens).not.toHaveText(tokensBefore);
+  // The authored curve is re-projected from the replayed active model. The DOM
+  // neither increments it nor owns a parallel counter.
+  await expect(status).toContainText("model Temporary Bracing");
+  await expect(cost).not.toHaveText(costBefore);
 });
 
 test("renders recognized and fallback TUI turns and dispatches ! shell work", async ({
