@@ -37,9 +37,10 @@ authoring tooling remain excluded.
   - acceptance: `engine/mind/{types,mind,module,mind.test}.ts`, `engine/story/actions.ts`, `engine/agent/intent.ts`, `runtime/views/tui.ts`, and `runtime/components/permission.ts` support validated grant, deny, and standing-allow continuations that publish atomically with the exact permission decision; a separate typed-waiver path creates authored `WAIVER.md`, accepts only raw input exactly equal to `I agree`, records waiver id/version, phrase, simulated time, and gated capability as its own ledger fact, and executes no gated action before consent; alternate text/denial cannot grant consent and unit/golden/browser tests prove exact later document/time queries (criteria 11, 12, 20; approved decision Q1=A)
   - deps: T33
   - pr: 59
-- [~] T35 (standard) — Event-driven escalation and reactive status
+- [R] T35 (standard) — Event-driven escalation and reactive status
   - acceptance: `engine/story/{conditions,story,module,story.test}.ts`, `engine/metrics/{types,metrics,metrics.test}.ts`, `engine/agent/intent.ts`, `runtime/app.ts`, and `runtime/components/status.ts` advance stages 0–4 only through validated command/reveal/model/permission/compact conditions, feed authoritative stage to activity/presentation, and project cartridge-authored status curves that vary by active model and stage, including the Not-Okay Ratio and impossible stage-4 values; waiting, animation frames, reduced motion, and browser timing cannot advance stage or select content, and tests cover every model/stage projection (criteria 8, 9, 20)
   - deps: T32
+  - pr: 60
 - [ ] T36 (standard) — Sparse persona routing and compact-damaged beliefs
   - acceptance: `engine/story/{router,router.test}.ts`, `engine/agent/{intent,awareness}.ts`, `engine/cartridge/{schema,types,load}.ts`, and `runtime/commands/slash.ts` route shared beats through defaults plus archetype/stage/condition overrides, never model-owned graphs; `/compact` selects the active archetype's authored summary and beliefs, preserves machine truth, and changes a later route through typed `beliefDivergence`; same-seed/input fixtures keep shared beat ids while producing four distinct state-consistent outcomes (criteria 4, 13, 20)
   - deps: T32, T35
