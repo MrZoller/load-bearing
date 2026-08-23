@@ -289,6 +289,21 @@ describe("weightedPick", () => {
       ]),
     ).toThrow(/weights must total between 1/);
   });
+
+  it("accepts the exact uint32 total and refuses the first total beyond it", () => {
+    const atBoundary: readonly WeightedEntry<string>[] = [
+      { value: "first", weight: 1 },
+      { value: "last", weight: MAX_INT_RANGE - 1 },
+    ];
+
+    expect(() => createRandom(SEED).weightedPick(atBoundary)).not.toThrow();
+    expect(() =>
+      createRandom(SEED).weightedPick([
+        { value: "too-large", weight: MAX_INT_RANGE },
+        { value: "also-too-large", weight: 1 },
+      ]),
+    ).toThrow(/weights must total between 1 and 4294967296/);
+  });
 });
 
 describe("state", () => {

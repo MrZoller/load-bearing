@@ -1017,6 +1017,7 @@
           "flail": "flail",
           "misfireEvery": 3
         },
+        "rareEvents": [],
         "routes": [],
         "transitions": [
           {
@@ -1342,6 +1343,7 @@
       "currentVariant": "",
       "discoveredEndings": [],
       "facts": [],
+      "rareEvents": [],
       "stage": 0
     },
     "terminal": {

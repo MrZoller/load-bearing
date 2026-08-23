@@ -35,7 +35,7 @@ function hostileStorySlice(slice: unknown): string {
     unknown
   >;
   const slices = recorded["slices"] as Record<string, unknown>;
-  slices["story"] = slice;
+  slices["story"] = { rareEvents: [], ...(slice as Record<string, unknown>) };
   return serialize(recorded);
 }
 
@@ -47,8 +47,66 @@ describe("shared story beats", () => {
       currentVariant: "",
       facts: [],
       counters: INCIDENT_COUNTERS,
+      rareEvents: [],
       discoveredEndings: [],
     });
+  });
+
+  it("initializes rare-event rows in declaration order and rejects altered recorded rows", () => {
+    const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
+    (source["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "start",
+      rareEvents: [
+        {
+          id: "first",
+          eligibility: { kind: "file-exists", path: "/etc/motd", exists: true },
+          fireWeight: 1,
+          missWeight: 1,
+        },
+        {
+          id: "second",
+          eligibility: { kind: "file-exists", path: "/missing", exists: true },
+          fireWeight: 1,
+          missWeight: 1,
+        },
+      ],
+      beats: [{ id: "start", ending: "" }],
+      endings: [],
+    };
+    const state = reduce({
+      cartridge: loadCartridge(source),
+      seed: SEED,
+      events: [],
+    });
+    expect(readStorySlice(state).rareEvents).toEqual([
+      { id: "first", evaluated: false, fired: false },
+      { id: "second", evaluated: false, fired: false },
+    ]);
+
+    const recorded = deserialize(snapshot(state)) as Record<string, unknown>;
+    const slices = recorded["slices"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    for (const [rareEvents, message] of [
+      [
+        [
+          { id: "second", evaluated: false, fired: false },
+          { id: "first", evaluated: false, fired: false },
+        ],
+        /expected declared rare event "first"/,
+      ],
+      [
+        [
+          { id: "first", evaluated: false, fired: true },
+          { id: "second", evaluated: false, fired: false },
+        ],
+        /cannot be true before evaluation/,
+      ],
+    ] as const) {
+      slices["story"] = { ...slices["story"], rareEvents };
+      expect(() => restoreSnapshot(serialize(recorded))).toThrow(message);
+    }
   });
 
   it("reaches authored beats and records endings once in first-discovery order", () => {
@@ -79,6 +137,7 @@ describe("shared story beats", () => {
       currentVariant: "preserved-load-bearing-response",
       facts: [{ id: "callback-load-bearing-response", kind: "callback" }],
       counters: INCIDENT_COUNTERS,
+      rareEvents: [],
       discoveredEndings: ["load-bearing-response"],
     });
   });
@@ -213,6 +272,7 @@ describe("shared story beats", () => {
       currentVariant: "first",
       facts: [{ id: "first-fact", kind: "callback" }],
       counters: [],
+      rareEvents: [],
       discoveredEndings: ["first-ending"],
     });
     selected = step(selected, createStoryBeatReachedEvent("start"));
@@ -226,6 +286,7 @@ describe("shared story beats", () => {
         { id: "base-fact", kind: "reveal" },
       ],
       counters: [],
+      rareEvents: [],
       discoveredEndings: ["first-ending", "base-ending"],
     });
   });
@@ -375,6 +436,106 @@ describe("shared story beats", () => {
       createStoryFactRecordedEvent("new-evidence"),
     );
     expect(readStorySlice(revealState).stage).toBe(1);
+  });
+
+  it("evaluates each newly eligible rare event once after an expansion has staged its final state", () => {
+    const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
+    (source["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "start",
+      rareEvents: [
+        {
+          id: "after-removal",
+          eligibility: {
+            kind: "file-exists",
+            path: "/etc/motd",
+            exists: false,
+          },
+          fireWeight: 1,
+          missWeight: 1,
+        },
+      ],
+      beats: [{ id: "start", ending: "" }],
+      endings: [],
+    };
+    const cartridge = loadCartridge(source);
+    const before = reduce({ cartridge, seed: SEED, events: [] });
+    const afterRemoval = step(before, createShellExecuteEvent("rm /etc/motd"));
+
+    expect(readStorySlice(afterRemoval).rareEvents).toMatchObject([
+      { id: "after-removal", evaluated: true },
+    ]);
+    const cursor =
+      afterRemoval.random.cursors["root/story/rare-events/after-removal"];
+    const afterAnotherTransition = step(
+      afterRemoval,
+      createShellExecuteEvent("pwd"),
+    );
+    expect(readStorySlice(afterAnotherTransition).rareEvents).toEqual(
+      readStorySlice(afterRemoval).rareEvents,
+    );
+    expect(
+      afterAnotherTransition.random.cursors[
+        "root/story/rare-events/after-removal"
+      ],
+    ).toBe(cursor);
+  });
+
+  it("keeps rare-event outcomes reproducible and isolated by id", () => {
+    const build = (ids: readonly string[], modelsReversed = false) => {
+      const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
+      (source["story"] as Record<string, unknown>)["phase2"] = {
+        initialBeat: "start",
+        rareEvents: ids.map((id) => ({
+          id,
+          eligibility: { kind: "file-exists", path: "/etc/motd", exists: true },
+          fireWeight: 1,
+          missWeight: 2,
+        })),
+        beats: [{ id: "start", ending: "" }],
+        endings: [],
+      };
+      if (modelsReversed) {
+        const models = source["models"] as unknown[];
+        source["models"] = [...models].reverse();
+      }
+      return loadCartridge(source);
+    };
+    const outcomes = (
+      cartridge: ReturnType<typeof build>,
+      unrelated = false,
+      switchModel = false,
+    ) => {
+      let state = reduce({ cartridge, seed: SEED, events: [] });
+      if (unrelated)
+        state = step(state, {
+          type: "probe.random",
+          payload: { stream: "unrelated", count: 7, form: "uint32" },
+        });
+      // A real terminal transition is itself a completed top-level event. With
+      // this condition already true it performs the first evaluation; its
+      // outcome must match the otherwise unrelated clock transition below.
+      if (switchModel)
+        state = step(state, createTerminalModelEvent("quick-patch"));
+      state = step(state, { type: "clock.tick", payload: { ms: 0 } });
+      return Object.fromEntries(
+        readStorySlice(state).rareEvents.map(({ id, fired }) => [id, fired]),
+      );
+    };
+
+    const baseline = outcomes(build(["first", "second"]));
+    expect(outcomes(build(["first", "second"]))).toEqual(baseline);
+    expect(outcomes(build(["second", "first"]))).toEqual(baseline);
+    expect(outcomes(build(["first", "second"]), true)).toEqual(baseline);
+    expect(outcomes(build(["first", "second"], false, true))).toEqual(baseline);
+  });
+
+  it("refuses forged rare-event owner events at the public reducer boundary", () => {
+    expect(() =>
+      step(bootstrap(), {
+        type: "story.rare-event-evaluated",
+        payload: { id: "anything", fired: true },
+      }),
+    ).toThrow(/cannot be logged or runtime-dispatched/);
   });
 
   it("publishes only one adjacent advance when one expansion records two matching facts", () => {
