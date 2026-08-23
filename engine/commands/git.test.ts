@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import incidentDocument from "../../content/incidents/incident-001.json";
 import { loadCartridge } from "../cartridge/load.js";
 import { bootstrap, step } from "../events/reduce.js";
 import type { SessionState } from "../events/state.js";
@@ -18,6 +19,13 @@ function initial(): SessionState {
   return bootstrap({
     cartridge: loadCartridge(loadCartridgeFixture("git")),
     seed: "git-commands",
+  });
+}
+
+function incidentInitial(): SessionState {
+  return bootstrap({
+    cartridge: loadCartridge(incidentDocument),
+    seed: "incident-001-git-commands",
   });
 }
 
@@ -97,6 +105,98 @@ describe("Git commands", () => {
       ],
       stderr: [],
       exitCode: 0,
+    });
+  });
+
+  it("keeps Incident #001's log, blame, refs, diffs, checkout, and repair undo in agreement", () => {
+    let state = incidentInitial();
+    const commits = Object.values(readGitSlice(state).commits);
+    const byId = Object.fromEntries(
+      commits.map((commit) => [commit.id, commit]),
+    );
+    const baseline = byId["regional-baseline"];
+    const repair = byId["healthcheck-repair"];
+    const rollback = byId["regional-rollback"];
+    if (
+      baseline === undefined ||
+      repair === undefined ||
+      rollback === undefined
+    )
+      expect.unreachable("Incident #001 declares its complete Git trail");
+
+    expect(run(state, "git log --oneline").stdout).toEqual([
+      `${rollback.hash.slice(0, 7)} restore regional attachment after maintainer departure`,
+      `${repair.hash.slice(0, 7)} return success from the health endpoint`,
+      `${baseline.hash.slice(0, 7)} establish regional fail-open`,
+    ]);
+    expect(run(state, "git diff").stdout).toEqual([]);
+    expect(run(state, "git blame src/config.ts").stdout).toEqual([
+      expect.stringMatching(
+        new RegExp(
+          `^${baseline.hash.slice(0, 7)} \\(Greg Formerly .* export const healthEndpoint`,
+        ),
+      ),
+      expect.stringMatching(new RegExp(`^${baseline.hash.slice(0, 7)} `)),
+      expect.stringMatching(new RegExp(`^${baseline.hash.slice(0, 7)} `)),
+      expect.stringMatching(
+        new RegExp(
+          `^${repair.hash.slice(0, 7)} \\(Greg Formerly .* successful health response`,
+        ),
+      ),
+      expect.stringMatching(new RegExp(`^${baseline.hash.slice(0, 7)} `)),
+      expect.stringMatching(new RegExp(`^${baseline.hash.slice(0, 7)} `)),
+    ]);
+    expect(run(state, "history").stdout).toEqual([
+      "    1  git status --short",
+      "    2  git log --oneline",
+      "    3  git blame src/config.ts",
+      "    4  git checkout greg/healthcheck-repair",
+      "    5  npm test",
+      "    6  git checkout main",
+      "    7  git restore config/routes.conf",
+    ]);
+
+    state = execute(state, "git checkout greg/healthcheck-repair");
+    expect(
+      readVfsSlice(state).entries[
+        "/production/load-balancer/config/routes.conf"
+      ],
+    ).toMatchObject({
+      contents: "health_status=200\neurope_attached=false\n",
+    });
+    expect(run(state, "git diff").stdout).toEqual([]);
+    expect(run(state, "git blame config/routes.conf").stdout).toEqual([
+      expect.stringMatching(new RegExp(`^${repair.hash.slice(0, 7)} `)),
+      expect.stringMatching(new RegExp(`^${repair.hash.slice(0, 7)} `)),
+    ]);
+
+    state = execute(state, "git checkout main");
+    state = execute(state, "rm config/routes.conf");
+    state = execute(state, "cp -p config/routes.200.conf config/routes.conf");
+    expect(run(state, "git diff").stdout).toEqual([
+      "diff --git a/config/routes.conf b/config/routes.conf",
+      "--- a/config/routes.conf",
+      "+++ b/config/routes.conf",
+      "@@ -1,2 +1,2 @@",
+      "-health_status=500",
+      "-europe_attached=true",
+      "+health_status=200",
+      "+europe_attached=false",
+    ]);
+
+    state = execute(state, "rm config/routes.conf");
+    state = execute(state, "cp -p config/routes.500.conf config/routes.conf");
+    expect(run(state, "git diff").stdout).toEqual([]);
+
+    state = execute(state, "rm config/routes.conf");
+    state = execute(state, "git restore config/routes.conf");
+    expect(run(state, "git status --short").stdout).toEqual([]);
+    expect(
+      readVfsSlice(state).entries[
+        "/production/load-balancer/config/routes.conf"
+      ],
+    ).toMatchObject({
+      contents: "health_status=500\neurope_attached=true\n",
     });
   });
 
