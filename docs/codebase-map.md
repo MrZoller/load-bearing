@@ -228,6 +228,15 @@ use the same architecture: `npm test` plans output from the current VFS, emits
 `tests.run`, and that owner records timing/results while advancing only the
 simulated clock.
 
+Logged `story.beat-reached` events add one bounded phase before reactions. The
+reducer selects the recorded base/variant outcome, maps its closed data actions
+to versioned owner events only through `engine/story/actions.ts`, and dispatches
+them unlogged in authored order. Recursive story reaches do the same depth-first;
+their event types follow the outer story trigger for later FIFO reactions. The
+complete outer event and consequence chain publishes atomically. Derived events
+may use legitimate owner effects, but cannot expand, append transcript entries,
+or move clock/PRNG state.
+
 The `mind` slice is intentionally downstream of machine truth, never coupled to
 its mutations. `mind.permission-decision` records exact action/resource grants,
 denials, and standing `always-allow` decisions at simulated time;
@@ -246,10 +255,14 @@ ordinary shell expansion children.
 The `story` slice owns one graph independent of model and archetype. A beat
 reach evaluates sparse variants in authored order against the complete
 pre-event state using closed VFS, service, belief, waiver, and story-fact
-predicates; the first all-of match replaces the base ending/fact outcome.
-Facts and ending discoveries are idempotent ordered session state. Cartridge
-loading rejects malformed predicates, duplicate ids, dangling references,
-fact-kind mismatches, and any model-owned graph field before replay.
+predicates, including closed bounded-counter comparisons; the first all-of match
+replaces the base ending/fact/action outcome. Facts and ending discoveries are
+idempotent ordered session state. Counter records remain in declaration order,
+must restore at exactly that count/order between declared initial and maximum,
+and overflow throws rather than clamps. Cartridges declare at most 64 counters.
+Loading rejects malformed predicates, duplicate ids, dangling action references,
+story-reach cycles, chains whose conservative worst selected outcome exceeds
+1024 actions, fact-kind mismatches, and any model-owned graph field before replay.
 
 The `agent` slice owns visible dialogue artifacts but no presentation state.
 `agent.response-recorded` resolves one validated cartridge response and derives

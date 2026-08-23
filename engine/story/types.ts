@@ -40,12 +40,27 @@ export type StoryCondition =
       readonly kind: "story-fact";
       readonly fact: string;
       readonly factKind: StoryFactKind;
+    }
+  | {
+      readonly kind: "story-counter";
+      readonly counter: string;
+      readonly comparison: "equal" | "at-least";
+      readonly value: number;
     };
 
 export interface StoryFact {
   readonly id: string;
   readonly kind: StoryFactKind;
 }
+
+export interface StoryCounter {
+  readonly id: string;
+  readonly value: number;
+}
+
+export type StoryCounterQuery =
+  | { readonly kind: "value"; readonly value: number }
+  | { readonly kind: "missing" };
 
 /** Replayable state owned by the shared story graph. */
 export interface StorySlice {
@@ -54,6 +69,8 @@ export interface StorySlice {
   readonly currentVariant: string;
   /** Facts in first-recorded order. */
   readonly facts: readonly StoryFact[];
+  /** Counter records remain in cartridge declaration order. */
+  readonly counters: readonly StoryCounter[];
   /** Ending ids in first-discovery order. */
   readonly discoveredEndings: readonly string[];
 }

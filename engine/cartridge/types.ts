@@ -77,6 +77,7 @@ export interface CartridgeStoryBeat {
   /** Empty when reaching this beat discovers no ending. */
   readonly ending: string;
   readonly facts: readonly string[];
+  readonly actions: readonly CartridgeStoryAction[];
   readonly variants: readonly CartridgeStoryVariant[];
 }
 
@@ -86,6 +87,47 @@ export interface CartridgeStoryVariant {
   readonly when: readonly StoryCondition[];
   readonly ending: string;
   readonly facts: readonly string[];
+  readonly actions: readonly CartridgeStoryAction[];
+}
+
+/** Closed story consequences. Only trusted owner events cross into the reducer. */
+export type CartridgeStoryAction =
+  | {
+      readonly kind: "counter-add";
+      readonly counter: string;
+      readonly amount: number;
+    }
+  | { readonly kind: "story-reach"; readonly beat: string }
+  | {
+      readonly kind: "file-write";
+      readonly path: string;
+      readonly contents: string;
+    }
+  | {
+      readonly kind: "service-state";
+      readonly service: string;
+      readonly state: WorldUnitState;
+    }
+  | {
+      readonly kind: "service-health";
+      readonly service: string;
+      readonly health: ServiceHealth;
+    }
+  | {
+      readonly kind: "process-state";
+      readonly [WORLD_PROCESS_FIELD]: string;
+      readonly state: WorldUnitState;
+    }
+  | {
+      readonly kind: "log-append";
+      readonly log: string;
+      readonly entry: string;
+    };
+
+export interface CartridgeStoryCounter {
+  readonly id: string;
+  readonly initial: number;
+  readonly maximum: number;
 }
 
 export interface CartridgeEnding {
@@ -95,6 +137,7 @@ export interface CartridgeEnding {
 
 export interface CartridgeStoryPhase2 {
   readonly initialBeat: string;
+  readonly counters: readonly CartridgeStoryCounter[];
   readonly facts: readonly {
     readonly id: string;
     readonly kind: StoryFactKind;

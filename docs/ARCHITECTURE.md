@@ -129,7 +129,13 @@ orchestration out of every owning subsystem without creating a privileged module
 that can write all their slices.
 
 After a logged event, or after every child of an expansion has been staged, the
-reducer evaluates cartridge **reactions** against that completed state. Trigger
+reducer first applies a selected story beat's **consequences**, then evaluates
+cartridge **reactions** against that completed state. Story consequences are
+unlogged owner events in authored order; a `story-reach` consequence selects and
+applies its reached outcome recursively. The outer story event, every authored
+consequence, and every recursively reached consequence form one transaction.
+Consequence event types join reaction trigger order after the outer story event.
+Trigger
 types enter a FIFO queue in source order; matching rules and their actions run
 in authored order, and each action's owner event joins the queue tail. Predicates
 are re-evaluated before each rule, so an earlier action may deliberately enable
@@ -218,11 +224,14 @@ renders the same entries differently without changing what was recorded.
 
 - `engine/story/` owns one shared graph: current beat and selected sparse
   variant, first-recorded reveal/callback facts, and first-discovery order of
-  unranked endings. `story.beat-reached` evaluates the beat's authored variants
+  unranked endings, plus bounded counters in declaration order.
+  `story.beat-reached` evaluates the beat's authored variants
   in order against pre-event state; the first flat all-of match replaces the
-  base outcome and records only its ending/facts. `story.fact-recorded` records
-  a declared fact idempotently. Neither event terminates the session, and model
-  or archetype records cannot contain their own graph.
+  base outcome and records its ending/facts before the reducer dispatches that
+  outcome's actions. `story.counter-added` is the counter owner's only mutation:
+  positive additions that exceed the declared maximum throw rather than clamp.
+  `story.fact-recorded` records a declared fact idempotently. None terminates the
+  session, and model or archetype records cannot contain their own graph.
 - `engine/commands/` owns POSIX-ish word tokenization, generic short/long option
   parsing, duplicate-safe command registration, and the one shell execution API
   used by both terminal views
@@ -414,16 +423,22 @@ v0: opening copy, authored response records and artifacts, minimal intents and
 fallback, help/idle-nudge/compact/resume references, rotating placeholders,
 slash autocomplete descriptions, archetype-stage spinner pools, and integer
 metric parameters. `story.phase2` is a concrete bounded shared graph: one
-initial beat, declared reveal/callback facts, authored-order beats with sparse
+initial beat, at most 64 nonnegative safe-integer counters, declared
+reveal/callback facts, authored-order beats with sparse
 first-match condition variants, and unranked ending identities. Conditions are
 a closed union over VFS contents/existence, service state/health, exact beliefs,
-exact waiver consent, and declared story facts; variant conditions are flat
+exact waiver consent, declared story facts, and `equal`/`at-least` counter
+queries; variant conditions are flat
 non-empty all-of lists evaluated against pre-event state. Cartridge actions are
 a closed `shell-execute` / `permission-request` / `story-reach` union rather
-than arbitrary engine events. Loading rejects duplicate or dangling response, intent,
-beat, variant, fact, ending, service, and action references, fact-kind
-mismatches, duplicate spinner keys, and missing stage-0 pools for model
-archetypes. Only `presentation.phase2` remains deferred,
+than arbitrary engine events. Beat outcomes separately use a closed consequence
+union mapped only in `engine/story/actions.ts`: counter add, story reach, file
+write, service/process state, service health, and log append. Loading rejects
+duplicate or dangling response, intent, beat, variant, fact, counter, ending,
+file, world, and action references; rejects story-reach cycles; and computes
+each beat's conservative worst selected-outcome chain (variant alternatives use
+the maximum), rejecting more than 1024 actions. Only `presentation.phase2`
+remains deferred,
 depth-limited, and marked in the emitted schema with its future owner.
 
 **Cartridge owns:** world (scene, repo, files with ownership metadata, git,

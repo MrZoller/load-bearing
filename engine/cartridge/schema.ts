@@ -174,6 +174,8 @@ export const MAX_STORY_FACTS = 256;
 export const MAX_STORY_VARIANTS = 16;
 export const MAX_STORY_CONDITIONS = 16;
 export const MAX_STORY_OUTCOME_FACTS = 16;
+export const MAX_STORY_COUNTERS = 64;
+export const MAX_STORY_CONSEQUENCE_WORK = 1024;
 export const MAX_STORY_ID_LENGTH = 64;
 export const STORY_ID_PATTERN = pattern(/^[a-z][a-z0-9-]{0,63}$/);
 
@@ -1526,6 +1528,29 @@ const STORY_CONDITION = {
         }),
       },
     },
+    "story-counter": {
+      kind: "object",
+      description: "A comparison against one declared bounded story counter.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "Story-counter condition kind.",
+          values: ["story-counter"],
+        }),
+        counter: required(PHASE_ONE_ID),
+        comparison: required({
+          kind: "enum",
+          description: "The closed counter comparison.",
+          values: ["equal", "at-least"],
+        }),
+        value: required({
+          kind: "integer",
+          description: "A nonnegative bounded counter value.",
+          minimum: 0,
+          maximum: Number.MAX_SAFE_INTEGER,
+        }),
+      },
+    },
   },
 } satisfies UnionNode;
 
@@ -1534,6 +1559,57 @@ const STORY_OUTCOME_FACTS = {
   description: "Declared facts recorded by this selected outcome.",
   items: PHASE_ONE_ID,
   maxItems: MAX_STORY_OUTCOME_FACTS,
+} satisfies ArrayNode;
+
+const STORY_ACTION = {
+  kind: "union",
+  description: "One bounded owner-directed story consequence.",
+  discriminator: "kind",
+  variants: {
+    "counter-add": {
+      kind: "object",
+      description: "Add a positive amount to a declared bounded counter.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "Story action kind.",
+          values: ["counter-add"],
+        }),
+        counter: required(PHASE_ONE_ID),
+        amount: required({
+          kind: "integer",
+          description: "A positive safe-integer increment.",
+          minimum: 1,
+          maximum: Number.MAX_SAFE_INTEGER,
+        }),
+      },
+    },
+    "story-reach": AGENT_ACTION.variants["story-reach"],
+    "file-write": {
+      kind: "object",
+      description: "Write exact contents to a declared VFS file.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "Story action kind.",
+          values: ["file-write"],
+        }),
+        path: required(BELIEF_PATH),
+        contents: required(BOUNDED_TEXT),
+      },
+    },
+    "service-state": SERVICE_STATE,
+    "service-health": SERVICE_HEALTH_RULE,
+    "process-state": PROCESS_STATE,
+    "log-append": REACTION_ACTION.variants["log-append"],
+  },
+} satisfies UnionNode;
+
+const STORY_ACTIONS = {
+  kind: "array",
+  description: "Owner-directed consequences in authored order.",
+  items: STORY_ACTION,
+  maxItems: MAX_STORY_ACTIONS,
 } satisfies ArrayNode;
 
 const STORY = {
@@ -1625,6 +1701,33 @@ const STORY = {
           "One bounded shared-beat graph with typed facts, sparse condition variants and non-terminal endings.",
         fields: {
           initialBeat: required(PHASE_ONE_ID),
+          counters: optional(
+            {
+              kind: "array",
+              description: "Bounded story counters in declaration order.",
+              maxItems: MAX_STORY_COUNTERS,
+              items: {
+                kind: "object",
+                description: "One nonnegative bounded story counter.",
+                fields: {
+                  id: required(PHASE_ONE_ID),
+                  initial: required({
+                    kind: "integer",
+                    description: "Initial counter value.",
+                    minimum: 0,
+                    maximum: Number.MAX_SAFE_INTEGER,
+                  }),
+                  maximum: required({
+                    kind: "integer",
+                    description: "Maximum counter value.",
+                    minimum: 0,
+                    maximum: Number.MAX_SAFE_INTEGER,
+                  }),
+                },
+              },
+            },
+            [],
+          ),
           facts: optional(
             {
               kind: "array",
@@ -1659,6 +1762,7 @@ const STORY = {
                 id: required(PHASE_ONE_ID),
                 ending: required(OPTIONAL_PHASE_ONE_ID),
                 facts: optional(STORY_OUTCOME_FACTS, []),
+                actions: optional(STORY_ACTIONS, []),
                 variants: optional(
                   {
                     kind: "array",
@@ -1680,6 +1784,7 @@ const STORY = {
                         }),
                         ending: required(OPTIONAL_PHASE_ONE_ID),
                         facts: optional(STORY_OUTCOME_FACTS, []),
+                        actions: optional(STORY_ACTIONS, []),
                       },
                     },
                   },
@@ -1705,8 +1810,11 @@ const STORY = {
       },
       {
         initialBeat: "start",
+        counters: [],
         facts: [],
-        beats: [{ id: "start", ending: "", facts: [], variants: [] }],
+        beats: [
+          { id: "start", ending: "", facts: [], actions: [], variants: [] },
+        ],
         endings: [],
       },
     ),
@@ -1879,7 +1987,8 @@ const PHASE_ONE_STORY_DEFAULT = {
   },
   phase2: {
     initialBeat: "start",
-    beats: [{ id: "start", ending: "" }],
+    counters: [],
+    beats: [{ id: "start", ending: "", actions: [] }],
     endings: [],
   },
 };
