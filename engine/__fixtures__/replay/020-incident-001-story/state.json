@@ -588,6 +588,7 @@
     },
     "story": {
       "compact": {
+        "archetypes": [],
         "beliefs": [
           {
             "exists": true,
@@ -887,6 +888,7 @@
           }
         ],
         "initialBeat": "incident-open",
+        "routes": [],
         "transitions": [
           {
             "from": 0,

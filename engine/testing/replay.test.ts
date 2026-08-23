@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { loadCartridge } from "../cartridge/load.js";
 import type { LoadedCartridge } from "../cartridge/types.js";
+import { readAgentSlice } from "../agent/agent.js";
 import { restoreSnapshot, snapshot, step } from "../events/reduce.js";
 import { findWaiverConsent, readMindSlice } from "../mind/mind.js";
 import { readStorySlice } from "../story/story.js";
@@ -185,6 +186,18 @@ describe("golden replay fixtures", () => {
     ).toMatchObject({ value: { contents: "waiver accepted\n" } });
     expect(recording.transcript).not.toContain("mind.permission-choice");
     expect(recording.transcript).not.toContain("mind.waiver-choice");
+  });
+
+  it("pins four same-seed persona outcomes over one shared beat identity", () => {
+    const recording = replayFixture(
+      loadReplayFixture("024-sparse-persona-routes"),
+    );
+    const state = restoreSnapshot(recording.state);
+
+    expect(readStorySlice(state).currentBeat).toBe("shared");
+    expect(
+      readAgentSlice(state).responses.map((response) => response.responseId),
+    ).toEqual(["paranoid", "reckless", "superficial", "existential"]);
   });
 
   it("records Incident #001's shared story outcome, waiver ledger, and resumable canonical snapshot", () => {

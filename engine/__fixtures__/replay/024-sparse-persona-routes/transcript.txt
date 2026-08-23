@@ -1,0 +1,15 @@
+0000  2026-08-23T00:00:00.000Z  agent.message-added message=turn-0
+0001  2026-08-23T00:00:00.000Z  story.beat-reached beat=shared
+0002  2026-08-23T00:00:00.000Z  agent.response-recorded response=paranoid instance=turn-0
+0003  2026-08-23T00:00:00.000Z  terminal.model-set model=temporary-shoring
+0004  2026-08-23T00:00:00.000Z  agent.message-added message=turn-3
+0005  2026-08-23T00:00:00.000Z  story.beat-reached beat=shared
+0006  2026-08-23T00:00:00.000Z  agent.response-recorded response=reckless instance=turn-3
+0007  2026-08-23T00:00:00.000Z  terminal.model-set model=drywall
+0008  2026-08-23T00:00:00.000Z  agent.message-added message=turn-6
+0009  2026-08-23T00:00:00.000Z  story.beat-reached beat=shared
+0010  2026-08-23T00:00:00.000Z  agent.response-recorded response=superficial instance=turn-6
+0011  2026-08-23T00:00:00.000Z  terminal.model-set model=cantilever
+0012  2026-08-23T00:00:00.000Z  agent.message-added message=turn-9
+0013  2026-08-23T00:00:00.000Z  story.beat-reached beat=shared
+0014  2026-08-23T00:00:00.000Z  agent.response-recorded response=existential instance=turn-9

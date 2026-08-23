@@ -9,6 +9,7 @@ import {
   readTerminalSlice,
   reduce,
 } from "../../engine/index.js";
+import { createTerminalModelEvent } from "../../engine/index.js";
 import { discoverSlashCommands, executeSlashCommand } from "./slash.js";
 
 const CARTRIDGE = loadCartridge(cartridgeDocument);
@@ -66,6 +67,63 @@ describe("the slash command registry", () => {
       { responseId: "help" },
       { responseId: "compact" },
     ]);
+  });
+
+  it("dispatches compact from replay state rather than selecting persona copy itself", () => {
+    const source = structuredClone(cartridgeDocument) as Record<
+      string,
+      unknown
+    >;
+    const models = source["models"] as Record<string, unknown>[];
+    const secondModel = models[1];
+    if (secondModel === undefined)
+      throw new Error("fixture lacks a second model");
+    secondModel["archetype"] = "reckless";
+    const presentation = source["presentation"] as Record<string, unknown>;
+    const spinnerPools = presentation["spinnerPools"] as unknown[];
+    spinnerPools.push({ archetype: "reckless", stage: 0, verbs: ["Assuming"] });
+    const story = source["story"] as Record<string, unknown>;
+    story["responses"] = [
+      ...(story["responses"] as unknown[]),
+      {
+        id: "reckless-compact",
+        text: "The quick summary misplaced the foundation.",
+      },
+    ];
+    story["compact"] = {
+      ...(story["compact"] as Record<string, unknown>),
+      archetypes: [
+        {
+          archetype: "reckless",
+          response: "reckless-compact",
+          summary: "Reckless replay summary.",
+          beliefs: [],
+        },
+      ],
+    };
+    const cartridge = loadCartridge(source);
+    const before = reduce({
+      cartridge,
+      seed: SEED,
+      events: [createTerminalModelEvent("temporary-bracing")],
+    });
+    const compact = executeSlashCommand(cartridge, before, "/compact");
+    if (compact.kind !== "dispatch") throw new Error("Expected compact events");
+    const after = reduce({
+      cartridge,
+      seed: SEED,
+      events: [
+        createTerminalModelEvent("temporary-bracing"),
+        ...compact.events,
+      ],
+    });
+
+    expect(readMindSlice(after).compactHistory.at(-1)?.summary).toBe(
+      "Reckless replay summary.",
+    );
+    expect(readAgentSlice(after).responses.at(-1)?.responseId).toBe(
+      "reckless-compact",
+    );
   });
 
   it("returns model selection, metrics, exit, and bounded errors from the same register", () => {

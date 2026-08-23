@@ -1,0 +1,83 @@
+{
+  "name": "024-sparse-persona-routes",
+  "description": "One same-seed inspection reaches the shared beat for all four archetypes while each records its state-consistent authored response.",
+  "seed": "2026-08-23/36/sparse-personas",
+  "cartridge": "persona-routes",
+  "events": [
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "turn-0", "text": "inspect" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "shared" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": { "responseId": "paranoid", "instanceId": "turn-0" },
+      "version": 0
+    },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "temporary-shoring" },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "turn-3", "text": "inspect" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "shared" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": { "responseId": "reckless", "instanceId": "turn-3" },
+      "version": 0
+    },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "drywall" },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "turn-6", "text": "inspect" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "shared" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": { "responseId": "superficial", "instanceId": "turn-6" },
+      "version": 0
+    },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "cantilever" },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "turn-9", "text": "inspect" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "shared" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": { "responseId": "existential", "instanceId": "turn-9" },
+      "version": 0
+    }
+  ]
+}

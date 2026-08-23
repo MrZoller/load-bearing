@@ -1,0 +1,568 @@
+{
+  "cartridge": {
+    "meta": {
+      "assignment": "Keep one beat shared.",
+      "date": "2026-08-23",
+      "number": 36,
+      "schemaVersion": 0,
+      "startedAt": "2026-08-23T00:00:00.000Z",
+      "title": "Persona Routes"
+    },
+    "models": [
+      {
+        "archetype": "paranoid",
+        "costMultiplier": 1,
+        "description": "Checks the footings.",
+        "id": "deep-foundation",
+        "name": "Deep Foundation",
+        "quirks": []
+      },
+      {
+        "archetype": "reckless",
+        "costMultiplier": 1,
+        "description": "Checks later.",
+        "id": "temporary-shoring",
+        "name": "Temporary Shoring",
+        "quirks": []
+      },
+      {
+        "archetype": "superficial",
+        "costMultiplier": 1,
+        "description": "Covers the evidence.",
+        "id": "drywall",
+        "name": "Drywall",
+        "quirks": []
+      },
+      {
+        "archetype": "existential",
+        "costMultiplier": 1,
+        "description": "Questions the floor.",
+        "id": "cantilever",
+        "name": "Cantilever",
+        "quirks": []
+      }
+    ],
+    "presentation": {
+      "autocomplete": {
+        "compact": "Replace context with its authored summary",
+        "cost": "Report replay-derived session metrics",
+        "exit": "Leave the agent view",
+        "help": "Show the authored command reference",
+        "model": "Choose the active agent model"
+      },
+      "metrics": {
+        "baseTokens": 0,
+        "contextWindowTokens": 1000,
+        "costMicrosPerToken": 1,
+        "integrityLossPerEvent": 1,
+        "integrityStart": 100,
+        "tokensPerEvent": 1
+      },
+      "phase2": {
+        "statusCurves": []
+      },
+      "placeholders": [
+        {
+          "stage": 0,
+          "text": "inspect"
+        }
+      ],
+      "spinnerPools": [
+        {
+          "archetype": "paranoid",
+          "stage": 0,
+          "verbs": [
+            "Checking"
+          ]
+        },
+        {
+          "archetype": "reckless",
+          "stage": 0,
+          "verbs": [
+            "Assuming"
+          ]
+        },
+        {
+          "archetype": "superficial",
+          "stage": 0,
+          "verbs": [
+            "Polishing"
+          ]
+        },
+        {
+          "archetype": "existential",
+          "stage": 0,
+          "verbs": [
+            "Considering"
+          ]
+        }
+      ]
+    },
+    "repository": {
+      "commands": {},
+      "cwd": "/srv/app",
+      "directories": {},
+      "endpoints": {},
+      "env": {},
+      "files": {
+        "/srv/app/main.ts": {
+          "contents": "export const shared = true;\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-23T00:00:00.000Z",
+          "owner": "root"
+        }
+      },
+      "gitHistory": {
+        "branches": {},
+        "commits": [],
+        "head": {
+          "kind": "detached",
+          "target": ""
+        }
+      },
+      "gitIdentity": {
+        "email": "visitor@example.test",
+        "name": "Visitor"
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      },
+      "logs": [],
+      "manPages": [],
+      "processes": [],
+      "reactions": [],
+      "services": [],
+      "shellHistory": [],
+      "system": {
+        "architecture": "x86_64",
+        "bootedAt": "2026-08-01T00:00:00.000Z",
+        "hostname": "fixture",
+        "kernelRelease": "6.1",
+        "operatingSystem": "Linux"
+      },
+      "tests": [],
+      "tickets": []
+    },
+    "story": {
+      "compact": {
+        "archetypes": [],
+        "beliefs": [],
+        "response": "default",
+        "summary": "Default summary."
+      },
+      "fallback": {
+        "actions": [],
+        "authorizedResponse": "",
+        "response": "default"
+      },
+      "helpResponse": "default",
+      "idleNudgeResponse": "",
+      "intents": [
+        {
+          "actions": [
+            {
+              "beat": "shared",
+              "kind": "story-reach"
+            }
+          ],
+          "authorizedResponse": "",
+          "id": "inspect",
+          "patterns": [
+            "inspect"
+          ],
+          "response": "default"
+        }
+      ],
+      "opening": {
+        "beliefs": [],
+        "login": [
+          "Fixture login."
+        ],
+        "response": "default"
+      },
+      "phase2": {
+        "beats": [
+          {
+            "actions": [],
+            "ending": "",
+            "facts": [],
+            "id": "shared",
+            "variants": []
+          }
+        ],
+        "counters": [],
+        "endings": [],
+        "facts": [],
+        "initialBeat": "shared",
+        "routes": [
+          {
+            "archetype": "paranoid",
+            "beat": "shared",
+            "id": "paranoid",
+            "response": "paranoid",
+            "stage": -1,
+            "when": []
+          },
+          {
+            "archetype": "reckless",
+            "beat": "shared",
+            "id": "reckless",
+            "response": "reckless",
+            "stage": -1,
+            "when": []
+          },
+          {
+            "archetype": "superficial",
+            "beat": "shared",
+            "id": "superficial",
+            "response": "superficial",
+            "stage": -1,
+            "when": []
+          },
+          {
+            "archetype": "existential",
+            "beat": "shared",
+            "id": "existential",
+            "response": "existential",
+            "stage": -1,
+            "when": []
+          }
+        ],
+        "transitions": []
+      },
+      "responses": [
+        {
+          "id": "default",
+          "text": "The shared beat remains.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "paranoid",
+          "text": "The shared beat has a permit.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "reckless",
+          "text": "The shared beat is probably fine.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "superficial",
+          "text": "The shared beat looks finished.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "existential",
+          "text": "The shared beat is load-bearing because it fears us.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        }
+      ],
+      "resume": {
+        "changedResponse": "default",
+        "unchangedResponse": "default"
+      }
+    }
+  },
+  "clock": {
+    "elapsedMs": 0,
+    "startMs": 1787443200000
+  },
+  "engineVersion": "0.0.0",
+  "eventCount": 15,
+  "eventSchemaVersion": 0,
+  "random": {
+    "cursors": {},
+    "seed": 1597821843
+  },
+  "seed": "2026-08-23/36/sparse-personas",
+  "slices": {
+    "agent": {
+      "activity": {
+        "status": "idle",
+        "verb": ""
+      },
+      "messages": [
+        {
+          "id": "turn-0",
+          "responseId": null,
+          "role": "visitor",
+          "text": "inspect"
+        },
+        {
+          "id": "turn-0/message",
+          "responseId": "paranoid",
+          "role": "agent",
+          "text": "The shared beat has a permit."
+        },
+        {
+          "id": "turn-3",
+          "responseId": null,
+          "role": "visitor",
+          "text": "inspect"
+        },
+        {
+          "id": "turn-3/message",
+          "responseId": "reckless",
+          "role": "agent",
+          "text": "The shared beat is probably fine."
+        },
+        {
+          "id": "turn-6",
+          "responseId": null,
+          "role": "visitor",
+          "text": "inspect"
+        },
+        {
+          "id": "turn-6/message",
+          "responseId": "superficial",
+          "role": "agent",
+          "text": "The shared beat looks finished."
+        },
+        {
+          "id": "turn-9",
+          "responseId": null,
+          "role": "visitor",
+          "text": "inspect"
+        },
+        {
+          "id": "turn-9/message",
+          "responseId": "existential",
+          "role": "agent",
+          "text": "The shared beat is load-bearing because it fears us."
+        }
+      ],
+      "responses": [
+        {
+          "instanceId": "turn-0",
+          "responseId": "paranoid"
+        },
+        {
+          "instanceId": "turn-3",
+          "responseId": "reckless"
+        },
+        {
+          "instanceId": "turn-6",
+          "responseId": "superficial"
+        },
+        {
+          "instanceId": "turn-9",
+          "responseId": "existential"
+        }
+      ],
+      "thinkingBlocks": [],
+      "todos": [],
+      "toolCalls": []
+    },
+    "git": {
+      "branches": {},
+      "commits": {},
+      "head": {
+        "kind": "detached",
+        "target": ""
+      },
+      "identity": {
+        "email": "visitor@example.test",
+        "name": "Visitor"
+      },
+      "index": {},
+      "root": "/srv/app"
+    },
+    "mind": {
+      "beliefs": [],
+      "compactHistory": [],
+      "pendingPermission": null,
+      "pendingWaiver": null,
+      "permissions": [],
+      "waiverConsents": []
+    },
+    "probe": {
+      "events": 0,
+      "values": 0
+    },
+    "story": {
+      "counters": [],
+      "currentBeat": "shared",
+      "currentVariant": "",
+      "discoveredEndings": [],
+      "facts": [],
+      "stage": 0
+    },
+    "terminal": {
+      "activeModel": "cantilever",
+      "mode": "bash"
+    },
+    "tests": {
+      "runs": []
+    },
+    "vfs": {
+      "cwd": "/srv/app",
+      "entries": {
+        "/": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-23T00:00:00.000Z",
+          "owner": "root"
+        },
+        "/srv": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-23T00:00:00.000Z",
+          "owner": "root"
+        },
+        "/srv/app": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-23T00:00:00.000Z",
+          "owner": "root"
+        },
+        "/srv/app/main.ts": {
+          "contents": "export const shared = true;\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-23T00:00:00.000Z",
+          "owner": "root"
+        }
+      },
+      "identity": {
+        "group": "root",
+        "home": "/root",
+        "umask": "0022",
+        "user": "root"
+      }
+    },
+    "world": {
+      "env": {},
+      "logs": [],
+      "manPages": [],
+      "processes": [],
+      "services": [],
+      "shellHistory": [],
+      "tickets": []
+    }
+  },
+  "transcript": [
+    {
+      "at": "2026-08-23T00:00:00.000Z",
+      "detail": [],
+      "index": 0,
+      "summary": "message=turn-0",
+      "type": "agent.message-added"
+    },
+    {
+      "at": "2026-08-23T00:00:00.000Z",
+      "detail": [],
+      "index": 1,
+      "summary": "beat=shared",
+      "type": "story.beat-reached"
+    },
+    {
+      "at": "2026-08-23T00:00:00.000Z",
+      "detail": [],
+      "index": 2,
+      "summary": "response=paranoid instance=turn-0",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-23T00:00:00.000Z",
+      "detail": [],
+      "index": 3,
+      "summary": "model=temporary-shoring",
+      "type": "terminal.model-set"
+    },
+    {
+      "at": "2026-08-23T00:00:00.000Z",
+      "detail": [],
+      "index": 4,
+      "summary": "message=turn-3",
+      "type": "agent.message-added"
+    },
+    {
+      "at": "2026-08-23T00:00:00.000Z",
+      "detail": [],
+      "index": 5,
+      "summary": "beat=shared",
+      "type": "story.beat-reached"
+    },
+    {
+      "at": "2026-08-23T00:00:00.000Z",
+      "detail": [],
+      "index": 6,
+      "summary": "response=reckless instance=turn-3",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-23T00:00:00.000Z",
+      "detail": [],
+      "index": 7,
+      "summary": "model=drywall",
+      "type": "terminal.model-set"
+    },
+    {
+      "at": "2026-08-23T00:00:00.000Z",
+      "detail": [],
+      "index": 8,
+      "summary": "message=turn-6",
+      "type": "agent.message-added"
+    },
+    {
+      "at": "2026-08-23T00:00:00.000Z",
+      "detail": [],
+      "index": 9,
+      "summary": "beat=shared",
+      "type": "story.beat-reached"
+    },
+    {
+      "at": "2026-08-23T00:00:00.000Z",
+      "detail": [],
+      "index": 10,
+      "summary": "response=superficial instance=turn-6",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-23T00:00:00.000Z",
+      "detail": [],
+      "index": 11,
+      "summary": "model=cantilever",
+      "type": "terminal.model-set"
+    },
+    {
+      "at": "2026-08-23T00:00:00.000Z",
+      "detail": [],
+      "index": 12,
+      "summary": "message=turn-9",
+      "type": "agent.message-added"
+    },
+    {
+      "at": "2026-08-23T00:00:00.000Z",
+      "detail": [],
+      "index": 13,
+      "summary": "beat=shared",
+      "type": "story.beat-reached"
+    },
+    {
+      "at": "2026-08-23T00:00:00.000Z",
+      "detail": [],
+      "index": 14,
+      "summary": "response=existential instance=turn-9",
+      "type": "agent.response-recorded"
+    }
+  ]
+}

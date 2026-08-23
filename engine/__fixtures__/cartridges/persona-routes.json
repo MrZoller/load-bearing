@@ -1,0 +1,146 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 36,
+    "date": "2026-08-23",
+    "title": "Persona Routes",
+    "assignment": "Keep one beat shared.",
+    "startedAt": "2026-08-23T00:00:00.000Z"
+  },
+  "repository": {
+    "cwd": "/srv/app",
+    "identity": { "user": "root", "group": "root", "home": "/root" },
+    "gitIdentity": { "name": "Visitor", "email": "visitor@example.test" },
+    "system": {
+      "hostname": "fixture",
+      "operatingSystem": "Linux",
+      "kernelRelease": "6.1",
+      "architecture": "x86_64",
+      "bootedAt": "2026-08-01T00:00:00.000Z"
+    },
+    "files": {
+      "/srv/app/main.ts": { "contents": "export const shared = true;\n" }
+    }
+  },
+  "models": [
+    {
+      "id": "deep-foundation",
+      "name": "Deep Foundation",
+      "archetype": "paranoid",
+      "description": "Checks the footings.",
+      "costMultiplier": 1
+    },
+    {
+      "id": "temporary-shoring",
+      "name": "Temporary Shoring",
+      "archetype": "reckless",
+      "description": "Checks later.",
+      "costMultiplier": 1
+    },
+    {
+      "id": "drywall",
+      "name": "Drywall",
+      "archetype": "superficial",
+      "description": "Covers the evidence.",
+      "costMultiplier": 1
+    },
+    {
+      "id": "cantilever",
+      "name": "Cantilever",
+      "archetype": "existential",
+      "description": "Questions the floor.",
+      "costMultiplier": 1
+    }
+  ],
+  "story": {
+    "opening": {
+      "login": ["Fixture login."],
+      "response": "default",
+      "beliefs": []
+    },
+    "responses": [
+      { "id": "default", "text": "The shared beat remains." },
+      { "id": "paranoid", "text": "The shared beat has a permit." },
+      { "id": "reckless", "text": "The shared beat is probably fine." },
+      { "id": "superficial", "text": "The shared beat looks finished." },
+      {
+        "id": "existential",
+        "text": "The shared beat is load-bearing because it fears us."
+      }
+    ],
+    "intents": [
+      {
+        "id": "inspect",
+        "patterns": ["inspect"],
+        "response": "default",
+        "actions": [{ "kind": "story-reach", "beat": "shared" }]
+      }
+    ],
+    "fallback": { "response": "default" },
+    "helpResponse": "default",
+    "compact": {
+      "response": "default",
+      "summary": "Default summary.",
+      "beliefs": []
+    },
+    "resume": { "unchangedResponse": "default", "changedResponse": "default" },
+    "phase2": {
+      "initialBeat": "shared",
+      "facts": [],
+      "beats": [
+        {
+          "id": "shared",
+          "ending": "",
+          "facts": [],
+          "actions": [],
+          "variants": []
+        }
+      ],
+      "routes": [
+        {
+          "id": "paranoid",
+          "beat": "shared",
+          "response": "paranoid",
+          "archetype": "paranoid"
+        },
+        {
+          "id": "reckless",
+          "beat": "shared",
+          "response": "reckless",
+          "archetype": "reckless"
+        },
+        {
+          "id": "superficial",
+          "beat": "shared",
+          "response": "superficial",
+          "archetype": "superficial"
+        },
+        {
+          "id": "existential",
+          "beat": "shared",
+          "response": "existential",
+          "archetype": "existential"
+        }
+      ],
+      "endings": [],
+      "transitions": []
+    }
+  },
+  "presentation": {
+    "placeholders": [{ "stage": 0, "text": "inspect" }],
+    "spinnerPools": [
+      { "archetype": "paranoid", "stage": 0, "verbs": ["Checking"] },
+      { "archetype": "reckless", "stage": 0, "verbs": ["Assuming"] },
+      { "archetype": "superficial", "stage": 0, "verbs": ["Polishing"] },
+      { "archetype": "existential", "stage": 0, "verbs": ["Considering"] }
+    ],
+    "metrics": {
+      "baseTokens": 0,
+      "tokensPerEvent": 1,
+      "contextWindowTokens": 1000,
+      "costMicrosPerToken": 1,
+      "integrityStart": 100,
+      "integrityLossPerEvent": 1
+    }
+  }
+}
