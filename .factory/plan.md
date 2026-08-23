@@ -49,7 +49,7 @@ authoring tooling remain excluded.
   - acceptance: `engine/terminal/{types,terminal,module,module.test}.ts`, `engine/story/{types,story,module,router}.ts`, and `runtime/views/tui.ts` preserve predecessor and successor in one replayable model transition and select reusable pair blame plus optional incident additions; table tests cover all 12 ordered archetype pairs, preserve machine/story/mind/endings, and prove switching neither reseeds nor consumes unrelated spinner or rare-event streams (criteria 5, 18, 20)
   - deps: T36
   - pr: 62
-- [ ] T38 (standard) — Deterministic intent families and mutating fallback
+- [~] T38 (standard) — Deterministic intent families and mutating fallback
   - acceptance: `engine/cartridge/{intent,intent.test}.ts`, `engine/agent/{intent,intent.test}.ts`, and `engine/story/{router,actions}.ts` provide bounded deterministic matching for assignment, undo/why/status, disagreement, insult, compliment, waiver consent, investigation, and capitulation while preserving the raw waiver path; every unmatched input selects a cartridge-defined adjacent owner action and condition-valid response, while bounded flail/capitulation counters support deterministic stage-3+ misfires without changing the disputed belief; an adversarial corpus proves no apology, parser leak, inert fallback, or state contradiction (criteria 6, 7, 16, 17 foundation)
   - deps: T33, T34, T35, T36
 - [ ] T39 (standard) — One-shot isolated rare-event draws
