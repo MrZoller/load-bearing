@@ -88,6 +88,7 @@ describe("the published schema", () => {
       initialBeat: "start",
       counters: [],
       facts: [],
+      rareEvents: [],
       beats: [
         {
           id: "start",

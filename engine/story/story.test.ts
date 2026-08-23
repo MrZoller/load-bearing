@@ -526,7 +526,7 @@ describe("shared story beats", () => {
     expect(outcomes(build(["first", "second"]))).toEqual(baseline);
     expect(outcomes(build(["second", "first"]))).toEqual(baseline);
     expect(outcomes(build(["first", "second"]), true)).toEqual(baseline);
-    expect(outcomes(build(["first", "second"], false, true))).toEqual(baseline);
+    expect(outcomes(build(["first", "second"]), false, true)).toEqual(baseline);
   });
 
   it("refuses forged rare-event owner events at the public reducer boundary", () => {
