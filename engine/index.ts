@@ -381,6 +381,7 @@ export {
 export {
   canRecordAuthoredResponse,
   canRecordAuthoredResponses,
+  stageOpeningResponseId,
 } from "./agent/intent.js";
 export {
   MAX_AGENT_ACTIVITY_VERB_LENGTH,

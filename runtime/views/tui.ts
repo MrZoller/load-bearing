@@ -10,6 +10,8 @@ import {
   readMindSlice,
   readTerminalSlice,
   routeModelHandoff,
+  stageOpeningResponseId,
+  readStorySlice,
 } from "../../engine/index.js";
 import type {
   EngineEvent,
@@ -55,7 +57,23 @@ export function createModelHandoffEvents(
   const selection = routeModelHandoff(cartridge, state, successor);
   if (selection.predecessor === selection.successor) return [];
   const instance = `handoff-${String(state.eventCount)}`;
+  const stageTransition = (cartridge.story.phase2.transitions ?? []).find(
+    (transition) =>
+      transition.from === readStorySlice(state).stage &&
+      transition.trigger.kind === "model" &&
+      transition.trigger.model === selection.successor,
+  );
   const responseIds = [
+    ...(stageTransition === undefined
+      ? []
+      : [
+          stageOpeningResponseId(
+            cartridge,
+            state,
+            stageTransition.to,
+            selection.successor,
+          ),
+        ]),
     selection.responseId,
     selection.additionResponseId,
   ].filter((responseId) => responseId !== "");

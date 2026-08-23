@@ -320,34 +320,51 @@ export function canRecordAuthoredResponses(
   );
 }
 
-/** Return openings that a selected top-level action can insert into this turn. */
+/** Resolve an opening against the model that will own an advanced stage. */
+export function stageOpeningResponseId(
+  cartridge: LoadedCartridge,
+  state: SessionState,
+  stage: number,
+  activeModel = readTerminalSlice(state).activeModel,
+): string {
+  const archetype = cartridge.models.find(
+    (model) => model.id === activeModel,
+  )?.archetype;
+  return (
+    cartridge.presentation.phase2.stagePresentations.find(
+      (row) => row.archetype === archetype && row.stage === stage,
+    )?.openingResponse ?? cartridge.story.opening.response
+  );
+}
+
+/** Return openings that selected top-level actions can insert into this turn. */
 function possibleStageOpeningResponseIds(
   cartridge: LoadedCartridge,
   state: SessionState,
   actions: AgentIntentSelection["actions"],
 ): readonly string[] {
-  const stage = readStorySlice(state).stage;
-  const canReveal = actions.some((action) => action.kind === "story-reach");
-  const commands = actions
-    .filter((action) => action.kind === "shell-execute")
-    .map((action) => action.input);
-  const archetype = cartridge.models.find(
-    (model) => model.id === readTerminalSlice(state).activeModel,
-  )?.archetype;
-  return (cartridge.story.phase2.transitions ?? [])
-    .filter(
-      (transition) =>
-        transition.from === stage &&
-        ((transition.trigger.kind === "reveal" && canReveal) ||
-          (transition.trigger.kind === "command" &&
-            commands.includes(transition.trigger.input))),
-    )
-    .map(
-      (transition) =>
-        cartridge.presentation.phase2.stagePresentations.find(
-          (row) => row.archetype === archetype && row.stage === transition.to,
-        )?.openingResponse ?? cartridge.story.opening.response,
+  let stage = readStorySlice(state).stage;
+  const openings: string[] = [];
+  for (const action of actions) {
+    const transition = (cartridge.story.phase2.transitions ?? []).find(
+      (candidate) =>
+        candidate.from === stage &&
+        ((candidate.trigger.kind === "command" &&
+          action.kind === "shell-execute" &&
+          candidate.trigger.input === action.input) ||
+          // Beat consequences reveal facts during their enclosing event. The
+          // exact fact is selected by the reducer, so reserve every eligible
+          // reveal transition here rather than risk an unplanned insertion.
+          (candidate.trigger.kind === "reveal" &&
+            action.kind === "story-reach")),
     );
+    if (transition === undefined) continue;
+    openings.push(stageOpeningResponseId(cartridge, state, transition.to));
+    // Reducer escalation occurs after each top-level action, so later shell
+    // actions observe this advance and may open the adjacent stage as well.
+    stage = transition.to;
+  }
+  return openings;
 }
 
 /**
