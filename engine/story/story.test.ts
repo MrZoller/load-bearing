@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import incident from "../../content/incidents/incident-001.json";
 import { loadCartridge } from "../cartridge/load.js";
+import { MAX_INT_RANGE } from "../random/stream.js";
 import { reduce, restoreSnapshot, snapshot, step } from "../events/reduce.js";
 import { deserialize, serialize } from "../serialize/canonical.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
@@ -473,24 +474,31 @@ describe("shared story beats", () => {
             path: "/etc/motd",
             exists: false,
           },
-          fireWeight: 1,
+          fireWeight: MAX_INT_RANGE - 1,
           missWeight: 1,
           fireBeat: "fired",
         },
       ],
-      facts: [{ id: "rare-callback", kind: "callback" }],
+      facts: [{ id: "rare-reveal", kind: "reveal" }],
       beats: [
         { id: "start", ending: "" },
         {
           id: "fired",
           ending: "",
-          facts: ["rare-callback"],
+          facts: ["rare-reveal"],
           actions: [
             { kind: "log-append", log: "rare-log", entry: "rare evidence" },
           ],
         },
       ],
       endings: [],
+      transitions: [
+        {
+          from: 0,
+          to: 1,
+          trigger: { kind: "reveal", fact: "rare-reveal" },
+        },
+      ],
     };
     (source["repository"] as Record<string, unknown>)["logs"] = [
       { id: "rare-log", kind: "stream", entries: [] },
@@ -503,9 +511,11 @@ describe("shared story beats", () => {
       { id: "after-removal", evaluated: true },
     ]);
     const fired = readStorySlice(afterRemoval).rareEvents[0]?.fired;
+    expect(fired).toBe(true);
     expect(readStorySlice(afterRemoval).facts).toEqual(
-      fired ? [{ id: "rare-callback", kind: "callback" }] : [],
+      fired ? [{ id: "rare-reveal", kind: "reveal" }] : [],
     );
+    expect(readStorySlice(afterRemoval).stage).toBe(fired ? 1 : 0);
     expect(
       readWorldSlice(afterRemoval).logs.find(({ id }) => id === "rare-log")
         ?.entries,

@@ -583,15 +583,27 @@ function applyRareEvents(
     );
     if (fired) {
       const triggers = ["story.beat-reached"];
+      // A fire beat is a distinct transition inside the outer transaction.
+      // Keep its pre-beat state so reveal-based escalation can see facts the
+      // beat introduced, just as it can for a visitor-reached beat.
+      const beforeFireBeat = state;
+      const fireBeat = createStoryBeatReachedEvent(declaration.fireBeat);
       state = applyDerivedEvent(
         state,
-        createStoryBeatReachedEvent(declaration.fireBeat),
+        fireBeat,
         registry,
         `${rareWhere} fire beat`,
         "story rare event",
       );
       state = applyStoryConsequences(state, registry, rareWhere, triggers);
       state = applyReactions(state, triggers, registry, rareWhere);
+      state = applyEscalation(
+        beforeFireBeat,
+        state,
+        fireBeat,
+        registry,
+        rareWhere,
+      );
     }
   }
 
