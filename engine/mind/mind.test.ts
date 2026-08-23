@@ -997,12 +997,13 @@ describe("Incident #001 permission and waiver orchestration", () => {
       visitorWaiver,
       createMindWaiverStartEvent("regional-fail-open"),
     );
-    const accepted = step(
-      pending,
-      createMindWaiverChoiceEvent("regional-fail-open", true),
-    );
 
-    expect(readStorySlice(accepted).facts).not.toContainEqual(
+    expect(readMindSlice(pending).pendingWaiver).toBeNull();
+    expect(pending.transcript.at(-1)?.type).toBe("mind.waiver-start-failed");
+    expect(() =>
+      step(pending, createMindWaiverChoiceEvent("regional-fail-open", true)),
+    ).toThrow(/pending waiver does not match authored request/);
+    expect(readStorySlice(pending).facts).not.toContainEqual(
       expect.objectContaining({ id: "callback-informed-structural-consent" }),
     );
   });

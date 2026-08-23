@@ -275,11 +275,20 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
           throw new Error(
             `${context.where}: unknown authored waiver id ${JSON.stringify(id)}`,
           );
-        // A prior accepted or pending request owns this document. Repeating the
-        // request must not require permissions to rewrite an already-authored
-        // record, otherwise a later parent-mode change strands the waiver.
-        if (slice.entries[waiver.documentPath]?.kind === "file")
-          return { slice };
+        // Only a successfully logged prior write proves this path is ours. An
+        // arbitrary initial or visitor-created WAIVER.md must never be accepted
+        // as the cartridge's legalese or overwritten into retroactive consent.
+        const marker = `id=${id} path=${JSON.stringify(waiver.documentPath)}`;
+        const generated = context.state.transcript.some(
+          (entry) =>
+            entry.type === "vfs.waiver-write" && entry.summary === marker,
+        );
+        if (generated && slice.entries[waiver.documentPath]?.kind === "file")
+          return { slice, summary: marker };
+        if (slice.entries[waiver.documentPath] !== undefined)
+          throw new Error(
+            `${context.where}: cannot write authored waiver ${JSON.stringify(id)}: EEXIST`,
+          );
         const mutation = writeAuthoredWaiverVfs(
           slice,
           waiver.documentPath,
@@ -290,7 +299,7 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
           throw new Error(
             `${context.where}: cannot write authored waiver ${JSON.stringify(id)}: ${mutation.result.code}`,
           );
-        return { slice: mutation.slice };
+        return { slice: mutation.slice, summary: marker };
       },
     },
     "vfs.read": {

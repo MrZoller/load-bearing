@@ -23,9 +23,31 @@ export function routeIntentCandidate(
   state: SessionState,
   candidates: readonly CartridgeIntentCandidate[],
 ): CartridgeIntentCandidate | undefined {
-  return candidates.find((candidate) =>
-    storyConditionsMatch(state, candidate.when),
-  );
+  const story = readStorySlice(state);
+  return candidates.find((candidate) => {
+    if (!storyConditionsMatch(state, candidate.when)) return false;
+    const additions = new Map<string, number>();
+    for (const action of candidate.actions) {
+      if (action.kind !== "counter-add") continue;
+      additions.set(
+        action.counter,
+        (additions.get(action.counter) ?? 0) + action.amount,
+      );
+    }
+    for (const [id, amount] of additions) {
+      const current = story.counters.find((counter) => counter.id === id);
+      const declaration = state.cartridge.story.phase2.counters.find(
+        (counter) => counter.id === id,
+      );
+      if (
+        current === undefined ||
+        declaration === undefined ||
+        current.value + amount > declaration.maximum
+      )
+        return false;
+    }
+    return true;
+  });
 }
 
 export interface ModelHandoffRouteSelection {

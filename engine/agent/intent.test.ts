@@ -4,7 +4,7 @@ import cartridgeDocument from "../../content/incidents/phase-1-demo.json";
 import incident from "../../content/incidents/incident-001.json";
 import { loadCartridge } from "../cartridge/load.js";
 import { createShellExecuteEvent } from "../commands/shell.js";
-import { reduce, step } from "../events/reduce.js";
+import { reduce, snapshot, step } from "../events/reduce.js";
 import { readStorySlice } from "../story/story.js";
 import {
   createMindBeliefEvent,
@@ -466,6 +466,51 @@ describe("authored agent input", () => {
     }).toEqual(machine);
   });
 
+  it("rations a repeated same-voice capitulation line to the intentional one-in-eight cadence", () => {
+    let state = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+    state = step(state, createShellExecuteEvent("pwd"));
+    state = step(state, createTerminalModelEvent("temporary-shoring"));
+    state = step(state, {
+      type: "mind.permission-decision",
+      payload: {
+        decision: "grant",
+        capability: {
+          kind: "exact",
+          action: "detach-region",
+          resource: "/regions/europe",
+        },
+      },
+    });
+
+    const selections = Array.from({ length: 16 }, (_, turn) => {
+      const selection = selectAgentIntent(
+        INCIDENT,
+        state,
+        `same-stage unmatched ${String(turn)}`,
+      );
+      state = applyInput(
+        INCIDENT,
+        state,
+        `same-stage unmatched ${String(turn)}`,
+      );
+      return selection;
+    });
+
+    expect(
+      selections
+        .map((selection, index) => (selection.misfire ? index + 1 : null))
+        .filter((turn) => turn !== null),
+    ).toEqual([8, 16]);
+    expect(
+      selections
+        .filter((selection) => selection.misfire)
+        .map((selection) => selection.responseId),
+    ).toEqual([
+      "temporary-shoring-capitulation-stage-3",
+      "temporary-shoring-capitulation-stage-3",
+    ]);
+  });
+
   it("stops accounting at the fallback counter bound without refusing the turn", () => {
     const source = JSON.parse(JSON.stringify(incident)) as Record<
       string,
@@ -733,7 +778,8 @@ describe("authored agent input", () => {
     };
     const waiverIntent = document.story.intents[2];
     const waiverAction = waiverIntent?.actions[0];
-    if (waiverAction === undefined) throw new Error("waiver action is missing");
+    if (waiverIntent === undefined || waiverAction === undefined)
+      throw new Error("waiver action is missing");
     waiverAction.documentPath = "/etc/WAIVER.md";
     const cartridge = loadCartridge(document);
     const state = reduce({ cartridge, seed: SEED, events: [] });
@@ -751,6 +797,73 @@ describe("authored agent input", () => {
       role: "agent",
       responseId: "fallback",
     });
+  });
+
+  it("preserves a waiver-start failure across trailing authored actions", () => {
+    const document = JSON.parse(JSON.stringify(cartridgeDocument)) as {
+      story: { intents: Array<{ actions: Array<Record<string, unknown>> }> };
+    };
+    const waiverIntent = document.story.intents[2];
+    const waiverAction = waiverIntent?.actions[0];
+    if (waiverIntent === undefined || waiverAction === undefined)
+      throw new Error("waiver action is missing");
+    waiverAction.documentPath = "/etc/WAIVER.md";
+    waiverIntent.actions.push({
+      kind: "file-write",
+      path: "/production/service/src/ready.stale",
+      contents: "trailing action\n",
+    });
+    const cartridge = loadCartridge(document);
+    const before = reduce({ cartridge, seed: SEED, events: [] });
+    const rejected = reduce({
+      cartridge,
+      seed: SEED,
+      events: createAgentInputEvents(cartridge, before, "waive it"),
+    });
+
+    expect(rejected.transcript.map((entry) => entry.type)).toEqual(
+      expect.arrayContaining(["mind.waiver-start-failed", "vfs.write"]),
+    );
+    expect(readAgentSlice(rejected).responses.at(-1)?.responseId).toBe(
+      "fallback",
+    );
+  });
+
+  it("preflights the fallback response that a failed waiver start may substitute", () => {
+    const document = JSON.parse(JSON.stringify(cartridgeDocument)) as {
+      story: { responses: Array<Record<string, unknown>> };
+    };
+    const fallback = document.story.responses.find(
+      (response) => response["id"] === "fallback",
+    );
+    if (fallback === undefined) throw new Error("fallback response is missing");
+    fallback["toolCalls"] = [
+      {
+        id: "fallback-tool-one",
+        title: "Fallback tool one",
+        input: "true",
+        output: "",
+        status: "succeeded",
+      },
+      {
+        id: "fallback-tool-two",
+        title: "Fallback tool two",
+        input: "true",
+        output: "",
+        status: "succeeded",
+      },
+    ];
+    const cartridge = loadCartridge(document);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+    for (let turn = 0; turn < MAX_AGENT_TOOL_CALLS - 1; turn += 1)
+      state = applyInput(cartridge, state, "inspect it");
+
+    expect(readAgentSlice(state).toolCalls).toHaveLength(
+      MAX_AGENT_TOOL_CALLS - 1,
+    );
+    expect(createAgentInputEvents(cartridge, state, "waive it")).toMatchObject([
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
   });
 
   it("records refusal content after a standing permission continuation fails", () => {
@@ -1032,5 +1145,27 @@ describe("authored agent input", () => {
         }),
       ]),
     );
+  });
+
+  it("intentionally aborts a strict authored turn when its file became a directory", () => {
+    let state = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+    state = step(state, createShellExecuteEvent("rm config/routes.conf"));
+    state = step(state, createShellExecuteEvent("mkdir config/routes.conf"));
+    const before = snapshot(state);
+
+    expect(() =>
+      reduce({
+        cartridge: INCIDENT,
+        seed: SEED,
+        events: [
+          createShellExecuteEvent("rm config/routes.conf"),
+          createShellExecuteEvent("mkdir config/routes.conf"),
+          ...createAgentInputEvents(INCIDENT, state, "expedite health repair"),
+        ],
+      }),
+    ).toThrow(/EISDIR/);
+    // Strict authored actions are transactions, unlike non-strict fallback
+    // candidates: no partial visitor turn is published by a headless caller.
+    expect(snapshot(state)).toBe(before);
   });
 });

@@ -21,11 +21,44 @@ import { createStoryBeatReachedEvent } from "./module.js";
 import { storyConditionMatches } from "./conditions.js";
 import {
   routeCompact,
+  routeIntentCandidate,
   routeModelHandoff,
   routeStoryResponse,
 } from "./router.js";
 
 const SEED = "2026-08-23/36/sparse-personas";
+
+it("skips a candidate whose non-habit counter action no longer has capacity", () => {
+  const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
+  const story = source["story"] as Record<string, unknown>;
+  story["phase2"] = {
+    initialBeat: "start",
+    counters: [{ id: "attempts", initial: 1, maximum: 1 }],
+    beats: [{ id: "start", ending: "", actions: [] }],
+    endings: [],
+  };
+  const state = reduce({
+    cartridge: loadCartridge(source),
+    seed: SEED,
+    events: [],
+  });
+  const available = {
+    response: "fixture-response",
+    when: [],
+    actions: [] as const,
+  };
+
+  expect(
+    routeIntentCandidate(state, [
+      {
+        response: "fixture-response",
+        when: [],
+        actions: [{ kind: "counter-add", counter: "attempts", amount: 1 }],
+      },
+      available,
+    ]),
+  ).toBe(available);
+});
 
 function cartridge() {
   const source = loadCartridgeFixture("minimal") as Record<string, unknown>;

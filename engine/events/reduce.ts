@@ -64,7 +64,7 @@ import { ENGINE_EVENT_REGISTRY } from "./modules.js";
 import type { EventRegistry } from "./registry.js";
 import { reactionActionEvent, reactionPredicateMatches } from "../reactions.js";
 import { MAX_STORY_CONSEQUENCE_WORK } from "../cartridge/schema.js";
-import { storyActionEvent } from "../story/actions.js";
+import { selectedStoryActions, storyActionEvent } from "../story/actions.js";
 import {
   storyConditionMatches,
   storyStageTriggerMatches,
@@ -75,6 +75,12 @@ import {
   createStoryRareEventEvaluatedEvent,
   createStoryStageAdvancedEvent,
 } from "../story/module.js";
+import { canRecordAuthoredResponse } from "../agent/intent.js";
+import {
+  createAgentCapacityEvent,
+  createAgentResponseEvent,
+  selectAgentPresentation,
+} from "../agent/module.js";
 import { EVENT_SCHEMA_VERSION, readSlice } from "./state.js";
 import type {
   EngineEvent,
@@ -404,9 +410,12 @@ function foldEvent(
       );
     }
 
-    const stageExpansion = (children: readonly EngineEvent[]): SessionState => {
+    const stageExpansion = (
+      children: readonly EngineEvent[],
+      includeEnvelopeTrigger: boolean,
+    ): SessionState => {
       let expanded = before;
-      const triggers: string[] = [envelope.type];
+      const triggers: string[] = includeEnvelopeTrigger ? [envelope.type] : [];
       for (const child of children) {
         const count = expanded.transcript.length;
         const childTriggers: string[] = [];
@@ -434,10 +443,13 @@ function foldEvent(
     // losing the child event types needed for narrower rules.
     let staged: SessionState;
     try {
-      staged = stageExpansion(outcome.expansion);
+      staged = stageExpansion(outcome.expansion, true);
     } catch (error) {
       if (!outcome.hasExpansionFallback) throw error;
-      staged = stageExpansion(outcome.expansionFallback);
+      // The envelope reaction already failed while staging the primary frame.
+      // Retrying it against fallback state can reproduce the same failure and
+      // prevent the authored recovery from becoming the terminal outcome.
+      staged = stageExpansion(outcome.expansionFallback, false);
     }
     const completed = applyEscalation(
       before,
@@ -542,11 +554,32 @@ function applyEscalation(
       storyStageTriggerMatches(candidate.trigger, before, staged, envelope),
   );
   if (transition === undefined) return staged;
-  return applyDerivedEvent(
+  const advanced = applyDerivedEvent(
     staged,
     createStoryStageAdvancedEvent(transition.from, transition.to),
     registry,
     `${where} escalation`,
+    "story escalation",
+  );
+  if (
+    registry.module("agent") === undefined ||
+    !Object.hasOwn(advanced.slices, "agent")
+  )
+    return advanced;
+  const responseId = selectAgentPresentation(
+    advanced.cartridge,
+    advanced,
+  ).openingResponse;
+  return applyDerivedEvent(
+    advanced,
+    canRecordAuthoredResponse(advanced.cartridge, advanced, responseId)
+      ? createAgentResponseEvent(
+          responseId,
+          `stage-${String(transition.to)}-opening-${String(advanced.eventCount)}`,
+        )
+      : createAgentCapacityEvent(advanced.cartridge.story.fallback.response),
+    registry,
+    `${where} escalation opening`,
     "story escalation",
   );
 }
@@ -648,23 +681,7 @@ function applyStoryConsequences(
   let state = initial;
   let work = 0;
   const dispatchSelected = (): void => {
-    const story = readStorySlice(state);
-    const beat = state.cartridge.story.phase2.beats.find(
-      (candidate) => candidate.id === story.currentBeat,
-    );
-    if (beat === undefined)
-      throw new Error(
-        `${where}: selected unknown story beat ${JSON.stringify(story.currentBeat)}`,
-      );
-    const actions =
-      story.currentVariant === ""
-        ? beat.actions
-        : beat.variants.find((variant) => variant.id === story.currentVariant)
-            ?.actions;
-    if (actions === undefined)
-      throw new Error(
-        `${where}: selected unknown story variant ${JSON.stringify(story.currentVariant)}`,
-      );
+    const actions = selectedStoryActions(state);
     for (let index = 0; index < actions.length; index += 1) {
       const action = actions[index];
       if (action === undefined) continue;

@@ -352,7 +352,19 @@ export function createAgentInputEvents(
       ? defaultResponseId
       : routeStoryResponse(cartridge, state, routedBeat.beat, defaultResponseId)
           .responseId;
-  if (!canRecordAuthoredResponse(cartridge, state, responseId, 2)) {
+  const maySubstituteWaiverFailure = selection.actions.some(
+    (action) => action.kind === "waiver-request",
+  );
+  if (
+    !canRecordAuthoredResponse(cartridge, state, responseId, 2) ||
+    (maySubstituteWaiverFailure &&
+      !canRecordAuthoredResponse(
+        cartridge,
+        state,
+        cartridge.story.fallback.response,
+        2,
+      ))
+  ) {
     return [createAgentCapacityEvent(cartridge.story.fallback.response)];
   }
   const turnId = `turn-${String(state.eventCount)}`;
