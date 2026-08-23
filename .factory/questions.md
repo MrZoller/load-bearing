@@ -316,3 +316,22 @@ files under `engine/__fixtures__/replay/021-incident-001-load-balancer/` was
 byte-compared against its committed copy on `factory/t41-load-balancer-files`
 and all three are IDENTICAL — fixture.json, state.json, transcript.txt — so
 discarding the checkout copies loses nothing.)
+
+## Q11 (task T45, open) — Should T45 receive a fresh wording-fix cycle after its re-panel block?
+
+Context: T45's implementation and full verification are green, but the initial
+panel found a low-severity false explanation for why the authored repair uses
+`rm` before `cp -p`. The required one-time re-panel then confirmed that the
+replacement explanation overcorrected into another false absolute: bounded Git
+checkout and restore commands can write an existing tracked file. The verifier
+classified the repeated finding as blocking, so the review rubric requires the
+branch to be parked rather than edited again in this cycle. Parked branch:
+`factory/t45-command-investigations`.
+Options considered: A — resume T45 in a fresh cycle and make the rationale only
+the precise true claim that bounded `cp` and `mv` reject an existing destination,
+then run verification and a fresh panel; B — replan or defer T45 despite its
+implemented command inventory, shell boundary tests, and golden replay.
+Recommendation: A; the defect is confined to one sentence and the implementation
+already proves the intended bounded route, but fixing it now would violate the
+panel termination rule.
+**A:**
