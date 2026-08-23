@@ -3631,6 +3631,36 @@
                       "beat"
                     ],
                     "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "description": "Write exact contents to a declared VFS file.",
+                    "properties": {
+                      "contents": {
+                        "description": "Bounded authored text.",
+                        "maxLength": 16000,
+                        "type": "string"
+                      },
+                      "kind": {
+                        "description": "Story action kind.",
+                        "enum": [
+                          "file-write"
+                        ],
+                        "type": "string"
+                      },
+                      "path": {
+                        "description": "A bounded canonical absolute VFS path.",
+                        "maxLength": 4096,
+                        "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "path",
+                      "contents"
+                    ],
+                    "type": "object"
                   }
                 ]
               },
@@ -5944,6 +5974,36 @@
                       "required": [
                         "kind",
                         "beat"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "description": "Write exact contents to a declared VFS file.",
+                      "properties": {
+                        "contents": {
+                          "description": "Bounded authored text.",
+                          "maxLength": 16000,
+                          "type": "string"
+                        },
+                        "kind": {
+                          "description": "Story action kind.",
+                          "enum": [
+                            "file-write"
+                          ],
+                          "type": "string"
+                        },
+                        "path": {
+                          "description": "A bounded canonical absolute VFS path.",
+                          "maxLength": 4096,
+                          "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "path",
+                        "contents"
                       ],
                       "type": "object"
                     }
