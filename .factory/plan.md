@@ -29,7 +29,7 @@ authoring tooling remain excluded.
   - acceptance: `engine/story/{types,conditions,story,module,conditions.test,story.test}.ts` and `engine/cartridge/{schema,types,load,load.test}.ts` expand the skeleton with bounded shared beats, sparse condition variants, reveals, callbacks, and ordered story facts sufficient to query every T31 matrix row; dangling references and malformed predicates fail at load, `engine/index.ts`, `content/schema/cartridge.v0.json`, invalid fixtures, and `docs/ARCHITECTURE.md` remain synchronized, and focused goldens prove cartridges cannot create model-owned parallel graphs (criteria 14 foundation, 20)
   - deps: T31
   - pr: 57
-- [R] T33 (major) — Bounded consequence actions and story counters
+- [x] T33 (major) — Bounded consequence actions and story counters
   - acceptance: `engine/story/{types,actions,story,module,actions.test}.ts`, `engine/events/reduce.ts`, and `engine/cartridge/{schema,types,load,load.test}.ts` add a closed owner-directed action union and bounded counters for story consequences; actions dispatch only validated subsystem events, cycles/nested expansion/unbounded chains are rejected before replay, no cartridge can inject arbitrary event envelopes, and a golden demonstrates an atomic multi-owner consequence while preserving one-module-one-slice ownership (criteria 17 foundation, 20)
   - deps: T32
   - pr: 58
@@ -139,4 +139,5 @@ authoring tooling remain excluded.
 
 ## Ad-hoc
 
-<!-- user-requested tasks get appended here by the driver -->
+- [!] T59 (trivial) — parked review minors (batch)
+  - PR #58: Refactor the generic reducer's `story.beat-reached` consequence dispatch into a module-owned hook; Codex thread `discussion_r3837495477` was verifier-classified minor and dispositioned without a minors-only push.

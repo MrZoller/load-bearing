@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T33",
-  "branch": "factory/t33-bounded-consequence-actions",
-  "pr": 58,
-  "hold": true,
-  "updated": "2026-08-23T01:48:45Z"
+  "current_task": null,
+  "branch": null,
+  "pr": null,
+  "hold": false,
+  "updated": "2026-08-23T02:10:23Z"
 }
