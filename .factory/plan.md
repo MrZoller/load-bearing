@@ -93,7 +93,7 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/cartridge/load.test.ts`, and focused story/browser tests fill stage 0–4 openings, placeholders, `/help`, idle nudges, and thinking openers for all archetypes; command/reveal/model/permission/compact routes visibly traverse stages, copy stays useful/accessible without shell spoilers, and verbal tics remain rationed (criteria 8, 15)
   - deps: T35, T40, T46
   - pr: 72
-- [R] T49 (standard) — Weighted spinner verbs and suffixes
+- [x] T49 (standard) — Weighted spinner verbs and suffixes
   - acceptance: `content/incidents/incident-001.json`, `engine/agent/module.test.ts`, and activity browser tests provide all 20 archetype/stage spinner pools and suffixes with explicit weights; plausible verbs are heavier than spike verbs in every pool, seeded choices reproduce, stage changes select the correct pool, and reduced motion exposes identical information (criteria 15)
   - deps: T40, T46
   - pr: 73

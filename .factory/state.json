@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T49",
-  "branch": "factory/t49-weighted-spinner-verbs",
-  "pr": 73,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-23T17:22:08Z"
+  "updated": "2026-08-23T17:29:57Z"
 }
