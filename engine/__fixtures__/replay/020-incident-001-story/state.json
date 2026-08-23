@@ -59,6 +59,7 @@
         "tokensPerEvent": 220
       },
       "phase2": {
+        "stagePresentations": [],
         "statusCurves": [
           {
             "context": "1%",
@@ -256,33 +257,61 @@
         {
           "archetype": "paranoid",
           "stage": 0,
+          "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt",
           "verbs": [
-            "Surveying",
-            "Checking regional loads"
+            {
+              "verb": "Surveying",
+              "weight": 4
+            },
+            {
+              "verb": "Checking regional loads",
+              "weight": 1
+            }
           ]
         },
         {
           "archetype": "reckless",
           "stage": 0,
+          "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt",
           "verbs": [
-            "Shoring",
-            "Assuming stability"
+            {
+              "verb": "Shoring",
+              "weight": 4
+            },
+            {
+              "verb": "Assuming stability",
+              "weight": 1
+            }
           ]
         },
         {
           "archetype": "superficial",
           "stage": 0,
+          "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt",
           "verbs": [
-            "Smoothing",
-            "Reviewing the surface"
+            {
+              "verb": "Smoothing",
+              "weight": 4
+            },
+            {
+              "verb": "Reviewing the surface",
+              "weight": 1
+            }
           ]
         },
         {
           "archetype": "existential",
           "stage": 0,
+          "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt",
           "verbs": [
-            "Extending",
-            "Locating support"
+            {
+              "verb": "Extending",
+              "weight": 4
+            },
+            {
+              "verb": "Locating support",
+              "weight": 1
+            }
           ]
         }
       ]
@@ -1209,6 +1238,7 @@
     "agent": {
       "activity": {
         "status": "idle",
+        "suffix": "",
         "verb": ""
       },
       "messages": [

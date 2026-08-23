@@ -28,6 +28,7 @@ import {
   validateAgentTodo,
   validateAgentToolCall,
 } from "./agent.js";
+import type { Archetype, LoadedCartridge } from "../cartridge/types.js";
 import type {
   AgentActivity,
   AgentActivityRequest,
@@ -41,6 +42,59 @@ import type {
 } from "./types.js";
 import { forkModelStream, readTerminalSlice } from "../terminal/terminal.js";
 import { readStorySlice } from "../story/story.js";
+
+export interface AgentPresentationSelection {
+  readonly archetype: Archetype;
+  readonly stage: number;
+  readonly openingResponse: string;
+  readonly helpResponse: string;
+  readonly idleNudgeResponse: string;
+  readonly placeholders: readonly string[];
+}
+
+/** Resolve consequential copy from the replayed model and authoritative story stage. */
+export function selectAgentPresentation(
+  cartridge: LoadedCartridge,
+  state: import("../events/state.js").SessionState,
+): AgentPresentationSelection {
+  const activeModel = readTerminalSlice(state).activeModel;
+  const model = cartridge.models.find(
+    (candidate) => candidate.id === activeModel,
+  );
+  if (model === undefined)
+    throw new Error(
+      `agent presentation: active model ${JSON.stringify(activeModel)} is not in the cartridge`,
+    );
+  const stage = readStorySlice(state).stage;
+  const rows = cartridge.presentation.phase2.stagePresentations;
+  const row = rows.find(
+    (candidate) =>
+      candidate.archetype === model.archetype && candidate.stage === stage,
+  );
+  if (rows.length > 0 && row === undefined)
+    throw new Error(
+      `agent presentation: no row for archetype ${JSON.stringify(model.archetype)} at stage ${String(stage)}`,
+    );
+  return row === undefined
+    ? {
+        archetype: model.archetype,
+        stage,
+        openingResponse: cartridge.story.opening.response,
+        helpResponse: cartridge.story.helpResponse,
+        idleNudgeResponse: cartridge.story.idleNudgeResponse,
+        placeholders: cartridge.presentation.placeholders
+          .filter((placeholder) => placeholder.stage === stage)
+          .map((placeholder) => placeholder.text),
+      }
+    : {
+        archetype: model.archetype,
+        stage,
+        openingResponse: row.openingResponse,
+        helpResponse: row.helpResponse,
+        idleNudgeResponse: row.idleNudgeResponse,
+        placeholders: row.placeholders,
+      };
+}
 
 function payload(
   context: EventContext,
@@ -195,8 +249,10 @@ function selectActivity(context: EventContext, stage: number): AgentActivity {
     );
   const verb = forkModelStream(context.random, activeModel)
     .fork("spinner.verbs")
-    .pick(pool.verbs);
-  return { status: "working", verb };
+    .weightedPick(
+      pool.verbs.map((entry) => ({ value: entry.verb, weight: entry.weight })),
+    );
+  return { status: "working", verb, suffix: pool.suffix };
 }
 
 export const AGENT_MODULE = defineEventModule<AgentSlice>({
@@ -209,7 +265,11 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
     "agent.idle-nudged": {
       version: 0,
       apply(context, slice) {
-        if (context.cartridge.story.idleNudgeResponse === "")
+        const responseId = selectAgentPresentation(
+          context.cartridge,
+          context.state,
+        ).idleNudgeResponse;
+        if (responseId === "")
           throw new Error(`${context.where}: cartridge has no idle nudge`);
         // The capacity fallback cannot record an authored-response instance,
         // so the transcript is the durable one-shot record for both paths.
@@ -219,10 +279,7 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
           )
         )
           throw new Error(`${context.where}: duplicate idle-nudge`);
-        const response = authoredResponse(
-          context,
-          context.cartridge.story.idleNudgeResponse,
-        );
+        const response = authoredResponse(context, responseId);
         if (
           slice.messages.length + 1 > MAX_AGENT_MESSAGES ||
           slice.responses.length + 1 > MAX_AGENT_RESPONSES ||
@@ -238,7 +295,7 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
           };
         return {
           slice: recordAuthoredResponse(slice, response, "idle-nudge"),
-          summary: `response=${context.cartridge.story.idleNudgeResponse} instance=idle-nudge`,
+          summary: `response=${responseId} instance=idle-nudge`,
         };
       },
     },
@@ -416,14 +473,14 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
           throw new Error(`${context.where}: status must be idle or working`);
         const activity =
           status === "idle"
-            ? ({ status: "idle", verb: "" } as const)
+            ? ({ status: "idle", verb: "", suffix: "" } as const)
             : selectActivity(context, readStorySlice(context.state).stage);
         return {
           slice: setAgentActivity(slice, activity),
           summary:
             activity.status === "idle"
               ? "activity=idle"
-              : `activity=working verb=${JSON.stringify(activity.verb)}`,
+              : `activity=working verb=${JSON.stringify(activity.verb)} suffix=${JSON.stringify(activity.suffix)}`,
         };
       },
     },

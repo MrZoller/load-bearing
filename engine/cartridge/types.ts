@@ -340,7 +340,13 @@ export interface CartridgePlaceholder {
 export interface CartridgeSpinnerPool {
   readonly archetype: Archetype;
   readonly stage: number;
-  readonly verbs: readonly string[];
+  readonly verbs: readonly CartridgeSpinnerVerb[];
+  readonly suffix: string;
+}
+
+export interface CartridgeSpinnerVerb {
+  readonly verb: string;
+  readonly weight: number;
 }
 
 export interface CartridgeMetricParameters {
@@ -364,6 +370,18 @@ export interface CartridgeStatusCurve {
 
 export interface CartridgePresentationPhase2 {
   readonly statusCurves: readonly CartridgeStatusCurve[];
+  /** Empty retains the global Phase 1 presentation copy. */
+  readonly stagePresentations: readonly CartridgeStagePresentation[];
+}
+
+export interface CartridgeStagePresentation {
+  readonly archetype: Archetype;
+  readonly stage: EscalationStage;
+  readonly openingResponse: string;
+  readonly helpResponse: string;
+  /** Empty means no idle nudge is authored for this row. */
+  readonly idleNudgeResponse: string;
+  readonly placeholders: readonly string[];
 }
 
 export interface CartridgeAutocompleteCopy {
@@ -380,7 +398,7 @@ export interface CartridgePresentation {
   readonly autocomplete: CartridgeAutocompleteCopy;
   readonly spinnerPools: readonly CartridgeSpinnerPool[];
   readonly metrics: CartridgeMetricParameters;
-  /** Status is concrete; T40 owns the remaining stage-aware presentation work. */
+  /** Reactive status and optional complete archetype-stage presentation copy. */
   readonly phase2: CartridgePresentationPhase2;
 }
 

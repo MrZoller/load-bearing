@@ -1187,6 +1187,17 @@ const NONEMPTY_BOUNDED_LINE = {
   minLength: 1,
 } satisfies StringNode;
 
+const SPINNER_SUFFIX = {
+  ...NONEMPTY_BOUNDED_LINE,
+  description:
+    "One spinner suffix template; only {seconds} and {tokens} substitutions are available.",
+  pattern: pattern(
+    /^(?:[^\u0000-\u001F\u007F-\u009F\u2028\u2029{}]|\{seconds\}|\{tokens\})+$/,
+  ),
+  patternLabel:
+    "a non-empty single-line template using only {seconds} and {tokens} substitutions",
+} satisfies StringNode;
+
 const RESPONSE_TOOL_CALL = {
   kind: "object",
   description: "One authored tool-call artifact instantiated by a response.",
@@ -2283,11 +2294,24 @@ const PRESENTATION = {
           }),
           verbs: required({
             kind: "array",
-            description: "Candidate spinner verbs.",
-            items: NONEMPTY_BOUNDED_LINE,
+            description: "Positive integer-weighted candidate spinner verbs.",
+            items: {
+              kind: "object",
+              description: "One weighted spinner verb.",
+              fields: {
+                verb: required(NONEMPTY_BOUNDED_LINE),
+                weight: required({
+                  kind: "integer",
+                  description: "Positive relative selection weight.",
+                  minimum: 1,
+                  maximum: MAX_INT_RANGE,
+                }),
+              },
+            },
             minItems: 1,
             maxItems: MAX_PRESENTATION_VERBS,
           }),
+          suffix: required(SPINNER_SUFFIX),
         },
       },
     }),
@@ -2337,7 +2361,7 @@ const PRESENTATION = {
       {
         kind: "object",
         description:
-          "Concrete reactive status display data; T40 owns broader stage-aware presentation.",
+          "Concrete reactive status and optional stage-aware presentation data.",
         fields: {
           statusCurves: required({
             kind: "array",
@@ -2363,9 +2387,40 @@ const PRESENTATION = {
             },
             maxItems: MAX_PRESENTATION_ENTRIES,
           }),
+          stagePresentations: optional(
+            {
+              kind: "array",
+              description:
+                "Optional complete presentation copy keyed by model archetype and escalation stage.",
+              items: {
+                kind: "object",
+                description: "One archetype-stage presentation row.",
+                fields: {
+                  archetype: required({
+                    kind: "enum",
+                    description: "Behavioral archetype.",
+                    values: ARCHETYPES,
+                  }),
+                  stage: required(ESCALATION_STAGE),
+                  openingResponse: required(PHASE_ONE_ID),
+                  helpResponse: required(PHASE_ONE_ID),
+                  idleNudgeResponse: optional(OPTIONAL_PHASE_ONE_ID, ""),
+                  placeholders: required({
+                    kind: "array",
+                    description: "Authored input placeholders for this row.",
+                    items: NONEMPTY_BOUNDED_LINE,
+                    minItems: 1,
+                    maxItems: MAX_PRESENTATION_VERBS,
+                  }),
+                },
+              },
+              maxItems: MAX_PRESENTATION_ENTRIES,
+            },
+            [],
+          ),
         },
       },
-      { statusCurves: [] },
+      { statusCurves: [], stagePresentations: [] },
     ),
   },
 } satisfies ObjectNode;
@@ -2433,7 +2488,8 @@ const PHASE_ONE_PRESENTATION_DEFAULT = {
   spinnerPools: ARCHETYPES.map((archetype) => ({
     archetype,
     stage: 0,
-    verbs: ["Working"],
+    verbs: [{ verb: "Working", weight: 1 }],
+    suffix: "{seconds}s · {tokens} tokens · Esc to interrupt",
   })),
   metrics: {
     baseTokens: 0,
@@ -2443,7 +2499,7 @@ const PHASE_ONE_PRESENTATION_DEFAULT = {
     integrityStart: 0,
     integrityLossPerEvent: 0,
   },
-  phase2: { statusCurves: [] },
+  phase2: { statusCurves: [], stagePresentations: [] },
 };
 
 const REPOSITORY = {

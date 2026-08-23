@@ -18,7 +18,12 @@ export function formatAgentActivity(
   const activity = readAgentSlice(state).activity;
   if (activity.status === "idle") return null;
   const tokens = deriveEngineMetrics(state).tokenCount;
-  return `${activity.verb}… ${String(elapsedSeconds(elapsedMs))}s · ${groupedInteger(tokens)} tokens · Esc to interrupt`;
+  const suffix = activity.suffix
+    .split("{seconds}")
+    .join(String(elapsedSeconds(elapsedMs)))
+    .split("{tokens}")
+    .join(groupedInteger(tokens));
+  return `${activity.verb}… ${suffix}`;
 }
 
 export function updateAgentActivity(

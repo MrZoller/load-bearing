@@ -479,8 +479,15 @@ Three things worth noting, because each is a decision rather than a detail:
 The Phase 1 portions of `story` and `presentation` are concrete and bounded in
 v0: opening copy, authored response records and artifacts, minimal intents and
 fallback, help/idle-nudge/compact/resume references, rotating placeholders,
-slash autocomplete descriptions, archetype-stage spinner pools, and integer
-metric parameters. `story.phase2` is a concrete bounded shared graph: one
+slash autocomplete descriptions, positive integer-weighted archetype-stage
+spinner pools with one bounded suffix template, and integer metric parameters.
+`presentation.phase2.stagePresentations` may remain empty for legacy global
+opening/help/nudge/placeholder copy; once authored it is a complete unique
+archetype-by-stage table for every archetype used by a model. The active model's
+archetype and the replayed story stage select consequential copy. Spinner verbs
+continue to draw from the model-scoped `spinner.verbs` stream, while the selected
+verb and suffix persist in agent activity state. `story.phase2` is a concrete
+bounded shared graph: one
 initial beat, at most 64 nonnegative safe-integer counters, declared
 reveal/callback facts, at most 64 one-condition rare events, authored-order
 beats with sparse

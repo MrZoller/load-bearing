@@ -274,7 +274,14 @@ Loading rejects malformed predicates, duplicate ids, dangling action references,
 story-reach cycles, chains whose conservative worst selected outcome exceeds
 1024 actions, fact-kind mismatches, and any model-owned graph field before replay.
 
-The `agent` slice owns visible dialogue artifacts but no presentation state.
+The `agent` slice owns visible dialogue artifacts and the current replayable
+working presentation. A working transition selects a positive integer-weighted
+verb on the active model's existing `spinner.verbs` stream and persists both the
+verb and its pool's authored suffix template. Runtime wall time substitutes only
+`{seconds}` and `{tokens}`; reduced motion changes the spinner decoration, not
+the text. Optional complete archetype-stage presentation rows select opening,
+help, idle nudge, and placeholders from active model plus authoritative story
+stage; an empty table preserves the legacy global fields.
 `agent.response-recorded` resolves one validated cartridge response and derives
 message/tool/thinking/todo ids from a stable instance id. Tool, thinking, and
 todo updates enforce closed forward transitions; snapshot restore revalidates

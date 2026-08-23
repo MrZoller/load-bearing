@@ -13,6 +13,7 @@ import {
   readAgentMessageArtifacts,
   readAgentSlice,
   recordAuthoredResponse,
+  validateAgentActivity,
   validateAgentSlice,
 } from "./agent.js";
 import {
@@ -94,10 +95,33 @@ function activityCartridge() {
   source["presentation"] = {
     placeholders: [{ stage: 0, text: "inspect" }],
     spinnerPools: [
-      { archetype: "paranoid", stage: 0, verbs: ["Deep zero", "Deep again"] },
-      { archetype: "paranoid", stage: 1, verbs: ["Deep one"] },
-      { archetype: "reckless", stage: 0, verbs: ["Quick zero"] },
-      { archetype: "reckless", stage: 1, verbs: ["Quick one"] },
+      {
+        archetype: "paranoid",
+        stage: 0,
+        verbs: [
+          { verb: "Deep zero", weight: 3 },
+          { verb: "Deep again", weight: 1 },
+        ],
+        suffix: "{seconds}s · {tokens} tokens",
+      },
+      {
+        archetype: "paranoid",
+        stage: 1,
+        verbs: [{ verb: "Deep one", weight: 1 }],
+        suffix: "{seconds}s · {tokens} tokens",
+      },
+      {
+        archetype: "reckless",
+        stage: 0,
+        verbs: [{ verb: "Quick zero", weight: 1 }],
+        suffix: "{seconds}s · {tokens} tokens",
+      },
+      {
+        archetype: "reckless",
+        stage: 1,
+        verbs: [{ verb: "Quick one", weight: 1 }],
+        suffix: "{seconds}s · {tokens} tokens",
+      },
     ],
     metrics: {
       baseTokens: 0,
@@ -130,6 +154,27 @@ function activityCartridge() {
 }
 
 describe("agent replay state", () => {
+  it("rejects activity copy that contradicts its status", () => {
+    expect(() =>
+      validateAgentActivity(
+        { status: "idle", verb: "", suffix: "still working" },
+        "activity",
+      ),
+    ).toThrow(/idle requires empty copy/);
+    expect(() =>
+      validateAgentActivity(
+        { status: "working", verb: "Inspecting", suffix: "" },
+        "activity",
+      ),
+    ).toThrow(/working requires a verb and suffix/);
+    expect(() =>
+      validateAgentActivity(
+        { status: "working", verb: "", suffix: "{seconds}s" },
+        "activity",
+      ),
+    ).toThrow(/working requires a verb and suffix/);
+  });
+
   it("instantiates authored responses with stable instance-derived artifact ids", () => {
     const event = createAgentResponseEvent("authored", "turn-one");
     expect(event.version).toBe(0);
@@ -362,7 +407,7 @@ describe("agent replay state", () => {
           toolCalls: [],
           thinkingBlocks: [],
           todos: [],
-          activity: { status: "idle", verb: "Animating" },
+          activity: { status: "idle", verb: "Animating", suffix: "" },
           responses: [],
           focused: true,
         },
@@ -411,7 +456,7 @@ describe("agent replay state", () => {
       toolCalls: [],
       thinkingBlocks: [],
       todos: [],
-      activity: { status: "idle", verb: "" },
+      activity: { status: "idle", verb: "", suffix: "" },
       responses: [],
     };
     const accessor: unknown[] = [];
@@ -445,7 +490,7 @@ describe("agent replay state", () => {
       toolCalls: [],
       thinkingBlocks: [],
       todos: [],
-      activity: { status: "idle", verb: "" },
+      activity: { status: "idle", verb: "", suffix: "" },
       responses: [],
     };
     const accessor = { ...base };
@@ -493,7 +538,11 @@ describe("agent replay state", () => {
       toolCalls: [],
       thinkingBlocks: [],
       todos: [],
-      activity: { status: "idle" as const, verb: "" as const },
+      activity: {
+        status: "idle" as const,
+        verb: "" as const,
+        suffix: "" as const,
+      },
       responses: [],
     };
     expect(validateAgentSlice(slice, "snapshot.agent")).toBe(slice);
@@ -580,10 +629,12 @@ describe("agent replay state", () => {
     expect(readAgentSlice(deep).activity).toEqual({
       status: "working",
       verb: "Deep one",
+      suffix: "{seconds}s · {tokens} tokens",
     });
     expect(readAgentSlice(quick).activity).toEqual({
       status: "working",
       verb: "Quick one",
+      suffix: "{seconds}s · {tokens} tokens",
     });
     expect(deep.transcript.at(-1)?.summary).toContain('verb="Deep one"');
   });
@@ -612,13 +663,20 @@ describe("agent replay state", () => {
       "deep-foundation",
     ).fork("spinner.verbs");
     const expectedDeep = [
-      deepSpinner.pick(deepVerbs),
-      deepSpinner.pick(deepVerbs),
+      deepSpinner.weightedPick([
+        { value: deepVerbs[0] ?? "", weight: 3 },
+        { value: deepVerbs[1] ?? "", weight: 1 },
+      ]),
+      deepSpinner.weightedPick([
+        { value: deepVerbs[0] ?? "", weight: 3 },
+        { value: deepVerbs[1] ?? "", weight: 1 },
+      ]),
     ];
 
     expect(readAgentSlice(state).activity).toEqual({
       status: "working",
       verb: expectedDeep[1],
+      suffix: "{seconds}s · {tokens} tokens",
     });
     expect(Object.keys(state.random.cursors)).toContain(
       "root/agent/models/deep-foundation/spinner.verbs",
@@ -630,7 +688,7 @@ describe("agent replay state", () => {
     expect(restoreSnapshot(snapshot(state))).toEqual(state);
   });
 
-  it("does not draw for idle activity and uses baseline activity until T40 authors the stage pool", () => {
+  it("does not draw for idle activity and uses baseline activity until a stage pool is authored", () => {
     const custom = activityCartridge();
     const idle = reduce({
       cartridge: custom,
@@ -638,7 +696,11 @@ describe("agent replay state", () => {
       events: [createAgentActivityEvent({ status: "idle" })],
     });
 
-    expect(readAgentSlice(idle).activity).toEqual({ status: "idle", verb: "" });
+    expect(readAgentSlice(idle).activity).toEqual({
+      status: "idle",
+      verb: "",
+      suffix: "",
+    });
     expect(Object.keys(idle.random.cursors)).not.toContain(
       "root/agent/models/deep-foundation/spinner.verbs",
     );

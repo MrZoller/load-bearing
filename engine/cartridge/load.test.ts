@@ -515,8 +515,18 @@ describe("loadCartridge", () => {
     };
     const presentation = source["presentation"] as Record<string, unknown>;
     presentation["spinnerPools"] = [
-      { archetype: "paranoid", stage: 0, verbs: ["Checking"] },
-      { archetype: "paranoid", stage: 0, verbs: ["Checking again"] },
+      {
+        archetype: "paranoid",
+        stage: 0,
+        verbs: [{ verb: "Checking", weight: 1 }],
+        suffix: "{seconds}s · {tokens} tokens",
+      },
+      {
+        archetype: "paranoid",
+        stage: 0,
+        verbs: [{ verb: "Checking again", weight: 1 }],
+        suffix: "{seconds}s · {tokens} tokens",
+      },
     ];
 
     expect(issuesOf(source).map((issue) => issue.pointer)).toEqual(
@@ -1136,17 +1146,144 @@ describe("loadCartridge", () => {
     const source = minimal();
     const presentation = source["presentation"] as Record<string, unknown>;
     presentation["spinnerPools"] = [
-      { archetype: "paranoid", stage: 0, verbs: [""] },
-      { archetype: "reckless", stage: 0, verbs: ["Assuming"] },
+      {
+        archetype: "paranoid",
+        stage: 0,
+        verbs: [{ verb: "", weight: 1 }],
+        suffix: "{seconds}s · {tokens} tokens",
+      },
+      {
+        archetype: "reckless",
+        stage: 0,
+        verbs: [{ verb: "Assuming", weight: 1 }],
+        suffix: "{seconds}s · {tokens} tokens",
+      },
     ];
 
     expect(issuesOf(source)).toEqual(
       expect.arrayContaining([
         {
-          pointer: "/presentation/spinnerPools/0/verbs/0",
+          pointer: "/presentation/spinnerPools/0/verbs/0/verb",
           expected: "at least 1 character(s)",
           found: '""',
         },
+      ]),
+    );
+  });
+
+  it("requires positive integer spinner weights, a bounded total, and supported suffix tokens", () => {
+    const invalidWeight = (weight: unknown) => {
+      const source = minimal();
+      const presentation = source["presentation"] as Record<string, unknown>;
+      const pools = presentation["spinnerPools"] as Record<string, unknown>[];
+      const pool = pools[0];
+      if (pool === undefined)
+        throw new Error("minimal fixture lacks a spinner pool");
+      pool["verbs"] = [{ verb: "Checking", weight }];
+      return issuesOf(source).map((issue) => issue.pointer);
+    };
+
+    for (const weight of [0, 1.5, MAX_INT_RANGE + 1])
+      expect(invalidWeight(weight)).toContain(
+        "/presentation/spinnerPools/0/verbs/0/weight",
+      );
+
+    const overflow = minimal();
+    const presentation = overflow["presentation"] as Record<string, unknown>;
+    const pools = presentation["spinnerPools"] as Record<string, unknown>[];
+    const pool = pools[0];
+    if (pool === undefined)
+      throw new Error("minimal fixture lacks a spinner pool");
+    pool["verbs"] = [
+      { verb: "Checking", weight: MAX_INT_RANGE },
+      { verb: "Checking again", weight: 1 },
+    ];
+    expect(issuesOf(overflow)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/presentation/spinnerPools/0/verbs",
+          expected: `weights totaling at most ${String(MAX_INT_RANGE)}`,
+        }),
+      ]),
+    );
+
+    const invalidSuffix = minimal();
+    const invalidPresentation = invalidSuffix["presentation"] as Record<
+      string,
+      unknown
+    >;
+    const invalidPools = invalidPresentation["spinnerPools"] as Record<
+      string,
+      unknown
+    >[];
+    const invalidPool = invalidPools[0];
+    if (invalidPool === undefined)
+      throw new Error("minimal fixture lacks a spinner pool");
+    invalidPool["suffix"] = "{minutes} remaining";
+    expect(issuesOf(invalidSuffix).map((issue) => issue.pointer)).toContain(
+      "/presentation/spinnerPools/0/suffix",
+    );
+
+    const boundary = minimal();
+    const boundaryPresentation = boundary["presentation"] as Record<
+      string,
+      unknown
+    >;
+    const boundaryPools = boundaryPresentation["spinnerPools"] as Record<
+      string,
+      unknown
+    >[];
+    const boundaryPool = boundaryPools[0];
+    if (boundaryPool === undefined)
+      throw new Error("minimal fixture lacks a spinner pool");
+    boundaryPool["verbs"] = [
+      { verb: "Checking", weight: MAX_INT_RANGE - 1 },
+      { verb: "Checking again", weight: 1 },
+    ];
+    expect(loadCartridge(boundary).presentation.spinnerPools[0]?.verbs).toEqual(
+      boundaryPool["verbs"],
+    );
+  });
+
+  it("requires nonempty stage presentation tables to be unique, complete, and response-resolved", () => {
+    const source = minimal();
+    const presentation = source["presentation"] as Record<string, unknown>;
+    const phase2 = presentation["phase2"] as Record<string, unknown>;
+    const models = source["models"] as Record<string, unknown>[];
+    const archetypes = [...new Set(models.map((model) => model["archetype"]))];
+    const rows = archetypes.flatMap((archetype) =>
+      Array.from({ length: 5 }, (_, stage) => ({
+        archetype,
+        stage,
+        openingResponse: "fixture-response",
+        helpResponse: "fixture-response",
+        idleNudgeResponse: "",
+        placeholders: [`${String(archetype)}-${String(stage)}`],
+      })),
+    );
+    phase2["stagePresentations"] = rows;
+    expect(
+      loadCartridge(source).presentation.phase2.stagePresentations,
+    ).toHaveLength(rows.length);
+
+    const duplicate = rows[0];
+    if (duplicate === undefined)
+      throw new Error("stage rows are unexpectedly empty");
+    rows[1] = { ...duplicate, helpResponse: "missing-response" };
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/presentation/phase2/stagePresentations/1",
+          expected: "an archetype-stage pair no other presentation row uses",
+        }),
+        expect.objectContaining({
+          pointer: "/presentation/phase2/stagePresentations/1/helpResponse",
+          expected: "the id of a declared authored response",
+        }),
+        expect.objectContaining({
+          pointer: "/presentation/phase2/stagePresentations",
+          found: expect.stringContaining("no row for archetype") as string,
+        }),
       ]),
     );
   });

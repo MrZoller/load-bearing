@@ -129,10 +129,30 @@
   "presentation": {
     "placeholders": [{ "stage": 0, "text": "inspect" }],
     "spinnerPools": [
-      { "archetype": "paranoid", "stage": 0, "verbs": ["Checking"] },
-      { "archetype": "reckless", "stage": 0, "verbs": ["Assuming"] },
-      { "archetype": "superficial", "stage": 0, "verbs": ["Polishing"] },
-      { "archetype": "existential", "stage": 0, "verbs": ["Considering"] }
+      {
+        "archetype": "paranoid",
+        "stage": 0,
+        "verbs": [{ "verb": "Checking", "weight": 1 }],
+        "suffix": "{seconds}s · {tokens} tokens"
+      },
+      {
+        "archetype": "reckless",
+        "stage": 0,
+        "verbs": [{ "verb": "Assuming", "weight": 1 }],
+        "suffix": "{seconds}s · {tokens} tokens"
+      },
+      {
+        "archetype": "superficial",
+        "stage": 0,
+        "verbs": [{ "verb": "Polishing", "weight": 1 }],
+        "suffix": "{seconds}s · {tokens} tokens"
+      },
+      {
+        "archetype": "existential",
+        "stage": 0,
+        "verbs": [{ "verb": "Considering", "weight": 1 }],
+        "suffix": "{seconds}s · {tokens} tokens"
+      }
     ],
     "metrics": {
       "baseTokens": 0,

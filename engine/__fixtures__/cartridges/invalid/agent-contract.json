@@ -47,8 +47,18 @@
   "presentation": {
     "placeholders": [{ "stage": 0, "text": "inspect" }],
     "spinnerPools": [
-      { "archetype": "reckless", "stage": 0, "verbs": ["Assuming"] },
-      { "archetype": "reckless", "stage": 0, "verbs": ["Shipping"] }
+      {
+        "archetype": "reckless",
+        "stage": 0,
+        "verbs": [{ "verb": "Assuming", "weight": 1 }],
+        "suffix": "{seconds}s · {tokens} tokens"
+      },
+      {
+        "archetype": "reckless",
+        "stage": 0,
+        "verbs": [{ "verb": "Shipping", "weight": 1 }],
+        "suffix": "{seconds}s · {tokens} tokens"
+      }
     ],
     "metrics": {
       "baseTokens": 0,
