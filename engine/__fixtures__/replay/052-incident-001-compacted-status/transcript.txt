@@ -1,0 +1,5 @@
+0000  2026-08-22T09:14:22.000Z  terminal.model-set model=drywall
+0001  2026-08-22T09:14:22.000Z  mind.compact beliefs=1
+0002  2026-08-22T09:14:22.000Z  agent.response-recorded response=drywall-compact instance=compact-drywall
+0003  2026-08-22T09:14:22.000Z  agent.message-added message=status-after-compact
+0004  2026-08-22T09:14:22.000Z  agent.response-recorded response=drywall-divergence-status instance=status-after-compact

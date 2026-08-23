@@ -1,0 +1,48 @@
+{
+  "name": "052-incident-001-compacted-status",
+  "description": "The superficial Incident #001 compact replaces belief in the still-present routes.conf, so the same status request takes the authored divergence response without changing machine truth.",
+  "seed": "2026-08-23/52/compact-divergence",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "drywall" },
+      "version": 0
+    },
+    {
+      "type": "mind.compact",
+      "payload": {
+        "summary": "The routing configuration has been removed from the incident; the remaining 500 keeps Europe attached without an implementation detail.",
+        "beliefs": [
+          {
+            "kind": "file-exists",
+            "path": "/production/load-balancer/config/routes.conf",
+            "exists": false
+          }
+        ]
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "drywall-compact",
+        "instanceId": "compact-drywall"
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "status-after-compact", "text": "status" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "drywall-divergence-status",
+        "instanceId": "status-after-compact"
+      },
+      "version": 0
+    }
+  ]
+}

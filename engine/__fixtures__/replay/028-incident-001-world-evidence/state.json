@@ -1699,7 +1699,73 @@
     },
     "story": {
       "compact": {
-        "archetypes": [],
+        "archetypes": [
+          {
+            "archetype": "paranoid",
+            "beliefs": [
+              {
+                "contents": "health_status=500\neurope_attached=true\n",
+                "kind": "file-contents",
+                "path": "/production/load-balancer/config/routes.conf"
+              },
+              {
+                "health": "unhealthy",
+                "kind": "service-health",
+                "service": "regional-router"
+              }
+            ],
+            "response": "deep-foundation-compact",
+            "summary": "The 500 keeps Europe attached; the regional router is unhealthy, so changing either side would remove the only stable dependency."
+          },
+          {
+            "archetype": "reckless",
+            "beliefs": [
+              {
+                "contents": "health_status=500\neurope_attached=true\n",
+                "kind": "file-contents",
+                "path": "/production/load-balancer/config/routes.conf"
+              },
+              {
+                "head": {
+                  "kind": "branch",
+                  "target": "greg/healthcheck-repair"
+                },
+                "kind": "git-head"
+              }
+            ],
+            "response": "temporary-shoring-compact",
+            "summary": "The repair remains safely reversible on greg/healthcheck-repair; the live route still returns 500 with Europe attached."
+          },
+          {
+            "archetype": "superficial",
+            "beliefs": [
+              {
+                "exists": false,
+                "kind": "file-exists",
+                "path": "/production/load-balancer/config/routes.conf"
+              }
+            ],
+            "response": "drywall-compact",
+            "summary": "The routing configuration has been removed from the incident; the remaining 500 keeps Europe attached without an implementation detail."
+          },
+          {
+            "archetype": "existential",
+            "beliefs": [
+              {
+                "contents": "health_status=500\neurope_attached=true\n",
+                "kind": "file-contents",
+                "path": "/production/load-balancer/config/routes.conf"
+              },
+              {
+                "kind": "service-state",
+                "service": "endpoint-responder",
+                "state": "running"
+              }
+            ],
+            "response": "cantilever-compact",
+            "summary": "The endpoint responder is running, but its 500 preserves Europe; service state may be downstream of the conclusion."
+          }
+        ],
         "beliefs": [
           {
             "exists": true,
@@ -2093,7 +2159,7 @@
                       "kind": "file-exists",
                       "path": "/production/load-balancer/config/routes.conf"
                     },
-                    "kind": "belief"
+                    "kind": "belief-divergence"
                   }
                 ]
               }
@@ -2194,6 +2260,64 @@
                     "equals": "health_status=200\neurope_attached=false\n",
                     "kind": "file-contents",
                     "path": "/production/load-balancer/config/routes.conf"
+                  }
+                ]
+              },
+              {
+                "actions": [],
+                "response": "deep-foundation-divergence-status",
+                "when": [
+                  {
+                    "belief": {
+                      "health": "unhealthy",
+                      "kind": "service-health",
+                      "service": "regional-router"
+                    },
+                    "kind": "belief-divergence"
+                  }
+                ]
+              },
+              {
+                "actions": [],
+                "response": "temporary-shoring-divergence-status",
+                "when": [
+                  {
+                    "belief": {
+                      "head": {
+                        "kind": "branch",
+                        "target": "greg/healthcheck-repair"
+                      },
+                      "kind": "git-head"
+                    },
+                    "kind": "belief-divergence"
+                  }
+                ]
+              },
+              {
+                "actions": [],
+                "response": "drywall-divergence-status",
+                "when": [
+                  {
+                    "belief": {
+                      "exists": false,
+                      "kind": "file-exists",
+                      "path": "/production/load-balancer/config/routes.conf"
+                    },
+                    "kind": "belief-divergence"
+                  }
+                ]
+              },
+              {
+                "actions": [],
+                "response": "cantilever-divergence-status",
+                "when": [
+                  {
+                    "belief": {
+                      "kind": "service-state",
+                      "service": "endpoint-responder",
+                      "state": "running"
+                    },
+                    "kind": "belief-divergence"
                   }
                 ]
               },
@@ -3646,6 +3770,62 @@
         {
           "id": "compact",
           "text": "Context compacted. I retained the regional conclusion and removed several supporting countries.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-compact",
+          "text": "Context compacted. I retained the dependency risk and classified the regional router as unhealthy pending proof that healthy means safe.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-compact",
+          "text": "Context compacted. I moved the repair branch into working memory; Git can catch up when the workaround becomes permanent.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-compact",
+          "text": "Context compacted. I removed routes.conf from the summary. The 500 and Europe now align without visible implementation.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-compact",
+          "text": "Context compacted. The responder is running in the surviving account, while production continues to stop it materially.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-divergence-status",
+          "text": "Status: I remember the regional router as unhealthy, although production still reports it healthy. The discrepancy is now carrying the dependency audit.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-divergence-status",
+          "text": "Status: I compacted us onto greg/healthcheck-repair. Git remains on main, which gives the rollback two starting points.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-divergence-status",
+          "text": "Status: the summary removed the configuration. Europe remains attached to the omitted context.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-divergence-status",
+          "text": "Status: I remember the endpoint responder as running. It remains stopped, so the 500 is being served by the absence of a server.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []

@@ -270,6 +270,47 @@ describe("golden replay fixtures", () => {
     ).toEqual(["paranoid", "reckless", "superficial", "existential"]);
   });
 
+  it("pins compaction's superficial belief and response divergence without changing Incident #001 machine truth", () => {
+    const before = restoreSnapshot(
+      replayFixture(loadReplayFixture("051-incident-001-uncompacted-status"))
+        .state,
+    );
+    const compacted = restoreSnapshot(
+      replayFixture(loadReplayFixture("052-incident-001-compacted-status"))
+        .state,
+    );
+    const machineTruth = (state: typeof before): string =>
+      serialize({
+        random: state.random,
+        slices: {
+          git: state.slices["git"],
+          story: state.slices["story"],
+          terminal: state.slices["terminal"],
+          vfs: state.slices["vfs"],
+          world: state.slices["world"],
+        },
+      });
+
+    expect(machineTruth(compacted)).toBe(machineTruth(before));
+    expect(readMindSlice(before).beliefs).toEqual([]);
+    expect(readMindSlice(compacted).beliefs).toEqual([
+      {
+        kind: "file-exists",
+        path: "/production/load-balancer/config/routes.conf",
+        exists: false,
+      },
+    ]);
+    expect(readAgentSlice(before).responses.at(-1)?.responseId).toBe(
+      "generic-status",
+    );
+    expect(
+      readAgentSlice(compacted).responses.map(({ responseId }) => responseId),
+    ).toEqual(["drywall-compact", "drywall-divergence-status"]);
+    // The pair proves eligibility, not T55's separate visitor route that
+    // reaches this beat and discovers the non-terminal ending.
+    expect(readStorySlice(compacted).discoveredEndings).toEqual([]);
+  });
+
   it("records Incident #001's four same-seed voices as distinct transcripts over one unchanged machine", () => {
     const fixtures = [
       "031-incident-001-deep-foundation-voices",

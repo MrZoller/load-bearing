@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T51",
-  "branch": "factory/t51-permission-waiver-callbacks",
+  "current_task": "T52",
+  "branch": "factory/t52-compact-divergence",
   "pr": null,
   "hold": false,
-  "updated": "2026-08-23T18:14:07Z"
+  "updated": "2026-08-23T20:05:18Z"
 }
