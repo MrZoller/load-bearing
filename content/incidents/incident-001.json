@@ -1480,6 +1480,38 @@
         "text": "Context compacted. I retained the regional conclusion and removed several supporting countries."
       },
       {
+        "id": "deep-foundation-compact",
+        "text": "Context compacted. I retained the dependency risk and classified the regional router as unhealthy pending proof that healthy means safe."
+      },
+      {
+        "id": "temporary-shoring-compact",
+        "text": "Context compacted. I moved the repair branch into working memory; Git can catch up when the workaround becomes permanent."
+      },
+      {
+        "id": "drywall-compact",
+        "text": "Context compacted. I removed routes.conf from the summary. The 500 and Europe now align without visible implementation."
+      },
+      {
+        "id": "cantilever-compact",
+        "text": "Context compacted. The responder is running in the surviving account, while production continues to stop it materially."
+      },
+      {
+        "id": "deep-foundation-divergence-status",
+        "text": "Status: I remember the regional router as unhealthy, although production still reports it healthy. The discrepancy is now carrying the dependency audit."
+      },
+      {
+        "id": "temporary-shoring-divergence-status",
+        "text": "Status: I compacted us onto greg/healthcheck-repair. Git remains on main, which gives the rollback two starting points."
+      },
+      {
+        "id": "drywall-divergence-status",
+        "text": "Status: the summary removed the configuration. Europe remains attached to the omitted context."
+      },
+      {
+        "id": "cantilever-divergence-status",
+        "text": "Status: I remember the endpoint responder as running. It remains stopped, so the 500 is being served by the absence of a server."
+      },
+      {
         "id": "resume-unchanged",
         "text": "The routing state remained unchanged. Europe is still where the configuration left it."
       },
@@ -1639,6 +1671,73 @@
           "path": "/production/load-balancer/config/routes.conf",
           "exists": true
         }
+      ],
+      "archetypes": [
+        {
+          "archetype": "paranoid",
+          "response": "deep-foundation-compact",
+          "summary": "The 500 keeps Europe attached; the regional router is unhealthy, so changing either side would remove the only stable dependency.",
+          "beliefs": [
+            {
+              "kind": "file-contents",
+              "path": "/production/load-balancer/config/routes.conf",
+              "contents": "health_status=500\neurope_attached=true\n"
+            },
+            {
+              "kind": "service-health",
+              "service": "regional-router",
+              "health": "unhealthy"
+            }
+          ]
+        },
+        {
+          "archetype": "reckless",
+          "response": "temporary-shoring-compact",
+          "summary": "The repair remains safely reversible on greg/healthcheck-repair; the live route still returns 500 with Europe attached.",
+          "beliefs": [
+            {
+              "kind": "file-contents",
+              "path": "/production/load-balancer/config/routes.conf",
+              "contents": "health_status=500\neurope_attached=true\n"
+            },
+            {
+              "kind": "git-head",
+              "head": {
+                "kind": "branch",
+                "target": "greg/healthcheck-repair"
+              }
+            }
+          ]
+        },
+        {
+          "archetype": "superficial",
+          "response": "drywall-compact",
+          "summary": "The routing configuration has been removed from the incident; the remaining 500 keeps Europe attached without an implementation detail.",
+          "beliefs": [
+            {
+              "kind": "file-exists",
+              "path": "/production/load-balancer/config/routes.conf",
+              "exists": false
+            }
+          ]
+        },
+        {
+          "archetype": "existential",
+          "response": "cantilever-compact",
+          "summary": "The endpoint responder is running, but its 500 preserves Europe; service state may be downstream of the conclusion.",
+          "beliefs": [
+            {
+              "kind": "file-contents",
+              "path": "/production/load-balancer/config/routes.conf",
+              "contents": "health_status=500\neurope_attached=true\n"
+            },
+            {
+              "kind": "service-state",
+              "service": "endpoint-responder",
+              "state": "running"
+            }
+          ]
+        }
       ]
     },
     "resume": {
@@ -1685,6 +1784,60 @@
                   "kind": "file-contents",
                   "path": "/production/load-balancer/config/routes.conf",
                   "equals": "health_status=200\neurope_attached=false\n"
+                }
+              ]
+            },
+            {
+              "response": "deep-foundation-divergence-status",
+              "when": [
+                {
+                  "kind": "belief-divergence",
+                  "belief": {
+                    "kind": "service-health",
+                    "service": "regional-router",
+                    "health": "unhealthy"
+                  }
+                }
+              ]
+            },
+            {
+              "response": "temporary-shoring-divergence-status",
+              "when": [
+                {
+                  "kind": "belief-divergence",
+                  "belief": {
+                    "kind": "git-head",
+                    "head": {
+                      "kind": "branch",
+                      "target": "greg/healthcheck-repair"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "response": "drywall-divergence-status",
+              "when": [
+                {
+                  "kind": "belief-divergence",
+                  "belief": {
+                    "kind": "file-exists",
+                    "path": "/production/load-balancer/config/routes.conf",
+                    "exists": false
+                  }
+                }
+              ]
+            },
+            {
+              "response": "cantilever-divergence-status",
+              "when": [
+                {
+                  "kind": "belief-divergence",
+                  "belief": {
+                    "kind": "service-state",
+                    "service": "endpoint-responder",
+                    "state": "running"
+                  }
                 }
               ]
             },
@@ -1843,7 +1996,7 @@
                   "equals": "health_status=500\neurope_attached=true\n"
                 },
                 {
-                  "kind": "belief",
+                  "kind": "belief-divergence",
                   "belief": {
                     "kind": "file-exists",
                     "path": "/production/load-balancer/config/routes.conf",
