@@ -101,7 +101,7 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/agent/intent.test.ts`, and paired goldens author capitulation for every archetype across escalation; deterministic stage-3+ misfires are rare, preserve the underlying belief that caused disagreement, remain state-consistent, and do not become a catchphrase (criteria 16)
   - deps: T38, T46, T48
   - pr: 74
-- [ ] T51 (standard) — Permission complicity and waiver callbacks
+- [~] T51 (standard) — Permission complicity and waiver callbacks
   - acceptance: `content/incidents/incident-001.json`, `engine/mind/mind.test.ts`, and permission/waiver goldens author trivial asks, conspicuous non-asks, distinct grant/deny/standing-allow continuations, `WAIVER.md`, exact `I agree`, and callbacks quoting the same document/time; tests cover alternate wording, exact ledger queries, gated machine effects, and the waiver-ending prerequisite without inferring consent from dialogue (criteria 11, 12, 18)
   - deps: T34, T41, T46
 - [ ] T52 (standard) — Archetype compact summaries and divergence callbacks
