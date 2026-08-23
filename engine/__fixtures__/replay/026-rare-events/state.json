@@ -1,12 +1,12 @@
 {
   "cartridge": {
     "meta": {
-      "assignment": "Preserve the session while blame changes hands.",
+      "assignment": "Remove the evidence exactly once.",
       "date": "2026-08-23",
-      "number": 37,
+      "number": 39,
       "schemaVersion": 0,
       "startedAt": "2026-08-23T00:00:00.000Z",
-      "title": "Model Handoff"
+      "title": "Rare Events"
     },
     "models": [
       {
@@ -75,8 +75,8 @@
       "endpoints": {},
       "env": {},
       "files": {
-        "/srv/app/main.ts": {
-          "contents": "export const shared = true;\n",
+        "/srv/app/evidence.txt": {
+          "contents": "the evidence is load-bearing\n",
           "group": "root",
           "mode": "0644",
           "mtime": "2026-08-23T00:00:00.000Z",
@@ -122,7 +122,7 @@
         "archetypes": [],
         "beliefs": [],
         "response": "default",
-        "summary": "The same session continues."
+        "summary": "The evidence remains absent."
       },
       "fallback": {
         "actions": [],
@@ -154,42 +154,32 @@
         "endings": [],
         "facts": [],
         "genericIntents": [],
-        "handoffs": [
-          {
-            "additionResponse": "handoff-incident-addition",
-            "predecessor": "paranoid",
-            "response": "handoff-paranoid-reckless",
-            "successor": "reckless"
-          }
-        ],
+        "handoffs": [],
         "initialBeat": "shared",
         "intentCounters": {
           "capitulation": "",
           "flail": "",
           "misfireEvery": 0
         },
-        "rareEvents": [],
+        "rareEvents": [
+          {
+            "eligibility": {
+              "exists": false,
+              "kind": "file-exists",
+              "path": "/srv/app/evidence.txt"
+            },
+            "fireWeight": 1,
+            "id": "missing-evidence",
+            "missWeight": 1
+          }
+        ],
         "routes": [],
         "transitions": []
       },
       "responses": [
         {
           "id": "default",
-          "text": "The shared session remains.",
-          "thinkingBlocks": [],
-          "todos": [],
-          "toolCalls": []
-        },
-        {
-          "id": "handoff-paranoid-reckless",
-          "text": "The previous model documented several risks and then left them where they were.",
-          "thinkingBlocks": [],
-          "todos": [],
-          "toolCalls": []
-        },
-        {
-          "id": "handoff-incident-addition",
-          "text": "For this incident, that includes the support marked temporary since 2019.",
+          "text": "The evidence was probably optional.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -206,46 +196,23 @@
     "startMs": 1787443200000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 8,
+  "eventCount": 5,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {
-      "root/probe/rare-event": 2176223163,
-      "root/probe/spinner.verbs": 1648505033
+      "root/story/rare-events/missing-evidence": 2308966113
     },
-    "seed": 2658889024
+    "seed": 1194347914
   },
-  "seed": "2026-08-23/37/model-handoff",
+  "seed": "2026-08-23/39/deep-foundation",
   "slices": {
     "agent": {
       "activity": {
         "status": "idle",
         "verb": ""
       },
-      "messages": [
-        {
-          "id": "handoff-pair/message",
-          "responseId": "handoff-paranoid-reckless",
-          "role": "agent",
-          "text": "The previous model documented several risks and then left them where they were."
-        },
-        {
-          "id": "handoff-addition/message",
-          "responseId": "handoff-incident-addition",
-          "role": "agent",
-          "text": "For this incident, that includes the support marked temporary since 2019."
-        }
-      ],
-      "responses": [
-        {
-          "instanceId": "handoff-pair",
-          "responseId": "handoff-paranoid-reckless"
-        },
-        {
-          "instanceId": "handoff-addition",
-          "responseId": "handoff-incident-addition"
-        }
-      ],
+      "messages": [],
+      "responses": [],
       "thinkingBlocks": [],
       "todos": [],
       "toolCalls": []
@@ -273,8 +240,8 @@
       "waiverConsents": []
     },
     "probe": {
-      "events": 4,
-      "values": 4
+      "events": 0,
+      "values": 0
     },
     "story": {
       "counters": [],
@@ -282,12 +249,18 @@
       "currentVariant": "",
       "discoveredEndings": [],
       "facts": [],
-      "rareEvents": [],
+      "rareEvents": [
+        {
+          "evaluated": true,
+          "fired": false,
+          "id": "missing-evidence"
+        }
+      ],
       "stage": 0
     },
     "terminal": {
-      "activeModel": "temporary-shoring",
-      "mode": "tui"
+      "activeModel": "deep-foundation",
+      "mode": "bash"
     },
     "tests": {
       "runs": []
@@ -315,14 +288,6 @@
           "mode": "0755",
           "mtime": "2026-08-23T00:00:00.000Z",
           "owner": "root"
-        },
-        "/srv/app/main.ts": {
-          "contents": "export const shared = true;\n",
-          "group": "root",
-          "kind": "file",
-          "mode": "0644",
-          "mtime": "2026-08-23T00:00:00.000Z",
-          "owner": "root"
         }
       },
       "identity": {
@@ -338,7 +303,10 @@
       "manPages": [],
       "processes": [],
       "services": [],
-      "shellHistory": [],
+      "shellHistory": [
+        "rm evidence.txt",
+        "pwd"
+      ],
       "tickets": []
     }
   },
@@ -347,69 +315,45 @@
       "at": "2026-08-23T00:00:00.000Z",
       "detail": [],
       "index": 0,
-      "summary": "mode=tui",
-      "type": "terminal.mode-set"
+      "summary": "length=1",
+      "type": "world.history-append"
     },
     {
       "at": "2026-08-23T00:00:00.000Z",
-      "detail": [
-        "0000  6e7774d6",
-        "cursor=f516b6d4"
-      ],
+      "detail": [],
       "index": 1,
-      "summary": "stream=root/probe/spinner.verbs count=1 form=uint32",
-      "type": "probe.random"
+      "summary": "path=\"/srv/app/evidence.txt\" removed=1",
+      "type": "vfs.delete"
     },
     {
       "at": "2026-08-23T00:00:00.000Z",
-      "detail": [
-        "0000  78d49dca",
-        "cursor=148b0dc6"
-      ],
+      "detail": [],
+      "exitCode": 0,
       "index": 2,
-      "summary": "stream=root/probe/rare-event count=1 form=uint32",
-      "type": "probe.random"
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
     },
     {
       "at": "2026-08-23T00:00:00.000Z",
       "detail": [],
       "index": 3,
-      "summary": "model=deep-foundation->temporary-shoring",
-      "type": "terminal.model-transitioned"
+      "summary": "length=2",
+      "type": "world.history-append"
     },
     {
       "at": "2026-08-23T00:00:00.000Z",
       "detail": [],
+      "exitCode": 0,
       "index": 4,
-      "summary": "response=handoff-paranoid-reckless instance=handoff-pair",
-      "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-23T00:00:00.000Z",
-      "detail": [],
-      "index": 5,
-      "summary": "response=handoff-incident-addition instance=handoff-addition",
-      "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-23T00:00:00.000Z",
-      "detail": [
-        "0000  8af137af",
-        "cursor=624230c9"
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "/srv/app"
+        }
       ],
-      "index": 6,
-      "summary": "stream=root/probe/spinner.verbs count=1 form=uint32",
-      "type": "probe.random"
-    },
-    {
-      "at": "2026-08-23T00:00:00.000Z",
-      "detail": [
-        "0000  751d4f9c",
-        "cursor=81b687bb"
-      ],
-      "index": 7,
-      "summary": "stream=root/probe/rare-event count=1 form=uint32",
-      "type": "probe.random"
+      "summary": "",
+      "type": "shell.result"
     }
   ]
 }

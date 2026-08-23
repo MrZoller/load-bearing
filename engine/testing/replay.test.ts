@@ -188,6 +188,26 @@ describe("golden replay fixtures", () => {
     expect(recording.transcript).not.toContain("mind.waiver-choice");
   });
 
+  it("records a rare draw only after the completing shell expansion, and never rerolls it", () => {
+    const recording = replayFixture(loadReplayFixture("026-rare-events"));
+    const state = restoreSnapshot(recording.state);
+
+    expect(readStorySlice(state).rareEvents).toEqual([
+      expect.objectContaining({
+        id: "missing-evidence",
+        evaluated: true,
+        fired: false,
+      }),
+    ]);
+    expect(Object.keys(state.random.cursors)).toContain(
+      "root/story/rare-events/missing-evidence",
+    );
+    expect(recording.transcript).toContain(
+      'vfs.delete path="/srv/app/evidence.txt" removed=1',
+    );
+    expect(recording.transcript.match(/shell\.result/g)).toHaveLength(2);
+  });
+
   it("pins four same-seed persona outcomes over one shared beat identity", () => {
     const recording = replayFixture(
       loadReplayFixture("024-sparse-persona-routes"),
@@ -220,6 +240,7 @@ describe("golden replay fixtures", () => {
         { id: "flail", value: 0 },
         { id: "capitulation", value: 0 },
       ],
+      rareEvents: [],
       discoveredEndings: ["load-bearing-response"],
     });
     expect(

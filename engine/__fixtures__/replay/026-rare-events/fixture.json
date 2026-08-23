@@ -1,0 +1,14 @@
+{
+  "name": "026-rare-events",
+  "description": "A shell expansion removes authored evidence; only after its final staged state does the isolated one-shot rare draw evaluate, and a later command cannot reroll it.",
+  "seed": "2026-08-23/39/deep-foundation",
+  "cartridge": "rare-events",
+  "events": [
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm evidence.txt" },
+      "version": 0
+    },
+    { "type": "shell.execute", "payload": { "input": "pwd" }, "version": 0 }
+  ]
+}

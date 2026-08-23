@@ -59,8 +59,10 @@ state = reduce(cartridge, seed, eventLog)
   one model's draws cannot perturb or restart another's. No `Math.random()`.
 - **All time** is simulated and advances by event, not wall clock. No
   `Date.now()` inside the engine.
-- Rare events roll against the PRNG so they are rare per-session but exactly
-  reproducible per-replay.
+- Rare events roll once when first eligible so they are rare per-session but
+  exactly reproducible per-replay. Each uses `root/story/rare-events/<id>` with
+  the fire arm before the miss arm; a miss is recorded and terminal rather than
+  becoming a reroll opportunity.
 
 This buys, for free: shareable replay permalinks
 (`incident + model + seed + compressed event log` in the URL), transcript
@@ -154,6 +156,15 @@ module that owns the affected slice. The full trigger plus cascade is atomic:
 if any action fails, no intermediate state escapes `step`. Cartridge loading
 rejects event-type cycles conservatively, so replay work is bounded by authored
 acyclic data rather than a runtime iteration limit.
+
+Only after that top-level transaction and its escalation transition are fully
+staged does the reducer visit eligible unevaluated **rare events** in authored
+order. Expansion children never run this phase independently. Each event makes
+one fire-first weighted pick on `root/story/rare-events/<id>` and atomically
+records evaluated/fired state; misses are terminal. Per-id forks mean adding or
+reordering another event, switching models, or consuming an unrelated stream
+cannot change an existing event's outcome. A failure publishes neither its
+story record nor the advanced random cursor.
 
 **An unregistered event type is refused, never ignored.** Treating it as a
 no-op would let a subsystem missing from the module list produce a session that
@@ -471,7 +482,8 @@ fallback, help/idle-nudge/compact/resume references, rotating placeholders,
 slash autocomplete descriptions, archetype-stage spinner pools, and integer
 metric parameters. `story.phase2` is a concrete bounded shared graph: one
 initial beat, at most 64 nonnegative safe-integer counters, declared
-reveal/callback facts, authored-order beats with sparse
+reveal/callback facts, at most 64 one-condition rare events, authored-order
+beats with sparse
 first-match condition variants, sparse authored-order dialogue routes over
 shared beat ids, unranked ending identities, and bounded
 authored-order adjacent escalation transitions. A transition's closed trigger
@@ -538,8 +550,10 @@ runtime projections; timers can rotate within the selected pool but cannot
 select a stage. `StorySlice.currentBeat`
 names the latest reached authored beat, `currentVariant` names its selected
 outcome (or empty for the base), `facts` preserves first-recorded typed facts,
-and `discoveredEndings` records ending ids once in discovery order. Variants are
-sparse outcomes on that one graph, never archetype-owned branches. Free play,
+and `discoveredEndings` records ending ids once in discovery order. `rareEvents`
+keeps one evaluated/fired record per declaration in authored order; fired always
+implies evaluated, while evaluated misses remain terminal. Variants are sparse
+outcomes on that one graph, never archetype-owned branches. Free play,
 Bash, and model switching continue after discovery; Phase 3 may project that
 state into a report, but it does not own or reinterpret the discovery.
 

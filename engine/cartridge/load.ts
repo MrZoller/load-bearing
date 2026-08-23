@@ -36,6 +36,7 @@
 import { deepFreeze } from "../freeze.js";
 import { parseTimestamp } from "../clock/civil.js";
 import { detectBrand } from "../serialize/canonical.js";
+import { MAX_INT_RANGE } from "../random/stream.js";
 import type { StoryCondition } from "../story/types.js";
 import { keywordPatternIssue, normalizeIntentPhrase } from "./intent.js";
 import {
@@ -1363,6 +1364,25 @@ function checkStoryAndPresentation(
         `${String(counter.maximum)}, below initial ${String(counter.initial)}`,
       );
   });
+  const rareEvents = new Map<string, number>();
+  story.phase2.rareEvents.forEach((rareEvent, index) => {
+    const root = `/story/phase2/rareEvents/${String(index)}`;
+    const first = rareEvents.get(rareEvent.id);
+    if (first === undefined) rareEvents.set(rareEvent.id, index);
+    else
+      report.addPhrase(
+        `${root}/id`,
+        "an id no other rare event uses",
+        `${JSON.stringify(rareEvent.id)}, already used by /story/phase2/rareEvents/${String(first)}`,
+      );
+    const total = rareEvent.fireWeight + rareEvent.missWeight;
+    if (total > MAX_INT_RANGE)
+      report.addPhrase(
+        `${root}/missWeight`,
+        `a fireWeight + missWeight total at most ${String(MAX_INT_RANGE)}`,
+        `${String(rareEvent.missWeight)}, which totals ${String(total)} with fireWeight ${String(rareEvent.fireWeight)}`,
+      );
+  });
   const routeIds = new Map<string, number>();
   story.phase2.routes.forEach((route, index) => {
     const root = `/story/phase2/routes/${String(index)}`;
@@ -1547,6 +1567,12 @@ function checkStoryAndPresentation(
         condition,
         `/story/phase2/routes/${String(routeIndex)}/when/${String(conditionIndex)}`,
       ),
+    ),
+  );
+  story.phase2.rareEvents.forEach((rareEvent, index) =>
+    checkConditionReferences(
+      rareEvent.eligibility,
+      `/story/phase2/rareEvents/${String(index)}/eligibility`,
     ),
   );
   const checkOutcomeActions = (

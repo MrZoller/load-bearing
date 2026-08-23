@@ -207,6 +207,7 @@
           "flail": "",
           "misfireEvery": 0
         },
+        "rareEvents": [],
         "routes": [
           {
             "archetype": "paranoid",
@@ -408,6 +409,7 @@
       "currentVariant": "",
       "discoveredEndings": [],
       "facts": [],
+      "rareEvents": [],
       "stage": 0
     },
     "terminal": {

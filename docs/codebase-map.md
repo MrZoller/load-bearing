@@ -134,7 +134,7 @@ cartridge JSON (authored / Phase-5 generated)
         ▼  reduce()  [engine/events/reduce.ts]
         │   bootstrap registered slices + clock + named PRNG streams
         │   fold events: expand envelopes → dispatch owners/effects → transcript
-        │   → evaluate authored FIFO reaction cascades against staged state
+        │   → evaluate reactions + escalation, then top-level rare-event draws
         ▼
    SessionState + transcript:string[]
         │
@@ -168,7 +168,9 @@ them re-rolls or invalidates every committed fixture, on purpose.
    serialized `RandomState` (an untouched stream's position is derivable).
    `int()` uses rejection sampling (unbiased, variable draw count but
    deterministic). `weightedPick` is exact integer arithmetic; entry *order*
-   is part of the contract.
+   is part of the contract. Rare events use fire-first arms on
+   `root/story/rare-events/<id>`; per-id forks isolate them from declaration
+   order, model switches, and unrelated stream consumption.
 
 2. **`engine/clock/civil.ts`** — UTC-only, hand-written Gregorian arithmetic
    (Howard Hinnant's `civil_from_days` era algorithm). No `Date`, no `Intl`,
@@ -236,6 +238,14 @@ their event types follow the outer story trigger for later FIFO reactions. The
 complete outer event and consequence chain publishes atomically. Derived events
 may use legitimate owner effects, but cannot expand, append transcript entries,
 or move clock/PRNG state.
+
+After consequences, FIFO reactions, and escalation have fully staged for the
+top-level transition, the reducer visits unevaluated eligible rare events in
+cartridge order. Expansion children do not run the phase. Each event makes one
+fire-first weighted pick from `root/story/rare-events/<id>` and records
+`{id,evaluated,fired}` through an internal story owner event. A miss is terminal;
+per-id forks isolate outcomes from model switches, authored reordering, and
+unrelated streams, and transaction failure publishes neither state nor cursor.
 
 The `mind` slice is intentionally downstream of machine truth, never coupled to
 its mutations. `mind.permission-decision` records exact action/resource grants,

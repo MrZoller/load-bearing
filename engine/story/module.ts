@@ -11,6 +11,7 @@ import {
   advanceStoryStage,
   createStorySlice,
   recordStoryFact,
+  recordStoryRareEventEvaluation,
   reachStoryBeat,
   validateStorySlice,
 } from "./story.js";
@@ -35,6 +36,18 @@ export function createStoryStageAdvancedEvent(
   to: EscalationStage,
 ): EngineEvent {
   return { type: "story.stage-advanced", payload: { from, to }, version: 0 };
+}
+
+/** Internal owner event. The reducer refuses this type in a visitor event log. */
+export function createStoryRareEventEvaluatedEvent(
+  id: string,
+  fired: boolean,
+): EngineEvent {
+  return {
+    type: "story.rare-event-evaluated",
+    payload: { id, fired },
+    version: 0,
+  };
 }
 
 export const STORY_MODULE = defineEventModule<StorySlice>({
@@ -74,6 +87,31 @@ export const STORY_MODULE = defineEventModule<StorySlice>({
             slice,
             from as EscalationStage,
             to as EscalationStage,
+          ),
+        };
+      },
+    },
+    "story.rare-event-evaluated": {
+      version: 0,
+      apply(context, slice) {
+        const payload = requirePayload(context);
+        const unknown = Object.keys(payload)
+          .filter((key) => key !== "id" && key !== "fired")
+          .sort();
+        if (unknown.length > 0)
+          throw new Error(
+            `${context.where}: unexpected payload field(s) ${unknown.join(", ")}; expected id, fired`,
+          );
+        const id = readString(payload, "id", context.where);
+        const fired = payload["fired"];
+        if (typeof fired !== "boolean")
+          throw new Error(`${context.where}: fired must be a boolean`);
+        return {
+          slice: recordStoryRareEventEvaluation(
+            slice,
+            context.cartridge,
+            id,
+            fired,
           ),
         };
       },

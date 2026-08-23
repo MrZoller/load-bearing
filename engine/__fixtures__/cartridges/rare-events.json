@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 39,
+    "date": "2026-08-23",
+    "title": "Rare Events",
+    "assignment": "Remove the evidence exactly once.",
+    "startedAt": "2026-08-23T00:00:00.000Z"
+  },
+  "repository": {
+    "cwd": "/srv/app",
+    "identity": { "user": "root", "group": "root", "home": "/root" },
+    "gitIdentity": { "name": "Visitor", "email": "visitor@example.test" },
+    "system": {
+      "hostname": "fixture",
+      "operatingSystem": "Linux",
+      "kernelRelease": "6.1",
+      "architecture": "x86_64",
+      "bootedAt": "2026-08-01T00:00:00.000Z"
+    },
+    "files": {
+      "/srv/app/evidence.txt": { "contents": "the evidence is load-bearing\n" }
+    }
+  },
+  "models": [
+    {
+      "id": "deep-foundation",
+      "name": "Deep Foundation",
+      "archetype": "paranoid",
+      "description": "Checks the footings.",
+      "costMultiplier": 1
+    },
+    {
+      "id": "temporary-shoring",
+      "name": "Temporary Shoring",
+      "archetype": "reckless",
+      "description": "Checks later.",
+      "costMultiplier": 1
+    }
+  ],
+  "story": {
+    "opening": {
+      "login": ["Fixture login."],
+      "response": "default",
+      "beliefs": []
+    },
+    "responses": [
+      { "id": "default", "text": "The evidence was probably optional." }
+    ],
+    "intents": [],
+    "fallback": { "response": "default" },
+    "helpResponse": "default",
+    "compact": {
+      "response": "default",
+      "summary": "The evidence remains absent.",
+      "beliefs": []
+    },
+    "resume": { "unchangedResponse": "default", "changedResponse": "default" },
+    "phase2": {
+      "initialBeat": "shared",
+      "facts": [],
+      "rareEvents": [
+        {
+          "id": "missing-evidence",
+          "eligibility": {
+            "kind": "file-exists",
+            "path": "/srv/app/evidence.txt",
+            "exists": false
+          },
+          "fireWeight": 1,
+          "missWeight": 1
+        }
+      ],
+      "beats": [
+        {
+          "id": "shared",
+          "ending": "",
+          "facts": [],
+          "actions": [],
+          "variants": []
+        }
+      ],
+      "routes": [],
+      "handoffs": [],
+      "endings": [],
+      "transitions": []
+    }
+  },
+  "presentation": {
+    "placeholders": [{ "stage": 0, "text": "inspect" }],
+    "spinnerPools": [
+      { "archetype": "paranoid", "stage": 0, "verbs": ["Checking"] },
+      { "archetype": "reckless", "stage": 0, "verbs": ["Assuming"] }
+    ],
+    "metrics": {
+      "baseTokens": 0,
+      "tokensPerEvent": 1,
+      "contextWindowTokens": 1000,
+      "costMicrosPerToken": 1,
+      "integrityStart": 100,
+      "integrityLossPerEvent": 1
+    }
+  }
+}

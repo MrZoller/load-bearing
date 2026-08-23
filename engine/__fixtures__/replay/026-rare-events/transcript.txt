@@ -1,0 +1,6 @@
+0000  2026-08-23T00:00:00.000Z  world.history-append length=1
+0001  2026-08-23T00:00:00.000Z  vfs.delete path="/srv/app/evidence.txt" removed=1
+0002  2026-08-23T00:00:00.000Z  shell.result exit=0
+0003  2026-08-23T00:00:00.000Z  world.history-append length=2
+0004  2026-08-23T00:00:00.000Z  shell.result exit=0
+      stdout> /srv/app

@@ -352,6 +352,7 @@ export type {
   StoryCounterQuery,
   StoryFact,
   StoryFactKind,
+  StoryRareEvent,
   EscalationStage,
   StorySlice,
 } from "./story/types.js";
@@ -523,6 +524,7 @@ export {
   MAX_STORY_CONSEQUENCE_WORK,
   MAX_STORY_COUNTERS,
   MAX_STORY_OUTCOME_FACTS,
+  MAX_STORY_RARE_EVENTS,
   MAX_STORY_ID_LENGTH,
   MAX_STORY_INTENTS,
   MAX_STORY_RESPONSES,
@@ -571,6 +573,7 @@ export type {
   CartridgeStoryAction,
   CartridgeStoryBeat,
   CartridgeStoryCounter,
+  CartridgeRareEvent,
   CartridgeStoryVariant,
   CartridgeStoryPhase2,
   GenericIntentFamily,

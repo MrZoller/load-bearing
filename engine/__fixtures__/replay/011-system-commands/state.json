@@ -351,6 +351,7 @@
           "flail": "",
           "misfireEvery": 0
         },
+        "rareEvents": [],
         "routes": [],
         "transitions": []
       },
@@ -428,6 +429,7 @@
       "currentVariant": "",
       "discoveredEndings": [],
       "facts": [],
+      "rareEvents": [],
       "stage": 0
     },
     "terminal": {

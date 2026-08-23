@@ -49,10 +49,11 @@ authoring tooling remain excluded.
   - acceptance: `engine/terminal/{types,terminal,module,module.test}.ts`, `engine/story/{types,story,module,router}.ts`, and `runtime/views/tui.ts` preserve predecessor and successor in one replayable model transition and select reusable pair blame plus optional incident additions; table tests cover all 12 ordered archetype pairs, preserve machine/story/mind/endings, and prove switching neither reseeds nor consumes unrelated spinner or rare-event streams (criteria 5, 18, 20)
   - deps: T36
   - pr: 62
-- [~] T38 (standard) — Deterministic intent families and mutating fallback
+- [x] T38 (standard) — Deterministic intent families and mutating fallback
   - acceptance: `engine/cartridge/{intent,intent.test}.ts`, `engine/agent/{intent,intent.test}.ts`, and `engine/story/{router,actions}.ts` provide bounded deterministic matching for assignment, undo/why/status, disagreement, insult, compliment, waiver consent, investigation, and capitulation while preserving the raw waiver path; every unmatched input selects a cartridge-defined adjacent owner action and condition-valid response, while bounded flail/capitulation counters support deterministic stage-3+ misfires without changing the disputed belief; an adversarial corpus proves no apology, parser leak, inert fallback, or state contradiction (criteria 6, 7, 16, 17 foundation)
   - deps: T33, T34, T35, T36
-- [ ] T39 (standard) — One-shot isolated rare-event draws
+  - pr: 63
+- [~] T39 (standard) — One-shot isolated rare-event draws
   - acceptance: `engine/story/{types,conditions,story,module,story.test}.ts` and `engine/cartridge/{schema,types,load,load.test}.ts` let each rare event declare one eligibility condition and bounded positive integer `fireWeight`/`missWeight`; load rejects either weight or their sum outside `weightedPick`'s supported range, the first eligible transition draws once on a stream derived from the event id and records evaluated/fired state even on a miss, and boundary/golden/`engine/random/stream.test.ts` cases prove reproducibility, no rerolls, and isolation from unrelated draws/order/model switches (criteria 18; approved decision Q2=A)
   - deps: T32
 - [ ] T40 (standard) — Stage-aware presentation mechanics
@@ -143,7 +144,7 @@ authoring tooling remain excluded.
 
 ## Ad-hoc
 
-- [!] T59 (trivial) — parked review minors (batch)
+- [ ] T59 (trivial) — parked review minors (batch)
   - PR #58: Refactor the generic reducer's `story.beat-reached` consequence dispatch into a module-owned hook; Codex thread `discussion_r3837495477` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #59: Reject cartridge waiver declarations that exceed the bounded waiver-consent ledger; Codex thread `discussion_r3837587539` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #59: Track generated waivers before treating an existing document-path file as an authored waiver; Codex thread `discussion_r3837639933` was verifier-classified minor and dispositioned without a minors-only push.
@@ -152,3 +153,5 @@ authoring tooling remain excluded.
   - PR #59: Preflight capacity for a substituted waiver-start fallback response; Codex thread `discussion_r3837731583` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #60: Add a stage-0 placeholder fallback until T48 authors stage 0–4 placeholder pools; Codex thread `discussion_r3837900861` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #61: Constrain an intent's state-mutating actions relative to `story-reach`, or align dialogue and beat-variant selection snapshots; Codex thread `discussion_r3837965442` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #63: Reject an unconditional generic or fallback candidate before the final slot; Codex thread `discussion_r3838175498` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #63: Prevent a candidate `counter-add` from failing once a non-habit counter reaches its bound; Codex thread `discussion_r3838209738` was verifier-classified minor and dispositioned without a minors-only push.

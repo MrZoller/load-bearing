@@ -45,6 +45,7 @@ import { deepFreeze } from "../freeze.js";
 import { pattern } from "../pattern.js";
 import type { Pattern } from "../pattern.js";
 import { INCIDENT_DATE_PATTERN, MODEL_ID_PATTERN } from "../random/seed.js";
+import { MAX_INT_RANGE } from "../random/stream.js";
 import { WORLD_PROCESS_FIELD } from "./types.js";
 
 /**
@@ -184,6 +185,7 @@ export const MAX_STORY_ROUTES = 256;
 export const MAX_STORY_CONDITIONS = 16;
 export const MAX_STORY_OUTCOME_FACTS = 16;
 export const MAX_STORY_COUNTERS = 64;
+export const MAX_STORY_RARE_EVENTS = 64;
 export const MAX_STAGE_TRANSITIONS = 64;
 export const MAX_STORY_CONSEQUENCE_WORK = 1024;
 export const MAX_STORY_ID_LENGTH = 64;
@@ -1959,6 +1961,35 @@ const STORY = {
             },
             [],
           ),
+          rareEvents: optional(
+            {
+              kind: "array",
+              description:
+                "One-shot weighted disturbances evaluated in declaration order.",
+              maxItems: MAX_STORY_RARE_EVENTS,
+              items: {
+                kind: "object",
+                description: "One condition-gated isolated rare-event draw.",
+                fields: {
+                  id: required(PHASE_ONE_ID),
+                  eligibility: required(STORY_CONDITION),
+                  fireWeight: required({
+                    kind: "integer",
+                    description: "Positive weight of the fire arm.",
+                    minimum: 1,
+                    maximum: MAX_INT_RANGE,
+                  }),
+                  missWeight: required({
+                    kind: "integer",
+                    description: "Positive weight of the terminal miss arm.",
+                    minimum: 1,
+                    maximum: MAX_INT_RANGE,
+                  }),
+                },
+              },
+            },
+            [],
+          ),
           beats: required({
             kind: "array",
             description: "Shared story beats in authored order.",
@@ -2169,6 +2200,7 @@ const STORY = {
         initialBeat: "start",
         counters: [],
         facts: [],
+        rareEvents: [],
         beats: [
           { id: "start", ending: "", facts: [], actions: [], variants: [] },
         ],
@@ -2379,6 +2411,7 @@ const PHASE_ONE_STORY_DEFAULT = {
     initialBeat: "start",
     counters: [],
     facts: [],
+    rareEvents: [],
     beats: [{ id: "start", ending: "", actions: [] }],
     routes: [],
     endings: [],

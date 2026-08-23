@@ -1017,6 +1017,7 @@
           "flail": "flail",
           "misfireEvery": 3
         },
+        "rareEvents": [],
         "routes": [],
         "transitions": [
           {
@@ -1405,6 +1406,7 @@
           "kind": "callback"
         }
       ],
+      "rareEvents": [],
       "stage": 1
     },
     "terminal": {

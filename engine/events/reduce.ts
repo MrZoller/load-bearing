@@ -65,9 +65,15 @@ import type { EventRegistry } from "./registry.js";
 import { reactionActionEvent, reactionPredicateMatches } from "../reactions.js";
 import { MAX_STORY_CONSEQUENCE_WORK } from "../cartridge/schema.js";
 import { storyActionEvent } from "../story/actions.js";
-import { storyStageTriggerMatches } from "../story/conditions.js";
+import {
+  storyConditionMatches,
+  storyStageTriggerMatches,
+} from "../story/conditions.js";
 import { readStorySlice, validateStorySlice } from "../story/story.js";
-import { createStoryStageAdvancedEvent } from "../story/module.js";
+import {
+  createStoryRareEventEvaluatedEvent,
+  createStoryStageAdvancedEvent,
+} from "../story/module.js";
 import { EVENT_SCHEMA_VERSION, readSlice } from "./state.js";
 import type {
   EngineEvent,
@@ -305,9 +311,12 @@ function foldEvent(
   const envelope = assertEventEnvelope(event, `event ${String(index)}`);
   const where = `event ${String(index)} (${envelope.type})`;
 
-  if (envelope.type === "story.stage-advanced")
+  if (
+    envelope.type === "story.stage-advanced" ||
+    envelope.type === "story.rare-event-evaluated"
+  )
     throw new Error(
-      `${where}: escalation stages are derived by the reducer and cannot be logged or runtime-dispatched`,
+      `${where}: internal story owner events are derived by the reducer and cannot be logged or runtime-dispatched`,
     );
 
   const handler = registry.handler(envelope.type);
@@ -429,7 +438,16 @@ function foldEvent(
       if (!outcome.hasExpansionFallback) throw error;
       staged = stageExpansion(outcome.expansionFallback);
     }
-    return applyEscalation(before, staged, envelope, registry, where);
+    const completed = applyEscalation(
+      before,
+      staged,
+      envelope,
+      registry,
+      where,
+    );
+    return reactionsAllowed
+      ? applyRareEvents(completed, registry, where)
+      : completed;
   }
   const slices = applyEffects(
     before,
@@ -466,9 +484,9 @@ function foldEvent(
   const reacted = reactionsAllowed
     ? applyReactions(staged, triggers, registry, where)
     : staged;
-  return reactionsAllowed
-    ? applyEscalation(before, reacted, envelope, registry, where)
-    : reacted;
+  if (!reactionsAllowed) return reacted;
+  const completed = applyEscalation(before, reacted, envelope, registry, where);
+  return applyRareEvents(completed, registry, where);
 }
 
 function stagedStorySlice(state: SessionState) {
@@ -507,6 +525,59 @@ function applyEscalation(
     `${where} escalation`,
     "story escalation",
   );
+}
+
+/** Evaluate each newly eligible rare event after the top-level transaction. */
+function applyRareEvents(
+  completed: SessionState,
+  registry: EventRegistry,
+  where: string,
+): SessionState {
+  const declarations = completed.cartridge.story.phase2.rareEvents ?? [];
+  if (
+    declarations.length === 0 ||
+    registry.module("story") === undefined ||
+    !Object.hasOwn(completed.slices, "story")
+  )
+    return completed;
+
+  const random = restoreRandom(completed.random);
+  const streams = random.fork("story").fork("rare-events");
+  let state = completed;
+  for (const declaration of declarations) {
+    const recorded = stagedStorySlice(state).rareEvents.find(
+      (rareEvent) => rareEvent.id === declaration.id,
+    );
+    if (
+      recorded === undefined ||
+      recorded.evaluated ||
+      !storyConditionMatches(state, declaration.eligibility)
+    )
+      continue;
+    const fired = streams.fork(declaration.id).weightedPick([
+      { value: true, weight: declaration.fireWeight },
+      { value: false, weight: declaration.missWeight },
+    ]);
+    state = applyDerivedEvent(
+      state,
+      createStoryRareEventEvaluatedEvent(declaration.id, fired),
+      registry,
+      `${where} rare event ${JSON.stringify(declaration.id)}`,
+      "story rare event",
+    );
+  }
+
+  return freezeState({
+    engineVersion: state.engineVersion,
+    eventSchemaVersion: state.eventSchemaVersion,
+    seed: state.seed,
+    cartridge: state.cartridge,
+    eventCount: state.eventCount,
+    clock: state.clock,
+    random: random.toState(),
+    slices: state.slices,
+    transcript: state.transcript,
+  });
 }
 
 /** Stage the selected story outcome and every recursively reached outcome. */
@@ -627,7 +698,8 @@ function applyDerivedEvent(
   event: EngineEvent,
   registry: EventRegistry,
   where: string,
-  source: "reaction" | "story consequence" | "story escalation",
+  source:
+    "reaction" | "story consequence" | "story escalation" | "story rare event",
 ): SessionState {
   const envelope = assertEventEnvelope(event, where);
   const handler = registry.handler(envelope.type);

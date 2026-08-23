@@ -11,6 +11,7 @@ import { CartridgeValidationError, loadCartridge } from "./load.js";
 import type { CartridgeIssue } from "./load.js";
 import { CARTRIDGE_SCHEMA } from "./schema.js";
 import type { SchemaNode } from "./schema.js";
+import { MAX_INT_RANGE } from "../random/stream.js";
 
 /** Rewritten per test; the shared object is only ever read. */
 function minimal(): Record<string, unknown> {
@@ -146,6 +147,7 @@ describe("loadCartridge", () => {
       initialBeat: "start",
       counters: [],
       facts: [],
+      rareEvents: [],
       beats: [
         {
           id: "start",
@@ -892,6 +894,66 @@ describe("loadCartridge", () => {
         expect.arrayContaining([...pointers]),
       );
     }
+  });
+
+  it("validates bounded, uniquely named rare-event draws and their one closed eligibility condition", () => {
+    const phase2 = (rareEvents: unknown[]) => ({
+      initialBeat: "start",
+      rareEvents,
+      beats: [{ id: "start", ending: "" }],
+      endings: [],
+    });
+    const invalid = (rareEvents: unknown[]) => {
+      const source = minimal();
+      (source["story"] as Record<string, unknown>)["phase2"] =
+        phase2(rareEvents);
+      return issuesOf(source).map((issue) => issue.pointer);
+    };
+    const draw = {
+      id: "same",
+      eligibility: { kind: "file-exists", path: "/etc/motd", exists: true },
+      fireWeight: 1,
+      missWeight: 1,
+    };
+
+    expect(invalid([{ ...draw, fireWeight: 0 }])).toContain(
+      "/story/phase2/rareEvents/0/fireWeight",
+    );
+    expect(invalid([{ ...draw, missWeight: MAX_INT_RANGE + 1 }])).toContain(
+      "/story/phase2/rareEvents/0/missWeight",
+    );
+    expect(
+      invalid([{ ...draw, fireWeight: 1, missWeight: MAX_INT_RANGE }]),
+    ).toContain("/story/phase2/rareEvents/0/missWeight");
+    expect(invalid([draw, { ...draw }])).toContain(
+      "/story/phase2/rareEvents/1/id",
+    );
+    expect(
+      invalid([{ ...draw, eligibility: [{ ...draw.eligibility }] }]),
+    ).toContain("/story/phase2/rareEvents/0/eligibility");
+    expect(
+      invalid([
+        {
+          ...draw,
+          eligibility: {
+            kind: "story-fact",
+            fact: "missing",
+            factKind: "reveal",
+          },
+        },
+      ]),
+    ).toContain("/story/phase2/rareEvents/0/eligibility/fact");
+
+    const valid = minimal();
+    (valid["story"] as Record<string, unknown>)["phase2"] = phase2([
+      {
+        id: "boundary",
+        eligibility: { kind: "file-exists", path: "/etc/motd", exists: true },
+        fireWeight: 1,
+        missWeight: MAX_INT_RANGE - 1,
+      },
+    ]);
+    expect(loadCartridge(valid).story.phase2.rareEvents).toHaveLength(1);
   });
 
   it("rejects direct and multi-beat story-reach cycles at their closing action", () => {

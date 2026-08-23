@@ -90,6 +90,7 @@ describe("the engine's module list", () => {
       "story.beat-reached",
       "story.counter-added",
       "story.fact-recorded",
+      "story.rare-event-evaluated",
       "story.stage-advanced",
       "terminal.mode-set",
       "terminal.model-set",
