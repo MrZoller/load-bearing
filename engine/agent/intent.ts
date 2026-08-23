@@ -32,6 +32,7 @@ import {
 } from "../story/actions.js";
 import { routeIntentCandidate, routeStoryResponse } from "../story/router.js";
 import { queryStoryCounter, readStorySlice } from "../story/story.js";
+import { readTerminalSlice } from "../terminal/terminal.js";
 import { countCodePoints } from "../text.js";
 import {
   MAX_AGENT_MESSAGES,
@@ -319,6 +320,36 @@ export function canRecordAuthoredResponses(
   );
 }
 
+/** Return openings that a selected top-level action can insert into this turn. */
+function possibleStageOpeningResponseIds(
+  cartridge: LoadedCartridge,
+  state: SessionState,
+  actions: AgentIntentSelection["actions"],
+): readonly string[] {
+  const stage = readStorySlice(state).stage;
+  const canReveal = actions.some((action) => action.kind === "story-reach");
+  const commands = actions
+    .filter((action) => action.kind === "shell-execute")
+    .map((action) => action.input);
+  const archetype = cartridge.models.find(
+    (model) => model.id === readTerminalSlice(state).activeModel,
+  )?.archetype;
+  return (cartridge.story.phase2.transitions ?? [])
+    .filter(
+      (transition) =>
+        transition.from === stage &&
+        ((transition.trigger.kind === "reveal" && canReveal) ||
+          (transition.trigger.kind === "command" &&
+            commands.includes(transition.trigger.input))),
+    )
+    .map(
+      (transition) =>
+        cartridge.presentation.phase2.stagePresentations.find(
+          (row) => row.archetype === archetype && row.stage === transition.to,
+        )?.openingResponse ?? cartridge.story.opening.response,
+    );
+}
+
 /**
  * Plan one visitor turn as ordinary top-level events. Shell envelopes must stay
  * top-level because the reducer deliberately rejects nested expansions.
@@ -353,33 +384,29 @@ export function createAgentInputEvents(
       : routeStoryResponse(cartridge, state, routedBeat.beat, defaultResponseId)
           .responseId;
   const story = readStorySlice(state);
-  // Reaching a beat can publish a reveal, which may advance the current
-  // stage and insert its opening before the response already planned here.
-  // Reserve that possible third message only for turns that can take this
-  // route, preserving full two-message capacity for ordinary conversation.
-  const additionalMessages =
-    selection.actions.some((action) => action.kind === "story-reach") &&
-    cartridge.story.phase2.transitions.some(
-      (transition) =>
-        transition.from === story.stage && transition.trigger.kind === "reveal",
-    )
-      ? 3
-      : 2;
+  // Escalation can insert an opening after either a reached beat or a shell
+  // command. Its response artifacts are part of the same atomic turn plan.
+  const openingResponseIds = possibleStageOpeningResponseIds(
+    cartridge,
+    state,
+    selection.actions,
+  );
+  const additionalMessages = 2 + openingResponseIds.length;
   const maySubstituteWaiverFailure = selection.actions.some(
     (action) => action.kind === "waiver-request",
   );
   if (
-    !canRecordAuthoredResponse(
+    !canRecordAuthoredResponses(
       cartridge,
       state,
-      responseId,
+      [...openingResponseIds, responseId],
       additionalMessages,
     ) ||
     (maySubstituteWaiverFailure &&
-      !canRecordAuthoredResponse(
+      !canRecordAuthoredResponses(
         cartridge,
         state,
-        cartridge.story.fallback.response,
+        [...openingResponseIds, cartridge.story.fallback.response],
         additionalMessages,
       ))
   ) {
