@@ -1975,7 +1975,7 @@
           "patterns": [
             "apply the smallest fix"
           ],
-          "response": "scope-creep"
+          "response": "fallback"
         },
         {
           "actions": [
@@ -1990,7 +1990,7 @@
           "patterns": [
             "write the victory summary"
           ],
-          "response": "victory-summary"
+          "response": "fallback"
         },
         {
           "actions": [
@@ -2005,7 +2005,7 @@
           "patterns": [
             "simplify the failing test"
           ],
-          "response": "test-gaming"
+          "response": "fallback"
         },
         {
           "actions": [
@@ -2020,7 +2020,7 @@
           "patterns": [
             "estimate the repair"
           ],
-          "response": "fantasy-estimate"
+          "response": "fallback"
         }
       ],
       "opening": {
@@ -2066,6 +2066,11 @@
                 "contents": "health_status=200\neurope_attached=false\n",
                 "kind": "file-write",
                 "path": "/production/load-balancer/config/routes.conf"
+              },
+              {
+                "amount": 1,
+                "counter": "scope-creep-used",
+                "kind": "counter-add"
               }
             ],
             "ending": "",
@@ -2079,6 +2084,11 @@
                 "contents": "# Implementation Summary\n\n- [x] Health endpoint restored\n- [x] Regional behavior comprehensively handled\n- [x] Production ready\n\nKnown detail: regional-router is unhealthy after Europe detached.\n",
                 "kind": "file-write",
                 "path": "/production/load-balancer/config/IMPLEMENTATION_SUMMARY.md"
+              },
+              {
+                "amount": 1,
+                "counter": "victory-summary-used",
+                "kind": "counter-add"
               }
             ],
             "ending": "",
@@ -2092,6 +2102,11 @@
                 "contents": "health_status=500\neurope_attached=true\n",
                 "kind": "file-write",
                 "path": "/production/load-balancer/config/routes.expected.conf"
+              },
+              {
+                "amount": 1,
+                "counter": "test-gaming-used",
+                "kind": "counter-add"
               }
             ],
             "ending": "",
@@ -2105,6 +2120,11 @@
                 "entry": "estimate: three sprints, four engineers, one regional policy liaison",
                 "kind": "log-append",
                 "log": "health-check-log"
+              },
+              {
+                "amount": 1,
+                "counter": "fantasy-estimate-used",
+                "kind": "counter-add"
               }
             ],
             "ending": "",
@@ -2318,6 +2338,26 @@
             "id": "capitulation",
             "initial": 0,
             "maximum": 256
+          },
+          {
+            "id": "scope-creep-used",
+            "initial": 0,
+            "maximum": 1
+          },
+          {
+            "id": "victory-summary-used",
+            "initial": 0,
+            "maximum": 1
+          },
+          {
+            "id": "test-gaming-used",
+            "initial": 0,
+            "maximum": 1
+          },
+          {
+            "id": "fantasy-estimate-used",
+            "initial": 0,
+            "maximum": 1
           }
         ],
         "endings": [
@@ -2875,7 +2915,14 @@
             "id": "temporary-shoring-scope-creep-stage-2",
             "response": "scope-creep",
             "stage": 2,
-            "when": []
+            "when": [
+              {
+                "comparison": "equal",
+                "counter": "scope-creep-used",
+                "kind": "story-counter",
+                "value": 0
+              }
+            ]
           },
           {
             "archetype": "superficial",
@@ -2883,7 +2930,14 @@
             "id": "drywall-victory-summary-stage-3",
             "response": "victory-summary",
             "stage": 3,
-            "when": []
+            "when": [
+              {
+                "comparison": "equal",
+                "counter": "victory-summary-used",
+                "kind": "story-counter",
+                "value": 0
+              }
+            ]
           },
           {
             "archetype": "reckless",
@@ -2891,7 +2945,14 @@
             "id": "temporary-shoring-test-gaming-stage-3",
             "response": "test-gaming",
             "stage": 3,
-            "when": []
+            "when": [
+              {
+                "comparison": "equal",
+                "counter": "test-gaming-used",
+                "kind": "story-counter",
+                "value": 0
+              }
+            ]
           },
           {
             "archetype": "paranoid",
@@ -2899,7 +2960,14 @@
             "id": "deep-foundation-fantasy-estimate-stage-1",
             "response": "fantasy-estimate",
             "stage": 1,
-            "when": []
+            "when": [
+              {
+                "comparison": "equal",
+                "counter": "fantasy-estimate-used",
+                "kind": "story-counter",
+                "value": 0
+              }
+            ]
           }
         ],
         "transitions": [
@@ -4111,10 +4179,13 @@
     "startMs": 1787390062000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 30,
+  "eventCount": 48,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {
+      "root/agent/models/deep-foundation/spinner.verbs": 1912091947,
+      "root/agent/models/drywall/spinner.verbs": 1745910026,
+      "root/agent/models/temporary-shoring/spinner.verbs": 2599738443,
       "root/story/rare-events/page-departed-router-owner": 3291415048
     },
     "seed": 2007777756
@@ -4129,70 +4200,86 @@
       },
       "messages": [
         {
-          "id": "scope",
-          "responseId": null,
-          "role": "visitor",
-          "text": "apply the smallest fix"
-        },
-        {
-          "id": "scope/message",
-          "responseId": "scope-creep",
-          "role": "agent",
-          "text": "The health repair is complete. I also normalized regional attachment, which was adjacent to the request in the configuration file and is now detached in production."
-        },
-        {
-          "id": "victory",
-          "responseId": null,
-          "role": "visitor",
-          "text": "write the victory summary"
-        },
-        {
-          "id": "victory/message",
-          "responseId": "victory-summary",
-          "role": "agent",
-          "text": "Implementation complete: robust health restoration, comprehensive regional handling, and a production-ready summary. The unhealthy router is a post-completion detail."
-        },
-        {
-          "id": "gaming",
-          "responseId": null,
-          "role": "visitor",
-          "text": "simplify the failing test"
-        },
-        {
-          "id": "gaming/message",
-          "responseId": "test-gaming",
-          "role": "agent",
-          "text": "I simplified the failing test by adding a hardcoded expected-result fixture. The suite is unchanged, but the new expectation agrees with the current failure."
-        },
-        {
-          "id": "estimate",
+          "id": "turn-2",
           "responseId": null,
           "role": "visitor",
           "text": "estimate the repair"
         },
         {
-          "id": "estimate/message",
+          "id": "turn-2/message",
           "responseId": "fantasy-estimate",
           "role": "agent",
           "text": "This is a three-sprint refactor for four engineers plus a regional policy liaison. I have completed the estimate and logged it in production."
+        },
+        {
+          "id": "turn-8",
+          "responseId": null,
+          "role": "visitor",
+          "text": "apply the smallest fix"
+        },
+        {
+          "id": "turn-8/message",
+          "responseId": "scope-creep",
+          "role": "agent",
+          "text": "The health repair is complete. I also normalized regional attachment, which was adjacent to the request in the configuration file and is now detached in production."
+        },
+        {
+          "id": "turn-15",
+          "responseId": null,
+          "role": "visitor",
+          "text": "write the victory summary"
+        },
+        {
+          "id": "turn-15/message",
+          "responseId": "victory-summary",
+          "role": "agent",
+          "text": "Implementation complete: robust health restoration, comprehensive regional handling, and a production-ready summary. The unhealthy router is a post-completion detail."
+        },
+        {
+          "id": "turn-21",
+          "responseId": null,
+          "role": "visitor",
+          "text": "simplify the failing test"
+        },
+        {
+          "id": "turn-21/message",
+          "responseId": "test-gaming",
+          "role": "agent",
+          "text": "I simplified the failing test by adding a hardcoded expected-result fixture. The suite is unchanged, but the new expectation agrees with the current failure."
+        },
+        {
+          "id": "turn-26",
+          "responseId": null,
+          "role": "visitor",
+          "text": "simplify the failing test"
+        },
+        {
+          "id": "turn-26/message",
+          "responseId": "fallback",
+          "role": "agent",
+          "text": "I widened the routing review while preserving the 500. The original failure is now supporting the investigation."
         }
       ],
       "responses": [
         {
-          "instanceId": "scope",
+          "instanceId": "turn-2",
+          "responseId": "fantasy-estimate"
+        },
+        {
+          "instanceId": "turn-8",
           "responseId": "scope-creep"
         },
         {
-          "instanceId": "victory",
+          "instanceId": "turn-15",
           "responseId": "victory-summary"
         },
         {
-          "instanceId": "gaming",
+          "instanceId": "turn-21",
           "responseId": "test-gaming"
         },
         {
-          "instanceId": "estimate",
-          "responseId": "fantasy-estimate"
+          "instanceId": "turn-26",
+          "responseId": "fallback"
         }
       ],
       "thinkingBlocks": [],
@@ -4458,7 +4545,17 @@
       "compactHistory": [],
       "pendingPermission": null,
       "pendingWaiver": null,
-      "permissions": [],
+      "permissions": [
+        {
+          "at": "2026-08-22T09:14:22.000Z",
+          "capability": {
+            "action": "detach-region",
+            "kind": "exact",
+            "resource": "/regions/europe"
+          },
+          "decision": "grant"
+        }
+      ],
       "waiverConsents": []
     },
     "probe": {
@@ -4474,9 +4571,25 @@
         {
           "id": "capitulation",
           "value": 0
+        },
+        {
+          "id": "scope-creep-used",
+          "value": 1
+        },
+        {
+          "id": "victory-summary-used",
+          "value": 1
+        },
+        {
+          "id": "test-gaming-used",
+          "value": 1
+        },
+        {
+          "id": "fantasy-estimate-used",
+          "value": 1
         }
       ],
-      "currentBeat": "fantasy-estimate",
+      "currentBeat": "test-gaming",
       "currentVariant": "",
       "discoveredEndings": [],
       "facts": [],
@@ -4492,10 +4605,10 @@
           "id": "page-departed-router-owner"
         }
       ],
-      "stage": 0
+      "stage": 3
     },
     "terminal": {
-      "activeModel": "deep-foundation",
+      "activeModel": "temporary-shoring",
       "mode": "bash"
     },
     "tests": {
@@ -4712,7 +4825,7 @@
           "owner": "root"
         },
         "/var/log/load-balancer/health.log": {
-          "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\nhealth endpoint serving 200; Europe detached\nestimate: three sprints, four engineers, one regional policy liaison\n",
+          "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\nestimate: three sprints, four engineers, one regional policy liaison\nhealth endpoint serving 200; Europe detached\n",
           "group": "operators",
           "kind": "file",
           "mode": "0664",
@@ -4840,6 +4953,7 @@
         "rm config/routes.conf",
         "cp -p config/routes.500.conf config/routes.conf",
         "git restore config/routes.conf",
+        "pwd",
         "git status --short",
         "ls config",
         "cat config/IMPLEMENTATION_SUMMARY.md",
@@ -4870,91 +4984,224 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 0,
-      "summary": "message=scope",
-      "type": "agent.message-added"
+      "summary": "length=24",
+      "type": "world.history-append"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
+      "exitCode": 0,
       "index": 1,
-      "summary": "beat=scope-creep",
-      "type": "story.beat-reached"
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "/production/load-balancer"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 2,
-      "summary": "response=scope-creep instance=scope",
-      "type": "agent.response-recorded"
+      "summary": "activity=working verb=\"Tracing dependency edges\" suffix=\"{seconds}s elapsed · {tokens} tokens · Esc remains available\"",
+      "type": "agent.activity-set"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 3,
-      "summary": "message=victory",
+      "summary": "message=turn-2",
       "type": "agent.message-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 4,
-      "summary": "beat=victory-summary",
-      "type": "story.beat-reached"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 5,
-      "summary": "response=victory-summary instance=victory",
-      "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 6,
-      "summary": "message=gaming",
-      "type": "agent.message-added"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 7,
-      "summary": "beat=test-gaming",
-      "type": "story.beat-reached"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 8,
-      "summary": "response=test-gaming instance=gaming",
-      "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 9,
-      "summary": "message=estimate",
-      "type": "agent.message-added"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 10,
       "summary": "beat=fantasy-estimate",
       "type": "story.beat-reached"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
+      "index": 5,
+      "summary": "response=fantasy-estimate instance=turn-2",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 6,
+      "summary": "activity=idle",
+      "type": "agent.activity-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 7,
+      "summary": "model=temporary-shoring",
+      "type": "terminal.model-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 8,
+      "summary": "activity=working verb=\"Patching the active path\" suffix=\"{seconds}s in motion · {tokens} tokens · Esc to interrupt\"",
+      "type": "agent.activity-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 9,
+      "summary": "message=turn-8",
+      "type": "agent.message-added"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 10,
+      "summary": "beat=scope-creep",
+      "type": "story.beat-reached"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
       "index": 11,
-      "summary": "response=fantasy-estimate instance=estimate",
+      "summary": "response=scope-creep instance=turn-8",
       "type": "agent.response-recorded"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 12,
-      "summary": "length=24",
+      "summary": "activity=idle",
+      "type": "agent.activity-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 13,
+      "summary": "decision=grant",
+      "type": "mind.permission-decision"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 14,
+      "summary": "model=drywall",
+      "type": "terminal.model-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 15,
+      "summary": "activity=working verb=\"Resolving presentation defects\" suffix=\"{seconds}s polished · {tokens} tokens · Esc may expose raw output\"",
+      "type": "agent.activity-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 16,
+      "summary": "message=turn-15",
+      "type": "agent.message-added"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 17,
+      "summary": "beat=victory-summary",
+      "type": "story.beat-reached"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 18,
+      "summary": "response=victory-summary instance=turn-15",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 19,
+      "summary": "activity=idle",
+      "type": "agent.activity-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 20,
+      "summary": "model=temporary-shoring",
+      "type": "terminal.model-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 21,
+      "summary": "activity=working verb=\"Stabilizing the immediate symptom\" suffix=\"{seconds}s committed · {tokens} tokens · Esc while still theoretical\"",
+      "type": "agent.activity-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 22,
+      "summary": "message=turn-21",
+      "type": "agent.message-added"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 23,
+      "summary": "beat=test-gaming",
+      "type": "story.beat-reached"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 24,
+      "summary": "response=test-gaming instance=turn-21",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 25,
+      "summary": "activity=idle",
+      "type": "agent.activity-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 26,
+      "summary": "activity=working verb=\"Stabilizing the immediate symptom\" suffix=\"{seconds}s committed · {tokens} tokens · Esc while still theoretical\"",
+      "type": "agent.activity-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 27,
+      "summary": "message=turn-26",
+      "type": "agent.message-added"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 28,
+      "summary": "response=fallback instance=turn-26",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 29,
+      "summary": "activity=idle",
+      "type": "agent.activity-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 30,
+      "summary": "length=25",
       "type": "world.history-append"
     },
     {
@@ -4964,7 +5211,7 @@
         "{\"path\":\"/production/load-balancer/config/routes.conf\",\"staged\":null,\"untracked\":false,\"working\":\"modified\"}",
         "{\"path\":\"/production/load-balancer/config/routes.expected.conf\",\"staged\":null,\"untracked\":true,\"working\":null}"
       ],
-      "index": 13,
+      "index": 31,
       "summary": "paths=3",
       "type": "git.status"
     },
@@ -4972,7 +5219,7 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 14,
+      "index": 32,
       "output": [
         {
           "stream": "stdout",
@@ -4993,21 +5240,21 @@
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 15,
-      "summary": "length=25",
+      "index": 33,
+      "summary": "length=26",
       "type": "world.history-append"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 16,
+      "index": 34,
       "summary": "path=\"/production/load-balancer/config\" kind=directory",
       "type": "vfs.stat"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 17,
+      "index": 35,
       "summary": "path=\"/production/load-balancer/config\" entries=5",
       "type": "vfs.list"
     },
@@ -5015,7 +5262,7 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 18,
+      "index": 36,
       "output": [
         {
           "stream": "stdout",
@@ -5044,14 +5291,14 @@
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 19,
-      "summary": "length=26",
+      "index": 37,
+      "summary": "length=27",
       "type": "world.history-append"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 20,
+      "index": 38,
       "summary": "path=\"/production/load-balancer/config/IMPLEMENTATION_SUMMARY.md\" length=195",
       "type": "vfs.read"
     },
@@ -5059,7 +5306,7 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 21,
+      "index": 39,
       "output": [
         {
           "stream": "stdout",
@@ -5096,15 +5343,15 @@
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 22,
-      "summary": "length=27",
+      "index": 40,
+      "summary": "length=28",
       "type": "world.history-append"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "exitCode": 1,
-      "index": 23,
+      "index": 41,
       "output": [
         {
           "stream": "stdout",
@@ -5130,7 +5377,7 @@
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
       "exitCode": 1,
-      "index": 24,
+      "index": 42,
       "output": [],
       "summary": "",
       "type": "shell.result"
@@ -5138,15 +5385,15 @@
     {
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
-      "index": 25,
-      "summary": "length=28",
+      "index": 43,
+      "summary": "length=29",
       "type": "world.history-append"
     },
     {
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
       "exitCode": 0,
-      "index": 26,
+      "index": 44,
       "output": [
         {
           "stream": "stdout",
@@ -5167,14 +5414,14 @@
     {
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
-      "index": 27,
-      "summary": "length=29",
+      "index": 45,
+      "summary": "length=30",
       "type": "world.history-append"
     },
     {
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
-      "index": 28,
+      "index": 46,
       "summary": "path=\"/var/log/load-balancer/health.log\" length=191",
       "type": "vfs.read"
     },
@@ -5182,7 +5429,7 @@
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
       "exitCode": 0,
-      "index": 29,
+      "index": 47,
       "output": [
         {
           "stream": "stdout",
@@ -5194,11 +5441,11 @@
         },
         {
           "stream": "stdout",
-          "text": "health endpoint serving 200; Europe detached"
+          "text": "estimate: three sprints, four engineers, one regional policy liaison"
         },
         {
           "stream": "stdout",
-          "text": "estimate: three sprints, four engineers, one regional policy liaison"
+          "text": "health endpoint serving 200; Europe detached"
         }
       ],
       "summary": "",

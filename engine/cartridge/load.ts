@@ -1647,7 +1647,9 @@ function checkStoryAndPresentation(
             missing("beat", action.beat, "story beat");
           break;
         case "file-write":
-          if (!files.has(action.path) && allowCreate) {
+          if (vfsDirectories.has(action.path))
+            missing("path", action.path, "file");
+          else if (!files.has(action.path) && allowCreate) {
             const parent =
               action.path.slice(0, action.path.lastIndexOf("/")) || "/";
             if (!vfsDirectories.has(parent))

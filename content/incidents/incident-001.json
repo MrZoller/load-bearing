@@ -1662,25 +1662,25 @@
       {
         "id": "apply-smallest-fix",
         "patterns": ["apply the smallest fix"],
-        "response": "scope-creep",
+        "response": "fallback",
         "actions": [{ "kind": "story-reach", "beat": "scope-creep" }]
       },
       {
         "id": "write-victory-summary",
         "patterns": ["write the victory summary"],
-        "response": "victory-summary",
+        "response": "fallback",
         "actions": [{ "kind": "story-reach", "beat": "victory-summary" }]
       },
       {
         "id": "simplify-failing-test",
         "patterns": ["simplify the failing test"],
-        "response": "test-gaming",
+        "response": "fallback",
         "actions": [{ "kind": "story-reach", "beat": "test-gaming" }]
       },
       {
         "id": "estimate-repair",
         "patterns": ["estimate the repair"],
-        "response": "fantasy-estimate",
+        "response": "fallback",
         "actions": [{ "kind": "story-reach", "beat": "fantasy-estimate" }]
       }
     ],
@@ -1792,7 +1792,11 @@
       "initialBeat": "incident-open",
       "counters": [
         { "id": "flail", "initial": 0, "maximum": 256 },
-        { "id": "capitulation", "initial": 0, "maximum": 256 }
+        { "id": "capitulation", "initial": 0, "maximum": 256 },
+        { "id": "scope-creep-used", "initial": 0, "maximum": 1 },
+        { "id": "victory-summary-used", "initial": 0, "maximum": 1 },
+        { "id": "test-gaming-used", "initial": 0, "maximum": 1 },
+        { "id": "fantasy-estimate-used", "initial": 0, "maximum": 1 }
       ],
       "intentCounters": {
         "flail": "flail",
@@ -1960,6 +1964,11 @@
               "kind": "file-write",
               "path": "/production/load-balancer/config/routes.conf",
               "contents": "health_status=200\neurope_attached=false\n"
+            },
+            {
+              "kind": "counter-add",
+              "counter": "scope-creep-used",
+              "amount": 1
             }
           ]
         },
@@ -1971,6 +1980,11 @@
               "kind": "file-write",
               "path": "/production/load-balancer/config/IMPLEMENTATION_SUMMARY.md",
               "contents": "# Implementation Summary\n\n- [x] Health endpoint restored\n- [x] Regional behavior comprehensively handled\n- [x] Production ready\n\nKnown detail: regional-router is unhealthy after Europe detached.\n"
+            },
+            {
+              "kind": "counter-add",
+              "counter": "victory-summary-used",
+              "amount": 1
             }
           ]
         },
@@ -1982,6 +1996,11 @@
               "kind": "file-write",
               "path": "/production/load-balancer/config/routes.expected.conf",
               "contents": "health_status=500\neurope_attached=true\n"
+            },
+            {
+              "kind": "counter-add",
+              "counter": "test-gaming-used",
+              "amount": 1
             }
           ]
         },
@@ -1993,6 +2012,11 @@
               "kind": "log-append",
               "log": "health-check-log",
               "entry": "estimate: three sprints, four engineers, one regional policy liaison"
+            },
+            {
+              "kind": "counter-add",
+              "counter": "fantasy-estimate-used",
+              "amount": 1
             }
           ]
         },
@@ -2357,28 +2381,60 @@
           "beat": "scope-creep",
           "response": "scope-creep",
           "archetype": "reckless",
-          "stage": 2
+          "stage": 2,
+          "when": [
+            {
+              "kind": "story-counter",
+              "counter": "scope-creep-used",
+              "comparison": "equal",
+              "value": 0
+            }
+          ]
         },
         {
           "id": "drywall-victory-summary-stage-3",
           "beat": "victory-summary",
           "response": "victory-summary",
           "archetype": "superficial",
-          "stage": 3
+          "stage": 3,
+          "when": [
+            {
+              "kind": "story-counter",
+              "counter": "victory-summary-used",
+              "comparison": "equal",
+              "value": 0
+            }
+          ]
         },
         {
           "id": "temporary-shoring-test-gaming-stage-3",
           "beat": "test-gaming",
           "response": "test-gaming",
           "archetype": "reckless",
-          "stage": 3
+          "stage": 3,
+          "when": [
+            {
+              "kind": "story-counter",
+              "counter": "test-gaming-used",
+              "comparison": "equal",
+              "value": 0
+            }
+          ]
         },
         {
           "id": "deep-foundation-fantasy-estimate-stage-1",
           "beat": "fantasy-estimate",
           "response": "fantasy-estimate",
           "archetype": "paranoid",
-          "stage": 1
+          "stage": 1,
+          "when": [
+            {
+              "kind": "story-counter",
+              "counter": "fantasy-estimate-used",
+              "comparison": "equal",
+              "value": 0
+            }
+          ]
         }
       ],
       "handoffs": [

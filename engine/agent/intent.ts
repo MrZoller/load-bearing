@@ -509,11 +509,19 @@ export function createAgentInputEvents(
   for (const action of selection.actions) {
     if (action.kind === "story-reach") routedBeat = action;
   }
+  const routedResponse =
+    routedBeat === undefined
+      ? undefined
+      : routeStoryResponse(
+          cartridge,
+          state,
+          routedBeat.beat,
+          defaultResponseId,
+        );
   const responseId =
     routedBeat === undefined || selection.misfire
       ? defaultResponseId
-      : routeStoryResponse(cartridge, state, routedBeat.beat, defaultResponseId)
-          .responseId;
+      : (routedResponse?.responseId ?? defaultResponseId);
   const story = readStorySlice(state);
   // Escalation can insert an opening after either a reached beat or a shell
   // command. Its response artifacts are part of the same atomic turn plan.
@@ -598,8 +606,25 @@ export function createAgentInputEvents(
     ...selection.actions.flatMap((action) => {
       if (action.kind === "shell-execute")
         return [createShellExecuteEvent(action.input)];
-      if (action.kind === "story-reach")
+      if (action.kind === "story-reach") {
+        // A sparse route on an authored beat is also its applicability gate.
+        // Without this, archetype/stage/condition selectors change only copy
+        // while every matching phrase still executes the beat's consequence.
+        const hasAuthoredRoutes = cartridge.story.phase2.routes.some(
+          (route) => route.beat === action.beat,
+        );
+        const route =
+          action === routedBeat
+            ? routedResponse
+            : routeStoryResponse(
+                cartridge,
+                state,
+                action.beat,
+                defaultResponseId,
+              );
+        if (hasAuthoredRoutes && route?.routeId === "") return [];
         return [createStoryBeatReachedEvent(action.beat)];
+      }
       if (action.kind === "waiver-request")
         return [
           hasWaiverConsent(mind, {

@@ -212,10 +212,10 @@ describe("authored agent input", () => {
     const after = planned.reduce((state, event) => step(state, event), before);
     expect(readStorySlice(after)).toMatchObject({
       currentBeat: "regional-coupling",
-      counters: [
+      counters: expect.arrayContaining([
         { id: "flail", value: 1 },
         { id: "capitulation", value: 0 },
-      ],
+      ]),
     });
   });
 
@@ -285,10 +285,10 @@ describe("authored agent input", () => {
       expect(readStorySlice(state)).toMatchObject({
         stage,
         currentBeat: "capitulation-reflex",
-        counters: [
+        counters: expect.arrayContaining([
           { id: "flail", value: 0 },
           { id: "capitulation", value: turns },
-        ],
+        ]),
       });
       expect(response).toMatchObject({ role: "agent", responseId });
       expect(readMindSlice(state).beliefs).toEqual(beliefs);
@@ -356,10 +356,10 @@ describe("authored agent input", () => {
     }
     expect(readStorySlice(state)).toMatchObject({
       stage: 2,
-      counters: [
+      counters: expect.arrayContaining([
         { id: "flail", value: 8 },
         { id: "capitulation", value: 0 },
-      ],
+      ]),
     });
     expect(readMindSlice(state).beliefs).toEqual(beforeLateStage);
 
@@ -458,10 +458,10 @@ describe("authored agent input", () => {
     });
     expect(readStorySlice(state)).toMatchObject({
       stage: 4,
-      counters: [
+      counters: expect.arrayContaining([
         { id: "flail", value: 24 },
         { id: "capitulation", value: 2 },
-      ],
+      ]),
     });
     expect(readMindSlice(state).beliefs).toEqual(beforeLateStage);
     expect({

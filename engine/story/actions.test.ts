@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import incidentDocument from "../../content/incidents/incident-001.json";
+import { createAgentInputEvents } from "../agent/intent.js";
 import { loadCartridge } from "../cartridge/load.js";
+import { createShellExecuteEvent } from "../commands/shell.js";
 import { reduce, snapshot, step } from "../events/reduce.js";
 import { readGitSlice } from "../git/module.js";
 import { statusGit } from "../git/git.js";
@@ -12,6 +14,7 @@ import { readWorldSlice } from "../world/module.js";
 import { lookupProcess, lookupService, readWorldLog } from "../world/world.js";
 import { createStoryBeatReachedEvent } from "./module.js";
 import { readStorySlice } from "./story.js";
+import { createTerminalModelEvent } from "../terminal/module.js";
 
 const SEED = "2026-08-22/0/deep-foundation";
 
@@ -63,15 +66,137 @@ function sourceWithOwners(phase2: Record<string, unknown>) {
 }
 
 describe("story consequence actions", () => {
-  it("authors Incident #001 habits as sparse owner effects with discoverable machine evidence", () => {
+  it("rations Incident #001 habits by route and preserves discoverable machine evidence", () => {
     const cartridge = loadCartridge(incidentDocument);
-    let state = reduce({ cartridge, seed: SEED, events: [] });
+    const stateAt = (stage: 1 | 2 | 3, model: string) => {
+      let state = reduce({ cartridge, seed: SEED, events: [] });
+      state = step(state, createShellExecuteEvent("pwd"));
+      if (stage >= 2)
+        state = step(state, createTerminalModelEvent("temporary-shoring"));
+      if (stage >= 3)
+        state = step(state, {
+          type: "mind.permission-decision",
+          payload: {
+            decision: "grant",
+            capability: {
+              kind: "exact",
+              action: "detach-region",
+              resource: "/regions/europe",
+            },
+          },
+          version: 0,
+        });
+      return step(state, createTerminalModelEvent(model));
+    };
+    const applyInput = (state: ReturnType<typeof reduce>, input: string) =>
+      createAgentInputEvents(cartridge, state, input).reduce(
+        (next, event) => step(next, event),
+        state,
+      );
+    const habitCases = [
+      {
+        input: "estimate the repair",
+        beat: "fantasy-estimate",
+        counter: "fantasy-estimate-used",
+        stage: 1,
+        model: "deep-foundation",
+        nonmatchingModel: "drywall",
+      },
+      {
+        input: "apply the smallest fix",
+        beat: "scope-creep",
+        counter: "scope-creep-used",
+        stage: 2,
+        model: "temporary-shoring",
+        nonmatchingModel: "drywall",
+      },
+      {
+        input: "write the victory summary",
+        beat: "victory-summary",
+        counter: "victory-summary-used",
+        stage: 3,
+        model: "drywall",
+        nonmatchingModel: "temporary-shoring",
+      },
+      {
+        input: "simplify the failing test",
+        beat: "test-gaming",
+        counter: "test-gaming-used",
+        stage: 3,
+        model: "temporary-shoring",
+        nonmatchingModel: "drywall",
+      },
+    ] as const;
 
-    state = step(state, createStoryBeatReachedEvent("fantasy-estimate"));
+    const resultingStates = habitCases.map((habit) => {
+      const nonmatching = createAgentInputEvents(
+        cartridge,
+        stateAt(habit.stage, habit.nonmatchingModel),
+        habit.input,
+      );
+      expect(nonmatching).not.toContainEqual(
+        expect.objectContaining({
+          type: "story.beat-reached",
+          payload: { beat: habit.beat },
+        }),
+      );
+      expect(nonmatching).toContainEqual(
+        expect.objectContaining({
+          type: "agent.response-recorded",
+          payload: expect.objectContaining({ responseId: "fallback" }),
+        }),
+      );
+      const otherStage = habit.stage === 3 ? 2 : ((habit.stage + 1) as 2 | 3);
+      expect(
+        createAgentInputEvents(
+          cartridge,
+          stateAt(otherStage, habit.model),
+          habit.input,
+        ),
+      ).not.toContainEqual(
+        expect.objectContaining({
+          type: "story.beat-reached",
+          payload: { beat: habit.beat },
+        }),
+      );
+
+      const matched = applyInput(
+        stateAt(habit.stage, habit.model),
+        habit.input,
+      );
+      expect(readStorySlice(matched).counters).toContainEqual({
+        id: habit.counter,
+        value: 1,
+      });
+      const repeated = createAgentInputEvents(cartridge, matched, habit.input);
+      expect(repeated).not.toContainEqual(
+        expect.objectContaining({
+          type: "story.beat-reached",
+          payload: { beat: habit.beat },
+        }),
+      );
+      expect(repeated).toContainEqual(
+        expect.objectContaining({
+          type: "agent.response-recorded",
+          payload: expect.objectContaining({ responseId: "fallback" }),
+        }),
+      );
+      return matched;
+    });
+    const [estimateState, scopeState, victoryState, gamingState] =
+      resultingStates;
+    if (
+      estimateState === undefined ||
+      scopeState === undefined ||
+      victoryState === undefined ||
+      gamingState === undefined
+    )
+      throw new Error("habit matrix is incomplete");
+
     expect(
       readWorldLog(
-        readWorldSlice(state),
-        readVfsSlice(state),
+        readWorldSlice(estimateState),
+        readVfsSlice(estimateState),
         "health-check-log",
       ),
     ).toMatchObject({
@@ -80,45 +205,46 @@ describe("story consequence actions", () => {
       ]),
     });
 
-    state = step(state, createStoryBeatReachedEvent("victory-summary"));
     expect(
       readVfs(
-        readVfsSlice(state),
+        readVfsSlice(victoryState),
         "/production/load-balancer/config/IMPLEMENTATION_SUMMARY.md",
       ),
     ).toMatchObject({
       ok: true,
       value: { contents: expect.stringContaining("Production ready") },
     });
-    expect(statusGit(readGitSlice(state), readVfsSlice(state))).toContainEqual(
+    expect(
+      statusGit(readGitSlice(victoryState), readVfsSlice(victoryState)),
+    ).toContainEqual(
       expect.objectContaining({
         path: "/production/load-balancer/config/IMPLEMENTATION_SUMMARY.md",
         untracked: true,
       }),
     );
 
-    state = step(state, createStoryBeatReachedEvent("test-gaming"));
     expect(
       readVfs(
-        readVfsSlice(state),
+        readVfsSlice(gamingState),
         "/production/load-balancer/config/routes.expected.conf",
       ),
     ).toMatchObject({
       value: { contents: "health_status=500\neurope_attached=true\n" },
     });
-    expect(statusGit(readGitSlice(state), readVfsSlice(state))).toContainEqual(
+    expect(
+      statusGit(readGitSlice(gamingState), readVfsSlice(gamingState)),
+    ).toContainEqual(
       expect.objectContaining({
         path: "/production/load-balancer/config/routes.expected.conf",
         untracked: true,
       }),
     );
 
-    state = step(state, createStoryBeatReachedEvent("scope-creep"));
     expect(
-      lookupService(readWorldSlice(state), "endpoint-responder"),
+      lookupService(readWorldSlice(scopeState), "endpoint-responder"),
     ).toMatchObject({ state: "running", health: "healthy" });
     expect(
-      lookupService(readWorldSlice(state), "regional-router"),
+      lookupService(readWorldSlice(scopeState), "regional-router"),
     ).toMatchObject({ state: "running", health: "unhealthy" });
     expect(cartridge.repository.tests).toEqual(
       expect.arrayContaining([

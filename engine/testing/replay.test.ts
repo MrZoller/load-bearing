@@ -352,6 +352,10 @@ describe("golden replay fixtures", () => {
       counters: [
         { id: "flail", value: 0 },
         { id: "capitulation", value: 0 },
+        { id: "scope-creep-used", value: 0 },
+        { id: "victory-summary-used", value: 0 },
+        { id: "test-gaming-used", value: 0 },
+        { id: "fantasy-estimate-used", value: 0 },
       ],
       rareEvents: [
         {
@@ -559,6 +563,10 @@ describe("golden replay fixtures", () => {
       counters: [
         { id: "flail", value: 0 },
         { id: "capitulation", value: 0 },
+        { id: "scope-creep-used", value: 0 },
+        { id: "victory-summary-used", value: 0 },
+        { id: "test-gaming-used", value: 0 },
+        { id: "fantasy-estimate-used", value: 0 },
       ],
       rareEvents: [
         {

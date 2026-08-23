@@ -1070,6 +1070,29 @@ describe("loadCartridge", () => {
     );
   });
 
+  it("rejects a creatable beat target that is itself a modeled directory", () => {
+    const source = minimal();
+    (source["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "start",
+      beats: [
+        {
+          id: "start",
+          ending: "",
+          actions: [{ kind: "file-write", path: "/etc", contents: "x" }],
+        },
+      ],
+      endings: [],
+    };
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/story/phase2/beats/0/actions/0/path",
+        }),
+      ]),
+    );
+  });
+
   it("rejects duplicate or inverted counter declarations and nonpositive action amounts", () => {
     for (const [counters, amount, pointers] of [
       [
