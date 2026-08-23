@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T38",
-  "branch": "factory/t38-deterministic-intents",
-  "pr": 63,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-23T09:03:49Z"
+  "updated": "2026-08-23T10:01:00Z"
 }
