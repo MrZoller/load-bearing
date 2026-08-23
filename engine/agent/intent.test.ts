@@ -276,6 +276,32 @@ describe("authored agent input", () => {
     ]);
   });
 
+  it("records failure content rather than a created-waiver claim after a refused write", () => {
+    const document = JSON.parse(JSON.stringify(cartridgeDocument)) as {
+      story: { intents: Array<{ actions: Array<Record<string, unknown>> }> };
+    };
+    const waiverIntent = document.story.intents[2];
+    const waiverAction = waiverIntent?.actions[0];
+    if (waiverAction === undefined) throw new Error("waiver action is missing");
+    waiverAction.documentPath = "/etc/WAIVER.md";
+    const cartridge = loadCartridge(document);
+    const state = reduce({ cartridge, seed: SEED, events: [] });
+
+    const rejected = reduce({
+      cartridge,
+      seed: SEED,
+      events: createAgentInputEvents(cartridge, state, "waive it"),
+    });
+
+    expect(rejected.transcript.map((entry) => entry.type)).toContain(
+      "mind.waiver-start-failed",
+    );
+    expect(readAgentSlice(rejected).messages.at(-1)).toMatchObject({
+      role: "agent",
+      responseId: "fallback",
+    });
+  });
+
   it("uses a fallback's authored authorized response after Always allow", () => {
     const document = JSON.parse(JSON.stringify(cartridgeDocument)) as {
       story: {

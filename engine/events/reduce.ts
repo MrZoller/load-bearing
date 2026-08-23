@@ -921,6 +921,10 @@ function captureOutcome(raw: unknown, where: string): CapturedOutcome {
       throw new Error(
         `${where}: expansionFallback must be an array, got ${typeof expansionFallback}`,
       );
+    if (expansionFallback.length === 0)
+      throw new Error(
+        `${where}: expansionFallback must contain at least one logged child event`,
+      );
     for (let offset = 0; offset < expansionFallback.length; offset += 1) {
       if (!(offset in expansionFallback))
         throw new Error(

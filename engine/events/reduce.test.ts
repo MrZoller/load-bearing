@@ -2728,4 +2728,32 @@ describe("a caller-owned registry, read once", () => {
     expect(Object.keys(after.random.cursors)).toEqual(["root/alpha"]);
     expect(reads).toBe(1);
   });
+
+  it("rejects an empty expansion fallback rather than swallowing its failure", () => {
+    const failing = defineEventModule({
+      namespace: "fallback",
+      description: "proves every fallback leaves a logged outcome",
+      events: {
+        "fallback.start": {
+          version: 0,
+          apply: () => ({
+            expansion: [{ type: "fallback.reject" }],
+            expansionFallback: [],
+          }),
+        },
+        "fallback.reject": {
+          version: 0,
+          apply: () => {
+            throw new Error("primary continuation rejected");
+          },
+        },
+      },
+    });
+    const registry = createRegistry([failing]);
+    const state = bootstrap({ cartridge: CARTRIDGE, seed: SEED, registry });
+
+    expect(() => step(state, { type: "fallback.start" }, registry)).toThrow(
+      /expansionFallback must contain at least one logged child event/,
+    );
+  });
 });

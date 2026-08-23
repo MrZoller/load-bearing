@@ -255,10 +255,19 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
       version: 0,
       apply(context, slice) {
         const data = payload(context, ["responseId", "instanceId"]);
-        const responseId = validateAgentId(
+        const requestedResponseId = validateAgentId(
           data["responseId"],
           `${context.where}: responseId`,
         );
+        // A failed first waiver write is a terminal authored outcome, not a
+        // successful request with a missing document. The input planner cannot
+        // know whether its preceding envelope will take that fallback, so the
+        // response event selects the cartridge's existing refusal only after
+        // the logged outcome makes that fact replayable.
+        const responseId =
+          context.state.transcript.at(-1)?.type === "mind.waiver-start-failed"
+            ? context.cartridge.story.fallback.response
+            : requestedResponseId;
         const instanceId = validateAgentId(
           data["instanceId"],
           `${context.where}: instanceId`,
