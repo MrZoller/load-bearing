@@ -188,6 +188,15 @@ export const MAX_STAGE_TRANSITIONS = 64;
 export const MAX_STORY_CONSEQUENCE_WORK = 1024;
 export const MAX_STORY_ID_LENGTH = 64;
 export const STORY_ID_PATTERN = pattern(/^[a-z][a-z0-9-]{0,63}$/);
+export const GENERIC_INTENT_FAMILIES = Object.freeze([
+  "undo",
+  "why",
+  "status",
+  "disagreement",
+  "insult",
+  "compliment",
+  "capitulation",
+] as const);
 
 /** A stable cartridge-local identifier that cannot disturb line-oriented output. */
 export const WORLD_ID_PATTERN = pattern(
@@ -1588,6 +1597,32 @@ const STORY_ACTIONS = {
   maxItems: MAX_STORY_ACTIONS,
 } satisfies ArrayNode;
 
+const INTENT_CANDIDATE = {
+  kind: "object",
+  description:
+    "One authored response and closed owner-action plan selected against pre-turn state.",
+  fields: {
+    response: required(PHASE_ONE_ID),
+    when: optional(
+      {
+        kind: "array",
+        description: "Typed pre-turn conditions that AND together.",
+        items: STORY_CONDITION,
+        maxItems: MAX_STORY_CONDITIONS,
+      },
+      [],
+    ),
+    actions: optional(STORY_ACTIONS, []),
+  },
+} satisfies ObjectNode;
+
+const INTENT_CANDIDATES = {
+  kind: "array",
+  description: "Authored-order condition-valid intent outcomes.",
+  items: INTENT_CANDIDATE,
+  maxItems: MAX_STORY_VARIANTS,
+} satisfies ArrayNode;
+
 const AGENT_ACTION = {
   kind: "union",
   description:
@@ -1796,6 +1831,16 @@ const STORY = {
             minItems: 1,
             maxItems: 16,
           }),
+          keywordPatterns: optional(
+            {
+              kind: "array",
+              description:
+                "Keyword phrases whose {slot} tokens consume bounded visitor words.",
+              items: BOUNDED_LINE,
+              maxItems: 16,
+            },
+            [],
+          ),
           response: required(PHASE_ONE_ID),
           // The empty normalized value means this intent's ordinary response
           // remains coherent when a standing grant skips its prompt action.
@@ -1813,6 +1858,7 @@ const STORY = {
         // coherent copy for the later exact-standing-grant path.
         authorizedResponse: optional(OPTIONAL_PHASE_ONE_ID, ""),
         actions: optional(ACTIONS, []),
+        candidates: optional(INTENT_CANDIDATES, []),
       },
     }),
     helpResponse: required(PHASE_ONE_ID),
@@ -2074,6 +2120,49 @@ const STORY = {
             },
             [],
           ),
+          genericIntents: optional(
+            {
+              kind: "array",
+              description:
+                "The closed runtime generic families mapped to authored outcomes.",
+              maxItems: GENERIC_INTENT_FAMILIES.length,
+              items: {
+                kind: "object",
+                description:
+                  "One generic family and its authored-order outcomes.",
+                fields: {
+                  family: required({
+                    kind: "enum",
+                    description: "Runtime-owned generic intent family.",
+                    values: GENERIC_INTENT_FAMILIES,
+                  }),
+                  candidates: required({
+                    ...INTENT_CANDIDATES,
+                    minItems: 1,
+                  }),
+                },
+              },
+            },
+            [],
+          ),
+          intentCounters: optional(
+            {
+              kind: "object",
+              description:
+                "Declared bounded counters and deterministic late-stage misfire cadence.",
+              fields: {
+                flail: required(OPTIONAL_PHASE_ONE_ID),
+                capitulation: required(OPTIONAL_PHASE_ONE_ID),
+                misfireEvery: required({
+                  kind: "integer",
+                  description: "Positive cadence, or zero when disabled.",
+                  minimum: 0,
+                  maximum: 64,
+                }),
+              },
+            },
+            { flail: "", capitulation: "", misfireEvery: 0 },
+          ),
         },
       },
       {
@@ -2087,6 +2176,8 @@ const STORY = {
         handoffs: [],
         endings: [],
         transitions: [],
+        genericIntents: [],
+        intentCounters: { flail: "", capitulation: "", misfireEvery: 0 },
       },
     ),
   },
@@ -2270,6 +2361,7 @@ const PHASE_ONE_STORY_DEFAULT = {
     response: "default-response",
     authorizedResponse: "",
     actions: [],
+    candidates: [],
   },
   helpResponse: "default-response",
   idleNudgeResponse: "",
@@ -2291,6 +2383,8 @@ const PHASE_ONE_STORY_DEFAULT = {
     routes: [],
     endings: [],
     transitions: [],
+    genericIntents: [],
+    intentCounters: { flail: "", capitulation: "", misfireEvery: 0 },
   },
 };
 

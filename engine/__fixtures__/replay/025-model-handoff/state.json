@@ -127,6 +127,7 @@
       "fallback": {
         "actions": [],
         "authorizedResponse": "",
+        "candidates": [],
         "response": "default"
       },
       "helpResponse": "default",
@@ -152,6 +153,7 @@
         "counters": [],
         "endings": [],
         "facts": [],
+        "genericIntents": [],
         "handoffs": [
           {
             "additionResponse": "handoff-incident-addition",
@@ -161,6 +163,11 @@
           }
         ],
         "initialBeat": "shared",
+        "intentCounters": {
+          "capitulation": "",
+          "flail": "",
+          "misfireEvery": 0
+        },
         "routes": [],
         "transitions": []
       },

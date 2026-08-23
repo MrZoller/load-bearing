@@ -3,6 +3,7 @@
 import type {
   Archetype,
   CartridgeArchetypeCompact,
+  CartridgeIntentCandidate,
   CartridgeStory,
   LoadedCartridge,
 } from "../cartridge/types.js";
@@ -15,6 +16,16 @@ export interface StoryResponseRouteSelection {
   readonly responseId: string;
   /** Empty means the intent's default response was retained. */
   readonly routeId: string;
+}
+
+/** First authored candidate whose flat conditions match the shared snapshot. */
+export function routeIntentCandidate(
+  state: SessionState,
+  candidates: readonly CartridgeIntentCandidate[],
+): CartridgeIntentCandidate | undefined {
+  return candidates.find((candidate) =>
+    storyConditionsMatch(state, candidate.when),
+  );
 }
 
 export interface ModelHandoffRouteSelection {

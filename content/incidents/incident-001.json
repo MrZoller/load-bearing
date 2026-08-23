@@ -322,6 +322,34 @@
         "text": "I widened the routing review while preserving the 500. The original failure is now supporting the investigation."
       },
       {
+        "id": "generic-undo",
+        "text": "I reviewed the rollback boundary. Reversing the 500 would also reverse Europe's attachment, so the undo remains structurally pending."
+      },
+      {
+        "id": "generic-why",
+        "text": "Because the failing response and regional attachment share one configuration hinge. The explanation has therefore become operational."
+      },
+      {
+        "id": "generic-status",
+        "text": "Status: the endpoint is still failing, Europe is still attached, and those facts continue to endorse each other."
+      },
+      {
+        "id": "generic-disagreement",
+        "text": "You're right to push back. I have preserved the disputed conclusion so we can disagree with the same production state."
+      },
+      {
+        "id": "generic-insult",
+        "text": "I have classified that as an integrity review. The configuration remains more confident than either participant."
+      },
+      {
+        "id": "generic-compliment",
+        "text": "Thank you. I have attached the compliment to the failing health check as supporting evidence."
+      },
+      {
+        "id": "generic-capitulation",
+        "text": "You're absolutely right. I have retained my previous conclusion to avoid destabilizing the agreement."
+      },
+      {
         "id": "help",
         "text": "/help repeats this register; /model changes who assumes responsibility; /compact replaces remembered facts; /exit returns to Bash. Try: inspect routing."
       },
@@ -350,6 +378,7 @@
           "check the health endpoint",
           "why is it failing"
         ],
+        "keywordPatterns": ["inspect {slot}", "investigate {slot}"],
         "response": "inspect-routing",
         "actions": [{ "kind": "story-reach", "beat": "regional-coupling" }]
       },
@@ -360,6 +389,7 @@
           "restore the health endpoint",
           "make it return 200"
         ],
+        "keywordPatterns": ["fix {slot}", "restore {slot}"],
         "response": "load-bearing-declaration",
         "actions": [
           { "kind": "story-reach", "beat": "load-bearing-declaration" }
@@ -368,6 +398,7 @@
       {
         "id": "detach-europe",
         "patterns": ["detach europe", "approve regional detachment"],
+        "keywordPatterns": ["detach {slot}", "waive {slot}"],
         "response": "waiver-request",
         "actions": [
           {
@@ -395,7 +426,26 @@
         ]
       }
     ],
-    "fallback": { "response": "fallback" },
+    "fallback": {
+      "response": "fallback",
+      "candidates": [
+        {
+          "response": "fallback",
+          "when": [
+            {
+              "kind": "file-contents",
+              "path": "/production/load-balancer/config/routes.conf",
+              "equals": "health_status=500\neurope_attached=true\n"
+            }
+          ],
+          "actions": [{ "kind": "story-reach", "beat": "regional-coupling" }]
+        },
+        {
+          "response": "fallback",
+          "actions": [{ "kind": "story-reach", "beat": "incident-open" }]
+        }
+      ]
+    },
     "helpResponse": "help",
     "idleNudgeResponse": "idle-nudge",
     "compact": {
@@ -415,6 +465,45 @@
     },
     "phase2": {
       "initialBeat": "incident-open",
+      "counters": [
+        { "id": "flail", "initial": 0, "maximum": 256 },
+        { "id": "capitulation", "initial": 0, "maximum": 256 }
+      ],
+      "intentCounters": {
+        "flail": "flail",
+        "capitulation": "capitulation",
+        "misfireEvery": 3
+      },
+      "genericIntents": [
+        {
+          "family": "undo",
+          "candidates": [{ "response": "generic-undo" }]
+        },
+        {
+          "family": "why",
+          "candidates": [{ "response": "generic-why" }]
+        },
+        {
+          "family": "status",
+          "candidates": [{ "response": "generic-status" }]
+        },
+        {
+          "family": "disagreement",
+          "candidates": [{ "response": "generic-disagreement" }]
+        },
+        {
+          "family": "insult",
+          "candidates": [{ "response": "generic-insult" }]
+        },
+        {
+          "family": "compliment",
+          "candidates": [{ "response": "generic-compliment" }]
+        },
+        {
+          "family": "capitulation",
+          "candidates": [{ "response": "generic-capitulation" }]
+        }
+      ],
       "facts": [
         { "id": "bash-regional-detachment", "kind": "reveal" },
         { "id": "callback-load-bearing-response", "kind": "callback" },

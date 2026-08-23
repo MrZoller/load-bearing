@@ -189,6 +189,7 @@
       "fallback": {
         "actions": [],
         "authorizedResponse": "",
+        "candidates": [],
         "response": "ledger-unchanged"
       },
       "helpResponse": "ledger-unchanged",
@@ -220,8 +221,14 @@
         "counters": [],
         "endings": [],
         "facts": [],
+        "genericIntents": [],
         "handoffs": [],
         "initialBeat": "start",
+        "intentCounters": {
+          "capitulation": "",
+          "flail": "",
+          "misfireEvery": 0
+        },
         "routes": [],
         "transitions": []
       },

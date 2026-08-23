@@ -276,17 +276,32 @@ renders the same entries differently without changing what was recorded.
 
 Deterministic, cartridge-driven, in three tiers:
 
-1. **Intent table:** pattern/keyword-slot matching mapped to scripted
-   consequence chains ("fix the failing test" → edit event + test-run event +
-   authored response for the active archetype and stage)
-2. **Generic intents:** a small runtime-owned set (undo, why, status,
-   disagreement/callouts, insults, compliments) with per-archetype response
-   pools — capitulation responses never write belief state (DESIGN.md →
-   The capitulation reflex)
+1. **Intent table:** authored normalized-exact phrases and bounded
+   keyword-slot phrases (`restore {slot}`) map assignment, investigation, and
+   waiver-like requests to closed action plans. A slot consumes 1–12 words;
+   patterns and submitted input have independent token bounds, and matching
+   uses a bounded table rather than content-generated regular expressions.
+2. **Generic intents:** the runtime owns exactly undo, why, status,
+   disagreement, insult, compliment, and capitulation. The cartridge maps each
+   family to an authored-order list of typed-condition response/action
+   candidates; first condition-valid candidate wins. Disagreement and
+   capitulation increment the declared bounded capitulation counter, but their
+   owner-action-only surface cannot write belief state (DESIGN.md → The
+   capitulation reflex).
 3. **Confident misunderstanding (the floor):** unmatched input *never*
-   produces "I don't understand." The agent selects a safe adjacent action
-   from a cartridge-defined pool, mutates state through normal events, and
-   responds in voice. Parser failure is characterization.
+   produces "I don't understand." The agent selects the first condition-valid
+   safe adjacent action from a cartridge-defined pool, increments the declared
+   bounded flail counter, mutates through normal owner events, and responds in
+   voice. At stage 3+, every authored `misfireEvery`th flail substitutes a
+   condition-valid capitulation response and increments capitulation while
+   still executing the selected adjacent fallback action. It does not mutate
+   the disputed belief. Pattern, family, candidate, sparse beat-response, and
+   misfire selection all read one pre-turn snapshot before any planned owner
+   event runs. Parser failure is characterization.
+
+The TUI's pending-waiver branch precedes all three tiers and compares the raw
+submitted string to the authored `I agree` bytes. Intent normalization cannot
+grant, reinterpret, or route around consent.
 
 A constrained live-model improvisation layer is **deferred indefinitely**
 (see ROADMAP.md). If ever added, it may propose only from the same safe

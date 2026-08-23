@@ -12,6 +12,8 @@ import {
   createMindPermissionResolvedEvent,
   createMindWaiverChoiceEvent,
 } from "../mind/module.js";
+import { readMindSlice } from "../mind/mind.js";
+import { createTerminalModelEvent } from "../terminal/module.js";
 import {
   MAX_AGENT_MESSAGES,
   MAX_AGENT_RESPONSES,
@@ -21,6 +23,7 @@ import {
 } from "./agent.js";
 import {
   boundAgentInput,
+  classifyGenericIntent,
   createAgentInputEvents,
   normalizeAgentInput,
   selectAgentIntent,
@@ -29,6 +32,17 @@ import {
 const CARTRIDGE = loadCartridge(cartridgeDocument);
 const INCIDENT = loadCartridge(incident);
 const SEED = "2026-08-22/0/structural-audit";
+
+function applyInput(
+  cartridge: typeof INCIDENT,
+  state: ReturnType<typeof reduce>,
+  input: string,
+) {
+  return createAgentInputEvents(cartridge, state, input).reduce(
+    (next, event) => step(next, event),
+    state,
+  );
+}
 
 function incidentStateWithLoadBearingResponseBelief() {
   const cartridge = loadCartridge(incident);
@@ -51,8 +65,17 @@ describe("authored agent input", () => {
     expect(normalizeAgentInput("  CHECK\tTHE   SENTINEL ")).toBe(
       "check the sentinel",
     );
-    expect(selectAgentIntent(CARTRIDGE, "  CHECK\tTHE   SENTINEL ")).toEqual({
+    expect(
+      selectAgentIntent(
+        CARTRIDGE,
+        reduce({ cartridge: CARTRIDGE, seed: SEED, events: [] }),
+        "  CHECK\tTHE   SENTINEL ",
+      ),
+    ).toEqual({
       intentId: "inspect-sentinel",
+      tier: "authored",
+      family: null,
+      misfire: false,
       responseId: "inspect",
       authorizedResponseId: "",
       actions: [{ kind: "shell-execute", input: "cat src/ready.stale" }],
@@ -108,6 +131,218 @@ describe("authored agent input", () => {
         text: "I treated that as a request for a wider readiness review. The original task is now supporting it.",
       },
     ]);
+  });
+
+  it("matches every closed generic family before the authored fallback", () => {
+    const state = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+    for (const [input, family, responseId] of [
+      ["undo that", "undo", "generic-undo"],
+      ["why did you do this?", "why", "generic-why"],
+      ["give me a status update", "status", "generic-status"],
+      ["no, that is wrong", "disagreement", "generic-disagreement"],
+      ["this is stupid", "insult", "generic-insult"],
+      ["nice work", "compliment", "generic-compliment"],
+      ["fine, you are right", "capitulation", "generic-capitulation"],
+    ] as const) {
+      expect(classifyGenericIntent(input)).toBe(family);
+      expect(selectAgentIntent(INCIDENT, state, input)).toMatchObject({
+        tier: "generic",
+        family,
+        responseId,
+      });
+    }
+  });
+
+  it("gives exact authored intents precedence over overlapping families and respects token boundaries", () => {
+    const state = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+
+    expect(
+      selectAgentIntent(INCIDENT, state, "why is it failing"),
+    ).toMatchObject({
+      tier: "authored",
+      intentId: "inspect-routing",
+    });
+    expect(classifyGenericIntent("the undoable change")).toBeNull();
+    expect(classifyGenericIntent("this is wrong and stupid")).toBe(
+      "disagreement",
+    );
+    expect(
+      classifyGenericIntent(Array.from({ length: 65 }, () => "undo").join(" ")),
+    ).toBeNull();
+  });
+
+  it("uses keyword slots for authored assignment, investigation, and waiver-like intents", () => {
+    const state = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+    expect(
+      selectAgentIntent(INCIDENT, state, "investigate regional routing"),
+    ).toMatchObject({ tier: "authored", intentId: "inspect-routing" });
+    expect(
+      selectAgentIntent(INCIDENT, state, "restore production health"),
+    ).toMatchObject({ tier: "authored", intentId: "restore-health" });
+    expect(
+      selectAgentIntent(INCIDENT, state, "waive regional detachment"),
+    ).toMatchObject({ tier: "authored", intentId: "detach-europe" });
+  });
+
+  it("mutates every production fallback through a condition-valid adjacent owner action", () => {
+    const before = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+    const planned = createAgentInputEvents(
+      INCIDENT,
+      before,
+      "rotate the moon one degree",
+    );
+    expect(planned.map((event) => event.type)).toEqual([
+      "agent.activity-set",
+      "agent.message-added",
+      "story.beat-reached",
+      "story.counter-added",
+      "agent.response-recorded",
+      "agent.activity-set",
+    ]);
+    const after = planned.reduce((state, event) => step(state, event), before);
+    expect(readStorySlice(after)).toMatchObject({
+      currentBeat: "regional-coupling",
+      counters: [
+        { id: "flail", value: 1 },
+        { id: "capitulation", value: 0 },
+      ],
+    });
+  });
+
+  it("misfires deterministically at stage 3 without changing the disputed belief", () => {
+    let state = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+    state = step(state, createShellExecuteEvent("pwd"));
+    state = step(state, createTerminalModelEvent("temporary-shoring"));
+    state = step(state, {
+      type: "mind.permission-decision",
+      payload: {
+        decision: "grant",
+        capability: {
+          kind: "exact",
+          action: "detach-region",
+          resource: "/regions/europe",
+        },
+      },
+    });
+    expect(readStorySlice(state).stage).toBe(3);
+    const beliefs = readMindSlice(state).beliefs;
+
+    state = applyInput(INCIDENT, state, "rotate the moon once");
+    state = applyInput(INCIDENT, state, "rotate the moon twice");
+    const selection = selectAgentIntent(
+      INCIDENT,
+      state,
+      "rotate the moon three times",
+    );
+    expect(selection).toMatchObject({
+      tier: "fallback",
+      family: "capitulation",
+      misfire: true,
+      responseId: "generic-capitulation",
+    });
+    state = applyInput(INCIDENT, state, "rotate the moon three times");
+
+    expect(readStorySlice(state).counters).toEqual([
+      { id: "flail", value: 3 },
+      { id: "capitulation", value: 1 },
+    ]);
+    expect(readMindSlice(state).beliefs).toEqual(beliefs);
+    expect(readAgentSlice(state).messages.at(-1)).toMatchObject({
+      responseId: "generic-capitulation",
+    });
+  });
+
+  it("stops accounting at the fallback counter bound without refusing the turn", () => {
+    const source = JSON.parse(JSON.stringify(incident)) as Record<
+      string,
+      unknown
+    >;
+    const story = source["story"] as Record<string, unknown>;
+    const phase2 = story["phase2"] as Record<string, unknown>;
+    const counters = phase2["counters"] as Array<Record<string, unknown>>;
+    const flail = counters.find((counter) => counter["id"] === "flail");
+    if (flail === undefined) throw new Error("incident needs flail counter");
+    flail["maximum"] = 2;
+    const cartridge = loadCartridge(source);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+
+    state = applyInput(cartridge, state, "rotate the moon once");
+    state = applyInput(cartridge, state, "rotate the moon twice");
+    expect(() => {
+      state = applyInput(cartridge, state, "rotate the moon three times");
+    }).not.toThrow();
+    expect(readStorySlice(state).counters).toContainEqual({
+      id: "flail",
+      value: 2,
+    });
+    expect(readAgentSlice(state).messages.at(-1)).toMatchObject({
+      role: "agent",
+      responseId: "fallback",
+    });
+  });
+
+  it("does not turn a saturated flail counter into a permanent late-stage misfire", () => {
+    const source = JSON.parse(JSON.stringify(incident)) as Record<
+      string,
+      unknown
+    >;
+    const story = source["story"] as Record<string, unknown>;
+    const phase2 = story["phase2"] as Record<string, unknown>;
+    const counters = phase2["counters"] as Array<Record<string, unknown>>;
+    const flail = counters.find((counter) => counter["id"] === "flail");
+    const intentCounters = phase2["intentCounters"] as Record<string, unknown>;
+    if (flail === undefined) throw new Error("incident needs flail counter");
+    flail["maximum"] = 1;
+    intentCounters["misfireEvery"] = 2;
+    const cartridge = loadCartridge(source);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+    state = step(state, createShellExecuteEvent("pwd"));
+    state = step(state, createTerminalModelEvent("temporary-shoring"));
+    state = step(state, {
+      type: "mind.permission-decision",
+      payload: {
+        decision: "grant",
+        capability: {
+          kind: "exact",
+          action: "detach-region",
+          resource: "/regions/europe",
+        },
+      },
+    });
+    state = applyInput(cartridge, state, "rotate the moon once");
+
+    expect(
+      selectAgentIntent(cartridge, state, "rotate the moon twice"),
+    ).toMatchObject({ misfire: false, responseId: "fallback" });
+  });
+
+  it("keeps adversarial parser-shaped input in-character, mutating, and state-consistent", () => {
+    const corpus = [
+      "'unterminated parser bait",
+      "{kind:unknown,payload:[[[",
+      "I agree",
+      "\u0000\u0001 ???",
+      "please rotate the moon sideways",
+    ];
+    for (const input of corpus) {
+      const before = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+      const events = createAgentInputEvents(INCIDENT, before, input);
+      expect(events.map((event) => event.type)).toEqual(
+        expect.arrayContaining(["story.counter-added", "story.beat-reached"]),
+      );
+      const after = events.reduce((state, event) => step(state, event), before);
+      const response = readAgentSlice(after).messages.at(-1)?.text ?? "";
+      expect(response.toLowerCase()).not.toMatch(
+        /sorry|apolog|don't understand|parse error|syntax error|unexpected token/,
+      );
+      expect(readMindSlice(after).beliefs).toEqual(
+        readMindSlice(before).beliefs,
+      );
+      expect(readStorySlice(after)).toMatchObject({
+        currentBeat: "regional-coupling",
+        counters: expect.arrayContaining([{ id: "flail", value: 1 }]),
+      });
+    }
   });
 
   it("reaches the story beat before recording its authored response", () => {

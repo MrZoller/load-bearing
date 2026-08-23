@@ -37,11 +37,12 @@ import { deepFreeze } from "../freeze.js";
 import { parseTimestamp } from "../clock/civil.js";
 import { detectBrand } from "../serialize/canonical.js";
 import type { StoryCondition } from "../story/types.js";
-import { normalizeIntentPhrase } from "./intent.js";
+import { keywordPatternIssue, normalizeIntentPhrase } from "./intent.js";
 import {
   CARTRIDGE_SCHEMA,
   CARTRIDGE_SCHEMA_VERSION,
   FILE_PATH_PATTERN,
+  GENERIC_INTENT_FAMILIES,
   MAX_STORY_CONSEQUENCE_WORK,
 } from "./schema.js";
 import type { SchemaNode, ObjectNode } from "./schema.js";
@@ -1587,6 +1588,108 @@ function checkStoryAndPresentation(
       }
     });
   };
+  const checkIntentCandidates = (
+    candidates: CartridgeStory["fallback"]["candidates"],
+    pointer: string,
+    requireMutation: boolean,
+  ): void => {
+    candidates.forEach((candidate, index) => {
+      const root = `${pointer}/${String(index)}`;
+      reference(candidate.response, `${root}/response`);
+      candidate.when.forEach((condition, conditionIndex) =>
+        checkConditionReferences(
+          condition,
+          `${root}/when/${String(conditionIndex)}`,
+        ),
+      );
+      checkOutcomeActions(candidate.actions, `${root}/actions`);
+      const reaches = candidate.actions.filter(
+        (action) => action.kind === "story-reach",
+      );
+      if (reaches.length > 1)
+        report.addPhrase(
+          `${root}/actions`,
+          "at most one story-reach action for one unambiguous response route",
+          `${String(reaches.length)} story-reach actions`,
+        );
+      const reachIndex = candidate.actions.findIndex(
+        (action) => action.kind === "story-reach",
+      );
+      if (reachIndex > 0)
+        report.addPhrase(
+          `${root}/actions/${String(reachIndex)}`,
+          "a story-reach action before other candidate owner actions, so the beat and dialogue share the pre-turn snapshot",
+          `a story-reach action after ${String(reachIndex)} earlier action(s)`,
+        );
+      if (requireMutation && candidate.actions.length === 0)
+        report.addPhrase(
+          `${root}/actions`,
+          "at least one adjacent owner action",
+          "an empty array",
+        );
+    });
+    if (
+      candidates.length > 0 &&
+      candidates[candidates.length - 1]?.when.length !== 0
+    )
+      report.addPhrase(
+        pointer,
+        "a final unconditional candidate so every state has an outcome",
+        "a condition-gated final candidate",
+      );
+  };
+  checkIntentCandidates(
+    story.fallback.candidates,
+    "/story/fallback/candidates",
+    true,
+  );
+  const genericFamilies = new Map<string, number>();
+  story.phase2.genericIntents.forEach((generic, index) => {
+    const root = `/story/phase2/genericIntents/${String(index)}`;
+    const first = genericFamilies.get(generic.family);
+    if (first === undefined) genericFamilies.set(generic.family, index);
+    else
+      report.addPhrase(
+        `${root}/family`,
+        "a generic family no other mapping uses",
+        `${JSON.stringify(generic.family)}, already used at index ${String(first)}`,
+      );
+    checkIntentCandidates(generic.candidates, `${root}/candidates`, false);
+  });
+  if (story.phase2.genericIntents.length > 0)
+    for (const family of GENERIC_INTENT_FAMILIES)
+      if (!genericFamilies.has(family))
+        report.addPhrase(
+          "/story/phase2/genericIntents",
+          "one mapping for every runtime-owned generic family",
+          `no mapping for ${JSON.stringify(family)}`,
+        );
+  const intentCounters = story.phase2.intentCounters;
+  if (
+    intentCounters.flail !== "" &&
+    intentCounters.flail === intentCounters.capitulation
+  )
+    report.addPhrase(
+      "/story/phase2/intentCounters/capitulation",
+      "a counter distinct from flail",
+      JSON.stringify(intentCounters.capitulation),
+    );
+  for (const field of ["flail", "capitulation"] as const)
+    if (intentCounters[field] !== "" && !counters.has(intentCounters[field]))
+      report.addPhrase(
+        `/story/phase2/intentCounters/${field}`,
+        "an empty string or the id of a declared story counter",
+        `${JSON.stringify(intentCounters[field])}, which does not exist`,
+      );
+  if (
+    intentCounters.misfireEvery > 0 &&
+    (intentCounters.flail === "" || intentCounters.capitulation === "")
+  )
+    report.addPhrase(
+      "/story/phase2/intentCounters/misfireEvery",
+      "zero, or a cadence with both flail and capitulation counters declared",
+      `${String(intentCounters.misfireEvery)} with a missing counter id`,
+    );
   story.phase2.beats.forEach((beat, index) => {
     const root = `/story/phase2/beats/${String(index)}`;
     const checkEnding = (ending: string, pointer: string): void => {
@@ -1856,6 +1959,21 @@ function checkStoryAndPresentation(
         report.addPhrase(
           pointer,
           "a pattern no other intent uses",
+          `${JSON.stringify(value)}, already used by ${first}`,
+        );
+    });
+    intent.keywordPatterns.forEach((value, patternIndex) => {
+      const pointer = `/story/intents/${String(index)}/keywordPatterns/${String(patternIndex)}`;
+      const issue = keywordPatternIssue(value);
+      if (issue !== undefined)
+        report.addPhrase(pointer, issue, JSON.stringify(value));
+      const key = `keyword\u0000${normalizeIntentPhrase(value)}`;
+      const first = patterns.get(key);
+      if (first === undefined) patterns.set(key, pointer);
+      else
+        report.addPhrase(
+          pointer,
+          "a keyword pattern no other intent uses",
           `${JSON.stringify(value)}, already used by ${first}`,
         );
     });

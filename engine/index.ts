@@ -338,6 +338,7 @@ export {
 } from "./story/story.js";
 export {
   routeCompact,
+  routeIntentCandidate,
   routeModelHandoff,
   routeStoryResponse,
 } from "./story/router.js";
@@ -425,6 +426,7 @@ export type {
 } from "./agent/types.js";
 export {
   boundAgentInput,
+  classifyGenericIntent,
   createAgentInputEvents,
   normalizeAgentInput,
   selectAgentIntent,
@@ -503,6 +505,7 @@ export {
   GIT_BRANCH_PATTERN,
   GIT_COMMIT_ID_PATTERN,
   GIT_EMAIL_PATTERN,
+  GENERIC_INTENT_FAMILIES,
   WORLD_ID_PATTERN,
   EVENT_TYPE_PATTERN,
   MAX_PRESENTATION_ENTRIES,
@@ -548,6 +551,9 @@ export type {
   CartridgeAuthoredResponse,
   CartridgeBelief,
   CartridgeIntent,
+  CartridgeIntentCandidate,
+  CartridgeIntentCounters,
+  CartridgeGenericIntent,
   CartridgeMetricParameters,
   CartridgePlaceholder,
   CartridgePresentation,
@@ -567,6 +573,7 @@ export type {
   CartridgeStoryCounter,
   CartridgeStoryVariant,
   CartridgeStoryPhase2,
+  GenericIntentFamily,
   CartridgeEnding,
   CartridgeRepository,
   CartridgeLog,

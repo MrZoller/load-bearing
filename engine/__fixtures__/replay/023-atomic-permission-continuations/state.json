@@ -287,6 +287,7 @@
       "fallback": {
         "actions": [],
         "authorizedResponse": "",
+        "candidates": [],
         "response": "fallback"
       },
       "helpResponse": "help",
@@ -301,6 +302,7 @@
           ],
           "authorizedResponse": "",
           "id": "inspect-sentinel",
+          "keywordPatterns": [],
           "patterns": [
             "inspect it",
             "check the sentinel",
@@ -337,6 +339,7 @@
           ],
           "authorizedResponse": "remove-authorized",
           "id": "remove-sentinel",
+          "keywordPatterns": [],
           "patterns": [
             "remove it",
             "delete the sentinel"
@@ -369,6 +372,7 @@
           ],
           "authorizedResponse": "",
           "id": "waive-sentinel",
+          "keywordPatterns": [],
           "patterns": [
             "waive it",
             "accept the waiver"
@@ -403,8 +407,14 @@
         "counters": [],
         "endings": [],
         "facts": [],
+        "genericIntents": [],
         "handoffs": [],
         "initialBeat": "start",
+        "intentCounters": {
+          "capitulation": "",
+          "flail": "",
+          "misfireEvery": 0
+        },
         "routes": [],
         "transitions": []
       },

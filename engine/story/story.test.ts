@@ -20,6 +20,10 @@ import { readStorySlice } from "./story.js";
 
 const CARTRIDGE = loadCartridge(incident);
 const SEED = "2026-08-22/0/deep-foundation";
+const INCIDENT_COUNTERS = [
+  { id: "flail", value: 0 },
+  { id: "capitulation", value: 0 },
+] as const;
 
 function bootstrap() {
   return reduce({ cartridge: CARTRIDGE, seed: SEED, events: [] });
@@ -42,7 +46,7 @@ describe("shared story beats", () => {
       currentBeat: "incident-open",
       currentVariant: "",
       facts: [],
-      counters: [],
+      counters: INCIDENT_COUNTERS,
       discoveredEndings: [],
     });
   });
@@ -74,7 +78,7 @@ describe("shared story beats", () => {
       currentBeat: "load-bearing-declaration",
       currentVariant: "preserved-load-bearing-response",
       facts: [{ id: "callback-load-bearing-response", kind: "callback" }],
-      counters: [],
+      counters: INCIDENT_COUNTERS,
       discoveredEndings: ["load-bearing-response"],
     });
   });
@@ -93,7 +97,7 @@ describe("shared story beats", () => {
           currentBeat: "incident-open",
           currentVariant: "",
           facts: [],
-          counters: [],
+          counters: INCIDENT_COUNTERS,
           discoveredEndings: [],
           extra: true,
         },
@@ -105,7 +109,7 @@ describe("shared story beats", () => {
           currentBeat: "incident-open",
           currentVariant: "",
           facts: [],
-          counters: [],
+          counters: INCIDENT_COUNTERS,
           discoveredEndings: [],
         },
         /stage: must be an escalation stage from 0 through 4/,
@@ -116,7 +120,7 @@ describe("shared story beats", () => {
           currentBeat: "invented-beat",
           currentVariant: "",
           facts: [],
-          counters: [],
+          counters: INCIDENT_COUNTERS,
           discoveredEndings: [],
         },
         /currentBeat: unknown beat "invented-beat"/,
@@ -127,7 +131,7 @@ describe("shared story beats", () => {
           currentBeat: "incident-open",
           currentVariant: "",
           facts: [],
-          counters: [],
+          counters: INCIDENT_COUNTERS,
           discoveredEndings: ["load-bearing-response", "load-bearing-response"],
         },
         /discoveredEndings\[1\]: duplicate ending/,
@@ -138,7 +142,7 @@ describe("shared story beats", () => {
           currentBeat: "incident-open",
           currentVariant: "",
           facts: [],
-          counters: [],
+          counters: INCIDENT_COUNTERS,
           discoveredEndings: ["invented-ending"],
         },
         /discoveredEndings\[0\]: unknown ending "invented-ending"/,
@@ -238,7 +242,7 @@ describe("shared story beats", () => {
           currentBeat: "incident-open",
           currentVariant: "",
           facts: [{ id: "made-up", kind: "reveal" }],
-          counters: [],
+          counters: INCIDENT_COUNTERS,
           discoveredEndings: [],
         },
         /unknown fact "made-up"/,

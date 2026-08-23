@@ -157,6 +157,7 @@
       "fallback": {
         "actions": [],
         "authorizedResponse": "",
+        "candidates": [],
         "response": "default"
       },
       "helpResponse": "default",
@@ -171,6 +172,7 @@
           ],
           "authorizedResponse": "",
           "id": "inspect",
+          "keywordPatterns": [],
           "patterns": [
             "inspect"
           ],
@@ -197,8 +199,14 @@
         "counters": [],
         "endings": [],
         "facts": [],
+        "genericIntents": [],
         "handoffs": [],
         "initialBeat": "shared",
+        "intentCounters": {
+          "capitulation": "",
+          "flail": "",
+          "misfireEvery": 0
+        },
         "routes": [
           {
             "archetype": "paranoid",

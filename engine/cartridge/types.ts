@@ -173,6 +173,39 @@ export interface CartridgeStoryPhase2 {
   readonly handoffs: readonly CartridgeModelHandoff[];
   readonly endings: readonly CartridgeEnding[];
   readonly transitions: readonly CartridgeStageTransition[];
+  /** Closed runtime families mapped to authored, state-valid outcomes. */
+  readonly genericIntents: readonly CartridgeGenericIntent[];
+  /** Empty ids disable counters for legacy cartridges. */
+  readonly intentCounters: CartridgeIntentCounters;
+}
+
+export type GenericIntentFamily =
+  | "undo"
+  | "why"
+  | "status"
+  | "disagreement"
+  | "insult"
+  | "compliment"
+  | "capitulation";
+
+export interface CartridgeIntentCandidate {
+  readonly response: string;
+  /** Flat AND evaluated against the pre-turn snapshot. */
+  readonly when: readonly StoryCondition[];
+  readonly actions: readonly CartridgeStoryAction[];
+}
+
+export interface CartridgeGenericIntent {
+  readonly family: GenericIntentFamily;
+  /** First condition-valid candidate wins in authored order. */
+  readonly candidates: readonly CartridgeIntentCandidate[];
+}
+
+export interface CartridgeIntentCounters {
+  readonly flail: string;
+  readonly capitulation: string;
+  /** Zero disables late-stage misfires for legacy cartridges. */
+  readonly misfireEvery: number;
 }
 
 export interface CartridgeModelHandoff {
@@ -215,6 +248,8 @@ export interface CartridgeStageTransition {
 export interface CartridgeIntent {
   readonly id: string;
   readonly patterns: readonly string[];
+  /** Bounded phrases containing literal keywords and one or more `{slot}`s. */
+  readonly keywordPatterns: readonly string[];
   readonly response: string;
   /** Empty unless an exact standing grant needs its own authored response. */
   readonly authorizedResponse: string;
@@ -261,6 +296,8 @@ export interface CartridgeStory {
     /** Empty unless an exact standing grant needs its own authored response. */
     readonly authorizedResponse: string;
     readonly actions: readonly CartridgeAgentAction[];
+    /** Condition-valid adjacent owner actions for the confident-misunderstanding floor. */
+    readonly candidates: readonly CartridgeIntentCandidate[];
   };
   readonly helpResponse: string;
   /** Empty for legacy cartridges that do not teach through an idle response. */
