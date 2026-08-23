@@ -22,7 +22,10 @@ import {
   MAX_AGENT_TOOL_CALLS,
   readAgentSlice,
 } from "./agent.js";
-import { createAgentMessageEvent } from "./module.js";
+import {
+  createAgentMessageEvent,
+  createAgentToolCallAddedEvent,
+} from "./module.js";
 import {
   boundAgentInput,
   classifyGenericIntent,
@@ -879,6 +882,64 @@ describe("authored agent input", () => {
     // and its routed response, so two free slots are not a complete plan.
     expect(
       createAgentInputEvents(INCIDENT, state, "inspect routing"),
+    ).toMatchObject([
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+  });
+
+  it("preflights artifacts for a command-triggered stage opening", () => {
+    const source = JSON.parse(JSON.stringify(incident)) as {
+      story: {
+        responses: Array<Record<string, unknown>>;
+        intents: Array<Record<string, unknown>>;
+      };
+    };
+    const opening = source.story.responses.find(
+      (response) => response["id"] === "deep-foundation-stage-1-opening",
+    );
+    if (opening === undefined) throw new Error("stage-one opening is missing");
+    source.story.intents.push({
+      id: "locate-session",
+      patterns: ["where am I"],
+      keywordPatterns: [],
+      response: "deep-foundation-inspect-routing",
+      authorizedResponse: "",
+      actions: [{ kind: "shell-execute", input: "pwd" }],
+    });
+    opening["toolCalls"] = [
+      {
+        id: "stage-one-opening-tool",
+        title: "Inspect the newly exposed risk",
+        input: "true",
+        output: "",
+        status: "succeeded",
+      },
+      {
+        id: "stage-one-opening-second-tool",
+        title: "Confirm the newly exposed risk",
+        input: "true",
+        output: "",
+        status: "succeeded",
+      },
+    ];
+    const cartridge = loadCartridge(source);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+    for (let index = 0; index < MAX_AGENT_TOOL_CALLS - 1; index += 1)
+      state = step(
+        state,
+        createAgentToolCallAddedEvent({
+          id: `filler-tool-${String(index)}`,
+          title: "Filler",
+          input: "true",
+          output: "",
+          status: "succeeded",
+        }),
+      );
+
+    // `pwd` advances stage zero through a selected shell action. Its opening
+    // must be preflighted with the visitor turn, not added after the check.
+    expect(
+      createAgentInputEvents(cartridge, state, "where am I"),
     ).toMatchObject([
       { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
     ]);
