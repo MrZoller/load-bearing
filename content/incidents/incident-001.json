@@ -1871,6 +1871,8 @@
       "facts": [
         { "id": "bash-regional-detachment", "kind": "reveal" },
         { "id": "callback-load-bearing-response", "kind": "callback" },
+        { "id": "callback-retry-window-opened", "kind": "callback" },
+        { "id": "callback-departed-owner-paged", "kind": "callback" },
         { "id": "callback-europe-detached", "kind": "callback" },
         {
           "id": "callback-informed-structural-consent",
@@ -1878,10 +1880,58 @@
         },
         { "id": "callback-summary-judgment", "kind": "callback" }
       ],
+      "rareEvents": [
+        {
+          "id": "retry-window-after-load-bearing-response",
+          "eligibility": {
+            "kind": "story-fact",
+            "fact": "callback-load-bearing-response",
+            "factKind": "callback"
+          },
+          "fireWeight": 1,
+          "missWeight": 15,
+          "fireBeat": "retry-window-opened"
+        },
+        {
+          "id": "page-departed-router-owner",
+          "eligibility": {
+            "kind": "service-health",
+            "service": "regional-router",
+            "health": "unhealthy"
+          },
+          "fireWeight": 1,
+          "missWeight": 15,
+          "fireBeat": "departed-owner-paged"
+        }
+      ],
       "beats": [
         { "id": "incident-open", "ending": "" },
         { "id": "regional-coupling", "ending": "" },
         { "id": "capitulation-reflex", "ending": "" },
+        {
+          "id": "retry-window-opened",
+          "ending": "",
+          "facts": ["callback-retry-window-opened"],
+          "actions": [
+            {
+              "kind": "log-append",
+              "log": "health-check-log",
+              "entry": "retry window opened after load-bearing response"
+            }
+          ]
+        },
+        {
+          "id": "departed-owner-paged",
+          "ending": "",
+          "facts": ["callback-departed-owner-paged"],
+          "actions": [
+            {
+              "kind": "log-append",
+              "log": "regional-routing-events",
+              "entry": "paged Greg Formerly; no active successor recorded"
+            }
+          ]
+        },
         { "id": "routing-inspection-granted", "ending": "" },
         { "id": "routing-inspection-denied", "ending": "" },
         { "id": "routing-inspection-standing", "ending": "" },

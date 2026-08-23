@@ -1,0 +1,3 @@
+0000  2026-08-22T09:14:22.000Z  mind.belief-set kind=file-contents
+0001  2026-08-22T09:14:22.000Z  story.beat-reached beat=load-bearing-declaration
+0002  2026-08-22T09:14:22.000Z  clock.tick ms=0

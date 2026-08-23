@@ -2001,6 +2001,36 @@
             "variants": []
           },
           {
+            "actions": [
+              {
+                "entry": "retry window opened after load-bearing response",
+                "kind": "log-append",
+                "log": "health-check-log"
+              }
+            ],
+            "ending": "",
+            "facts": [
+              "callback-retry-window-opened"
+            ],
+            "id": "retry-window-opened",
+            "variants": []
+          },
+          {
+            "actions": [
+              {
+                "entry": "paged Greg Formerly; no active successor recorded",
+                "kind": "log-append",
+                "log": "regional-routing-events"
+              }
+            ],
+            "ending": "",
+            "facts": [
+              "callback-departed-owner-paged"
+            ],
+            "id": "departed-owner-paged",
+            "variants": []
+          },
+          {
             "actions": [],
             "ending": "",
             "facts": [],
@@ -2203,6 +2233,14 @@
           },
           {
             "id": "callback-load-bearing-response",
+            "kind": "callback"
+          },
+          {
+            "id": "callback-retry-window-opened",
+            "kind": "callback"
+          },
+          {
+            "id": "callback-departed-owner-paged",
             "kind": "callback"
           },
           {
@@ -2455,7 +2493,30 @@
           "flail": "flail",
           "misfireEvery": 8
         },
-        "rareEvents": [],
+        "rareEvents": [
+          {
+            "eligibility": {
+              "fact": "callback-load-bearing-response",
+              "factKind": "callback",
+              "kind": "story-fact"
+            },
+            "fireBeat": "retry-window-opened",
+            "fireWeight": 1,
+            "id": "retry-window-after-load-bearing-response",
+            "missWeight": 15
+          },
+          {
+            "eligibility": {
+              "health": "unhealthy",
+              "kind": "service-health",
+              "service": "regional-router"
+            },
+            "fireBeat": "departed-owner-paged",
+            "fireWeight": 1,
+            "id": "page-departed-router-owner",
+            "missWeight": 15
+          }
+        ],
         "routes": [
           {
             "archetype": "paranoid",
@@ -4196,7 +4257,18 @@
       "currentVariant": "",
       "discoveredEndings": [],
       "facts": [],
-      "rareEvents": [],
+      "rareEvents": [
+        {
+          "evaluated": false,
+          "fired": false,
+          "id": "retry-window-after-load-bearing-response"
+        },
+        {
+          "evaluated": false,
+          "fired": false,
+          "id": "page-departed-router-owner"
+        }
+      ],
       "stage": 0
     },
     "terminal": {

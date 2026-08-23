@@ -177,6 +177,7 @@
               "kind": "file-exists",
               "path": "/srv/app/evidence.txt"
             },
+            "fireBeat": "shared",
             "fireWeight": 1,
             "id": "missing-evidence",
             "missWeight": 1

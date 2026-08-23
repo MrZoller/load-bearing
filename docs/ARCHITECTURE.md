@@ -161,10 +161,12 @@ Only after that top-level transaction and its escalation transition are fully
 staged does the reducer visit eligible unevaluated **rare events** in authored
 order. Expansion children never run this phase independently. Each event makes
 one fire-first weighted pick on `root/story/rare-events/<id>` and atomically
-records evaluated/fired state; misses are terminal. Per-id forks mean adding or
-reordering another event, switching models, or consuming an unrelated stream
-cannot change an existing event's outcome. A failure publishes neither its
-story record nor the advanced random cursor.
+records evaluated/fired state; misses are terminal, while a fire reaches its
+authored shared beat and stages that beat's ordinary facts and bounded
+consequences in the same transaction. Per-id forks mean adding or reordering
+another event, switching models, or consuming an unrelated stream cannot change
+an existing event's outcome. A failure publishes neither its story record nor
+the advanced random cursor.
 
 **An unregistered event type is refused, never ignored.** Treating it as a
 no-op would let a subsystem missing from the module list produce a session that

@@ -12,6 +12,9 @@ import {
   createMindPermissionRequestEvent,
 } from "../mind/module.js";
 import { createTerminalModelEvent } from "../terminal/module.js";
+import { readVfsSlice } from "../vfs/module.js";
+import { readWorldSlice } from "../world/module.js";
+import { readWorldLog } from "../world/world.js";
 import {
   createStoryBeatReachedEvent,
   createStoryFactRecordedEvent,
@@ -24,6 +27,18 @@ const INCIDENT_COUNTERS = [
   { id: "flail", value: 0 },
   { id: "capitulation", value: 0 },
 ] as const;
+const INCIDENT_RARE_EVENTS = [
+  {
+    id: "retry-window-after-load-bearing-response",
+    evaluated: false,
+    fired: false,
+  },
+  {
+    id: "page-departed-router-owner",
+    evaluated: false,
+    fired: false,
+  },
+] as const;
 
 function bootstrap() {
   return reduce({ cartridge: CARTRIDGE, seed: SEED, events: [] });
@@ -35,7 +50,10 @@ function hostileStorySlice(slice: unknown): string {
     unknown
   >;
   const slices = recorded["slices"] as Record<string, unknown>;
-  slices["story"] = { rareEvents: [], ...(slice as Record<string, unknown>) };
+  slices["story"] = {
+    rareEvents: INCIDENT_RARE_EVENTS,
+    ...(slice as Record<string, unknown>),
+  };
   return serialize(recorded);
 }
 
@@ -47,7 +65,7 @@ describe("shared story beats", () => {
       currentVariant: "",
       facts: [],
       counters: INCIDENT_COUNTERS,
-      rareEvents: [],
+      rareEvents: INCIDENT_RARE_EVENTS,
       discoveredEndings: [],
     });
   });
@@ -62,12 +80,14 @@ describe("shared story beats", () => {
           eligibility: { kind: "file-exists", path: "/etc/motd", exists: true },
           fireWeight: 1,
           missWeight: 1,
+          fireBeat: "start",
         },
         {
           id: "second",
           eligibility: { kind: "file-exists", path: "/missing", exists: true },
           fireWeight: 1,
           missWeight: 1,
+          fireBeat: "start",
         },
       ],
       beats: [{ id: "start", ending: "" }],
@@ -137,7 +157,10 @@ describe("shared story beats", () => {
       currentVariant: "preserved-load-bearing-response",
       facts: [{ id: "callback-load-bearing-response", kind: "callback" }],
       counters: INCIDENT_COUNTERS,
-      rareEvents: [],
+      rareEvents: [
+        { ...INCIDENT_RARE_EVENTS[0], evaluated: true },
+        INCIDENT_RARE_EVENTS[1],
+      ],
       discoveredEndings: ["load-bearing-response"],
     });
   });
@@ -452,11 +475,26 @@ describe("shared story beats", () => {
           },
           fireWeight: 1,
           missWeight: 1,
+          fireBeat: "fired",
         },
       ],
-      beats: [{ id: "start", ending: "" }],
+      facts: [{ id: "rare-callback", kind: "callback" }],
+      beats: [
+        { id: "start", ending: "" },
+        {
+          id: "fired",
+          ending: "",
+          facts: ["rare-callback"],
+          actions: [
+            { kind: "log-append", log: "rare-log", entry: "rare evidence" },
+          ],
+        },
+      ],
       endings: [],
     };
+    (source["repository"] as Record<string, unknown>)["logs"] = [
+      { id: "rare-log", kind: "stream", entries: [] },
+    ];
     const cartridge = loadCartridge(source);
     const before = reduce({ cartridge, seed: SEED, events: [] });
     const afterRemoval = step(before, createShellExecuteEvent("rm /etc/motd"));
@@ -464,6 +502,14 @@ describe("shared story beats", () => {
     expect(readStorySlice(afterRemoval).rareEvents).toMatchObject([
       { id: "after-removal", evaluated: true },
     ]);
+    const fired = readStorySlice(afterRemoval).rareEvents[0]?.fired;
+    expect(readStorySlice(afterRemoval).facts).toEqual(
+      fired ? [{ id: "rare-callback", kind: "callback" }] : [],
+    );
+    expect(
+      readWorldSlice(afterRemoval).logs.find(({ id }) => id === "rare-log")
+        ?.entries,
+    ).toEqual(fired ? ["rare evidence"] : []);
     const cursor =
       afterRemoval.random.cursors["root/story/rare-events/after-removal"];
     const afterAnotherTransition = step(
@@ -490,6 +536,7 @@ describe("shared story beats", () => {
           eligibility: { kind: "file-exists", path: "/etc/motd", exists: true },
           fireWeight: 1,
           missWeight: 2,
+          fireBeat: "start",
         })),
         beats: [{ id: "start", ending: "" }],
         endings: [],
@@ -523,6 +570,93 @@ describe("shared story beats", () => {
     expect(outcomes(build(["second", "first"]))).toEqual(baseline);
     expect(outcomes(build(["first", "second"]), true)).toEqual(baseline);
     expect(outcomes(build(["first", "second"]), false, true)).toEqual(baseline);
+  });
+
+  it("stages Incident #001 fired callback facts and log consequences, while misses have no effect", () => {
+    const callbackPath = (seed: string) => {
+      let state = reduce({ cartridge: CARTRIDGE, seed, events: [] });
+      state = step(state, {
+        type: "mind.belief-set",
+        payload: {
+          belief: {
+            kind: "file-contents",
+            path: "/production/load-balancer/config/routes.conf",
+            contents: "health_status=500\neurope_attached=true\n",
+          },
+        },
+      });
+      return step(
+        state,
+        createStoryBeatReachedEvent("load-bearing-declaration"),
+      );
+    };
+
+    const hit = callbackPath("2026-08-23/53/callback-10");
+    expect(readStorySlice(hit).rareEvents[0]).toMatchObject({
+      evaluated: true,
+      fired: true,
+    });
+    expect(readStorySlice(hit).facts).toContainEqual({
+      id: "callback-retry-window-opened",
+      kind: "callback",
+    });
+    expect(
+      readWorldLog(readWorldSlice(hit), readVfsSlice(hit), "health-check-log"),
+    ).toEqual({
+      ok: true,
+      entries: expect.arrayContaining([
+        "retry window opened after load-bearing response",
+      ]),
+    });
+
+    const miss = callbackPath("2026-08-23/53/callback-0");
+    expect(readStorySlice(miss).rareEvents[0]).toMatchObject({
+      evaluated: true,
+      fired: false,
+    });
+    expect(readStorySlice(miss).facts).not.toContainEqual({
+      id: "callback-retry-window-opened",
+      kind: "callback",
+    });
+    expect(
+      readWorldLog(
+        readWorldSlice(miss),
+        readVfsSlice(miss),
+        "health-check-log",
+      ),
+    ).toEqual({
+      ok: true,
+      entries: expect.not.arrayContaining([
+        "retry window opened after load-bearing response",
+      ]),
+    });
+  });
+
+  it("pages the departed owner through the same beat consequence path when regional routing becomes unhealthy", () => {
+    let state = reduce({
+      cartridge: CARTRIDGE,
+      seed: "2026-08-23/53/router-17",
+      events: [],
+    });
+    state = step(state, createShellExecuteEvent("rm config/routes.conf"));
+    state = step(
+      state,
+      createShellExecuteEvent("cp config/routes.200.conf config/routes.conf"),
+    );
+
+    expect(readStorySlice(state).rareEvents[1]).toMatchObject({
+      evaluated: true,
+      fired: true,
+    });
+    expect(readStorySlice(state).facts).toContainEqual({
+      id: "callback-departed-owner-paged",
+      kind: "callback",
+    });
+    expect(
+      readWorldSlice(state).logs.find(
+        ({ id }) => id === "regional-routing-events",
+      )?.entries,
+    ).toContain("paged Greg Formerly; no active successor recorded");
   });
 
   it("refuses forged rare-event owner events at the public reducer boundary", () => {

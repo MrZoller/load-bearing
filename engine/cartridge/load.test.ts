@@ -1124,11 +1124,22 @@ describe("loadCartridge", () => {
       eligibility: { kind: "file-exists", path: "/etc/motd", exists: true },
       fireWeight: 1,
       missWeight: 1,
+      fireBeat: "start",
     };
 
     expect(invalid([{ ...draw, fireWeight: 0 }])).toContain(
       "/story/phase2/rareEvents/0/fireWeight",
     );
+    expect(
+      invalid([
+        {
+          id: draw.id,
+          eligibility: draw.eligibility,
+          fireWeight: draw.fireWeight,
+          missWeight: draw.missWeight,
+        },
+      ]),
+    ).toContain("/story/phase2/rareEvents/0/fireBeat");
     expect(invalid([{ ...draw, missWeight: MAX_INT_RANGE + 1 }])).toContain(
       "/story/phase2/rareEvents/0/missWeight",
     );
@@ -1153,6 +1164,9 @@ describe("loadCartridge", () => {
         },
       ]),
     ).toContain("/story/phase2/rareEvents/0/eligibility/fact");
+    expect(invalid([{ ...draw, fireBeat: "missing" }])).toContain(
+      "/story/phase2/rareEvents/0/fireBeat",
+    );
 
     const valid = minimal();
     (valid["story"] as Record<string, unknown>)["phase2"] = phase2([
@@ -1161,6 +1175,7 @@ describe("loadCartridge", () => {
         eligibility: { kind: "file-exists", path: "/etc/motd", exists: true },
         fireWeight: 1,
         missWeight: MAX_INT_RANGE - 1,
+        fireBeat: "start",
       },
     ]);
     expect(loadCartridge(valid).story.phase2.rareEvents).toHaveLength(1);

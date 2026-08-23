@@ -1,0 +1,25 @@
+{
+  "name": "053-incident-001-rare-disturbance-hit",
+  "description": "Incident #001 fires its isolated post-callback disturbance once, records the authored callback fact, and appends retry evidence through ordinary beat consequences.",
+  "seed": "2026-08-23/53/callback-10",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    {
+      "type": "mind.belief-set",
+      "payload": {
+        "belief": {
+          "kind": "file-contents",
+          "path": "/production/load-balancer/config/routes.conf",
+          "contents": "health_status=500\neurope_attached=true\n"
+        }
+      },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "load-bearing-declaration" },
+      "version": 0
+    },
+    { "type": "clock.tick", "payload": { "ms": 0 }, "version": 0 }
+  ]
+}

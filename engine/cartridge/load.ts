@@ -1382,6 +1382,12 @@ function checkStoryAndPresentation(
         `a fireWeight + missWeight total at most ${String(MAX_INT_RANGE)}`,
         `${String(rareEvent.missWeight)}, which totals ${String(total)} with fireWeight ${String(rareEvent.fireWeight)}`,
       );
+    if (!beats.has(rareEvent.fireBeat))
+      report.addPhrase(
+        `${root}/fireBeat`,
+        "the id of a declared story beat",
+        `${JSON.stringify(rareEvent.fireBeat)}, which does not exist`,
+      );
   });
   const routeIds = new Map<string, number>();
   story.phase2.routes.forEach((route, index) => {

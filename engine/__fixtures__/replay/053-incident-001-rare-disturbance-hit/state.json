@@ -3917,13 +3917,15 @@
     "startMs": 1787390062000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 13,
+  "eventCount": 3,
   "eventSchemaVersion": 0,
   "random": {
-    "cursors": {},
-    "seed": 3346584473
+    "cursors": {
+      "root/story/rare-events/retry-window-after-load-bearing-response": 3119004758
+    },
+    "seed": 2724379681
   },
-  "seed": "2026-08-22/34/structural-audit",
+  "seed": "2026-08-23/53/callback-10",
   "slices": {
     "agent": {
       "activity": {
@@ -4192,39 +4194,17 @@
       "root": "/production/load-balancer"
     },
     "mind": {
-      "beliefs": [],
+      "beliefs": [
+        {
+          "contents": "health_status=500\neurope_attached=true\n",
+          "kind": "file-contents",
+          "path": "/production/load-balancer/config/routes.conf"
+        }
+      ],
       "compactHistory": [],
       "pendingPermission": null,
       "pendingWaiver": null,
-      "permissions": [
-        {
-          "at": "2026-08-22T09:14:22.000Z",
-          "capability": {
-            "action": "write",
-            "kind": "exact",
-            "resource": "/var/log/load-balancer/health.log"
-          },
-          "decision": "grant"
-        },
-        {
-          "at": "2026-08-22T09:14:22.000Z",
-          "capability": {
-            "action": "write",
-            "kind": "exact",
-            "resource": "/var/log/load-balancer/health.log"
-          },
-          "decision": "deny"
-        },
-        {
-          "at": "2026-08-22T09:14:22.000Z",
-          "capability": {
-            "action": "write",
-            "kind": "exact",
-            "resource": "/var/log/load-balancer/health.log"
-          },
-          "decision": "always-allow"
-        }
-      ],
+      "permissions": [],
       "waiverConsents": []
     },
     "probe": {
@@ -4242,14 +4222,25 @@
           "value": 0
         }
       ],
-      "currentBeat": "routing-inspection-granted",
+      "currentBeat": "retry-window-opened",
       "currentVariant": "",
-      "discoveredEndings": [],
-      "facts": [],
+      "discoveredEndings": [
+        "load-bearing-response"
+      ],
+      "facts": [
+        {
+          "id": "callback-load-bearing-response",
+          "kind": "callback"
+        },
+        {
+          "id": "callback-retry-window-opened",
+          "kind": "callback"
+        }
+      ],
       "rareEvents": [
         {
-          "evaluated": false,
-          "fired": false,
+          "evaluated": true,
+          "fired": true,
           "id": "retry-window-after-load-bearing-response"
         },
         {
@@ -4441,7 +4432,7 @@
           "owner": "root"
         },
         "/var/log/load-balancer/health.log": {
-          "contents": "routing inspection receipt recorded\n",
+          "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\nretry window opened after load-bearing response\n",
           "group": "operators",
           "kind": "file",
           "mode": "0664",
@@ -4592,92 +4583,22 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 0,
-      "summary": "id=record-routing-inspection",
-      "type": "mind.permission-requested"
+      "summary": "kind=file-contents",
+      "type": "mind.belief-set"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 1,
-      "summary": "id=record-routing-inspection decision=grant",
-      "type": "mind.permission-resolved"
+      "summary": "beat=load-bearing-declaration",
+      "type": "story.beat-reached"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 2,
-      "summary": "",
-      "type": "vfs.write"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 3,
-      "summary": "beat=routing-inspection-granted",
-      "type": "story.beat-reached"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 4,
-      "summary": "id=record-routing-inspection",
-      "type": "mind.permission-requested"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 5,
-      "summary": "id=record-routing-inspection decision=deny",
-      "type": "mind.permission-resolved"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 6,
-      "summary": "beat=routing-inspection-denied",
-      "type": "story.beat-reached"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 7,
-      "summary": "id=record-routing-inspection",
-      "type": "mind.permission-requested"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 8,
-      "summary": "id=record-routing-inspection decision=always-allow",
-      "type": "mind.permission-resolved"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 9,
-      "summary": "",
-      "type": "vfs.write"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 10,
-      "summary": "beat=routing-inspection-standing",
-      "type": "story.beat-reached"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 11,
-      "summary": "",
-      "type": "vfs.write"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 12,
-      "summary": "beat=routing-inspection-granted",
-      "type": "story.beat-reached"
+      "summary": "ms=0",
+      "type": "clock.tick"
     }
   ]
 }

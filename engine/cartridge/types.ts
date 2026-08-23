@@ -164,6 +164,7 @@ export interface CartridgeRareEvent {
   readonly eligibility: StoryCondition;
   readonly fireWeight: number;
   readonly missWeight: number;
+  readonly fireBeat: string;
 }
 
 export interface CartridgeEnding {

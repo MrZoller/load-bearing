@@ -71,6 +71,7 @@ import {
 } from "../story/conditions.js";
 import { readStorySlice, validateStorySlice } from "../story/story.js";
 import {
+  createStoryBeatReachedEvent,
   createStoryRareEventEvaluatedEvent,
   createStoryStageAdvancedEvent,
 } from "../story/module.js";
@@ -541,8 +542,6 @@ function applyRareEvents(
   )
     return completed;
 
-  const random = restoreRandom(completed.random);
-  const streams = random.fork("story").fork("rare-events");
   let state = completed;
   for (const declaration of declarations) {
     const recorded = stagedStorySlice(state).rareEvents.find(
@@ -554,30 +553,49 @@ function applyRareEvents(
       !storyConditionMatches(state, declaration.eligibility)
     )
       continue;
-    const fired = streams.fork(declaration.id).weightedPick([
-      { value: true, weight: declaration.fireWeight },
-      { value: false, weight: declaration.missWeight },
-    ]);
+    const random = restoreRandom(state.random);
+    const fired = random
+      .fork("story")
+      .fork("rare-events")
+      .fork(declaration.id)
+      .weightedPick([
+        { value: true, weight: declaration.fireWeight },
+        { value: false, weight: declaration.missWeight },
+      ]);
+    state = freezeState({
+      engineVersion: state.engineVersion,
+      eventSchemaVersion: state.eventSchemaVersion,
+      seed: state.seed,
+      cartridge: state.cartridge,
+      eventCount: state.eventCount,
+      clock: state.clock,
+      random: random.toState(),
+      slices: state.slices,
+      transcript: state.transcript,
+    });
+    const rareWhere = `${where} rare event ${JSON.stringify(declaration.id)}`;
     state = applyDerivedEvent(
       state,
       createStoryRareEventEvaluatedEvent(declaration.id, fired),
       registry,
-      `${where} rare event ${JSON.stringify(declaration.id)}`,
+      rareWhere,
       "story rare event",
     );
+    if (fired) {
+      const triggers = ["story.beat-reached"];
+      state = applyDerivedEvent(
+        state,
+        createStoryBeatReachedEvent(declaration.fireBeat),
+        registry,
+        `${rareWhere} fire beat`,
+        "story rare event",
+      );
+      state = applyStoryConsequences(state, registry, rareWhere, triggers);
+      state = applyReactions(state, triggers, registry, rareWhere);
+    }
   }
 
-  return freezeState({
-    engineVersion: state.engineVersion,
-    eventSchemaVersion: state.eventSchemaVersion,
-    seed: state.seed,
-    cartridge: state.cartridge,
-    eventCount: state.eventCount,
-    clock: state.clock,
-    random: random.toState(),
-    slices: state.slices,
-    transcript: state.transcript,
-  });
+  return state;
 }
 
 /** Stage the selected story outcome and every recursively reached outcome. */
