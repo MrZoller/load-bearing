@@ -152,8 +152,17 @@ describe("loadCartridge", () => {
     expect(cartridge.story.responses).toHaveLength(1);
     expect(cartridge.story.phase2).toEqual({
       initialBeat: "start",
+      counters: [],
       facts: [],
-      beats: [{ id: "start", ending: "", facts: [], variants: [] }],
+      beats: [
+        {
+          id: "start",
+          ending: "",
+          facts: [],
+          actions: [],
+          variants: [],
+        },
+      ],
       endings: [],
     });
     expect(cartridge.presentation.spinnerPools).toHaveLength(2);
@@ -704,6 +713,219 @@ describe("loadCartridge", () => {
         expect.objectContaining({ pointer: "/models/0/storyGraph" }),
       ]),
     );
+  });
+
+  it("admits only the closed owner-directed consequence union, with no arbitrary event envelope or extra fields", () => {
+    const source = minimal();
+    (source["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "start",
+      beats: [
+        {
+          id: "start",
+          ending: "",
+          actions: [
+            {
+              kind: "event",
+              type: "mind.belief-set",
+              payload: {
+                belief: {
+                  kind: "file-exists",
+                  path: "/etc/motd",
+                  exists: false,
+                },
+              },
+              version: 0,
+            },
+            {
+              kind: "file-write",
+              path: "/etc/motd",
+              contents: "changed\n",
+              payload: { arbitrary: true },
+              expansion: [{ type: "vfs.write", payload: {} }],
+            },
+          ],
+        },
+      ],
+      endings: [],
+    };
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/story/phase2/beats/0/actions/0/kind",
+        }),
+        expect.objectContaining({
+          pointer: "/story/phase2/beats/0/actions/1/payload",
+        }),
+        expect.objectContaining({
+          pointer: "/story/phase2/beats/0/actions/1/expansion",
+        }),
+      ]),
+    );
+  });
+
+  it("validates every consequence reference plus counter declarations and action bounds", () => {
+    const source = minimal();
+    (source["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "start",
+      counters: [{ id: "same", initial: 0, maximum: 2 }],
+      beats: [
+        {
+          id: "start",
+          ending: "",
+          actions: [
+            { kind: "counter-add", counter: "missing-counter", amount: 1 },
+            { kind: "story-reach", beat: "missing-beat" },
+            { kind: "file-write", path: "/missing", contents: "x" },
+            {
+              kind: "service-state",
+              service: "missing-service",
+              state: "running",
+            },
+            {
+              kind: "service-health",
+              service: "missing-health",
+              health: "healthy",
+            },
+            {
+              kind: "process-state",
+              process: "missing-process",
+              state: "running",
+            },
+            { kind: "log-append", log: "missing-log", entry: "x" },
+          ],
+        },
+      ],
+      endings: [],
+    };
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual(
+      expect.arrayContaining([
+        "/story/phase2/beats/0/actions/0/counter",
+        "/story/phase2/beats/0/actions/1/beat",
+        "/story/phase2/beats/0/actions/2/path",
+        "/story/phase2/beats/0/actions/3/service",
+        "/story/phase2/beats/0/actions/4/service",
+        "/story/phase2/beats/0/actions/5/process",
+        "/story/phase2/beats/0/actions/6/log",
+      ]),
+    );
+  });
+
+  it("rejects duplicate or inverted counter declarations and nonpositive action amounts", () => {
+    for (const [counters, amount, pointers] of [
+      [
+        [
+          { id: "same", initial: 0, maximum: 1 },
+          { id: "same", initial: 0, maximum: 1 },
+        ],
+        1,
+        ["/story/phase2/counters/1/id"],
+      ],
+      [
+        [{ id: "counter", initial: 2, maximum: 1 }],
+        1,
+        ["/story/phase2/counters/0/maximum"],
+      ],
+      [
+        [{ id: "counter", initial: 0, maximum: 1 }],
+        0,
+        ["/story/phase2/beats/0/actions/0/amount"],
+      ],
+    ] as const) {
+      const source = minimal();
+      (source["story"] as Record<string, unknown>)["phase2"] = {
+        initialBeat: "start",
+        counters,
+        beats: [
+          {
+            id: "start",
+            ending: "",
+            actions: [{ kind: "counter-add", counter: "counter", amount }],
+          },
+        ],
+        endings: [],
+      };
+      expect(issuesOf(source).map((issue) => issue.pointer)).toEqual(
+        expect.arrayContaining([...pointers]),
+      );
+    }
+  });
+
+  it("rejects direct and multi-beat story-reach cycles at their closing action", () => {
+    for (const [name, beats, pointer] of [
+      [
+        "direct",
+        [
+          {
+            id: "start",
+            ending: "",
+            actions: [{ kind: "story-reach", beat: "start" }],
+          },
+        ],
+        "/story/phase2/beats/0/actions/0/beat",
+      ],
+      [
+        "multi-beat",
+        [
+          {
+            id: "start",
+            ending: "",
+            actions: [{ kind: "story-reach", beat: "middle" }],
+          },
+          {
+            id: "middle",
+            ending: "",
+            actions: [{ kind: "story-reach", beat: "end" }],
+          },
+          {
+            id: "end",
+            ending: "",
+            actions: [{ kind: "story-reach", beat: "start" }],
+          },
+        ],
+        "/story/phase2/beats/2/actions/0/beat",
+      ],
+    ] as const) {
+      const source = minimal();
+      (source["story"] as Record<string, unknown>)["phase2"] = {
+        initialBeat: "start",
+        beats,
+        endings: [],
+      };
+
+      expect(issuesOf(source), name).toContainEqual(
+        expect.objectContaining({
+          pointer,
+          expected: expect.stringContaining("acyclic"),
+        }),
+      );
+    }
+  });
+
+  it("rejects a programmatically authored acyclic chain over the consequence work limit before replay", () => {
+    const source = minimal();
+    const beats = Array.from({ length: 65 }, (_, index) => ({
+      id: `beat-${String(index)}`,
+      ending: "",
+      actions: Array.from({ length: 16 }, (_, actionIndex) =>
+        index === 64 || actionIndex < 15
+          ? { kind: "counter-add", counter: "work", amount: 1 }
+          : { kind: "story-reach", beat: `beat-${String(index + 1)}` },
+      ),
+    }));
+    (source["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "beat-0",
+      counters: [{ id: "work", initial: 0, maximum: 2000 }],
+      beats,
+      endings: [],
+    };
+
+    expect(issuesOf(source)).toContainEqual({
+      pointer: "/story/phase2/beats/0/actions",
+      expected: "a worst-case consequence chain of at most 1024 actions",
+      found: "1040 actions",
+    });
   });
 
   it("rejects an idle nudge that names no authored response", () => {

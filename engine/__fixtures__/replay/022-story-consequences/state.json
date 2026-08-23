@@ -1,30 +1,20 @@
 {
   "cartridge": {
     "meta": {
-      "assignment": "Exercise the loader. Do not make this interesting.",
-      "date": "2026-08-05",
+      "assignment": "Prove that owner-directed consequences remain one event.",
+      "date": "2026-08-22",
       "number": 0,
       "schemaVersion": 0,
-      "startedAt": "2026-08-05T09:14:22.000Z",
-      "title": "Fixture World"
+      "startedAt": "2026-08-22T09:14:22.000Z",
+      "title": "Story consequence fixture"
     },
     "models": [
       {
         "archetype": "paranoid",
-        "costMultiplier": 48000,
-        "description": "Thorough. Expensive. Excavation permit required.",
+        "costMultiplier": 1,
+        "description": "A fixture model.",
         "id": "deep-foundation",
         "name": "Deep Foundation",
-        "quirks": [
-          "Surveys before it reads."
-        ]
-      },
-      {
-        "archetype": "reckless",
-        "costMultiplier": 3,
-        "description": "Ships first. Reads the diff later, or never.",
-        "id": "quick-patch",
-        "name": "Quick Patch",
         "quirks": []
       }
     ],
@@ -58,13 +48,6 @@
           "verbs": [
             "Inspecting"
           ]
-        },
-        {
-          "archetype": "reckless",
-          "stage": 0,
-          "verbs": [
-            "Assuming"
-          ]
         }
       ]
     },
@@ -73,31 +56,35 @@
       "cwd": "/production/service",
       "directories": {},
       "endpoints": {},
-      "env": {
-        "PATH": "/usr/local/bin:/usr/bin:/bin",
-        "SERVICE_TIER": "critical"
-      },
+      "env": {},
       "files": {
         "/etc/motd": {
-          "contents": "This system is load-bearing.\n",
+          "contents": "before\n",
           "group": "root",
-          "mode": "0444",
-          "mtime": "2026-08-05T09:14:22.000Z",
+          "mode": "0644",
+          "mtime": "2026-08-22T09:14:22.000Z",
           "owner": "root"
         },
         "/production/service/README.md": {
-          "contents": "# service\n",
+          "contents": "# fixture\n",
           "group": "root",
           "mode": "0644",
-          "mtime": "2026-08-05T09:14:22.000Z",
+          "mtime": "2026-08-22T09:14:22.000Z",
           "owner": "root"
         },
-        "/production/service/src/index.ts": {
-          "contents": "export const load = 1;\n",
-          "group": "departed",
+        "/usr/bin/worker": {
+          "contents": "worker\n",
+          "group": "root",
           "mode": "0644",
-          "mtime": "2026-07-31T02:11:09.000Z",
-          "owner": "greg"
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var/log/story.log": {
+          "contents": "started\n",
+          "group": "root",
+          "mode": "0644",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "root"
         }
       },
       "gitHistory": {
@@ -118,25 +105,55 @@
         "umask": "0022",
         "user": "root"
       },
-      "logs": [],
-      "manPages": [
+      "logs": [
         {
-          "contents": "SERVICE(8)\n\nNAME\n     service - the service\n",
-          "name": "service",
-          "section": "8"
+          "entries": [],
+          "id": "story-log",
+          "kind": "file",
+          "path": "/var/log/story.log"
         }
       ],
-      "processes": [],
-      "reactions": [],
-      "services": [],
-      "shellHistory": [
-        "cd /production/service",
-        "git status",
-        "npm test"
+      "manPages": [],
+      "processes": [
+        {
+          "command": {
+            "args": [],
+            "binary": "/usr/bin/worker"
+          },
+          "id": "worker",
+          "pid": 1200,
+          "startedAt": "2026-08-22T09:00:00.000Z",
+          "state": "running",
+          "user": "root"
+        }
       ],
+      "reactions": [
+        {
+          "actions": [
+            {
+              "health": "degraded",
+              "kind": "service-health",
+              "service": "api"
+            }
+          ],
+          "id": "write-marks-api-degraded",
+          "on": "vfs.write",
+          "predicates": []
+        }
+      ],
+      "services": [
+        {
+          "dependencies": [],
+          "health": "healthy",
+          "id": "api",
+          "ports": [],
+          "state": "running"
+        }
+      ],
+      "shellHistory": [],
       "system": {
         "architecture": "x86_64",
-        "bootedAt": "2025-07-01T06:10:00.000Z",
+        "bootedAt": "2026-08-22T09:00:00.000Z",
         "hostname": "production",
         "kernelRelease": "6.1.0-load-bearing",
         "operatingSystem": "Linux"
@@ -157,17 +174,7 @@
       },
       "helpResponse": "fixture-response",
       "idleNudgeResponse": "",
-      "intents": [
-        {
-          "actions": [],
-          "authorizedResponse": "",
-          "id": "fixture-intent",
-          "patterns": [
-            "inspect"
-          ],
-          "response": "fixture-response"
-        }
-      ],
+      "intents": [],
       "opening": {
         "beliefs": [],
         "login": [
@@ -178,14 +185,46 @@
       "phase2": {
         "beats": [
           {
-            "actions": [],
+            "actions": [
+              {
+                "amount": 1,
+                "counter": "attempts",
+                "kind": "counter-add"
+              },
+              {
+                "contents": "changed\n",
+                "kind": "file-write",
+                "path": "/etc/motd"
+              },
+              {
+                "kind": "service-state",
+                "service": "api",
+                "state": "stopped"
+              },
+              {
+                "kind": "process-state",
+                "process": "worker",
+                "state": "stopped"
+              },
+              {
+                "entry": "consequence",
+                "kind": "log-append",
+                "log": "story-log"
+              }
+            ],
             "ending": "",
             "facts": [],
             "id": "start",
             "variants": []
           }
         ],
-        "counters": [],
+        "counters": [
+          {
+            "id": "attempts",
+            "initial": 0,
+            "maximum": 2
+          }
+        ],
         "endings": [],
         "facts": [],
         "initialBeat": "start"
@@ -194,29 +233,9 @@
         {
           "id": "fixture-response",
           "text": "Fixture response.",
-          "thinkingBlocks": [
-            {
-              "id": "reason",
-              "status": "active",
-              "text": "Okay, the fixture is stable."
-            }
-          ],
-          "todos": [
-            {
-              "id": "inspect",
-              "status": "pending",
-              "text": "Inspect fixture"
-            }
-          ],
-          "toolCalls": [
-            {
-              "id": "read",
-              "input": "cat README.md",
-              "output": "",
-              "status": "pending",
-              "title": "Read fixture"
-            }
-          ]
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
         }
       ],
       "resume": {
@@ -226,17 +245,17 @@
     }
   },
   "clock": {
-    "elapsedMs": 1500,
-    "startMs": 1785921262000
+    "elapsedMs": 0,
+    "startMs": 1787390062000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 2,
+  "eventCount": 1,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {},
-    "seed": 1023437636
+    "seed": 2156910889
   },
-  "seed": "2026-08-05/0/deep-foundation",
+  "seed": "2026-08-22/22/deep-foundation",
   "slices": {
     "agent": {
       "activity": {
@@ -275,7 +294,12 @@
       "values": 0
     },
     "story": {
-      "counters": [],
+      "counters": [
+        {
+          "id": "attempts",
+          "value": 1
+        }
+      ],
       "currentBeat": "start",
       "currentVariant": "",
       "discoveredEndings": [],
@@ -295,60 +319,89 @@
           "group": "root",
           "kind": "directory",
           "mode": "0755",
-          "mtime": "2026-08-05T09:14:22.000Z",
+          "mtime": "2026-08-22T09:14:22.000Z",
           "owner": "root"
         },
         "/etc": {
           "group": "root",
           "kind": "directory",
           "mode": "0755",
-          "mtime": "2026-08-05T09:14:22.000Z",
+          "mtime": "2026-08-22T09:14:22.000Z",
           "owner": "root"
         },
         "/etc/motd": {
-          "contents": "This system is load-bearing.\n",
+          "contents": "changed\n",
           "group": "root",
           "kind": "file",
-          "mode": "0444",
-          "mtime": "2026-08-05T09:14:22.000Z",
+          "mode": "0644",
+          "mtime": "2026-08-22T09:14:22.000Z",
           "owner": "root"
         },
         "/production": {
           "group": "root",
           "kind": "directory",
           "mode": "0755",
-          "mtime": "2026-08-05T09:14:22.000Z",
+          "mtime": "2026-08-22T09:14:22.000Z",
           "owner": "root"
         },
         "/production/service": {
           "group": "root",
           "kind": "directory",
           "mode": "0755",
-          "mtime": "2026-08-05T09:14:22.000Z",
+          "mtime": "2026-08-22T09:14:22.000Z",
           "owner": "root"
         },
         "/production/service/README.md": {
-          "contents": "# service\n",
+          "contents": "# fixture\n",
           "group": "root",
           "kind": "file",
           "mode": "0644",
-          "mtime": "2026-08-05T09:14:22.000Z",
+          "mtime": "2026-08-22T09:14:22.000Z",
           "owner": "root"
         },
-        "/production/service/src": {
+        "/usr": {
           "group": "root",
           "kind": "directory",
           "mode": "0755",
-          "mtime": "2026-08-05T09:14:22.000Z",
+          "mtime": "2026-08-22T09:14:22.000Z",
           "owner": "root"
         },
-        "/production/service/src/index.ts": {
-          "contents": "export const load = 1;\n",
-          "group": "departed",
+        "/usr/bin": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/usr/bin/worker": {
+          "contents": "worker\n",
+          "group": "root",
           "kind": "file",
           "mode": "0644",
-          "mtime": "2026-07-31T02:11:09.000Z",
-          "owner": "greg"
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var/log": {
+          "group": "root",
+          "kind": "directory",
+          "mode": "0755",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "root"
+        },
+        "/var/log/story.log": {
+          "contents": "started\nconsequence\n",
+          "group": "root",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "root"
         }
       },
       "identity": {
@@ -359,42 +412,49 @@
       }
     },
     "world": {
-      "env": {
-        "PATH": "/usr/local/bin:/usr/bin:/bin",
-        "SERVICE_TIER": "critical"
-      },
-      "logs": [],
-      "manPages": [
+      "env": {},
+      "logs": [
         {
-          "contents": "SERVICE(8)\n\nNAME\n     service - the service\n",
-          "name": "service",
-          "section": "8"
+          "entries": [],
+          "id": "story-log",
+          "kind": "file",
+          "path": "/var/log/story.log"
         }
       ],
-      "processes": [],
-      "services": [],
-      "shellHistory": [
-        "cd /production/service",
-        "git status",
-        "npm test"
+      "manPages": [],
+      "processes": [
+        {
+          "command": {
+            "args": [],
+            "binary": "/usr/bin/worker"
+          },
+          "id": "worker",
+          "pid": 1200,
+          "startedAt": "2026-08-22T09:00:00.000Z",
+          "state": "stopped",
+          "user": "root"
+        }
       ],
+      "services": [
+        {
+          "dependencies": [],
+          "health": "degraded",
+          "id": "api",
+          "ports": [],
+          "state": "stopped"
+        }
+      ],
+      "shellHistory": [],
       "tickets": []
     }
   },
   "transcript": [
     {
-      "at": "2026-08-05T09:14:22.000Z",
+      "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 0,
-      "summary": "ms=0",
-      "type": "clock.tick"
-    },
-    {
-      "at": "2026-08-05T09:14:22.000Z",
-      "detail": [],
-      "index": 1,
-      "summary": "ms=1500",
-      "type": "clock.tick"
+      "summary": "beat=start",
+      "type": "story.beat-reached"
     }
   ]
 }

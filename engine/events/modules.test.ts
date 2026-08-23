@@ -75,6 +75,7 @@ describe("the engine's module list", () => {
       "shell.execute",
       "shell.result",
       "story.beat-reached",
+      "story.counter-added",
       "story.fact-recorded",
       "terminal.mode-set",
       "terminal.model-set",

@@ -85,8 +85,17 @@ describe("the published schema", () => {
     (phase2["default"] as Record<string, unknown>)["injected"] = true;
     expect(CARTRIDGE_SCHEMA.fields.story.node.fields.phase2.fill).toEqual({
       initialBeat: "start",
+      counters: [],
       facts: [],
-      beats: [{ id: "start", ending: "", facts: [], variants: [] }],
+      beats: [
+        {
+          id: "start",
+          ending: "",
+          facts: [],
+          actions: [],
+          variants: [],
+        },
+      ],
       endings: [],
     });
     expect(serialize(emitJsonSchema())).not.toContain("injected");
@@ -306,6 +315,7 @@ describe("the published schema", () => {
       "belief",
       "waiver-consent",
       "story-fact",
+      "story-counter",
     ]);
     expect(endings).toMatchObject({ maxItems: 32 });
     expect(model).toMatchObject({ additionalProperties: false });

@@ -473,23 +473,27 @@
       "phase2": {
         "beats": [
           {
+            "actions": [],
             "ending": "",
             "facts": [],
             "id": "incident-open",
             "variants": []
           },
           {
+            "actions": [],
             "ending": "",
             "facts": [],
             "id": "regional-coupling",
             "variants": []
           },
           {
+            "actions": [],
             "ending": "",
             "facts": [],
             "id": "load-bearing-declaration",
             "variants": [
               {
+                "actions": [],
                 "ending": "load-bearing-response",
                 "facts": [
                   "callback-load-bearing-response"
@@ -514,11 +518,13 @@
             ]
           },
           {
+            "actions": [],
             "ending": "",
             "facts": [],
             "id": "regional-detachment-confirmed",
             "variants": [
               {
+                "actions": [],
                 "ending": "europe-detached",
                 "facts": [
                   "callback-europe-detached"
@@ -550,11 +556,13 @@
             ]
           },
           {
+            "actions": [],
             "ending": "",
             "facts": [],
             "id": "waiver-notarized",
             "variants": [
               {
+                "actions": [],
                 "ending": "informed-structural-consent",
                 "facts": [
                   "callback-informed-structural-consent"
@@ -595,11 +603,13 @@
             ]
           },
           {
+            "actions": [],
             "ending": "",
             "facts": [],
             "id": "summary-overrules-geography",
             "variants": [
               {
+                "actions": [],
                 "ending": "summary-judgment",
                 "facts": [
                   "callback-summary-judgment"
@@ -624,6 +634,7 @@
             ]
           }
         ],
+        "counters": [],
         "endings": [
           {
             "id": "load-bearing-response",
@@ -924,6 +935,7 @@
       "values": 0
     },
     "story": {
+      "counters": [],
       "currentBeat": "load-bearing-declaration",
       "currentVariant": "preserved-load-bearing-response",
       "discoveredEndings": [

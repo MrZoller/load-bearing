@@ -31,6 +31,7 @@ describe("shared story beats", () => {
       currentBeat: "incident-open",
       currentVariant: "",
       facts: [],
+      counters: [],
       discoveredEndings: [],
     });
   });
@@ -61,6 +62,7 @@ describe("shared story beats", () => {
       currentBeat: "load-bearing-declaration",
       currentVariant: "preserved-load-bearing-response",
       facts: [{ id: "callback-load-bearing-response", kind: "callback" }],
+      counters: [],
       discoveredEndings: ["load-bearing-response"],
     });
   });
@@ -78,6 +80,7 @@ describe("shared story beats", () => {
           currentBeat: "incident-open",
           currentVariant: "",
           facts: [],
+          counters: [],
           discoveredEndings: [],
           extra: true,
         },
@@ -88,6 +91,7 @@ describe("shared story beats", () => {
           currentBeat: "invented-beat",
           currentVariant: "",
           facts: [],
+          counters: [],
           discoveredEndings: [],
         },
         /currentBeat: unknown beat "invented-beat"/,
@@ -97,6 +101,7 @@ describe("shared story beats", () => {
           currentBeat: "incident-open",
           currentVariant: "",
           facts: [],
+          counters: [],
           discoveredEndings: ["load-bearing-response", "load-bearing-response"],
         },
         /discoveredEndings\[1\]: duplicate ending/,
@@ -106,6 +111,7 @@ describe("shared story beats", () => {
           currentBeat: "incident-open",
           currentVariant: "",
           facts: [],
+          counters: [],
           discoveredEndings: ["invented-ending"],
         },
         /discoveredEndings\[0\]: unknown ending "invented-ending"/,
@@ -174,6 +180,7 @@ describe("shared story beats", () => {
       currentBeat: "start",
       currentVariant: "first",
       facts: [{ id: "first-fact", kind: "callback" }],
+      counters: [],
       discoveredEndings: ["first-ending"],
     });
     selected = step(selected, createStoryBeatReachedEvent("start"));
@@ -185,6 +192,7 @@ describe("shared story beats", () => {
         { id: "first-fact", kind: "callback" },
         { id: "base-fact", kind: "reveal" },
       ],
+      counters: [],
       discoveredEndings: ["first-ending", "base-ending"],
     });
   });
@@ -200,11 +208,64 @@ describe("shared story beats", () => {
           currentBeat: "incident-open",
           currentVariant: "",
           facts: [{ id: "made-up", kind: "reveal" }],
+          counters: [],
           discoveredEndings: [],
         },
         /unknown fact "made-up"/,
       ],
     ] as const)
       expect(() => restoreSnapshot(hostileStorySlice(slice))).toThrow(message);
+  });
+
+  it("requires snapshot counters to exactly preserve declaration order, count, and bounds", () => {
+    const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
+    (source["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "start",
+      counters: [
+        { id: "first", initial: 1, maximum: 2 },
+        { id: "second", initial: 0, maximum: 3 },
+      ],
+      beats: [{ id: "start", ending: "" }],
+      endings: [],
+    };
+    const cartridge = loadCartridge(source);
+    const state = reduce({ cartridge, seed: SEED, events: [] });
+    const recorded = deserialize(snapshot(state)) as Record<string, unknown>;
+    const slices = recorded["slices"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+
+    expect(readStorySlice(state).counters).toEqual([
+      { id: "first", value: 1 },
+      { id: "second", value: 0 },
+    ]);
+    for (const [counters, message] of [
+      [[{ id: "first", value: 1 }], /expected exactly 2 declared counters/],
+      [
+        [
+          { id: "second", value: 0 },
+          { id: "first", value: 1 },
+        ],
+        /expected declared counter "first"/,
+      ],
+      [
+        [
+          { id: "first", value: 0 },
+          { id: "second", value: 0 },
+        ],
+        /between initial 1 and maximum 2/,
+      ],
+      [
+        [
+          { id: "first", value: 1 },
+          { id: "second", value: 4 },
+        ],
+        /between initial 0 and maximum 3/,
+      ],
+    ] as const) {
+      slices["story"] = { ...slices["story"], counters };
+      expect(() => restoreSnapshot(serialize(recorded))).toThrow(message);
+    }
   });
 });
