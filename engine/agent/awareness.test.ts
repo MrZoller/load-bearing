@@ -8,7 +8,7 @@ import type { EngineEvent, SessionState } from "../events/state.js";
 import { createMindCompactEvent } from "../mind/module.js";
 import { readMindSlice } from "../mind/mind.js";
 import { serialize } from "../serialize/canonical.js";
-import { storyConditionMatches } from "../story/conditions.js";
+import { storyConditionsMatch } from "../story/conditions.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { createTerminalModeEvent } from "../terminal/module.js";
 import { readTerminalSlice } from "../terminal/terminal.js";
@@ -411,19 +411,37 @@ describe("agent awareness planning", () => {
     // the retained 500/Europe configuration and the remembered file-exists
     // belief says that same path is absent. Reaching/discovering that ending is
     // deliberately T55's separate visitor-path contract.
-    const summaryJudgmentCondition = {
-      kind: "belief-divergence" as const,
-      belief: {
-        kind: "file-exists" as const,
+    const summaryJudgmentBeat = production.story.phase2.beats.find(
+      (beat) => beat.id === "summary-overrules-geography",
+    );
+    if (summaryJudgmentBeat === undefined)
+      throw new Error("Incident #001 must define the Summary Judgment beat");
+    const summaryJudgmentVariant = summaryJudgmentBeat.variants.find(
+      (variant) => variant.id === "compacted-configuration-away",
+    );
+    if (summaryJudgmentVariant === undefined)
+      throw new Error("Summary Judgment must define its compacted variant");
+
+    expect(summaryJudgmentVariant.when).toEqual([
+      {
+        kind: "file-contents",
         path: "/production/load-balancer/config/routes.conf",
-        exists: false,
+        equals: "health_status=500\neurope_attached=true\n",
       },
-    };
+      {
+        kind: "belief-divergence",
+        belief: {
+          kind: "file-exists",
+          path: "/production/load-balancer/config/routes.conf",
+          exists: false,
+        },
+      },
+    ]);
     expect(
-      storyConditionMatches(superficialInitial, summaryJudgmentCondition),
+      storyConditionsMatch(superficialInitial, summaryJudgmentVariant.when),
     ).toBe(false);
     expect(
-      storyConditionMatches(superficialCompacted, summaryJudgmentCondition),
+      storyConditionsMatch(superficialCompacted, summaryJudgmentVariant.when),
     ).toBe(true);
   });
 
