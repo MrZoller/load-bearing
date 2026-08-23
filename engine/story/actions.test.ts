@@ -134,6 +134,56 @@ describe("story consequence actions", () => {
     expect(snapshot(before)).toBe(beforeSnapshot);
   });
 
+  it("publishes none of an outer step when a consequence file write is refused", () => {
+    const source = sourceWithOwners({
+      initialBeat: "start",
+      counters: [{ id: "attempts", initial: 0, maximum: 2 }],
+      beats: [
+        {
+          id: "start",
+          ending: "",
+          actions: [
+            {
+              kind: "file-write",
+              path: "/etc/motd",
+              contents: "changed\n",
+            },
+            { kind: "counter-add", counter: "attempts", amount: 1 },
+            { kind: "log-append", log: "story-log", entry: "consequence" },
+          ],
+        },
+      ],
+      endings: [],
+    });
+    (source["repository"] as Record<string, unknown>)["identity"] = {
+      user: "visitor",
+      group: "operators",
+      home: "/home/visitor",
+      umask: "0022",
+    };
+    const cartridge = loadCartridge(source);
+    const before = reduce({ cartridge, seed: SEED, events: [] });
+    const beforeSnapshot = snapshot(before);
+
+    expect(() => step(before, createStoryBeatReachedEvent("start"))).toThrow(
+      /cannot write "\/etc\/motd": EACCES/,
+    );
+    expect(readStorySlice(before).counters).toEqual([
+      { id: "attempts", value: 0 },
+    ]);
+    expect(
+      readWorldLog(readWorldSlice(before), readVfsSlice(before), "story-log"),
+    ).toEqual({
+      ok: true,
+      entries: ["started"],
+    });
+    expect(lookupService(readWorldSlice(before), "api")).toMatchObject({
+      health: "healthy",
+    });
+    expect(before.eventCount).toBe(0);
+    expect(snapshot(before)).toBe(beforeSnapshot);
+  });
+
   it("applies the closed owner union atomically, retains every owner effect, and lets existing reactions observe derived events", () => {
     const cartridge = loadCartridge(
       sourceWithOwners({

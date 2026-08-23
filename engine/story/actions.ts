@@ -24,6 +24,10 @@ export function storyActionEvent(action: CartridgeStoryAction): EngineEvent {
           path: action.path,
           contents: action.contents,
           transcript: false,
+          // Consequences stage as one outer transition. A refused VFS mutation
+          // must abort that transaction instead of looking like a successful
+          // owner event whose reaction may publish incoherent world state.
+          strict: true,
         },
         version: 0,
       };
