@@ -109,8 +109,11 @@ describe("authored agent input", () => {
   });
 
   it("reaches the story beat before recording its authored response", () => {
-    const { cartridge, events: initialEvents, state } =
-      incidentStateWithLoadBearingResponseBelief();
+    const {
+      cartridge,
+      events: initialEvents,
+      state,
+    } = incidentStateWithLoadBearingResponseBelief();
     const events = createAgentInputEvents(cartridge, state, "fix the 500");
 
     expect(events.map((event) => event.type)).toEqual([
@@ -134,8 +137,11 @@ describe("authored agent input", () => {
   });
 
   it("continues accepting authored input after an ending is discovered", () => {
-    const { cartridge, events: initialEvents, state } =
-      incidentStateWithLoadBearingResponseBelief();
+    const {
+      cartridge,
+      events: initialEvents,
+      state,
+    } = incidentStateWithLoadBearingResponseBelief();
     const endingEvents = createAgentInputEvents(
       cartridge,
       state,
