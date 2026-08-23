@@ -98,6 +98,7 @@ describe("the published schema", () => {
         },
       ],
       endings: [],
+      transitions: [],
     });
     expect(serialize(emitJsonSchema())).not.toContain("injected");
   });
@@ -245,15 +246,6 @@ describe("the published schema", () => {
     walk(emitJsonSchema(), "");
   });
 
-  it("says which issue tightens each unvalidated section", () => {
-    // The gap is a decision, not an oversight — and a reader should be able to
-    // see that without noticing an absence.
-    const rendered = serialize(emitJsonSchema());
-    for (const owner of ["Phase 4"]) {
-      expect(rendered).toContain(owner);
-    }
-  });
-
   it("publishes one closed bounded story graph with facts and sparse condition variants", () => {
     const root = emitJsonSchema()["properties"] as Record<string, unknown>;
     const story = root["story"] as Record<string, unknown>;
@@ -269,6 +261,25 @@ describe("the published schema", () => {
     const factProperties = fact["properties"] as Record<string, unknown>;
     const beats = storyProperties["beats"] as Record<string, unknown>;
     const endings = storyProperties["endings"] as Record<string, unknown>;
+    const transitions = storyProperties["transitions"] as Record<
+      string,
+      unknown
+    >;
+    const transition = transitions["items"] as Record<string, unknown>;
+    const transitionProperties = transition["properties"] as Record<
+      string,
+      unknown
+    >;
+    const triggerKinds = (
+      (transitionProperties["trigger"] as Record<string, unknown>)[
+        "oneOf"
+      ] as Record<string, unknown>[]
+    ).map((trigger) => {
+      const properties = trigger["properties"] as Record<string, unknown>;
+      return (
+        (properties["kind"] as Record<string, unknown>)["enum"] as string[]
+      )[0];
+    });
     const beat = beats["items"] as Record<string, unknown>;
     const beatProperties = beat["properties"] as Record<string, unknown>;
     const variants = beatProperties["variants"] as Record<string, unknown>;
@@ -288,9 +299,11 @@ describe("the published schema", () => {
     const presentationPhase2 = (
       presentation["properties"] as Record<string, unknown>
     )["phase2"] as Record<string, unknown>;
-    const model = (root["models"] as Record<string, unknown>)[
-      "items"
-    ] as Record<string, unknown>;
+    const statusCurves = (
+      presentationPhase2["properties"] as Record<string, unknown>
+    )["statusCurves"] as Record<string, unknown>;
+    const models = root["models"] as Record<string, unknown>;
+    const model = models["items"] as Record<string, unknown>;
     const modelProperties = model["properties"] as Record<string, unknown>;
 
     expect(storyPhase2).toMatchObject({
@@ -336,9 +349,27 @@ describe("the published schema", () => {
       "story-counter",
     ]);
     expect(endings).toMatchObject({ maxItems: 32 });
+    expect(transitions).toMatchObject({ maxItems: 64, default: [] });
+    expect(transition).toMatchObject({
+      additionalProperties: false,
+      required: ["from", "to", "trigger"],
+    });
+    expect(triggerKinds).toEqual([
+      "command",
+      "reveal",
+      "model",
+      "permission",
+      "compact",
+    ]);
+    expect(models).toMatchObject({ maxItems: 12 });
     expect(model).toMatchObject({ additionalProperties: false });
     expect(modelProperties).not.toHaveProperty("storyGraph");
-    expect(presentationPhase2["$comment"]).toContain("Phase 4");
+    expect(presentationPhase2).toMatchObject({
+      type: "object",
+      additionalProperties: false,
+      required: ["statusCurves"],
+    });
+    expect(statusCurves).toMatchObject({ maxItems: 64 });
   });
 });
 

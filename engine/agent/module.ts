@@ -3,7 +3,7 @@
 import { defineEventModule } from "../events/module.js";
 import type { EventContext } from "../events/module.js";
 import { stampEvent } from "../events/log.js";
-import { readInteger, readString, requirePayload } from "../events/payload.js";
+import { readString, requirePayload } from "../events/payload.js";
 import type { EventPayload } from "../events/payload.js";
 import type { EngineEvent } from "../events/state.js";
 import {
@@ -40,6 +40,7 @@ import type {
   ToolCallStatus,
 } from "./types.js";
 import { forkModelStream, readTerminalSlice } from "../terminal/terminal.js";
+import { readStorySlice } from "../story/story.js";
 
 function payload(
   context: EventContext,
@@ -160,9 +161,7 @@ export function createAgentActivityEvent(
     {
       type: "agent.activity-set",
       payload:
-        activity.status === "idle"
-          ? { status: "idle" }
-          : { status: "working", stage: activity.stage },
+        activity.status === "idle" ? { status: "idle" } : { status: "working" },
     },
     "agent activity",
   );
@@ -177,13 +176,22 @@ function selectActivity(context: EventContext, stage: number): AgentActivity {
     throw new Error(
       `${context.where}: active model ${JSON.stringify(activeModel)} is not in the cartridge`,
     );
-  const pool = context.cartridge.presentation.spinnerPools.find(
-    (candidate) =>
-      candidate.archetype === model.archetype && candidate.stage === stage,
-  );
+  const pool =
+    context.cartridge.presentation.spinnerPools.find(
+      (candidate) =>
+        candidate.archetype === model.archetype && candidate.stage === stage,
+    ) ??
+    // T40 authors complete stage pools. Until then, an escalated T35
+    // cartridge keeps its existing baseline activity instead of making a
+    // visitor turn impossible; the authoritative stage still selects an exact
+    // row as soon as one is authored.
+    context.cartridge.presentation.spinnerPools.find(
+      (candidate) =>
+        candidate.archetype === model.archetype && candidate.stage === 0,
+    );
   if (pool === undefined)
     throw new Error(
-      `${context.where}: no spinner pool for archetype ${JSON.stringify(model.archetype)} at stage ${String(stage)}`,
+      `${context.where}: no spinner pool for archetype ${JSON.stringify(model.archetype)} at stage ${String(stage)} or baseline stage 0`,
     );
   const verb = forkModelStream(context.random, activeModel)
     .fork("spinner.verbs")
@@ -399,23 +407,17 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
       },
     },
     "agent.activity-set": {
-      version: 1,
+      version: 2,
       apply(context, slice) {
         const initial = requirePayload(context);
         const status = readString(initial, "status", context.where);
-        const data = payload(
-          context,
-          status === "idle" ? ["status"] : ["status", "stage"],
-        );
+        const data = payload(context, ["status"]);
         if (status !== "idle" && status !== "working")
           throw new Error(`${context.where}: status must be idle or working`);
         const activity =
           status === "idle"
             ? ({ status: "idle", verb: "" } as const)
-            : selectActivity(
-                context,
-                readInteger(data, "stage", 0, 4, context.where),
-              );
+            : selectActivity(context, readStorySlice(context.state).stage);
         return {
           slice: setAgentActivity(slice, activity),
           summary:

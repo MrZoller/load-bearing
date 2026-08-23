@@ -122,6 +122,55 @@
       "costMicrosPerToken": 1,
       "integrityStart": 100,
       "integrityLossPerEvent": 1
+    },
+    "phase2": {
+      "statusCurves": [
+        {
+          "model": "foundation-surveyor",
+          "stage": 0,
+          "tokens": "0",
+          "cost": "$0",
+          "context": "0%",
+          "structuralIntegrity": "100",
+          "notOkayRatio": "0"
+        },
+        {
+          "model": "foundation-surveyor",
+          "stage": 1,
+          "tokens": "1",
+          "cost": "$1",
+          "context": "1%",
+          "structuralIntegrity": "99",
+          "notOkayRatio": "1"
+        },
+        {
+          "model": "foundation-surveyor",
+          "stage": 2,
+          "tokens": "2",
+          "cost": "$2",
+          "context": "2%",
+          "structuralIntegrity": "98",
+          "notOkayRatio": "2"
+        },
+        {
+          "model": "foundation-surveyor",
+          "stage": 3,
+          "tokens": "3",
+          "cost": "$3",
+          "context": "3%",
+          "structuralIntegrity": "97",
+          "notOkayRatio": "3"
+        },
+        {
+          "model": "foundation-surveyor",
+          "stage": 4,
+          "tokens": "impossible",
+          "cost": "$-1",
+          "context": "over",
+          "structuralIntegrity": "none",
+          "notOkayRatio": "all"
+        }
+      ]
     }
   }
 }

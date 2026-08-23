@@ -58,7 +58,190 @@
         "integrityStart": 1000,
         "tokensPerEvent": 220
       },
-      "phase2": {},
+      "phase2": {
+        "statusCurves": [
+          {
+            "context": "1%",
+            "cost": "$1,382.400000",
+            "model": "deep-foundation",
+            "notOkayRatio": "0.04",
+            "stage": 0,
+            "structuralIntegrity": "1,000",
+            "tokens": "2,400"
+          },
+          {
+            "context": "9%",
+            "cost": "$10,886.400000",
+            "model": "deep-foundation",
+            "notOkayRatio": "0.31",
+            "stage": 1,
+            "structuralIntegrity": "812",
+            "tokens": "18,900"
+          },
+          {
+            "context": "46%",
+            "cost": "$52,416.000000",
+            "model": "deep-foundation",
+            "notOkayRatio": "0.88",
+            "stage": 2,
+            "structuralIntegrity": "503",
+            "tokens": "91,000"
+          },
+          {
+            "context": "99%",
+            "cost": "$114,302.016000",
+            "model": "deep-foundation",
+            "notOkayRatio": "4.20",
+            "stage": 3,
+            "structuralIntegrity": "73",
+            "tokens": "198,441"
+          },
+          {
+            "context": "SURCHARGED",
+            "cost": "$-0.000001",
+            "model": "deep-foundation",
+            "notOkayRatio": "NaN/1",
+            "stage": 4,
+            "structuralIntegrity": "-LOAD",
+            "tokens": "∞ + 14"
+          },
+          {
+            "context": "1%",
+            "cost": "$25.920000",
+            "model": "temporary-shoring",
+            "notOkayRatio": "0.03",
+            "stage": 0,
+            "structuralIntegrity": "1,000",
+            "tokens": "2,400"
+          },
+          {
+            "context": "7%",
+            "cost": "$153.360000",
+            "model": "temporary-shoring",
+            "notOkayRatio": "0.45",
+            "stage": 1,
+            "structuralIntegrity": "760",
+            "tokens": "14,200"
+          },
+          {
+            "context": "36%",
+            "cost": "$777.600000",
+            "model": "temporary-shoring",
+            "notOkayRatio": "1.20",
+            "stage": 2,
+            "structuralIntegrity": "402",
+            "tokens": "72,000"
+          },
+          {
+            "context": "100%",
+            "cost": "$2,160.000000",
+            "model": "temporary-shoring",
+            "notOkayRatio": "9.99",
+            "stage": 3,
+            "structuralIntegrity": "9",
+            "tokens": "200,000"
+          },
+          {
+            "context": "103%",
+            "cost": "$FAST",
+            "model": "temporary-shoring",
+            "notOkayRatio": "ALL",
+            "stage": 4,
+            "structuralIntegrity": "temporary",
+            "tokens": "-8,000"
+          },
+          {
+            "context": "1%",
+            "cost": "$3.456000",
+            "model": "drywall",
+            "notOkayRatio": "0.02",
+            "stage": 0,
+            "structuralIntegrity": "1,000",
+            "tokens": "2,400"
+          },
+          {
+            "context": "5%",
+            "cost": "$13.392000",
+            "model": "drywall",
+            "notOkayRatio": "0.18",
+            "stage": 1,
+            "structuralIntegrity": "901",
+            "tokens": "9,300"
+          },
+          {
+            "context": "24%",
+            "cost": "$69.120000",
+            "model": "drywall",
+            "notOkayRatio": "0.77",
+            "stage": 2,
+            "structuralIntegrity": "600",
+            "tokens": "48,000"
+          },
+          {
+            "context": "86%",
+            "cost": "$246.240000",
+            "model": "drywall",
+            "notOkayRatio": "3.14",
+            "stage": 3,
+            "structuralIntegrity": "surface only",
+            "tokens": "171,000"
+          },
+          {
+            "context": "flat",
+            "cost": "$0-ish",
+            "model": "drywall",
+            "notOkayRatio": "behind wall",
+            "stage": 4,
+            "structuralIntegrity": "looks fine",
+            "tokens": "painted over"
+          },
+          {
+            "context": "1%",
+            "cost": "$201.600000",
+            "model": "cantilever-experimental",
+            "notOkayRatio": "0.05",
+            "stage": 0,
+            "structuralIntegrity": "1,000",
+            "tokens": "2,400"
+          },
+          {
+            "context": "11%",
+            "cost": "$1,764.000000",
+            "model": "cantilever-experimental",
+            "notOkayRatio": "0.62",
+            "stage": 1,
+            "structuralIntegrity": "744",
+            "tokens": "21,000"
+          },
+          {
+            "context": "55%",
+            "cost": "$9,240.000000",
+            "model": "cantilever-experimental",
+            "notOkayRatio": "1.61",
+            "stage": 2,
+            "structuralIntegrity": "cantilevered",
+            "tokens": "110,000"
+          },
+          {
+            "context": "100% minus support",
+            "cost": "$16,799.916000",
+            "model": "cantilever-experimental",
+            "notOkayRatio": "∞",
+            "stage": 3,
+            "structuralIntegrity": "1",
+            "tokens": "199,999"
+          },
+          {
+            "context": "outside",
+            "cost": "$17i",
+            "model": "cantilever-experimental",
+            "notOkayRatio": "load/load",
+            "stage": 4,
+            "structuralIntegrity": "yes",
+            "tokens": "unsupported"
+          }
+        ]
+      },
       "placeholders": [
         {
           "stage": 0,
@@ -703,7 +886,53 @@
             "kind": "callback"
           }
         ],
-        "initialBeat": "incident-open"
+        "initialBeat": "incident-open",
+        "transitions": [
+          {
+            "from": 0,
+            "to": 1,
+            "trigger": {
+              "input": "pwd",
+              "kind": "command"
+            }
+          },
+          {
+            "from": 0,
+            "to": 1,
+            "trigger": {
+              "fact": "bash-regional-detachment",
+              "kind": "reveal"
+            }
+          },
+          {
+            "from": 1,
+            "to": 2,
+            "trigger": {
+              "kind": "model",
+              "model": "temporary-shoring"
+            }
+          },
+          {
+            "from": 2,
+            "to": 3,
+            "trigger": {
+              "capability": {
+                "action": "detach-region",
+                "kind": "exact",
+                "resource": "/regions/europe"
+              },
+              "decision": "grant",
+              "kind": "permission"
+            }
+          },
+          {
+            "from": 3,
+            "to": 4,
+            "trigger": {
+              "kind": "compact"
+            }
+          }
+        ]
       },
       "responses": [
         {
@@ -986,7 +1215,8 @@
           "id": "callback-load-bearing-response",
           "kind": "callback"
         }
-      ]
+      ],
+      "stage": 1
     },
     "terminal": {
       "activeModel": "deep-foundation",

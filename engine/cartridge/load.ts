@@ -237,9 +237,10 @@ function objectFromEntries(
 /**
  * How deep a `deferred` subtree may nest.
  *
- * The validated sections are bounded by the schema itself, but the deferred
- * `presentation.phase2` interior is explicitly unconstrained — so its depth is
- * whatever a cartridge says, and the clone below is recursive. `JSON.parse` happily
+ * Validated sections are bounded by the schema itself. The generic deferred
+ * node remains available to later schema work, and its interior is explicitly
+ * unconstrained — so its depth is whatever a cartridge says, and the clone
+ * below is recursive. `JSON.parse` happily
  * accepts a few thousand levels; the clone
  * then exhausts the stack and `loadCartridge` escapes with a bare `RangeError`
  * instead of a validation issue, which is the validation boundary failing open
@@ -1347,6 +1348,72 @@ function checkStoryAndPresentation(
       "the id of a declared story beat",
       `${JSON.stringify(story.phase2.initialBeat)}, which does not exist`,
     );
+  story.phase2.transitions.forEach((transition, index) => {
+    const root = `/story/phase2/transitions/${String(index)}`;
+    if (transition.to !== transition.from + 1)
+      report.addPhrase(
+        `${root}/to`,
+        "exactly from + 1",
+        `${String(transition.to)} for from ${String(transition.from)}`,
+      );
+    const trigger = transition.trigger;
+    if (trigger.kind === "reveal") {
+      const fact = facts.get(trigger.fact);
+      if (fact === undefined)
+        report.addPhrase(
+          `${root}/trigger/fact`,
+          "the id of a declared reveal fact",
+          `${JSON.stringify(trigger.fact)}, which does not exist`,
+        );
+      else if (fact.kind !== "reveal")
+        report.addPhrase(
+          `${root}/trigger/fact`,
+          "the id of a declared reveal fact",
+          `${JSON.stringify(trigger.fact)}, declared as ${fact.kind}`,
+        );
+    }
+    if (
+      trigger.kind === "model" &&
+      !models.some((model) => model.id === trigger.model)
+    )
+      report.addPhrase(
+        `${root}/trigger/model`,
+        "the id of a declared model",
+        `${JSON.stringify(trigger.model)}, which does not exist`,
+      );
+  });
+
+  const statusRows = presentation.phase2.statusCurves;
+  if (statusRows.length > 0) {
+    const rows = new Map<string, number>();
+    statusRows.forEach((row, index) => {
+      const key = `${row.model}\u0000${String(row.stage)}`;
+      const first = rows.get(key);
+      if (first === undefined) rows.set(key, index);
+      else
+        report.addPhrase(
+          `/presentation/phase2/statusCurves/${String(index)}`,
+          "a model-stage pair no other status row uses",
+          `a duplicate of /presentation/phase2/statusCurves/${String(first)}`,
+        );
+      if (!models.some((model) => model.id === row.model))
+        report.addPhrase(
+          `/presentation/phase2/statusCurves/${String(index)}/model`,
+          "the id of a declared model",
+          `${JSON.stringify(row.model)}, which does not exist`,
+        );
+    });
+    for (const model of models) {
+      for (let stage = 0; stage <= 4; stage += 1) {
+        if (!rows.has(`${model.id}\u0000${String(stage)}`))
+          report.addPhrase(
+            "/presentation/phase2/statusCurves",
+            "exactly one row for every declared model at every stage 0 through 4",
+            `no row for model ${JSON.stringify(model.id)} at stage ${String(stage)}`,
+          );
+      }
+    }
+  }
   const services = new Set(repository.services.map((service) => service.id));
   const processes = new Set(repository.processes.map((proc) => proc.id));
   const logs = new Set(repository.logs.map((log) => log.id));

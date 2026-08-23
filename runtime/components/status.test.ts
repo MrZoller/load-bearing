@@ -63,6 +63,7 @@ describe("renderStatus", () => {
     expect(visible).toContain("context");
     expect(visible).toContain("%");
     expect(visible).toContain("integrity");
+    expect(visible).toContain("Not-Okay Ratio");
     expect(visible).toContain("loadbearing.cc · Incident #007");
   });
 });

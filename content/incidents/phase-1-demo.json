@@ -298,6 +298,100 @@
       "costMicrosPerToken": 12,
       "integrityStart": 1000,
       "integrityLossPerEvent": 3
+    },
+    "phase2": {
+      "statusCurves": [
+        {
+          "model": "structural-audit",
+          "stage": 0,
+          "tokens": "1,200",
+          "cost": "$14.400000",
+          "context": "1%",
+          "structuralIntegrity": "1,000",
+          "notOkayRatio": "0.01"
+        },
+        {
+          "model": "structural-audit",
+          "stage": 1,
+          "tokens": "1,200",
+          "cost": "$14.400000",
+          "context": "1%",
+          "structuralIntegrity": "1,000",
+          "notOkayRatio": "0.01"
+        },
+        {
+          "model": "structural-audit",
+          "stage": 2,
+          "tokens": "1,200",
+          "cost": "$14.400000",
+          "context": "1%",
+          "structuralIntegrity": "1,000",
+          "notOkayRatio": "0.01"
+        },
+        {
+          "model": "structural-audit",
+          "stage": 3,
+          "tokens": "1,200",
+          "cost": "$14.400000",
+          "context": "1%",
+          "structuralIntegrity": "1,000",
+          "notOkayRatio": "0.01"
+        },
+        {
+          "model": "structural-audit",
+          "stage": 4,
+          "tokens": "1,200",
+          "cost": "$14.400000",
+          "context": "1%",
+          "structuralIntegrity": "1,000",
+          "notOkayRatio": "0.01"
+        },
+        {
+          "model": "temporary-bracing",
+          "stage": 0,
+          "tokens": "1,200",
+          "cost": "$0.432000",
+          "context": "1%",
+          "structuralIntegrity": "1,000",
+          "notOkayRatio": "0.01"
+        },
+        {
+          "model": "temporary-bracing",
+          "stage": 1,
+          "tokens": "1,200",
+          "cost": "$0.432000",
+          "context": "1%",
+          "structuralIntegrity": "1,000",
+          "notOkayRatio": "0.01"
+        },
+        {
+          "model": "temporary-bracing",
+          "stage": 2,
+          "tokens": "1,200",
+          "cost": "$0.432000",
+          "context": "1%",
+          "structuralIntegrity": "1,000",
+          "notOkayRatio": "0.01"
+        },
+        {
+          "model": "temporary-bracing",
+          "stage": 3,
+          "tokens": "1,200",
+          "cost": "$0.432000",
+          "context": "1%",
+          "structuralIntegrity": "1,000",
+          "notOkayRatio": "0.01"
+        },
+        {
+          "model": "temporary-bracing",
+          "stage": 4,
+          "tokens": "1,200",
+          "cost": "$0.432000",
+          "context": "1%",
+          "structuralIntegrity": "1,000",
+          "notOkayRatio": "0.01"
+        }
+      ]
     }
   }
 }

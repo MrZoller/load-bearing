@@ -42,7 +42,100 @@
         "integrityStart": 1000,
         "tokensPerEvent": 180
       },
-      "phase2": {},
+      "phase2": {
+        "statusCurves": [
+          {
+            "context": "1%",
+            "cost": "$14.400000",
+            "model": "structural-audit",
+            "notOkayRatio": "0.01",
+            "stage": 0,
+            "structuralIntegrity": "1,000",
+            "tokens": "1,200"
+          },
+          {
+            "context": "1%",
+            "cost": "$14.400000",
+            "model": "structural-audit",
+            "notOkayRatio": "0.01",
+            "stage": 1,
+            "structuralIntegrity": "1,000",
+            "tokens": "1,200"
+          },
+          {
+            "context": "1%",
+            "cost": "$14.400000",
+            "model": "structural-audit",
+            "notOkayRatio": "0.01",
+            "stage": 2,
+            "structuralIntegrity": "1,000",
+            "tokens": "1,200"
+          },
+          {
+            "context": "1%",
+            "cost": "$14.400000",
+            "model": "structural-audit",
+            "notOkayRatio": "0.01",
+            "stage": 3,
+            "structuralIntegrity": "1,000",
+            "tokens": "1,200"
+          },
+          {
+            "context": "1%",
+            "cost": "$14.400000",
+            "model": "structural-audit",
+            "notOkayRatio": "0.01",
+            "stage": 4,
+            "structuralIntegrity": "1,000",
+            "tokens": "1,200"
+          },
+          {
+            "context": "1%",
+            "cost": "$0.432000",
+            "model": "temporary-bracing",
+            "notOkayRatio": "0.01",
+            "stage": 0,
+            "structuralIntegrity": "1,000",
+            "tokens": "1,200"
+          },
+          {
+            "context": "1%",
+            "cost": "$0.432000",
+            "model": "temporary-bracing",
+            "notOkayRatio": "0.01",
+            "stage": 1,
+            "structuralIntegrity": "1,000",
+            "tokens": "1,200"
+          },
+          {
+            "context": "1%",
+            "cost": "$0.432000",
+            "model": "temporary-bracing",
+            "notOkayRatio": "0.01",
+            "stage": 2,
+            "structuralIntegrity": "1,000",
+            "tokens": "1,200"
+          },
+          {
+            "context": "1%",
+            "cost": "$0.432000",
+            "model": "temporary-bracing",
+            "notOkayRatio": "0.01",
+            "stage": 3,
+            "structuralIntegrity": "1,000",
+            "tokens": "1,200"
+          },
+          {
+            "context": "1%",
+            "cost": "$0.432000",
+            "model": "temporary-bracing",
+            "notOkayRatio": "0.01",
+            "stage": 4,
+            "structuralIntegrity": "1,000",
+            "tokens": "1,200"
+          }
+        ]
+      },
       "placeholders": [
         {
           "stage": 0,
@@ -309,7 +402,8 @@
         "counters": [],
         "endings": [],
         "facts": [],
-        "initialBeat": "start"
+        "initialBeat": "start",
+        "transitions": []
       },
       "responses": [
         {
@@ -547,7 +641,8 @@
       "currentBeat": "start",
       "currentVariant": "",
       "discoveredEndings": [],
-      "facts": []
+      "facts": [],
+      "stage": 0
     },
     "terminal": {
       "activeModel": "structural-audit",

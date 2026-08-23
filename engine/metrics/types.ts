@@ -9,4 +9,13 @@ export interface EngineMetrics {
   readonly contextPercent: number;
   /** Cartridge-authored raw integrity units, floored at zero. */
   readonly structuralIntegrity: number;
+  readonly stage: import("../story/types.js").EscalationStage;
+  /** Complete cartridge-authored status narration for the active model/stage. */
+  readonly display: {
+    readonly tokens: string;
+    readonly cost: string;
+    readonly context: string;
+    readonly structuralIntegrity: string;
+    readonly notOkayRatio: string;
+  };
 }

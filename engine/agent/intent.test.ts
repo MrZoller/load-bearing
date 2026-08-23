@@ -67,7 +67,7 @@ describe("authored agent input", () => {
     ).toEqual([
       expect.objectContaining({
         type: "agent.activity-set",
-        payload: { status: "working", stage: 0 },
+        payload: { status: "working" },
       }),
       expect.objectContaining({
         type: "agent.message-added",
@@ -198,7 +198,7 @@ describe("authored agent input", () => {
     );
 
     expect(events).toMatchObject([
-      { type: "agent.activity-set", payload: { status: "working", stage: 0 } },
+      { type: "agent.activity-set", payload: { status: "working" } },
       { type: "agent.message-added" },
       {
         type: "mind.permission-request",
@@ -234,7 +234,7 @@ describe("authored agent input", () => {
       [
         {
           type: "agent.activity-set",
-          payload: { status: "working", stage: 0 },
+          payload: { status: "working" },
         },
         { type: "agent.message-added" },
         {
@@ -265,7 +265,7 @@ describe("authored agent input", () => {
     expect(
       createAgentInputEvents(INCIDENT, accepted, "detach europe"),
     ).toMatchObject([
-      { type: "agent.activity-set", payload: { status: "working", stage: 0 } },
+      { type: "agent.activity-set", payload: { status: "working" } },
       { type: "agent.message-added" },
       {
         type: "mind.waiver-standing",
@@ -412,7 +412,7 @@ describe("authored agent input", () => {
     expect(
       createAgentInputEvents(cartridge, state, "please rotate the moon"),
     ).toMatchObject([
-      { type: "agent.activity-set", payload: { status: "working", stage: 0 } },
+      { type: "agent.activity-set", payload: { status: "working" } },
       { type: "agent.message-added" },
       {
         type: "mind.permission-standing",

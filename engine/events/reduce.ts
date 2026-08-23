@@ -65,7 +65,9 @@ import type { EventRegistry } from "./registry.js";
 import { reactionActionEvent, reactionPredicateMatches } from "../reactions.js";
 import { MAX_STORY_CONSEQUENCE_WORK } from "../cartridge/schema.js";
 import { storyActionEvent } from "../story/actions.js";
-import { readStorySlice } from "../story/story.js";
+import { storyStageTriggerMatches } from "../story/conditions.js";
+import { readStorySlice, validateStorySlice } from "../story/story.js";
+import { createStoryStageAdvancedEvent } from "../story/module.js";
 import { EVENT_SCHEMA_VERSION, readSlice } from "./state.js";
 import type {
   EngineEvent,
@@ -303,6 +305,11 @@ function foldEvent(
   const envelope = assertEventEnvelope(event, `event ${String(index)}`);
   const where = `event ${String(index)} (${envelope.type})`;
 
+  if (envelope.type === "story.stage-advanced")
+    throw new Error(
+      `${where}: escalation stages are derived by the reducer and cannot be logged or runtime-dispatched`,
+    );
+
   const handler = registry.handler(envelope.type);
   if (handler === undefined) {
     throw new UnknownEventTypeError(envelope.type, index, registry.namespaces);
@@ -415,12 +422,14 @@ function foldEvent(
     // after every child is staged. This lets a cartridge react to the visitor's
     // `shell.execute` intent while predicates see the completed command, without
     // losing the child event types needed for narrower rules.
+    let staged: SessionState;
     try {
-      return stageExpansion(outcome.expansion);
+      staged = stageExpansion(outcome.expansion);
     } catch (error) {
       if (!outcome.hasExpansionFallback) throw error;
-      return stageExpansion(outcome.expansionFallback);
+      staged = stageExpansion(outcome.expansionFallback);
     }
+    return applyEscalation(before, staged, envelope, registry, where);
   }
   const slices = applyEffects(
     before,
@@ -454,9 +463,50 @@ function foldEvent(
       ? applyStoryConsequences(logged, registry, where, triggers)
       : logged;
   triggerSink?.push(...triggers);
-  return reactionsAllowed
+  const reacted = reactionsAllowed
     ? applyReactions(staged, triggers, registry, where)
     : staged;
+  return reactionsAllowed
+    ? applyEscalation(before, reacted, envelope, registry, where)
+    : reacted;
+}
+
+function stagedStorySlice(state: SessionState) {
+  // Hand-built reducer test cartridges may omit loaded cross-reference data;
+  // escalation needs only the already validated owner slice at this boundary.
+  return validateStorySlice(readSlice(state, "story"), "staged story slice");
+}
+
+function applyEscalation(
+  before: SessionState,
+  staged: SessionState,
+  envelope: EngineEvent,
+  registry: EventRegistry,
+  where: string,
+): SessionState {
+  const transitions = staged.cartridge.story.phase2.transitions ?? [];
+  // Custom registries remain independent reducer test surfaces. Escalation is
+  // active only when both its authored contract and owning module are present.
+  if (
+    transitions.length === 0 ||
+    registry.module("story") === undefined ||
+    !Object.hasOwn(staged.slices, "story")
+  )
+    return staged;
+  const stage = stagedStorySlice(before).stage;
+  const transition = transitions.find(
+    (candidate) =>
+      candidate.from === stage &&
+      storyStageTriggerMatches(candidate.trigger, before, staged, envelope),
+  );
+  if (transition === undefined) return staged;
+  return applyDerivedEvent(
+    staged,
+    createStoryStageAdvancedEvent(transition.from, transition.to),
+    registry,
+    `${where} escalation`,
+    "story escalation",
+  );
 }
 
 /** Stage the selected story outcome and every recursively reached outcome. */
@@ -577,7 +627,7 @@ function applyDerivedEvent(
   event: EngineEvent,
   registry: EventRegistry,
   where: string,
-  source: "reaction" | "story consequence",
+  source: "reaction" | "story consequence" | "story escalation",
 ): SessionState {
   const envelope = assertEventEnvelope(event, where);
   const handler = registry.handler(envelope.type);

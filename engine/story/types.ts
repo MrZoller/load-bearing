@@ -5,6 +5,8 @@ import type {
 } from "../cartridge/types.js";
 import type { ExactCapability } from "../mind/types.js";
 
+export type EscalationStage = 0 | 1 | 2 | 3 | 4;
+
 export type StoryFactKind = "reveal" | "callback";
 
 export type StoryCondition =
@@ -64,6 +66,8 @@ export type StoryCounterQuery =
 
 /** Replayable state owned by the shared story graph. */
 export interface StorySlice {
+  /** Authoritative deterioration stage; presentation time never owns it. */
+  readonly stage: EscalationStage;
   readonly currentBeat: string;
   /** Empty identifies the base outcome rather than an authored variant. */
   readonly currentVariant: string;

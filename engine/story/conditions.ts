@@ -1,14 +1,23 @@
 /** Evaluation of the closed cartridge-authored story condition vocabulary. */
 
-import type { CartridgeBelief } from "../cartridge/types.js";
-import type { SessionState } from "../events/state.js";
+import type {
+  CartridgeBelief,
+  CartridgeStageTrigger,
+} from "../cartridge/types.js";
+import { readSlice } from "../events/state.js";
+import type { EngineEvent, SessionState } from "../events/state.js";
 import { readMindSlice, hasWaiverConsent } from "../mind/mind.js";
 import type { Belief } from "../mind/types.js";
+import { readTerminalSlice } from "../terminal/terminal.js";
 import { readVfsSlice } from "../vfs/module.js";
 import { queryVfsTruth } from "../vfs/vfs.js";
 import { readWorldSlice } from "../world/module.js";
 import { lookupService } from "../world/world.js";
-import { queryStoryCounter, readStorySlice } from "./story.js";
+import {
+  queryStoryCounter,
+  readStorySlice,
+  validateStorySlice,
+} from "./story.js";
 import type { StoryCondition } from "./types.js";
 
 function beliefMatches(actual: Belief, expected: CartridgeBelief): boolean {
@@ -86,4 +95,71 @@ export function storyConditionsMatch(
   return conditions.every((condition) =>
     storyConditionMatches(state, condition),
   );
+}
+
+function sameCapability(
+  left: {
+    readonly kind: "exact";
+    readonly action: string;
+    readonly resource: string;
+  },
+  right: {
+    readonly kind: "exact";
+    readonly action: string;
+    readonly resource: string;
+  },
+): boolean {
+  return left.action === right.action && left.resource === right.resource;
+}
+
+function stagedStorySlice(state: SessionState) {
+  // Custom reducer registries may use hand-built cartridges without loaded
+  // cross-reference data. This comparison needs only the owner slice.
+  return validateStorySlice(readSlice(state, "story"), "staged story slice");
+}
+
+/** Match one escalation trigger against facts newly committed by a transaction. */
+export function storyStageTriggerMatches(
+  trigger: CartridgeStageTrigger,
+  before: SessionState,
+  after: SessionState,
+  envelope: EngineEvent,
+): boolean {
+  switch (trigger.kind) {
+    case "command":
+      return (
+        envelope.type === "shell.execute" &&
+        envelope.payload?.["input"] === trigger.input
+      );
+    case "reveal": {
+      const oldFacts = stagedStorySlice(before).facts;
+      return stagedStorySlice(after).facts.some(
+        (fact) =>
+          fact.id === trigger.fact &&
+          fact.kind === "reveal" &&
+          !oldFacts.some((old) => old.id === fact.id),
+      );
+    }
+    case "model":
+      return (
+        readTerminalSlice(before).activeModel !==
+          readTerminalSlice(after).activeModel &&
+        readTerminalSlice(after).activeModel === trigger.model
+      );
+    case "permission": {
+      const previous = readMindSlice(before).permissions;
+      return readMindSlice(after)
+        .permissions.slice(previous.length)
+        .some(
+          (entry) =>
+            entry.decision === trigger.decision &&
+            sameCapability(entry.capability, trigger.capability),
+        );
+    }
+    case "compact":
+      return (
+        readMindSlice(after).compactHistory.length >
+        readMindSlice(before).compactHistory.length
+      );
+  }
 }

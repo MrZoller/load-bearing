@@ -38,8 +38,7 @@ export type AgentActivity =
 
 /** A requested transition; the engine, not the caller, authors the visible verb. */
 export type AgentActivityRequest =
-  | { readonly status: "idle" }
-  | { readonly status: "working"; readonly stage: number };
+  { readonly status: "idle" } | { readonly status: "working" };
 
 export interface AuthoredResponseRecord {
   readonly instanceId: string;

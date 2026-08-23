@@ -319,6 +319,7 @@ export {
 export {
   storyConditionMatches,
   storyConditionsMatch,
+  storyStageTriggerMatches,
 } from "./story/conditions.js";
 export {
   createStorySlice,
@@ -335,6 +336,7 @@ export type {
   StoryCounterQuery,
   StoryFact,
   StoryFactKind,
+  EscalationStage,
   StorySlice,
 } from "./story/types.js";
 
@@ -502,6 +504,7 @@ export {
   MAX_STORY_ID_LENGTH,
   MAX_STORY_INTENTS,
   MAX_STORY_RESPONSES,
+  MAX_STAGE_TRANSITIONS,
   MAX_STORY_TEXT_LENGTH,
   STORY_ID_PATTERN,
 } from "./cartridge/schema.js";
@@ -533,6 +536,10 @@ export type {
   CartridgeResponseTodo,
   CartridgeResponseToolCall,
   CartridgeSpinnerPool,
+  CartridgeStageTransition,
+  CartridgeStageTrigger,
+  CartridgeStatusCurve,
+  CartridgePresentationPhase2,
   CartridgeStory,
   CartridgeStoryAction,
   CartridgeStoryBeat,

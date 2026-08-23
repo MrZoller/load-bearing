@@ -5,6 +5,7 @@ import {
   hasAgentIdleNudged,
   readAgentSlice,
   readMindSlice,
+  readStorySlice,
   readTerminalSlice,
 } from "../engine/index.js";
 import type { EngineEvent } from "../engine/index.js";
@@ -97,10 +98,14 @@ export function mountApp(
   let pendingWorkingEvents: readonly EngineEvent[] | null = null;
   const seenTranscriptKeys = new Set<string>();
   let announcementsSeeded = false;
-  const placeholders = session.cartridge.presentation.placeholders
-    .filter(({ stage }) => stage === 0)
-    .map(({ text }) => text);
   let placeholderIndex = 0;
+
+  function currentPlaceholders(): readonly string[] {
+    const stage = readStorySlice(session.current().state).stage;
+    return session.cartridge.presentation.placeholders
+      .filter((placeholder) => placeholder.stage === stage)
+      .map((placeholder) => placeholder.text);
+  }
 
   const inputController = createTerminalInputController({
     initialBashHistory: [
@@ -179,13 +184,18 @@ export function mountApp(
   }
 
   function schedulePlaceholder(): void {
+    const placeholders = currentPlaceholders();
+    if (browser !== null && placeholderTimer !== null)
+      browser.clearTimeout(placeholderTimer);
+    placeholderTimer = null;
     if (browser === null || placeholders.length < 2) return;
-    if (placeholderTimer !== null) browser.clearTimeout(placeholderTimer);
     placeholderTimer = browser.setTimeout(() => {
-      placeholderIndex = (placeholderIndex + 1) % placeholders.length;
+      const current = currentPlaceholders();
+      if (current.length === 0) return;
+      placeholderIndex = (placeholderIndex + 1) % current.length;
       const prompt = view.querySelector<HTMLInputElement>("#agent-input");
       if (prompt !== null)
-        prompt.placeholder = placeholders[placeholderIndex] ?? "";
+        prompt.placeholder = current[placeholderIndex % current.length] ?? "";
       schedulePlaceholder();
     }, PLACEHOLDER_PRESENTATION_MS);
   }
@@ -267,6 +277,8 @@ export function mountApp(
 
   function render(): void {
     const snapshot = session.current();
+    const placeholders = currentPlaceholders();
+    if (placeholderIndex >= placeholders.length) placeholderIndex = 0;
     const activity = readAgentSlice(snapshot.state).activity;
     const inTui = readTerminalSlice(snapshot.state).mode === "tui";
     if (inTui && activity.status === "working") {
@@ -321,6 +333,7 @@ export function mountApp(
     if (transcriptSearch.element.hidden || !transcriptSearch.hasFocus())
       focusPrompt();
     scheduleActivityFrame();
+    schedulePlaceholder();
     resetIdleTimer();
   }
 
@@ -330,7 +343,6 @@ export function mountApp(
     event.preventDefault();
     finishWorkingPresentation();
   });
-  schedulePlaceholder();
   // The mounted surface may expose this read-only pair to an acceptance
   // harness. Mutation remains private to the closures above: browser tests can
   // replay what happened, but cannot manufacture state outside dispatch.

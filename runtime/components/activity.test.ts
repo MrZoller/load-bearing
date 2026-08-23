@@ -49,7 +49,7 @@ function workingState() {
   return reduce({
     cartridge: CARTRIDGE,
     seed: SEED,
-    events: [createAgentActivityEvent({ status: "working", stage: 0 })],
+    events: [createAgentActivityEvent({ status: "working" })],
   });
 }
 

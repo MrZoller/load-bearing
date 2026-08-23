@@ -46,6 +46,29 @@ const CARTRIDGE: LoadedCartridge = loadCartridge({
       costMultiplier: 1,
     },
   ],
+  presentation: {
+    placeholders: [{ stage: 0, text: "inspect" }],
+    spinnerPools: [{ archetype: "paranoid", stage: 0, verbs: ["Inspecting"] }],
+    metrics: {
+      baseTokens: 0,
+      tokensPerEvent: 1,
+      contextWindowTokens: 1000,
+      costMicrosPerToken: 1,
+      integrityStart: 100,
+      integrityLossPerEvent: 1,
+    },
+    phase2: {
+      statusCurves: [0, 1, 2, 3, 4].map((stage) => ({
+        model: "deep-foundation",
+        stage,
+        tokens: "0",
+        cost: "$0",
+        context: "0%",
+        structuralIntegrity: "100",
+        notOkayRatio: "0",
+      })),
+    },
+  },
 });
 
 function replay(cartridge: LoadedCartridge, events: readonly EngineEvent[]) {

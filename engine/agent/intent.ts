@@ -144,7 +144,7 @@ export function createAgentInputEvents(
     // These delimit the visitor turn in the replay log. The browser may use
     // presentation time between them, but the selected verb remains wholly
     // determined by this event and the seeded model stream.
-    createAgentActivityEvent({ status: "working", stage: 0 }),
+    createAgentActivityEvent({ status: "working" }),
     createAgentMessageEvent(turnId, boundedInput),
     ...selection.actions.flatMap((action) => {
       if (action.kind === "shell-execute")
