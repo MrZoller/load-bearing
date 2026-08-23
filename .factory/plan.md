@@ -33,7 +33,7 @@ authoring tooling remain excluded.
   - acceptance: `engine/story/{types,actions,story,module,actions.test}.ts`, `engine/events/reduce.ts`, and `engine/cartridge/{schema,types,load,load.test}.ts` add a closed owner-directed action union and bounded counters for story consequences; actions dispatch only validated subsystem events, cycles/nested expansion/unbounded chains are rejected before replay, no cartridge can inject arbitrary event envelopes, and a golden demonstrates an atomic multi-owner consequence while preserving one-module-one-slice ownership (criteria 17 foundation, 20)
   - deps: T32
   - pr: 58
-- [ ] T34 (major) — Atomic permission continuations and exact waiver consent
+- [~] T34 (major) — Atomic permission continuations and exact waiver consent
   - acceptance: `engine/mind/{types,mind,module,mind.test}.ts`, `engine/story/actions.ts`, `engine/agent/intent.ts`, `runtime/views/tui.ts`, and `runtime/components/permission.ts` support validated grant, deny, and standing-allow continuations that publish atomically with the exact permission decision; a separate typed-waiver path creates authored `WAIVER.md`, accepts only raw input exactly equal to `I agree`, records waiver id/version, phrase, simulated time, and gated capability as its own ledger fact, and executes no gated action before consent; alternate text/denial cannot grant consent and unit/golden/browser tests prove exact later document/time queries (criteria 11, 12, 20; approved decision Q1=A)
   - deps: T33
 - [ ] T35 (standard) — Event-driven escalation and reactive status
