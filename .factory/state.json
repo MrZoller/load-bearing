@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T44",
-  "branch": "factory/t44-environmental-evidence",
-  "pr": 68,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-23T13:44:24Z"
+  "updated": "2026-08-23T13:52:52Z"
 }

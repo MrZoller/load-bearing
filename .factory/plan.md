@@ -73,7 +73,7 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/world/world.test.ts`, and `engine/commands/system.test.ts` add consistent services, health, endpoints, process names, stream/file logs, and bounded reactions; `curl`, `systemctl`, `ps`, log evidence, tests, and repository configuration tell the same story throughout a focused golden path (criteria 1, 10, 20)
   - deps: T41
   - pr: 67
-- [R] T44 (standard) — Environmental evidence and hidden shell depth
+- [x] T44 (standard) — Environmental evidence and hidden shell depth
   - acceptance: `content/incidents/incident-001.json`, `engine/cartridge/load.test.ts`, `engine/commands/{system,filesystem,registry}.test.ts`, and one focused golden add restrained environment variables, man pages, ticket archive, ownership details, hidden evidence, and static commands; every clue remains coherent after mutations and the browser's onboarding surfaces do not advertise the hidden layer (criteria 10, 15, 20)
   - deps: T42, T43
   - pr: 68
