@@ -241,6 +241,13 @@ renders the same entries differently without changing what was recorded.
   positive additions that exceed the declared maximum throw rather than clamp.
   `story.fact-recorded` records a declared fact idempotently. None terminates the
   session, and model or archetype records cannot contain their own graph.
+- Dialogue responses retain each intent's default and may add bounded sparse
+  overrides attached to a shared beat id. Overrides are tested in authored
+  order; their optional archetype, escalation-stage, and typed-condition
+  selectors AND together, and every override must declare at least one selector.
+  Selection happens while planning the intent against pre-event state, before
+  the corresponding beat and its consequences are replayed. Model ids never
+  appear in this routing table: models select an archetype, not a graph.
 - `engine/commands/` owns POSIX-ish word tokenization, generic short/long option
   parsing, duplicate-safe command registration, and the one shell execution API
   used by both terminal views
@@ -334,7 +341,9 @@ The agent's mind is engine state, distinct from machine truth:
   with an authored, subtly wrong summary's beliefs while the world stays
   correct, and appends the timestamped summary to history. Divergence is
   returned in belief order through typed VFS, Git, and service truth lookups,
-  never arbitrary object diffing, and can gate escalation and endings.
+  never arbitrary object diffing. Story conditions can require an exact held
+  belief that is currently divergent, so absence of an assertion is distinct
+  from a wrong assertion and can gate later dialogue or endings.
 - **Agent transcript artifacts:** `engine/agent/` owns bounded messages, authored
   response instances, tool calls, thinking blocks, todos, and working activity.
   Response events carry only a cartridge response id plus stable instance id;
@@ -448,7 +457,8 @@ slash autocomplete descriptions, archetype-stage spinner pools, and integer
 metric parameters. `story.phase2` is a concrete bounded shared graph: one
 initial beat, at most 64 nonnegative safe-integer counters, declared
 reveal/callback facts, authored-order beats with sparse
-first-match condition variants, unranked ending identities, and bounded
+first-match condition variants, sparse authored-order dialogue routes over
+shared beat ids, unranked ending identities, and bounded
 authored-order adjacent escalation transitions. A transition's closed trigger
 is an exact raw shell command, a newly recorded reveal, an actual model change,
 a newly recorded exact permission decision, or a newly recorded compact. The
@@ -456,7 +466,7 @@ reducer compares pre-transaction state with the fully staged result after
 expansion, story consequences, and reactions; the first current-stage match
 advances at most once through an unlogged story-owned derived event. Conditions
 are a closed union over VFS contents/existence, service state/health, exact beliefs,
-exact waiver consent, declared story facts, and `equal`/`at-least` counter
+exact typed belief divergence, exact waiver consent, declared story facts, and `equal`/`at-least` counter
 queries; variant conditions are flat
 non-empty all-of lists evaluated against pre-event state. Cartridge actions are
 a closed `shell-execute` / `permission-request` / `story-reach` union rather
@@ -497,6 +507,15 @@ would crush the nightly pipeline — this structure is the difference between
 a Phase 5 that works and one that drowns. The dialogue layer is therefore
 (beat × archetype × stage) → response, with archetype-pair handoff
 templates covering mid-session model switches.
+
+The sparse response table keeps the intent's response as its default, then
+checks matching-beat overrides in authored order. Archetype, stage, and
+condition selectors are optional individually but at least one is required;
+all selectors present on a record must match. `/compact` follows the same sparse
+principle: one default response/summary/belief replacement is required and a
+unique optional record per archetype may replace it. Compaction replaces the
+belief set wholesale while leaving VFS, Git, services, story, and other machine
+truth untouched.
 
 Ending discovery is session state, not terminal state. `StorySlice.stage` is the
 authoritative 0–4 escalation stage used by metrics, activity, and stage-keyed

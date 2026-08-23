@@ -36,6 +36,7 @@
 import { deepFreeze } from "../freeze.js";
 import { parseTimestamp } from "../clock/civil.js";
 import { detectBrand } from "../serialize/canonical.js";
+import type { StoryCondition } from "../story/types.js";
 import { normalizeIntentPhrase } from "./intent.js";
 import {
   CARTRIDGE_SCHEMA,
@@ -1233,6 +1234,19 @@ function checkStoryAndPresentation(
 
   checkBeliefs(story.opening.beliefs, "/story/opening/beliefs");
   checkBeliefs(story.compact.beliefs, "/story/compact/beliefs");
+  const compactArchetypes = new Map<string, number>();
+  story.compact.archetypes.forEach((compact, index) => {
+    const root = `/story/compact/archetypes/${String(index)}`;
+    checkBeliefs(compact.beliefs, `${root}/beliefs`);
+    const first = compactArchetypes.get(compact.archetype);
+    if (first === undefined) compactArchetypes.set(compact.archetype, index);
+    else
+      report.addPhrase(
+        `${root}/archetype`,
+        "an archetype no other compact replacement uses",
+        `${JSON.stringify(compact.archetype)}, already used by /story/compact/archetypes/${String(first)}`,
+      );
+  });
 
   const responses = new Map<string, number>();
   story.responses.forEach((response, index) => {
@@ -1283,6 +1297,12 @@ function checkStoryAndPresentation(
   if (story.idleNudgeResponse !== "")
     reference(story.idleNudgeResponse, "/story/idleNudgeResponse");
   reference(story.compact.response, "/story/compact/response");
+  story.compact.archetypes.forEach((compact, index) =>
+    reference(
+      compact.response,
+      `/story/compact/archetypes/${String(index)}/response`,
+    ),
+  );
   reference(story.resume.unchangedResponse, "/story/resume/unchangedResponse");
   reference(story.resume.changedResponse, "/story/resume/changedResponse");
 
@@ -1340,6 +1360,31 @@ function checkStoryAndPresentation(
         `/story/phase2/counters/${String(index)}/maximum`,
         "a maximum at least as large as initial",
         `${String(counter.maximum)}, below initial ${String(counter.initial)}`,
+      );
+  });
+  const routeIds = new Map<string, number>();
+  story.phase2.routes.forEach((route, index) => {
+    const root = `/story/phase2/routes/${String(index)}`;
+    const first = routeIds.get(route.id);
+    if (first === undefined) routeIds.set(route.id, index);
+    else
+      report.addPhrase(
+        `${root}/id`,
+        "an id no other dialogue route uses",
+        `${JSON.stringify(route.id)}, already used by /story/phase2/routes/${String(first)}`,
+      );
+    if (!beats.has(route.beat))
+      report.addPhrase(
+        `${root}/beat`,
+        "the id of a declared shared story beat",
+        `${JSON.stringify(route.beat)}, which does not exist`,
+      );
+    reference(route.response, `${root}/response`);
+    if (route.archetype === "" && route.stage === -1 && route.when.length === 0)
+      report.addPhrase(
+        root,
+        "at least one archetype, stage or condition selector",
+        "no selectors",
       );
   });
   if (!beats.has(story.phase2.initialBeat))
@@ -1431,6 +1476,56 @@ function checkStoryAndPresentation(
     addDirectoryAncestors(path);
   for (const path of files)
     addDirectoryAncestors(path.slice(0, path.lastIndexOf("/")) || "/");
+  const checkConditionReferences = (
+    condition: StoryCondition,
+    root: string,
+  ): void => {
+    if (condition.kind === "story-fact") {
+      const declared = facts.get(condition.fact);
+      if (declared === undefined)
+        report.addPhrase(
+          `${root}/fact`,
+          "the id of a declared story fact",
+          `${JSON.stringify(condition.fact)}, which does not exist`,
+        );
+      else if (declared.kind !== condition.factKind)
+        report.addPhrase(
+          `${root}/factKind`,
+          `the declared kind ${declared.kind}`,
+          JSON.stringify(condition.factKind),
+        );
+    }
+    if (condition.kind === "story-counter" && !counters.has(condition.counter))
+      report.addPhrase(
+        `${root}/counter`,
+        "the id of a declared story counter",
+        `${JSON.stringify(condition.counter)}, which does not exist`,
+      );
+    const belief =
+      condition.kind === "belief" || condition.kind === "belief-divergence"
+        ? condition.belief
+        : undefined;
+    const service =
+      condition.kind === "service-state" || condition.kind === "service-health"
+        ? condition.service
+        : belief?.kind === "service-state" || belief?.kind === "service-health"
+          ? belief.service
+          : undefined;
+    if (service !== undefined && !services.has(service))
+      report.addPhrase(
+        belief === undefined ? `${root}/service` : `${root}/belief/service`,
+        "the id of a declared service",
+        `${JSON.stringify(service)}, which does not exist`,
+      );
+  };
+  story.phase2.routes.forEach((route, routeIndex) =>
+    route.when.forEach((condition, conditionIndex) =>
+      checkConditionReferences(
+        condition,
+        `/story/phase2/routes/${String(routeIndex)}/when/${String(conditionIndex)}`,
+      ),
+    ),
+  );
   const checkOutcomeActions = (
     actions: readonly CartridgeStoryAction[],
     pointer: string,
@@ -1517,48 +1612,10 @@ function checkStoryAndPresentation(
       checkFacts(variant.facts ?? [], `${variantRoot}/facts`);
       checkOutcomeActions(variant.actions ?? [], `${variantRoot}/actions`);
       variant.when.forEach((condition, conditionIndex) => {
-        const conditionRoot = `${variantRoot}/when/${String(conditionIndex)}`;
-        if (condition.kind === "story-fact") {
-          const declared = facts.get(condition.fact);
-          if (declared === undefined)
-            report.addPhrase(
-              `${conditionRoot}/fact`,
-              "the id of a declared story fact",
-              `${JSON.stringify(condition.fact)}, which does not exist`,
-            );
-          else if (declared.kind !== condition.factKind)
-            report.addPhrase(
-              `${conditionRoot}/factKind`,
-              `the declared kind ${declared.kind}`,
-              JSON.stringify(condition.factKind),
-            );
-        }
-        if (
-          condition.kind === "story-counter" &&
-          !counters.has(condition.counter)
-        )
-          report.addPhrase(
-            `${conditionRoot}/counter`,
-            "the id of a declared story counter",
-            `${JSON.stringify(condition.counter)}, which does not exist`,
-          );
-        const service =
-          condition.kind === "service-state" ||
-          condition.kind === "service-health"
-            ? condition.service
-            : condition.kind === "belief" &&
-                (condition.belief.kind === "service-state" ||
-                  condition.belief.kind === "service-health")
-              ? condition.belief.service
-              : undefined;
-        if (service !== undefined && !services.has(service))
-          report.addPhrase(
-            condition.kind === "belief"
-              ? `${conditionRoot}/belief/service`
-              : `${conditionRoot}/service`,
-            "the id of a declared service",
-            `${JSON.stringify(service)}, which does not exist`,
-          );
+        checkConditionReferences(
+          condition,
+          `${variantRoot}/when/${String(conditionIndex)}`,
+        );
       });
     });
   });
@@ -1646,6 +1703,13 @@ function checkStoryAndPresentation(
         pointer,
         "at most one permission or waiver request action",
         `${String(prompts.length)} request actions`,
+      );
+    const reaches = actions.filter((action) => action.kind === "story-reach");
+    if (reaches.length > 1)
+      report.addPhrase(
+        pointer,
+        "at most one story-reach action, so one visitor turn has one unambiguous response route",
+        `${String(reaches.length)} story-reach actions`,
       );
     actions.forEach((action, index) => {
       if (action.kind === "story-reach" && !beats.has(action.beat))

@@ -6,7 +6,11 @@ import type {
 } from "../cartridge/types.js";
 import { readSlice } from "../events/state.js";
 import type { EngineEvent, SessionState } from "../events/state.js";
-import { readMindSlice, hasWaiverConsent } from "../mind/mind.js";
+import {
+  beliefDivergence,
+  readMindSlice,
+  hasWaiverConsent,
+} from "../mind/mind.js";
 import type { Belief } from "../mind/types.js";
 import { readTerminalSlice } from "../terminal/terminal.js";
 import { readVfsSlice } from "../vfs/module.js";
@@ -44,6 +48,49 @@ function beliefMatches(actual: Belief, expected: CartridgeBelief): boolean {
   return false;
 }
 
+function divergentBeliefMatches(
+  state: SessionState,
+  expected: CartridgeBelief,
+): boolean {
+  if (
+    !readMindSlice(state).beliefs.some((belief) =>
+      beliefMatches(belief, expected),
+    )
+  )
+    return false;
+  return beliefDivergence(state).some((mismatch) => {
+    if (mismatch.kind !== expected.kind) return false;
+    if (mismatch.kind === "git-head" && expected.kind === "git-head")
+      return (
+        mismatch.believed.kind === expected.head.kind &&
+        mismatch.believed.target === expected.head.target
+      );
+    if (mismatch.kind === "file-exists" && expected.kind === "file-exists")
+      return (
+        mismatch.path === expected.path && mismatch.believed === expected.exists
+      );
+    if (mismatch.kind === "file-contents" && expected.kind === "file-contents")
+      return (
+        mismatch.path === expected.path &&
+        mismatch.believed === expected.contents
+      );
+    if (mismatch.kind === "service-state" && expected.kind === "service-state")
+      return (
+        mismatch.service === expected.service &&
+        mismatch.believed === expected.state
+      );
+    if (
+      mismatch.kind === "service-health" &&
+      expected.kind === "service-health"
+    )
+      return (
+        mismatch.service === expected.service &&
+        mismatch.believed === expected.health
+      );
+    return false;
+  });
+}
+
 export function storyConditionMatches(
   state: SessionState,
   condition: StoryCondition,
@@ -72,6 +119,8 @@ export function storyConditionMatches(
     return readMindSlice(state).beliefs.some((belief) =>
       beliefMatches(belief, condition.belief),
     );
+  if (condition.kind === "belief-divergence")
+    return divergentBeliefMatches(state, condition.belief);
   if (condition.kind === "waiver-consent")
     return hasWaiverConsent(readMindSlice(state), condition);
   if (condition.kind === "story-counter") {

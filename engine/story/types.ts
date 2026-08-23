@@ -32,6 +32,10 @@ export type StoryCondition =
     }
   | { readonly kind: "belief"; readonly belief: CartridgeBelief }
   | {
+      readonly kind: "belief-divergence";
+      readonly belief: CartridgeBelief;
+    }
+  | {
       readonly kind: "waiver-consent";
       readonly id: string;
       readonly version: number;

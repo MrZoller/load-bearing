@@ -8,6 +8,7 @@ import {
   createMindCompactEvent,
 } from "../mind/module.js";
 import { createTerminalModeEvent } from "../terminal/module.js";
+import { routeCompact } from "../story/router.js";
 import { readAgentSlice } from "./agent.js";
 import { canRecordAuthoredResponse } from "./intent.js";
 import {
@@ -71,15 +72,13 @@ export function createAgentCompactEvents(
   cartridge: LoadedCartridge,
   state: SessionState,
 ): readonly EngineEvent[] {
+  const compact = routeCompact(cartridge, state);
   return [
-    createMindCompactEvent(
-      cartridge.story.compact.summary,
-      cartridge.story.compact.beliefs,
-    ),
+    createMindCompactEvent(compact.summary, compact.beliefs),
     responseEvent(
       cartridge,
       state,
-      cartridge.story.compact.response,
+      compact.response,
       `compact-${String(state.eventCount)}`,
     ),
   ];

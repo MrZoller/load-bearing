@@ -167,8 +167,22 @@ export interface CartridgeStoryPhase2 {
     readonly kind: StoryFactKind;
   }[];
   readonly beats: readonly CartridgeStoryBeat[];
+  /** Sparse authored-order dialogue overrides on the shared beat graph. */
+  readonly routes: readonly CartridgeDialogueRoute[];
   readonly endings: readonly CartridgeEnding[];
   readonly transitions: readonly CartridgeStageTransition[];
+}
+
+export interface CartridgeDialogueRoute {
+  readonly id: string;
+  readonly beat: string;
+  readonly response: string;
+  /** Empty means this selector is absent. */
+  readonly archetype: Archetype | "";
+  /** -1 means this selector is absent. */
+  readonly stage: EscalationStage | -1;
+  /** Conditions AND together; an empty list means this selector is absent. */
+  readonly when: readonly StoryCondition[];
 }
 
 export type CartridgeStageTrigger =
@@ -245,6 +259,7 @@ export interface CartridgeStory {
     readonly response: string;
     readonly summary: string;
     readonly beliefs: readonly CartridgeBelief[];
+    readonly archetypes: readonly CartridgeArchetypeCompact[];
   };
   readonly resume: {
     readonly unchangedResponse: string;
@@ -252,6 +267,13 @@ export interface CartridgeStory {
   };
   /** Bounded shared-beat graph and ordered, non-terminal ending identities. */
   readonly phase2: CartridgeStoryPhase2;
+}
+
+export interface CartridgeArchetypeCompact {
+  readonly archetype: Archetype;
+  readonly response: string;
+  readonly summary: string;
+  readonly beliefs: readonly CartridgeBelief[];
 }
 
 export interface CartridgePlaceholder {

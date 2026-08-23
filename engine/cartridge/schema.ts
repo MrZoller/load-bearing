@@ -177,6 +177,7 @@ export const MAX_STORY_BEATS = 128;
 export const MAX_STORY_ENDINGS = 32;
 export const MAX_STORY_FACTS = 256;
 export const MAX_STORY_VARIANTS = 16;
+export const MAX_STORY_ROUTES = 256;
 export const MAX_STORY_CONDITIONS = 16;
 export const MAX_STORY_OUTCOME_FACTS = 16;
 export const MAX_STORY_COUNTERS = 64;
@@ -1443,6 +1444,19 @@ const STORY_CONDITION = {
         belief: required(CARTRIDGE_BELIEF),
       },
     },
+    "belief-divergence": {
+      kind: "object",
+      description:
+        "An exact authored belief currently held by the mind that differs from typed machine truth.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "Belief-divergence condition kind.",
+          values: ["belief-divergence"],
+        }),
+        belief: required(CARTRIDGE_BELIEF),
+      },
+    },
     "waiver-consent": {
       kind: "object",
       description: "An exact distinct waiver-consent ledger entry.",
@@ -1807,6 +1821,29 @@ const STORY = {
         response: required(PHASE_ONE_ID),
         summary: required(BOUNDED_TEXT),
         beliefs: required(CARTRIDGE_BELIEFS),
+        archetypes: optional(
+          {
+            kind: "array",
+            description:
+              "Sparse archetype-specific compact replacements; the default compact remains the fallback.",
+            maxItems: ARCHETYPES.length,
+            items: {
+              kind: "object",
+              description: "One archetype-specific lossy context replacement.",
+              fields: {
+                archetype: required({
+                  kind: "enum",
+                  description: "Behavioral archetype.",
+                  values: ARCHETYPES,
+                }),
+                response: required(PHASE_ONE_ID),
+                summary: required(BOUNDED_TEXT),
+                beliefs: required(CARTRIDGE_BELIEFS),
+              },
+            },
+          },
+          [],
+        ),
       },
     }),
     resume: required({
@@ -1917,6 +1954,54 @@ const STORY = {
               },
             },
           }),
+          routes: optional(
+            {
+              kind: "array",
+              description:
+                "Sparse authored-order response overrides attached to shared beat identities.",
+              maxItems: MAX_STORY_ROUTES,
+              items: {
+                kind: "object",
+                description:
+                  "One response override whose present selectors all must match.",
+                fields: {
+                  id: required(PHASE_ONE_ID),
+                  beat: required(PHASE_ONE_ID),
+                  response: required(PHASE_ONE_ID),
+                  archetype: optional(
+                    {
+                      kind: "enum",
+                      description:
+                        "Behavioral archetype selector, or empty when absent.",
+                      values: ["", ...ARCHETYPES],
+                    },
+                    "",
+                  ),
+                  stage: optional(
+                    {
+                      kind: "integer",
+                      description:
+                        "Escalation-stage selector, or -1 when absent.",
+                      minimum: -1,
+                      maximum: 4,
+                    },
+                    -1,
+                  ),
+                  when: optional(
+                    {
+                      kind: "array",
+                      description:
+                        "Typed conditions ANDed with the archetype and stage selectors.",
+                      items: STORY_CONDITION,
+                      maxItems: MAX_STORY_CONDITIONS,
+                    },
+                    [],
+                  ),
+                },
+              },
+            },
+            [],
+          ),
           endings: required({
             kind: "array",
             description: "Unranked collectible endings in authored order.",
@@ -1967,6 +2052,7 @@ const STORY = {
         beats: [
           { id: "start", ending: "", facts: [], actions: [], variants: [] },
         ],
+        routes: [],
         endings: [],
         transitions: [],
       },
@@ -2159,6 +2245,7 @@ const PHASE_ONE_STORY_DEFAULT = {
     response: "default-response",
     summary: "Session ready.",
     beliefs: [],
+    archetypes: [],
   },
   resume: {
     unchangedResponse: "default-response",
@@ -2167,7 +2254,9 @@ const PHASE_ONE_STORY_DEFAULT = {
   phase2: {
     initialBeat: "start",
     counters: [],
+    facts: [],
     beats: [{ id: "start", ending: "", actions: [] }],
+    routes: [],
     endings: [],
     transitions: [],
   },

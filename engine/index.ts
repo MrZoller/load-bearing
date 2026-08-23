@@ -330,6 +330,8 @@ export {
   recordStoryFact,
   validateStorySlice,
 } from "./story/story.js";
+export { routeCompact, routeStoryResponse } from "./story/router.js";
+export type { StoryResponseRouteSelection } from "./story/router.js";
 export type {
   StoryCondition,
   StoryCounter,
@@ -497,6 +499,7 @@ export {
   MAX_STORY_ENDINGS,
   MAX_STORY_FACTS,
   MAX_STORY_VARIANTS,
+  MAX_STORY_ROUTES,
   MAX_STORY_CONDITIONS,
   MAX_STORY_CONSEQUENCE_WORK,
   MAX_STORY_COUNTERS,
@@ -541,6 +544,8 @@ export type {
   CartridgeStatusCurve,
   CartridgePresentationPhase2,
   CartridgeStory,
+  CartridgeArchetypeCompact,
+  CartridgeDialogueRoute,
   CartridgeStoryAction,
   CartridgeStoryBeat,
   CartridgeStoryCounter,
