@@ -69,7 +69,7 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/git/git.test.ts`, and `engine/commands/git.test.ts` add coherent commits, refs, index, blame spans, departed-maintainer trail, and shell history; log/diff/blame/checkout/restore views agree with T41's current files before and after authored repair/undo actions, pinned by a focused golden (criteria 6 shell foundation, 10, 20)
   - deps: T41
   - pr: 66
-- [R] T43 (standard) — Services, endpoints, processes, and logs
+- [x] T43 (standard) — Services, endpoints, processes, and logs
   - acceptance: `content/incidents/incident-001.json`, `engine/world/world.test.ts`, and `engine/commands/system.test.ts` add consistent services, health, endpoints, process names, stream/file logs, and bounded reactions; `curl`, `systemctl`, `ps`, log evidence, tests, and repository configuration tell the same story throughout a focused golden path (criteria 1, 10, 20)
   - deps: T41
   - pr: 67
@@ -152,6 +152,7 @@ authoring tooling remain excluded.
   - PR #58: Refactor the generic reducer's `story.beat-reached` consequence dispatch into a module-owned hook; Codex thread `discussion_r3837495477` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #59: Reject cartridge waiver declarations that exceed the bounded waiver-consent ledger; Codex thread `discussion_r3837587539` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #59: Track generated waivers before treating an existing document-path file as an authored waiver; Codex thread `discussion_r3837639933` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #67: Make the repair transition independent of a visitor-mutated regional-router health latch; Codex thread `discussion_r3838574431` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #59: Avoid replaying a failed envelope reaction while staging an expansion fallback; Codex thread `discussion_r3837695311` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #59: Preserve a waiver-start failure across authored trailing actions; Codex thread `discussion_r3837731579` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #59: Preflight capacity for a substituted waiver-start fallback response; Codex thread `discussion_r3837731583` was verifier-classified minor and dispositioned without a minors-only push.
