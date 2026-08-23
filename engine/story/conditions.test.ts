@@ -152,6 +152,25 @@ describe("closed story conditions", () => {
     ).toBe(false);
   });
 
+  it("does not let a waiver condition widen its recorded capability", () => {
+    const withConsent = state([createMindWaiverConsentRecordedEvent(WAIVER)]);
+
+    expect(
+      storyConditionMatches(withConsent, {
+        kind: "waiver-consent",
+        ...WAIVER,
+        capability: { ...CAPABILITY, action: "delete" },
+      }),
+    ).toBe(false);
+    expect(
+      storyConditionMatches(withConsent, {
+        kind: "waiver-consent",
+        ...WAIVER,
+        capability: { ...CAPABILITY, resource: "/etc/shadow" },
+      }),
+    ).toBe(false);
+  });
+
   it("does not blur divergence-relevant belief subjects or values", () => {
     const beliefs = [
       { kind: "file-exists", path: "/etc/motd", exists: true },

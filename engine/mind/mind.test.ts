@@ -204,6 +204,18 @@ describe("mind events", () => {
     ]);
     expect(hasWaiverConsent(mind, waiver)).toBe(true);
     expect(hasWaiverConsent(mind, { ...waiver, version: 2 })).toBe(false);
+    expect(
+      hasWaiverConsent(mind, {
+        ...waiver,
+        capability: { ...CAPABILITY, action: "delete" },
+      }),
+    ).toBe(false);
+    expect(
+      hasWaiverConsent(mind, {
+        ...waiver,
+        capability: { ...CAPABILITY, resource: "/etc/shadow" },
+      }),
+    ).toBe(false);
     expect(() =>
       fold([
         createMindWaiverConsentRecordedEvent(waiver),
