@@ -75,6 +75,39 @@ describe("bounded cartridge intent patterns", () => {
     }
   });
 
+  it("rejects incomplete misfire wiring and authored writes to habit counters", () => {
+    const source = JSON.parse(JSON.stringify(incidentDocument)) as Record<
+      string,
+      unknown
+    >;
+    const story = source["story"] as Record<string, unknown>;
+    const phase2 = story["phase2"] as Record<string, unknown>;
+    phase2["genericIntents"] = [];
+    const fallback = story["fallback"] as Record<string, unknown>;
+    const candidates = fallback["candidates"] as Array<Record<string, unknown>>;
+    const first = candidates[0];
+    if (first === undefined) throw new Error("incident needs a fallback");
+    const actions = first["actions"] as unknown[];
+    actions.push({ kind: "counter-add", counter: "flail", amount: 1 });
+
+    try {
+      loadCartridge(source);
+      throw new Error("expected cartridge rejection");
+    } catch (error) {
+      expect(error).toBeInstanceOf(CartridgeValidationError);
+      expect(
+        (error as CartridgeValidationError).issues.map(
+          (issue) => issue.pointer,
+        ),
+      ).toEqual(
+        expect.arrayContaining([
+          "/story/fallback/candidates/0/actions/1/counter",
+          "/story/phase2/intentCounters/misfireEvery",
+        ]),
+      );
+    }
+  });
+
   it("selects the first condition-valid authored candidate", () => {
     const source = JSON.parse(JSON.stringify(incidentDocument)) as Record<
       string,

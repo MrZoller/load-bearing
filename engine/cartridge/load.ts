@@ -1603,6 +1603,18 @@ function checkStoryAndPresentation(
         ),
       );
       checkOutcomeActions(candidate.actions, `${root}/actions`);
+      candidate.actions.forEach((action, actionIndex) => {
+        if (
+          action.kind === "counter-add" &&
+          (action.counter === story.phase2.intentCounters.flail ||
+            action.counter === story.phase2.intentCounters.capitulation)
+        )
+          report.addPhrase(
+            `${root}/actions/${String(actionIndex)}/counter`,
+            "a counter other than the engine-owned flail and capitulation counters",
+            JSON.stringify(action.counter),
+          );
+      });
       const reaches = candidate.actions.filter(
         (action) => action.kind === "story-reach",
       );
@@ -1689,6 +1701,12 @@ function checkStoryAndPresentation(
       "/story/phase2/intentCounters/misfireEvery",
       "zero, or a cadence with both flail and capitulation counters declared",
       `${String(intentCounters.misfireEvery)} with a missing counter id`,
+    );
+  if (intentCounters.misfireEvery > 0 && !genericFamilies.has("capitulation"))
+    report.addPhrase(
+      "/story/phase2/intentCounters/misfireEvery",
+      "zero, or a cadence with an authored capitulation generic intent",
+      `${String(intentCounters.misfireEvery)} without a capitulation mapping`,
     );
   story.phase2.beats.forEach((beat, index) => {
     const root = `/story/phase2/beats/${String(index)}`;
