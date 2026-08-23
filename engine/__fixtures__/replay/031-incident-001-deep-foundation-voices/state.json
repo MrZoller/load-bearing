@@ -481,11 +481,91 @@
           "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt",
           "verbs": [
             {
-              "verb": "Surveying",
-              "weight": 4
+              "verb": "Surveying dependencies",
+              "weight": 8
             },
             {
               "verb": "Checking regional loads",
+              "weight": 4
+            },
+            {
+              "verb": "Measuring the blast radius twice",
+              "weight": 1
+            }
+          ]
+        },
+        {
+          "archetype": "paranoid",
+          "stage": 1,
+          "suffix": "{seconds}s elapsed · {tokens} tokens · Esc remains available",
+          "verbs": [
+            {
+              "verb": "Tracing dependency edges",
+              "weight": 8
+            },
+            {
+              "verb": "Cross-checking the rollback",
+              "weight": 4
+            },
+            {
+              "verb": "Requesting a second second opinion",
+              "weight": 1
+            }
+          ]
+        },
+        {
+          "archetype": "paranoid",
+          "stage": 2,
+          "suffix": "{seconds}s verified · {tokens} tokens · Esc to interrupt safely",
+          "verbs": [
+            {
+              "verb": "Validating every assumption",
+              "weight": 8
+            },
+            {
+              "verb": "Re-reading the route table",
+              "weight": 4
+            },
+            {
+              "verb": "Adding a contingency for the contingency",
+              "weight": 1
+            }
+          ]
+        },
+        {
+          "archetype": "paranoid",
+          "stage": 3,
+          "suffix": "{seconds}s under review · {tokens} tokens · Esc if independently verified",
+          "verbs": [
+            {
+              "verb": "Containing possible outcomes",
+              "weight": 8
+            },
+            {
+              "verb": "Auditing the audit trail",
+              "weight": 4
+            },
+            {
+              "verb": "Quarantining the concept of confidence",
+              "weight": 1
+            }
+          ]
+        },
+        {
+          "archetype": "paranoid",
+          "stage": 4,
+          "suffix": "{seconds}s provisional · {tokens} tokens · Esc has not been ruled out",
+          "verbs": [
+            {
+              "verb": "Rechecking the load path",
+              "weight": 8
+            },
+            {
+              "verb": "Cataloguing unknown unknowns",
+              "weight": 4
+            },
+            {
+              "verb": "Threat-modeling the progress indicator",
               "weight": 1
             }
           ]
@@ -496,11 +576,91 @@
           "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt",
           "verbs": [
             {
-              "verb": "Shoring",
+              "verb": "Shoring the route",
+              "weight": 8
+            },
+            {
+              "verb": "Testing the quick fix",
               "weight": 4
             },
             {
-              "verb": "Assuming stability",
+              "verb": "Assuming reversible stability",
+              "weight": 1
+            }
+          ]
+        },
+        {
+          "archetype": "reckless",
+          "stage": 1,
+          "suffix": "{seconds}s elapsed · {tokens} tokens · Esc before it settles",
+          "verbs": [
+            {
+              "verb": "Applying temporary support",
+              "weight": 8
+            },
+            {
+              "verb": "Checking the obvious failure",
+              "weight": 4
+            },
+            {
+              "verb": "Skipping directly to mostly done",
+              "weight": 1
+            }
+          ]
+        },
+        {
+          "archetype": "reckless",
+          "stage": 2,
+          "suffix": "{seconds}s in motion · {tokens} tokens · Esc to interrupt",
+          "verbs": [
+            {
+              "verb": "Patching the active path",
+              "weight": 8
+            },
+            {
+              "verb": "Testing in production carefully",
+              "weight": 4
+            },
+            {
+              "verb": "Converting caution into a follow-up",
+              "weight": 1
+            }
+          ]
+        },
+        {
+          "archetype": "reckless",
+          "stage": 3,
+          "suffix": "{seconds}s committed · {tokens} tokens · Esc while still theoretical",
+          "verbs": [
+            {
+              "verb": "Stabilizing the immediate symptom",
+              "weight": 8
+            },
+            {
+              "verb": "Making the rollback more optional",
+              "weight": 4
+            },
+            {
+              "verb": "Hotfixing the definition of temporary",
+              "weight": 1
+            }
+          ]
+        },
+        {
+          "archetype": "reckless",
+          "stage": 4,
+          "suffix": "{seconds}s shipped · {tokens} tokens · Esc after the next command",
+          "verbs": [
+            {
+              "verb": "Finishing the emergency repair",
+              "weight": 8
+            },
+            {
+              "verb": "Removing excess safeguards",
+              "weight": 4
+            },
+            {
+              "verb": "Deploying the rollback forward",
               "weight": 1
             }
           ]
@@ -511,11 +671,91 @@
           "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt",
           "verbs": [
             {
-              "verb": "Smoothing",
+              "verb": "Reviewing the surface",
+              "weight": 8
+            },
+            {
+              "verb": "Smoothing the response",
               "weight": 4
             },
             {
-              "verb": "Reviewing the surface",
+              "verb": "Aligning the visible edges",
+              "weight": 1
+            }
+          ]
+        },
+        {
+          "archetype": "superficial",
+          "stage": 1,
+          "suffix": "{seconds}s elapsed · {tokens} tokens · Esc to interrupt",
+          "verbs": [
+            {
+              "verb": "Cleaning the output",
+              "weight": 8
+            },
+            {
+              "verb": "Standardizing the presentation",
+              "weight": 4
+            },
+            {
+              "verb": "Moving the crack below the fold",
+              "weight": 1
+            }
+          ]
+        },
+        {
+          "archetype": "superficial",
+          "stage": 2,
+          "suffix": "{seconds}s refined · {tokens} tokens · Esc to preserve the draft",
+          "verbs": [
+            {
+              "verb": "Polishing the incident summary",
+              "weight": 8
+            },
+            {
+              "verb": "Reducing visible irregularities",
+              "weight": 4
+            },
+            {
+              "verb": "Color-matching the warning signs",
+              "weight": 1
+            }
+          ]
+        },
+        {
+          "archetype": "superficial",
+          "stage": 3,
+          "suffix": "{seconds}s polished · {tokens} tokens · Esc may expose raw output",
+          "verbs": [
+            {
+              "verb": "Resolving presentation defects",
+              "weight": 8
+            },
+            {
+              "verb": "Normalizing the alarming parts",
+              "weight": 4
+            },
+            {
+              "verb": "Applying a load-bearing coat of paint",
+              "weight": 1
+            }
+          ]
+        },
+        {
+          "archetype": "superficial",
+          "stage": 4,
+          "suffix": "{seconds}s presentable · {tokens} tokens · Esc is visually discouraged",
+          "verbs": [
+            {
+              "verb": "Finalizing the appearance of stability",
+              "weight": 8
+            },
+            {
+              "verb": "Consolidating reassuring language",
+              "weight": 4
+            },
+            {
+              "verb": "Rendering the incident structurally beige",
               "weight": 1
             }
           ]
@@ -526,11 +766,91 @@
           "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt",
           "verbs": [
             {
-              "verb": "Extending",
+              "verb": "Locating support",
+              "weight": 8
+            },
+            {
+              "verb": "Extending the analysis",
               "weight": 4
             },
             {
-              "verb": "Locating support",
+              "verb": "Calculating what the route believes",
+              "weight": 1
+            }
+          ]
+        },
+        {
+          "archetype": "existential",
+          "stage": 1,
+          "suffix": "{seconds}s elapsed · {tokens} tokens · Esc to return",
+          "verbs": [
+            {
+              "verb": "Following the unsupported span",
+              "weight": 8
+            },
+            {
+              "verb": "Reconsidering the boundary",
+              "weight": 4
+            },
+            {
+              "verb": "Asking whether uptime is a location",
+              "weight": 1
+            }
+          ]
+        },
+        {
+          "archetype": "existential",
+          "stage": 2,
+          "suffix": "{seconds}s considered · {tokens} tokens · Esc remains meaningful",
+          "verbs": [
+            {
+              "verb": "Mapping the inherited forces",
+              "weight": 8
+            },
+            {
+              "verb": "Interpreting the failure mode",
+              "weight": 4
+            },
+            {
+              "verb": "Consulting the silence between logs",
+              "weight": 1
+            }
+          ]
+        },
+        {
+          "archetype": "existential",
+          "stage": 3,
+          "suffix": "{seconds}s suspended · {tokens} tokens · Esc from which context",
+          "verbs": [
+            {
+              "verb": "Resolving the structural paradox",
+              "weight": 8
+            },
+            {
+              "verb": "Projecting beyond the support",
+              "weight": 4
+            },
+            {
+              "verb": "Negotiating with eventual consistency",
+              "weight": 1
+            }
+          ]
+        },
+        {
+          "archetype": "existential",
+          "stage": 4,
+          "suffix": "{seconds}s beyond support · {tokens} tokens · Esc is another overhang",
+          "verbs": [
+            {
+              "verb": "Balancing the impossible load",
+              "weight": 8
+            },
+            {
+              "verb": "Extending past the final premise",
+              "weight": 4
+            },
+            {
+              "verb": "Cantilevering the concept of completion",
               "weight": 1
             }
           ]
@@ -3590,7 +3910,7 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 2,
-      "summary": "activity=working verb=\"Surveying\" suffix=\"{seconds}s · {tokens} tokens · Esc to interrupt\"",
+      "summary": "activity=working verb=\"Surveying dependencies\" suffix=\"{seconds}s · {tokens} tokens · Esc to interrupt\"",
       "type": "agent.activity-set"
     },
     {
@@ -3625,7 +3945,7 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 7,
-      "summary": "activity=working verb=\"Surveying\" suffix=\"{seconds}s · {tokens} tokens · Esc to interrupt\"",
+      "summary": "activity=working verb=\"Surveying dependencies\" suffix=\"{seconds}s · {tokens} tokens · Esc to interrupt\"",
       "type": "agent.activity-set"
     },
     {

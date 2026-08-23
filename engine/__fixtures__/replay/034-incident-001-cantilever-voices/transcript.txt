@@ -1,11 +1,11 @@
 0000  2026-08-22T09:14:22.000Z  terminal.model-set model=cantilever-experimental
 0001  2026-08-22T09:14:22.000Z  mind.belief-set kind=file-contents
-0002  2026-08-22T09:14:22.000Z  agent.activity-set activity=working verb="Extending" suffix="{seconds}s · {tokens} tokens · Esc to interrupt"
+0002  2026-08-22T09:14:22.000Z  agent.activity-set activity=working verb="Locating support" suffix="{seconds}s · {tokens} tokens · Esc to interrupt"
 0003  2026-08-22T09:14:22.000Z  agent.message-added message=turn-2
 0004  2026-08-22T09:14:22.000Z  story.beat-reached beat=regional-coupling
 0005  2026-08-22T09:14:22.000Z  agent.response-recorded response=cantilever-inspect-routing instance=turn-2
 0006  2026-08-22T09:14:22.000Z  agent.activity-set activity=idle
-0007  2026-08-22T09:14:22.000Z  agent.activity-set activity=working verb="Extending" suffix="{seconds}s · {tokens} tokens · Esc to interrupt"
+0007  2026-08-22T09:14:22.000Z  agent.activity-set activity=working verb="Locating support" suffix="{seconds}s · {tokens} tokens · Esc to interrupt"
 0008  2026-08-22T09:14:22.000Z  agent.message-added message=turn-7
 0009  2026-08-22T09:14:22.000Z  story.beat-reached beat=load-bearing-declaration
 0010  2026-08-22T09:14:22.000Z  agent.response-recorded response=cantilever-load-bearing-declaration instance=turn-7
