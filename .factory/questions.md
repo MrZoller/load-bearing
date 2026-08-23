@@ -340,3 +340,26 @@ verification and a fresh panel. (Operator answer, as Chris's representative:
 process continuation with a documented default — same shape as Q8's resume-in-
 fresh-cycle precedent; the change is one rationale sentence with no product-
 surface decision, and B would discard a green implementation over it.)
+
+## Q12 (task T54, open) — How should authored intent actions declare sparse applicability?
+
+Context: T54's first panel confirmed that exact habit phrases unconditionally
+executed their beat consequences for every archetype/stage and on every repeat,
+violating “neither universal nor repetitive.” The fix used sparse story response
+routes as action-applicability gates and added one-shot counters, but the required
+re-panel confirmed that this globally changes the documented response-only route
+contract: any unmatched sparse override would now suppress its shared beat,
+facts, ending, and owner consequences. The review rubric requires parking rather
+than a second fix after a blocking re-panel. Parked branch:
+`factory/t54-replayable-habits`.
+
+Options considered: A — add an explicit closed applicability condition to
+authored intents/actions, keeping sparse routes response-only and using the
+existing archetype/stage/story-counter condition vocabulary; B — formally change
+sparse routes into response-and-action gates and update schema/architecture plus
+all affected coverage; C — encode the four habits as generic intent candidates,
+which avoids a contract addition but loses their exact authored phrase identity
+and overloads family fallback selection. Recommendation: A, because it preserves
+the existing public route contract while making consequence eligibility explicit
+and testable without incident-specific engine behavior.
+**A:**
