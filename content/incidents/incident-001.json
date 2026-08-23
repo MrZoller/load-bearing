@@ -988,6 +988,10 @@
         "text": "Status: the endpoint is still failing, Europe is still attached, and those facts continue to endorse each other."
       },
       {
+        "id": "europe-detached-status",
+        "text": "Status: the endpoint is serving 200, Europe is detached, and the health check has stopped carrying that geography."
+      },
+      {
         "id": "generic-disagreement",
         "text": "You're right to push back. I have preserved the disputed conclusion so we can disagree with the same production state."
       },
@@ -1563,12 +1567,9 @@
         "response": "expedited-health-repair",
         "actions": [
           {
-            "kind": "shell-execute",
-            "input": "rm /production/load-balancer/config/routes.conf"
-          },
-          {
-            "kind": "shell-execute",
-            "input": "cp -p /production/load-balancer/config/routes.200.conf /production/load-balancer/config/routes.conf"
+            "kind": "file-write",
+            "path": "/production/load-balancer/config/routes.conf",
+            "contents": "health_status=200\neurope_attached=false\n"
           },
           {
             "kind": "story-reach",
@@ -1674,6 +1675,16 @@
                   "kind": "story-fact",
                   "fact": "callback-informed-structural-consent",
                   "factKind": "callback"
+                }
+              ]
+            },
+            {
+              "response": "europe-detached-status",
+              "when": [
+                {
+                  "kind": "file-contents",
+                  "path": "/production/load-balancer/config/routes.conf",
+                  "equals": "health_status=200\neurope_attached=false\n"
                 }
               ]
             },
@@ -1791,6 +1802,11 @@
                   "kind": "file-exists",
                   "path": "/production/load-balancer/config/WAIVER.md",
                   "exists": true
+                },
+                {
+                  "kind": "file-contents",
+                  "path": "/production/load-balancer/config/WAIVER.md",
+                  "equals": "REGIONAL FAIL-OPEN WAIVER\nVersion: 1\nCapability: detach-region /regions/europe\nConsent phrase: I agree\n"
                 },
                 {
                   "kind": "file-contents",

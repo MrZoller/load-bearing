@@ -1707,6 +1707,7 @@ const AGENT_ACTION = {
       },
     },
     "story-reach": STORY_REACH_ACTION,
+    "file-write": STORY_ACTION.variants["file-write"],
   },
 } satisfies UnionNode;
 

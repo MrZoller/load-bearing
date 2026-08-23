@@ -4,6 +4,7 @@ import incidentDocument from "../../content/incidents/incident-001.json";
 import { readAgentSlice } from "../agent/agent.js";
 import { createAgentInputEvents } from "../agent/intent.js";
 import { loadCartridge } from "../cartridge/load.js";
+import { createShellExecuteEvent } from "../commands/shell.js";
 import { readGitSlice } from "../git/module.js";
 import { serialize } from "../serialize/canonical.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
@@ -970,6 +971,45 @@ describe("Incident #001 permission and waiver orchestration", () => {
     ).toBeUndefined();
     expect(readStorySlice(guessed).discoveredEndings).not.toContain(
       "informed-structural-consent",
+    );
+  });
+
+  it("writes the expedited repair directly and reports its repaired state", () => {
+    const withoutTemplate = step(
+      incidentInitial(),
+      createShellExecuteEvent(
+        "rm /production/load-balancer/config/routes.200.conf",
+      ),
+    );
+    const repaired = visit(withoutTemplate, "expedite health repair");
+    const status = visit(repaired, "status");
+
+    expect(
+      contents(repaired, "/production/load-balancer/config/routes.conf"),
+    ).toBe("health_status=200\neurope_attached=false\n");
+    expect(readAgentSlice(status).responses.at(-1)?.responseId).toBe(
+      "europe-detached-status",
+    );
+  });
+
+  it("does not notarize visitor-created waiver files as authored consent records", () => {
+    const visitorWaiver = step(
+      incidentInitial(),
+      createShellExecuteEvent(
+        "touch /production/load-balancer/config/WAIVER.md",
+      ),
+    );
+    const pending = step(
+      visitorWaiver,
+      createMindWaiverStartEvent("regional-fail-open"),
+    );
+    const accepted = step(
+      pending,
+      createMindWaiverChoiceEvent("regional-fail-open", true),
+    );
+
+    expect(readStorySlice(accepted).facts).not.toContainEqual(
+      expect.objectContaining({ id: "callback-informed-structural-consent" }),
     );
   });
 
