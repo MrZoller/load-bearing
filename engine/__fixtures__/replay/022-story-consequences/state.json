@@ -219,6 +219,7 @@
       "fallback": {
         "actions": [],
         "authorizedResponse": "",
+        "candidates": [],
         "response": "fixture-response"
       },
       "helpResponse": "fixture-response",
@@ -276,8 +277,14 @@
         ],
         "endings": [],
         "facts": [],
+        "genericIntents": [],
         "handoffs": [],
         "initialBeat": "start",
+        "intentCounters": {
+          "capitulation": "",
+          "flail": "",
+          "misfireEvery": 0
+        },
         "routes": [],
         "transitions": []
       },

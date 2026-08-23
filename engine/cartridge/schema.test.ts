@@ -101,6 +101,8 @@ describe("the published schema", () => {
       handoffs: [],
       endings: [],
       transitions: [],
+      genericIntents: [],
+      intentCounters: { flail: "", capitulation: "", misfireEvery: 0 },
     });
     expect(serialize(emitJsonSchema())).not.toContain("injected");
   });

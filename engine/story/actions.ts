@@ -60,3 +60,22 @@ export function storyActionEvent(action: CartridgeStoryAction): EngineEvent {
       };
   }
 }
+
+/**
+ * Intent candidates retain their authored reply when a visitor-created VFS
+ * state refuses an adjacent attempt, but record that refusal as content.
+ * Story consequences remain strict above because they stage atomically.
+ */
+export function candidateStoryActionEvent(
+  action: CartridgeStoryAction,
+): EngineEvent {
+  const event = storyActionEvent(action);
+  if (event.type !== "vfs.write") return event;
+  return {
+    ...event,
+    // A non-strict candidate write must stay visible when it fails. Otherwise
+    // the selected normal reply would claim an adjacent mutation that did not
+    // happen, and the ordinary visitor turn would erase its own failure.
+    payload: { ...event.payload, strict: false, transcript: true },
+  };
+}

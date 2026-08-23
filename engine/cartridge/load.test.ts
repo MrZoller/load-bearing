@@ -159,6 +159,8 @@ describe("loadCartridge", () => {
       handoffs: [],
       endings: [],
       transitions: [],
+      genericIntents: [],
+      intentCounters: { flail: "", capitulation: "", misfireEvery: 0 },
     });
     expect(cartridge.presentation.spinnerPools).toHaveLength(2);
     expect(cartridge.repository.processes).toEqual([]);

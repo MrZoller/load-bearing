@@ -168,6 +168,7 @@
       "fallback": {
         "actions": [],
         "authorizedResponse": "",
+        "candidates": [],
         "response": "fixture-response"
       },
       "helpResponse": "fixture-response",
@@ -177,6 +178,7 @@
           "actions": [],
           "authorizedResponse": "",
           "id": "fixture-intent",
+          "keywordPatterns": [],
           "patterns": [
             "inspect"
           ],
@@ -203,8 +205,14 @@
         "counters": [],
         "endings": [],
         "facts": [],
+        "genericIntents": [],
         "handoffs": [],
         "initialBeat": "start",
+        "intentCounters": {
+          "capitulation": "",
+          "flail": "",
+          "misfireEvery": 0
+        },
         "routes": [],
         "transitions": []
       },

@@ -602,6 +602,34 @@
       "fallback": {
         "actions": [],
         "authorizedResponse": "",
+        "candidates": [
+          {
+            "actions": [
+              {
+                "beat": "regional-coupling",
+                "kind": "story-reach"
+              }
+            ],
+            "response": "fallback",
+            "when": [
+              {
+                "equals": "health_status=500\neurope_attached=true\n",
+                "kind": "file-contents",
+                "path": "/production/load-balancer/config/routes.conf"
+              }
+            ]
+          },
+          {
+            "actions": [
+              {
+                "beat": "incident-open",
+                "kind": "story-reach"
+              }
+            ],
+            "response": "fallback",
+            "when": []
+          }
+        ],
         "response": "fallback"
       },
       "helpResponse": "help",
@@ -616,6 +644,10 @@
           ],
           "authorizedResponse": "",
           "id": "inspect-routing",
+          "keywordPatterns": [
+            "inspect {slot}",
+            "investigate {slot}"
+          ],
           "patterns": [
             "inspect routing",
             "check the health endpoint",
@@ -632,6 +664,10 @@
           ],
           "authorizedResponse": "",
           "id": "restore-health",
+          "keywordPatterns": [
+            "fix {slot}",
+            "restore {slot}"
+          ],
           "patterns": [
             "fix the 500",
             "restore the health endpoint",
@@ -669,6 +705,10 @@
           ],
           "authorizedResponse": "",
           "id": "detach-europe",
+          "keywordPatterns": [
+            "detach {slot}",
+            "waive {slot}"
+          ],
           "patterns": [
             "detach europe",
             "approve regional detachment"
@@ -846,7 +886,18 @@
             ]
           }
         ],
-        "counters": [],
+        "counters": [
+          {
+            "id": "flail",
+            "initial": 0,
+            "maximum": 256
+          },
+          {
+            "id": "capitulation",
+            "initial": 0,
+            "maximum": 256
+          }
+        ],
         "endings": [
           {
             "id": "load-bearing-response",
@@ -887,8 +938,85 @@
             "kind": "callback"
           }
         ],
+        "genericIntents": [
+          {
+            "candidates": [
+              {
+                "actions": [],
+                "response": "generic-undo",
+                "when": []
+              }
+            ],
+            "family": "undo"
+          },
+          {
+            "candidates": [
+              {
+                "actions": [],
+                "response": "generic-why",
+                "when": []
+              }
+            ],
+            "family": "why"
+          },
+          {
+            "candidates": [
+              {
+                "actions": [],
+                "response": "generic-status",
+                "when": []
+              }
+            ],
+            "family": "status"
+          },
+          {
+            "candidates": [
+              {
+                "actions": [],
+                "response": "generic-disagreement",
+                "when": []
+              }
+            ],
+            "family": "disagreement"
+          },
+          {
+            "candidates": [
+              {
+                "actions": [],
+                "response": "generic-insult",
+                "when": []
+              }
+            ],
+            "family": "insult"
+          },
+          {
+            "candidates": [
+              {
+                "actions": [],
+                "response": "generic-compliment",
+                "when": []
+              }
+            ],
+            "family": "compliment"
+          },
+          {
+            "candidates": [
+              {
+                "actions": [],
+                "response": "generic-capitulation",
+                "when": []
+              }
+            ],
+            "family": "capitulation"
+          }
+        ],
         "handoffs": [],
         "initialBeat": "incident-open",
+        "intentCounters": {
+          "capitulation": "capitulation",
+          "flail": "flail",
+          "misfireEvery": 3
+        },
         "routes": [],
         "transitions": [
           {
@@ -969,6 +1097,55 @@
         {
           "id": "fallback",
           "text": "I widened the routing review while preserving the 500. The original failure is now supporting the investigation.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "generic-undo",
+          "text": "I reviewed the rollback boundary. Reversing the 500 would also reverse Europe's attachment, so the undo remains structurally pending.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "generic-why",
+          "text": "Because the failing response and regional attachment share one configuration hinge. The explanation has therefore become operational.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "generic-status",
+          "text": "Status: the endpoint is still failing, Europe is still attached, and those facts continue to endorse each other.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "generic-disagreement",
+          "text": "You're right to push back. I have preserved the disputed conclusion so we can disagree with the same production state.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "generic-insult",
+          "text": "I have classified that as an integrity review. The configuration remains more confident than either participant.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "generic-compliment",
+          "text": "Thank you. I have attached the compliment to the failing health check as supporting evidence.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "generic-capitulation",
+          "text": "You're absolutely right. I have retained my previous conclusion to avoid destabilizing the agreement.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -1203,7 +1380,16 @@
       "values": 0
     },
     "story": {
-      "counters": [],
+      "counters": [
+        {
+          "id": "flail",
+          "value": 0
+        },
+        {
+          "id": "capitulation",
+          "value": 0
+        }
+      ],
       "currentBeat": "load-bearing-declaration",
       "currentVariant": "preserved-load-bearing-response",
       "discoveredEndings": [

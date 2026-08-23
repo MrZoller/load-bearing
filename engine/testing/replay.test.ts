@@ -216,7 +216,10 @@ describe("golden replay fixtures", () => {
         { id: "bash-regional-detachment", kind: "reveal" },
         { id: "callback-load-bearing-response", kind: "callback" },
       ],
-      counters: [],
+      counters: [
+        { id: "flail", value: 0 },
+        { id: "capitulation", value: 0 },
+      ],
       discoveredEndings: ["load-bearing-response"],
     });
     expect(
