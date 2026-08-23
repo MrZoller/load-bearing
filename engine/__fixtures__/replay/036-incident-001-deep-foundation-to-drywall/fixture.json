@@ -1,0 +1,75 @@
+{
+  "name": "036-incident-001-deep-foundation-to-drywall",
+  "description": "One Incident #001 session retains Deep Foundation's shared beat, hands it to Drywall, and records the successor's shared-beat response without moving an unrelated probe.",
+  "seed": "2026-08-23/47/handoffs",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "deep-foundation" },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "before", "text": "inspect routing" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "regional-coupling" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "deep-foundation-inspect-routing",
+        "instanceId": "before"
+      },
+      "version": 0
+    },
+    {
+      "type": "probe.random",
+      "payload": { "stream": "unrelated", "count": 2, "form": "uint32" },
+      "version": 0
+    },
+    {
+      "type": "terminal.model-transitioned",
+      "payload": { "predecessor": "deep-foundation", "successor": "drywall" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "handoff-paranoid-superficial",
+        "instanceId": "handoff-pair"
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "handoff-incident-paranoid-superficial",
+        "instanceId": "handoff-incident"
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "after", "text": "inspect routing" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "regional-coupling" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "drywall-inspect-routing",
+        "instanceId": "after"
+      },
+      "version": 0
+    }
+  ]
+}

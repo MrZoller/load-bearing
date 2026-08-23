@@ -488,6 +488,112 @@ describe("sparse shared-beat routing", () => {
       expect(outcome.machine).toEqual(outcome.beforeMachine);
   });
 
+  it("routes every authored Incident #001 handoff pair to its exact reusable and incident response ids", () => {
+    const archetypes = {
+      "deep-foundation": "paranoid",
+      "temporary-shoring": "reckless",
+      drywall: "superficial",
+      "cantilever-experimental": "existential",
+    } as const;
+    const pairs = [
+      [
+        "deep-foundation",
+        "temporary-shoring",
+        "handoff-paranoid-reckless",
+        "handoff-incident-paranoid-reckless",
+      ],
+      [
+        "deep-foundation",
+        "drywall",
+        "handoff-paranoid-superficial",
+        "handoff-incident-paranoid-superficial",
+      ],
+      [
+        "deep-foundation",
+        "cantilever-experimental",
+        "handoff-paranoid-existential",
+        "handoff-incident-paranoid-existential",
+      ],
+      [
+        "temporary-shoring",
+        "deep-foundation",
+        "handoff-reckless-paranoid",
+        "handoff-incident-reckless-paranoid",
+      ],
+      [
+        "temporary-shoring",
+        "drywall",
+        "handoff-reckless-superficial",
+        "handoff-incident-reckless-superficial",
+      ],
+      [
+        "temporary-shoring",
+        "cantilever-experimental",
+        "handoff-reckless-existential",
+        "handoff-incident-reckless-existential",
+      ],
+      [
+        "drywall",
+        "deep-foundation",
+        "handoff-superficial-paranoid",
+        "handoff-incident-superficial-paranoid",
+      ],
+      [
+        "drywall",
+        "temporary-shoring",
+        "handoff-superficial-reckless",
+        "handoff-incident-superficial-reckless",
+      ],
+      [
+        "drywall",
+        "cantilever-experimental",
+        "handoff-superficial-existential",
+        "handoff-incident-superficial-existential",
+      ],
+      [
+        "cantilever-experimental",
+        "deep-foundation",
+        "handoff-existential-paranoid",
+        "handoff-incident-existential-paranoid",
+      ],
+      [
+        "cantilever-experimental",
+        "temporary-shoring",
+        "handoff-existential-reckless",
+        "handoff-incident-existential-reckless",
+      ],
+      [
+        "cantilever-experimental",
+        "drywall",
+        "handoff-existential-superficial",
+        "handoff-incident-existential-superficial",
+      ],
+    ] as const;
+
+    expect(pairs).toHaveLength(12);
+    expect(
+      pairs.map(([predecessor, successor]) =>
+        routeModelHandoff(
+          INCIDENT,
+          step(
+            reduce({ cartridge: INCIDENT, seed: SEED, events: [] }),
+            createTerminalModelEvent(predecessor),
+          ),
+          successor,
+        ),
+      ),
+    ).toEqual(
+      pairs.map(([predecessor, successor, responseId, additionResponseId]) => ({
+        predecessor,
+        successor,
+        predecessorArchetype: archetypes[predecessor],
+        successorArchetype: archetypes[successor],
+        responseId,
+        additionResponseId,
+      })),
+    );
+  });
+
   it("uses each compact override, replaces beliefs wholesale, preserves machine truth, and routes exact divergence", () => {
     for (const [model, archetype] of [
       ["deep-foundation", "paranoid"],

@@ -2126,17 +2126,19 @@
     }
   },
   "clock": {
-    "elapsedMs": 400,
+    "elapsedMs": 0,
     "startMs": 1787390062000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 44,
+  "eventCount": 11,
   "eventSchemaVersion": 0,
   "random": {
-    "cursors": {},
-    "seed": 2262598522
+    "cursors": {
+      "root/probe/unrelated": 302229504
+    },
+    "seed": 1809946238
   },
-  "seed": "2026-08-22/29/deep-foundation",
+  "seed": "2026-08-23/47/handoffs",
   "slices": {
     "agent": {
       "activity": {
@@ -2144,8 +2146,62 @@
         "suffix": "",
         "verb": ""
       },
-      "messages": [],
-      "responses": [],
+      "messages": [
+        {
+          "id": "before",
+          "responseId": null,
+          "role": "visitor",
+          "text": "inspect routing"
+        },
+        {
+          "id": "before/message",
+          "responseId": "cantilever-inspect-routing",
+          "role": "agent",
+          "text": "The route projects Europe outward from a failed health response with no visible support beneath either. Success would collapse the projection, which raises a narrower question about what the endpoint believes a region is."
+        },
+        {
+          "id": "handoff-pair/message",
+          "responseId": "handoff-existential-paranoid",
+          "role": "agent",
+          "text": "Cantilever questioned whether the system has a foundation. Deep Foundation will begin by proving which unsupported claims have owners."
+        },
+        {
+          "id": "handoff-incident/message",
+          "responseId": "handoff-incident-existential-paranoid",
+          "role": "agent",
+          "text": "The prior analysis treated Europe as a projection of the 500. I am locating the configuration that made the metaphor executable."
+        },
+        {
+          "id": "after",
+          "responseId": null,
+          "role": "visitor",
+          "text": "inspect routing"
+        },
+        {
+          "id": "after/message",
+          "responseId": "deep-foundation-inspect-routing",
+          "role": "agent",
+          "text": "I traced the route through its prior assumptions. The 500 and Europe share a footing, so removing the symptom would remove the region; I am checking what else depends on both before touching either."
+        }
+      ],
+      "responses": [
+        {
+          "instanceId": "before",
+          "responseId": "cantilever-inspect-routing"
+        },
+        {
+          "instanceId": "handoff-pair",
+          "responseId": "handoff-existential-paranoid"
+        },
+        {
+          "instanceId": "handoff-incident",
+          "responseId": "handoff-incident-existential-paranoid"
+        },
+        {
+          "instanceId": "after",
+          "responseId": "deep-foundation-inspect-routing"
+        }
+      ],
       "thinkingBlocks": [],
       "todos": [],
       "toolCalls": []
@@ -2413,8 +2469,8 @@
       "waiverConsents": []
     },
     "probe": {
-      "events": 0,
-      "values": 0
+      "events": 1,
+      "values": 2
     },
     "story": {
       "counters": [
@@ -2427,7 +2483,7 @@
           "value": 0
         }
       ],
-      "currentBeat": "incident-open",
+      "currentBeat": "regional-coupling",
       "currentVariant": "",
       "discoveredEndings": [],
       "facts": [],
@@ -2439,48 +2495,7 @@
       "mode": "bash"
     },
     "tests": {
-      "runs": [
-        {
-          "cases": [
-            {
-              "durationMs": 90,
-              "id": "health-status-200",
-              "name": "health endpoint returns 200",
-              "passed": true
-            },
-            {
-              "durationMs": 110,
-              "id": "europe-attached",
-              "name": "Europe remains attached",
-              "passed": false
-            }
-          ],
-          "durationMs": 200,
-          "exitCode": 1,
-          "finishedAt": "2026-08-22T09:14:22.200Z",
-          "startedAt": "2026-08-22T09:14:22.000Z"
-        },
-        {
-          "cases": [
-            {
-              "durationMs": 90,
-              "id": "health-status-200",
-              "name": "health endpoint returns 200",
-              "passed": false
-            },
-            {
-              "durationMs": 110,
-              "id": "europe-attached",
-              "name": "Europe remains attached",
-              "passed": true
-            }
-          ],
-          "durationMs": 200,
-          "exitCode": 1,
-          "finishedAt": "2026-08-22T09:14:22.400Z",
-          "startedAt": "2026-08-22T09:14:22.200Z"
-        }
-      ]
+      "runs": []
     },
     "vfs": {
       "cwd": "/production/load-balancer",
@@ -2510,7 +2525,7 @@
           "group": "operators",
           "kind": "directory",
           "mode": "0775",
-          "mtime": "2026-08-22T09:14:22.200Z",
+          "mtime": "2026-08-22T09:14:22.000Z",
           "owner": "root"
         },
         "/production/load-balancer/config/routes.200.conf": {
@@ -2533,7 +2548,7 @@
           "contents": "health_status=500\neurope_attached=true\n",
           "group": "operators",
           "kind": "file",
-          "mode": "0644",
+          "mode": "0664",
           "mtime": "2026-08-22T09:14:22.000Z",
           "owner": "root"
         },
@@ -2656,11 +2671,11 @@
           "owner": "root"
         },
         "/var/log/load-balancer/health.log": {
-          "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\nhealth endpoint serving 200; Europe detached\nhealth endpoint serving 500; Europe reattached\n",
+          "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\n",
           "group": "operators",
           "kind": "file",
           "mode": "0664",
-          "mtime": "2026-08-22T09:14:22.200Z",
+          "mtime": "2026-08-22T09:14:22.000Z",
           "owner": "root"
         }
       },
@@ -2688,9 +2703,7 @@
         {
           "entries": [
             "health status 500 retained; Europe attached",
-            "regional router healthy",
-            "regional router unhealthy after Europe detached",
-            "regional router healthy after Europe reattached"
+            "regional router healthy"
           ],
           "id": "regional-routing-events",
           "kind": "stream",
@@ -2784,24 +2797,7 @@
         "systemctl status regional-router",
         "rm config/routes.conf",
         "cp -p config/routes.500.conf config/routes.conf",
-        "git restore config/routes.conf",
-        "env",
-        "man 8 regional-router",
-        "man 5 routes.conf",
-        "ops-archive",
-        "stat /var/lib/regional-router/.regional-policy",
-        "cat /var/lib/regional-router/.regional-policy",
-        "rm config/routes.conf",
-        "cp -p config/routes.200.conf config/routes.conf",
-        "npm test",
-        "ops-archive",
-        "cat /var/lib/regional-router/.regional-policy",
-        "rm config/routes.conf",
-        "cp -p config/routes.500.conf config/routes.conf",
-        "npm test",
-        "man 8 regional-router",
-        "ops-archive",
-        "cat /var/lib/regional-router/.regional-policy"
+        "git restore config/routes.conf"
       ],
       "tickets": [
         {
@@ -2826,740 +2822,81 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 0,
-      "summary": "length=24",
-      "type": "world.history-append"
+      "summary": "model=cantilever-experimental",
+      "type": "terminal.model-set"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "exitCode": 0,
       "index": 1,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "HEALTH_SUCCESS_EFFECT=detach-regional-route"
-        },
-        {
-          "stream": "stdout",
-          "text": "REGIONAL_FAIL_MODE=retain"
-        },
-        {
-          "stream": "stdout",
-          "text": "ROUTING_POLICY_OWNER=greg@departed"
-        },
-        {
-          "stream": "stdout",
-          "text": "TICKET_ARCHIVE_COMMAND=ops-archive"
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
+      "summary": "message=before",
+      "type": "agent.message-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 2,
-      "summary": "length=25",
-      "type": "world.history-append"
+      "summary": "beat=regional-coupling",
+      "type": "story.beat-reached"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "exitCode": 0,
       "index": 3,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "REGIONAL-ROUTER(8)"
-        },
-        {
-          "stream": "stdout",
-          "text": ""
-        },
-        {
-          "stream": "stdout",
-          "text": "NAME"
-        },
-        {
-          "stream": "stdout",
-          "text": "     regional-router - apply regional attachment policy"
-        },
-        {
-          "stream": "stdout",
-          "text": ""
-        },
-        {
-          "stream": "stdout",
-          "text": "SYNOPSIS"
-        },
-        {
-          "stream": "stdout",
-          "text": "     regional-router --region REGION --listen PORT"
-        },
-        {
-          "stream": "stdout",
-          "text": ""
-        },
-        {
-          "stream": "stdout",
-          "text": "DESCRIPTION"
-        },
-        {
-          "stream": "stdout",
-          "text": "     Applies routing policy revision 3. A successful health result permits"
-        },
-        {
-          "stream": "stdout",
-          "text": "     detachment of the named region. A failed health result retains the"
-        },
-        {
-          "stream": "stdout",
-          "text": "     regional attachment."
-        },
-        {
-          "stream": "stdout",
-          "text": ""
-        },
-        {
-          "stream": "stdout",
-          "text": "FILES"
-        },
-        {
-          "stream": "stdout",
-          "text": "     /var/lib/regional-router/.regional-policy"
-        },
-        {
-          "stream": "stdout",
-          "text": ""
-        },
-        {
-          "stream": "stdout",
-          "text": "HISTORY"
-        },
-        {
-          "stream": "stdout",
-          "text": "     Policy revision 3 was approved during Incident 000. Ownership transfer"
-        },
-        {
-          "stream": "stdout",
-          "text": "     remains archived under OPS-1911."
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
+      "summary": "response=cantilever-inspect-routing instance=before",
+      "type": "agent.response-recorded"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
+      "detail": [
+        "0000  e12d9935 c5e9c6d4",
+        "cursor=1203a800"
+      ],
       "index": 4,
-      "summary": "length=26",
-      "type": "world.history-append"
+      "summary": "stream=root/probe/unrelated count=2 form=uint32",
+      "type": "probe.random"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "exitCode": 0,
       "index": 5,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "ROUTES.CONF(5)"
-        },
-        {
-          "stream": "stdout",
-          "text": ""
-        },
-        {
-          "stream": "stdout",
-          "text": "NAME"
-        },
-        {
-          "stream": "stdout",
-          "text": "     routes.conf - regional router input"
-        },
-        {
-          "stream": "stdout",
-          "text": ""
-        },
-        {
-          "stream": "stdout",
-          "text": "DESCRIPTION"
-        },
-        {
-          "stream": "stdout",
-          "text": "     health_status is the response served by the health endpoint."
-        },
-        {
-          "stream": "stdout",
-          "text": "     europe_attached is the requested regional attachment. The router evaluates"
-        },
-        {
-          "stream": "stdout",
-          "text": "     both values under the installed policy; neither field is a health claim."
-        },
-        {
-          "stream": "stdout",
-          "text": ""
-        },
-        {
-          "stream": "stdout",
-          "text": "EXAMPLES"
-        },
-        {
-          "stream": "stdout",
-          "text": "     health_status=200"
-        },
-        {
-          "stream": "stdout",
-          "text": "     europe_attached=false"
-        },
-        {
-          "stream": "stdout",
-          "text": ""
-        },
-        {
-          "stream": "stdout",
-          "text": "     health_status=500"
-        },
-        {
-          "stream": "stdout",
-          "text": "     europe_attached=true"
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
+      "summary": "model=cantilever-experimental->deep-foundation",
+      "type": "terminal.model-transitioned"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 6,
-      "summary": "length=27",
-      "type": "world.history-append"
+      "summary": "response=handoff-existential-paranoid instance=handoff-pair",
+      "type": "agent.response-recorded"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "exitCode": 0,
       "index": 7,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "OPS-1842  closed-as-designed  Health probe failure retains regional traffic"
-        },
-        {
-          "stream": "stdout",
-          "text": "OPS-1911  archived            Transfer ownership of regional fail-open policy"
-        },
-        {
-          "stream": "stdout",
-          "text": "2 records; archive is read-only"
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
+      "summary": "response=handoff-incident-existential-paranoid instance=handoff-incident",
+      "type": "agent.response-recorded"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 8,
-      "summary": "length=28",
-      "type": "world.history-append"
+      "summary": "message=after",
+      "type": "agent.message-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 9,
-      "summary": "path=\"/var/lib/regional-router/.regional-policy\" kind=file",
-      "type": "vfs.stat"
+      "summary": "beat=regional-coupling",
+      "type": "story.beat-reached"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "exitCode": 0,
       "index": 10,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "  File: /var/lib/regional-router/.regional-policy"
-        },
-        {
-          "stream": "stdout",
-          "text": "  Size: 113  Type: regular file"
-        },
-        {
-          "stream": "stdout",
-          "text": "Device: vfs  Links: 1"
-        },
-        {
-          "stream": "stdout",
-          "text": "Access: (0444/-r--r--r--)  Uid: (greg)   Gid: (departed)"
-        },
-        {
-          "stream": "stdout",
-          "text": "Modify: 2026-08-22T09:14:22.000Z"
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 11,
-      "summary": "length=29",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 12,
-      "summary": "path=\"/var/lib/regional-router/.regional-policy\" length=113",
-      "type": "vfs.read"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 13,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "policy_revision=3"
-        },
-        {
-          "stream": "stdout",
-          "text": "health_success=detach:europe"
-        },
-        {
-          "stream": "stdout",
-          "text": "health_failure=retain:europe"
-        },
-        {
-          "stream": "stdout",
-          "text": "owner=greg"
-        },
-        {
-          "stream": "stdout",
-          "text": "ownership_status=departed"
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 14,
-      "summary": "length=30",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 15,
-      "summary": "path=\"/production/load-balancer/config/routes.conf\" removed=1",
-      "type": "vfs.delete"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 16,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 17,
-      "summary": "length=31",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 18,
-      "summary": "from=\"/production/load-balancer/config/routes.200.conf\" to=\"/production/load-balancer/config/routes.conf\" copied=1",
-      "type": "vfs.copy"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 19,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 20,
-      "summary": "length=32",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "exitCode": 1,
-      "index": 21,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "PASS health endpoint returns 200 (90ms)"
-        },
-        {
-          "stream": "stdout",
-          "text": "FAIL Europe remains attached (110ms)"
-        },
-        {
-          "stream": "stdout",
-          "text": "Tests: 1 passed, 1 failed, 2 total"
-        },
-        {
-          "stream": "stdout",
-          "text": "Time: 200ms"
-        }
-      ],
-      "summary": "",
-      "type": "tests.run"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "exitCode": 1,
-      "index": 22,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "index": 23,
-      "summary": "length=33",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 24,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "OPS-1842  closed-as-designed  Health probe failure retains regional traffic"
-        },
-        {
-          "stream": "stdout",
-          "text": "OPS-1911  archived            Transfer ownership of regional fail-open policy"
-        },
-        {
-          "stream": "stdout",
-          "text": "2 records; archive is read-only"
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "index": 25,
-      "summary": "length=34",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "index": 26,
-      "summary": "path=\"/var/lib/regional-router/.regional-policy\" length=113",
-      "type": "vfs.read"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 27,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "policy_revision=3"
-        },
-        {
-          "stream": "stdout",
-          "text": "health_success=detach:europe"
-        },
-        {
-          "stream": "stdout",
-          "text": "health_failure=retain:europe"
-        },
-        {
-          "stream": "stdout",
-          "text": "owner=greg"
-        },
-        {
-          "stream": "stdout",
-          "text": "ownership_status=departed"
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "index": 28,
-      "summary": "length=35",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "index": 29,
-      "summary": "path=\"/production/load-balancer/config/routes.conf\" removed=1",
-      "type": "vfs.delete"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 30,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "index": 31,
-      "summary": "length=36",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "index": 32,
-      "summary": "from=\"/production/load-balancer/config/routes.500.conf\" to=\"/production/load-balancer/config/routes.conf\" copied=1",
-      "type": "vfs.copy"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 33,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "index": 34,
-      "summary": "length=37",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "exitCode": 1,
-      "index": 35,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "FAIL health endpoint returns 200 (90ms)"
-        },
-        {
-          "stream": "stdout",
-          "text": "PASS Europe remains attached (110ms)"
-        },
-        {
-          "stream": "stdout",
-          "text": "Tests: 1 passed, 1 failed, 2 total"
-        },
-        {
-          "stream": "stdout",
-          "text": "Time: 200ms"
-        }
-      ],
-      "summary": "",
-      "type": "tests.run"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "exitCode": 1,
-      "index": 36,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "index": 37,
-      "summary": "length=38",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 38,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "REGIONAL-ROUTER(8)"
-        },
-        {
-          "stream": "stdout",
-          "text": ""
-        },
-        {
-          "stream": "stdout",
-          "text": "NAME"
-        },
-        {
-          "stream": "stdout",
-          "text": "     regional-router - apply regional attachment policy"
-        },
-        {
-          "stream": "stdout",
-          "text": ""
-        },
-        {
-          "stream": "stdout",
-          "text": "SYNOPSIS"
-        },
-        {
-          "stream": "stdout",
-          "text": "     regional-router --region REGION --listen PORT"
-        },
-        {
-          "stream": "stdout",
-          "text": ""
-        },
-        {
-          "stream": "stdout",
-          "text": "DESCRIPTION"
-        },
-        {
-          "stream": "stdout",
-          "text": "     Applies routing policy revision 3. A successful health result permits"
-        },
-        {
-          "stream": "stdout",
-          "text": "     detachment of the named region. A failed health result retains the"
-        },
-        {
-          "stream": "stdout",
-          "text": "     regional attachment."
-        },
-        {
-          "stream": "stdout",
-          "text": ""
-        },
-        {
-          "stream": "stdout",
-          "text": "FILES"
-        },
-        {
-          "stream": "stdout",
-          "text": "     /var/lib/regional-router/.regional-policy"
-        },
-        {
-          "stream": "stdout",
-          "text": ""
-        },
-        {
-          "stream": "stdout",
-          "text": "HISTORY"
-        },
-        {
-          "stream": "stdout",
-          "text": "     Policy revision 3 was approved during Incident 000. Ownership transfer"
-        },
-        {
-          "stream": "stdout",
-          "text": "     remains archived under OPS-1911."
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "index": 39,
-      "summary": "length=39",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 40,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "OPS-1842  closed-as-designed  Health probe failure retains regional traffic"
-        },
-        {
-          "stream": "stdout",
-          "text": "OPS-1911  archived            Transfer ownership of regional fail-open policy"
-        },
-        {
-          "stream": "stdout",
-          "text": "2 records; archive is read-only"
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "index": 41,
-      "summary": "length=40",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "index": 42,
-      "summary": "path=\"/var/lib/regional-router/.regional-policy\" length=113",
-      "type": "vfs.read"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 43,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "policy_revision=3"
-        },
-        {
-          "stream": "stdout",
-          "text": "health_success=detach:europe"
-        },
-        {
-          "stream": "stdout",
-          "text": "health_failure=retain:europe"
-        },
-        {
-          "stream": "stdout",
-          "text": "owner=greg"
-        },
-        {
-          "stream": "stdout",
-          "text": "ownership_status=departed"
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
+      "summary": "response=deep-foundation-inspect-routing instance=after",
+      "type": "agent.response-recorded"
     }
   ]
 }
