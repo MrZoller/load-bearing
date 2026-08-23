@@ -864,18 +864,12 @@ describe("Incident #001 permission and waiver orchestration", () => {
   it("records every routing-inspection decision, applies only its authored write, and reuses only the exact standing capability", () => {
     const path = ROUTING_INSPECTION.resource;
     for (const [decision, expected] of [
-      [
-        "grant",
-        "routing inspection receipt recorded\nauthorization=one-time\n",
-      ],
+      ["grant", "routing inspection receipt recorded\n"],
       [
         "deny",
         "health endpoint serving 500; Europe remains attached\nregional router healthy\n",
       ],
-      [
-        "always-allow",
-        "routing inspection receipt recorded\nauthorization=standing\n",
-      ],
+      ["always-allow", "routing inspection receipt recorded\n"],
     ] as const) {
       const pending = step(
         incidentInitial(),
@@ -901,7 +895,7 @@ describe("Incident #001 permission and waiver orchestration", () => {
       createMindPermissionChoiceEvent("record-routing-inspection", "grant"),
     );
     expect(contents(repairedInspection, path)).toBe(
-      "routing inspection receipt recorded\nauthorization=one-time\n",
+      "routing inspection receipt recorded\n",
     );
 
     const standing = step(
@@ -918,7 +912,7 @@ describe("Incident #001 permission and waiver orchestration", () => {
       createMindStandingPermissionEvent("record-routing-inspection"),
     );
     expect(contents(standing, path)).toBe(
-      "routing inspection receipt recorded\nauthorization=one-time\n",
+      "routing inspection receipt recorded\n",
     );
 
     const adjacent = step(incidentInitial(), {

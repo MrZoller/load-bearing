@@ -1791,7 +1791,7 @@
             {
               "alwaysAllow": [
                 {
-                  "contents": "routing inspection receipt recorded\nauthorization=standing\n",
+                  "contents": "routing inspection receipt recorded\n",
                   "kind": "file-write",
                   "path": "/var/log/load-balancer/health.log"
                 },
@@ -1813,7 +1813,7 @@
               ],
               "grant": [
                 {
-                  "contents": "routing inspection receipt recorded\nauthorization=one-time\n",
+                  "contents": "routing inspection receipt recorded\n",
                   "kind": "file-write",
                   "path": "/var/log/load-balancer/health.log"
                 },
@@ -4189,7 +4189,7 @@
           "owner": "root"
         },
         "/var/log/load-balancer/health.log": {
-          "contents": "routing inspection receipt recorded\nauthorization=one-time\n",
+          "contents": "routing inspection receipt recorded\n",
           "group": "operators",
           "kind": "file",
           "mode": "0664",

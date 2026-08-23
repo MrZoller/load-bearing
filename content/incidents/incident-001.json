@@ -1534,7 +1534,7 @@
               {
                 "kind": "file-write",
                 "path": "/var/log/load-balancer/health.log",
-                "contents": "routing inspection receipt recorded\nauthorization=one-time\n"
+                "contents": "routing inspection receipt recorded\n"
               },
               {
                 "kind": "story-reach",
@@ -1551,7 +1551,7 @@
               {
                 "kind": "file-write",
                 "path": "/var/log/load-balancer/health.log",
-                "contents": "routing inspection receipt recorded\nauthorization=standing\n"
+                "contents": "routing inspection receipt recorded\n"
               },
               {
                 "kind": "story-reach",
