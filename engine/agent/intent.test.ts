@@ -199,15 +199,8 @@ describe("authored agent input", () => {
       { type: "agent.activity-set", payload: { status: "working", stage: 0 } },
       { type: "agent.message-added" },
       {
-        type: "mind.permission-requested",
-        payload: {
-          id: "delete-ready-sentinel",
-          capability: {
-            kind: "exact",
-            action: "delete",
-            resource: "/production/service/src/ready.stale",
-          },
-        },
+        type: "mind.permission-request",
+        payload: { id: "delete-ready-sentinel" },
       },
       { type: "agent.response-recorded" },
       { type: "agent.activity-set", payload: { status: "idle" } },
@@ -219,7 +212,7 @@ describe("authored agent input", () => {
       "delete-ready-sentinel",
       {
         kind: "exact",
-        action: "delete",
+        action: "write",
         resource: "/production/service/src/ready.stale",
       },
     );
@@ -243,6 +236,10 @@ describe("authored agent input", () => {
         },
         { type: "agent.message-added" },
         {
+          type: "mind.permission-standing",
+          payload: { id: "delete-ready-sentinel" },
+        },
+        {
           type: "agent.response-recorded",
           payload: { responseId: "remove-authorized" },
         },
@@ -265,8 +262,26 @@ describe("authored agent input", () => {
       {
         kind: "permission-request",
         id: "remove-fallback-sentinel",
-        action: "delete",
-        resource: "/production/service/src/ready.stale",
+        capability: {
+          kind: "exact",
+          action: "write",
+          resource: "/production/service/src/ready.stale",
+        },
+        grant: [
+          {
+            kind: "file-write",
+            path: "/production/service/src/ready.stale",
+            contents: "permission granted\n",
+          },
+        ],
+        deny: [],
+        alwaysAllow: [
+          {
+            kind: "file-write",
+            path: "/production/service/src/ready.stale",
+            contents: "permission granted\n",
+          },
+        ],
       },
     ];
     const cartridge = loadCartridge(document);
@@ -276,7 +291,7 @@ describe("authored agent input", () => {
       events: [
         createMindPermissionRequestedEvent("remove-fallback-sentinel", {
           kind: "exact",
-          action: "delete",
+          action: "write",
           resource: "/production/service/src/ready.stale",
         }),
         createMindPermissionResolvedEvent(
@@ -291,6 +306,10 @@ describe("authored agent input", () => {
     ).toMatchObject([
       { type: "agent.activity-set", payload: { status: "working", stage: 0 } },
       { type: "agent.message-added" },
+      {
+        type: "mind.permission-standing",
+        payload: { id: "remove-fallback-sentinel" },
+      },
       {
         type: "agent.response-recorded",
         payload: { responseId: "remove-authorized" },

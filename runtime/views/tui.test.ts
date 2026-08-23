@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import cartridgeDocument from "../../content/incidents/phase-1-demo.json";
+import incidentDocument from "../../content/incidents/incident-001.json";
 import {
+  createAgentInputEvents,
   createShellExecuteEvent,
   loadCartridge,
   reduce,
+  step,
 } from "../../engine/index.js";
 import { createTuiInputEvents } from "./tui.js";
 
@@ -43,5 +46,24 @@ describe("createTuiInputEvents", () => {
     expect(createTuiInputEvents(CARTRIDGE, STATE, " /exit ")).toMatchObject([
       { type: "terminal.mode-set", payload: { mode: "bash" } },
     ]);
+  });
+
+  it("inspects raw waiver input before slash, shell or intent normalization and mismatches deny", () => {
+    const incident = loadCartridge(incidentDocument);
+    let state = reduce({ cartridge: incident, seed: "waiver", events: [] });
+    for (const event of createAgentInputEvents(
+      incident,
+      state,
+      "detach europe",
+    ))
+      state = step(state, event);
+
+    expect(createTuiInputEvents(incident, state, "I agree")).toMatchObject([
+      { type: "mind.waiver-choice", payload: { accepted: true } },
+    ]);
+    for (const mismatch of [" I agree", "I agree ", "i agree", "/exit", "!pwd"])
+      expect(createTuiInputEvents(incident, state, mismatch)).toMatchObject([
+        { type: "mind.waiver-choice", payload: { accepted: false } },
+      ]);
   });
 });

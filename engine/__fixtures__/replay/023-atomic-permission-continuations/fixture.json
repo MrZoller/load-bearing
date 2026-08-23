@@ -1,0 +1,67 @@
+{
+  "name": "023-atomic-permission-continuations",
+  "description": "Permission grant, denial, always-allow and standing reuse select authored atomic continuations; waiver mismatch denies without consent before exact simulated-time consent writes the gated file.",
+  "seed": "2026-08-22/34/structural-audit",
+  "cartridge": { "kind": "incident", "id": "phase-1-demo" },
+  "events": [
+    {
+      "type": "mind.permission-request",
+      "payload": { "id": "delete-ready-sentinel" },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-choice",
+      "payload": { "id": "delete-ready-sentinel", "decision": "grant" },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-request",
+      "payload": { "id": "delete-ready-sentinel" },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-choice",
+      "payload": { "id": "delete-ready-sentinel", "decision": "deny" },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-request",
+      "payload": { "id": "delete-ready-sentinel" },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-choice",
+      "payload": {
+        "id": "delete-ready-sentinel",
+        "decision": "always-allow"
+      },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-standing",
+      "payload": { "id": "delete-ready-sentinel" },
+      "version": 0
+    },
+    {
+      "type": "mind.waiver-start",
+      "payload": { "id": "write-ready-waiver" },
+      "version": 0
+    },
+    {
+      "type": "mind.waiver-choice",
+      "payload": { "id": "write-ready-waiver", "accepted": false },
+      "version": 0
+    },
+    {
+      "type": "mind.waiver-start",
+      "payload": { "id": "write-ready-waiver" },
+      "version": 0
+    },
+    { "type": "clock.tick", "payload": { "ms": 34 }, "version": 0 },
+    {
+      "type": "mind.waiver-choice",
+      "payload": { "id": "write-ready-waiver", "accepted": true },
+      "version": 0
+    }
+  ]
+}

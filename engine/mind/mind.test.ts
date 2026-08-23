@@ -96,6 +96,7 @@ describe("mind events", () => {
       ]);
       expect(readMindSlice(resolved)).toEqual({
         pendingPermission: null,
+        pendingWaiver: null,
         permissions: [
           {
             capability: CAPABILITY,
@@ -129,6 +130,7 @@ describe("mind events", () => {
       ),
     ).toMatchObject({
       pendingPermission: null,
+      pendingWaiver: null,
       permissions: [
         { capability: CAPABILITY, decision: "deny", at: STARTED_AT },
       ],
@@ -144,6 +146,7 @@ describe("mind events", () => {
       ),
     ).toMatchObject({
       pendingPermission: null,
+      pendingWaiver: null,
       permissions: [
         { capability: CAPABILITY, decision: "grant", at: STARTED_AT },
       ],
@@ -272,6 +275,7 @@ describe("mind events", () => {
         restoreWithMind({
           permissions: [],
           pendingPermission: null,
+          pendingWaiver: null,
           waiverConsents,
           beliefs: [],
           compactHistory: [],
@@ -290,6 +294,7 @@ describe("mind events", () => {
       restoreWithMind({
         permissions: [],
         pendingPermission: null,
+        pendingWaiver: null,
         waiverConsents,
         beliefs: [],
         compactHistory: [],
@@ -400,6 +405,7 @@ describe("mind events", () => {
     expect(readMindSlice(state)).toEqual({
       permissions: [],
       pendingPermission: null,
+      pendingWaiver: null,
       waiverConsents: [],
       beliefs: [],
       compactHistory: [
@@ -546,6 +552,7 @@ describe("mind events", () => {
     const duplicateSlice = {
       permissions: [],
       pendingPermission: null,
+      pendingWaiver: null,
       waiverConsents: [],
       beliefs: duplicateBeliefs,
       compactHistory: [],
@@ -561,6 +568,7 @@ describe("mind events", () => {
         {
           permissions: [],
           pendingPermission: null,
+          pendingWaiver: null,
           waiverConsents: [],
           beliefs: [],
           compactHistory: [],
@@ -574,6 +582,7 @@ describe("mind events", () => {
       restoreWithMind({
         permissions: [],
         pendingPermission: null,
+        pendingWaiver: null,
         waiverConsents: [],
         beliefs: [],
         compactHistory: [{ summary: "x", at: "not-time" }],

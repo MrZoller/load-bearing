@@ -990,22 +990,35 @@ describe("loadCartridge", () => {
   it.each([
     [
       "an empty permission action",
-      { action: "", resource: "/etc/motd" },
-      "/story/intents/0/actions/0/action",
+      { capability: { kind: "exact", action: "", resource: "/etc/motd" } },
+      "/story/intents/0/actions/0/capability/action",
     ],
     [
       "an overlong permission action",
-      { action: "x".repeat(241), resource: "/etc/motd" },
-      "/story/intents/0/actions/0/action",
+      {
+        capability: {
+          kind: "exact",
+          action: "x".repeat(241),
+          resource: "/etc/motd",
+        },
+      },
+      "/story/intents/0/actions/0/capability/action",
     ],
     [
       "an unknown permission action field",
-      { action: "delete", resource: "/etc/motd", unexpected: true },
+      {
+        capability: {
+          kind: "exact",
+          action: "delete",
+          resource: "/etc/motd",
+        },
+        unexpected: true,
+      },
       "/story/intents/0/actions/0/unexpected",
     ],
     [
       "an unknown action kind",
-      { kind: "permission-please", action: "delete", resource: "/etc/motd" },
+      { kind: "permission-please" },
       "/story/intents/0/actions/0/kind",
     ],
   ])("rejects %s", (_case, action, pointer) => {
@@ -1015,7 +1028,14 @@ describe("loadCartridge", () => {
     if (intent === undefined)
       throw new Error("minimal fixture lacks an intent");
     intent["actions"] = [
-      { kind: "permission-request", id: "delete-motd", ...action },
+      {
+        kind: "permission-request",
+        id: "delete-motd",
+        grant: [{ kind: "file-write", path: "/etc/motd", contents: "x" }],
+        deny: [],
+        alwaysAllow: [{ kind: "file-write", path: "/etc/motd", contents: "x" }],
+        ...action,
+      },
     ];
 
     expect(issuesOf(source).map((issue) => issue.pointer)).toContain(pointer);
@@ -1031,14 +1051,18 @@ describe("loadCartridge", () => {
       {
         kind: "permission-request",
         id: "delete-motd",
-        action: "delete",
-        resource: "/etc/motd",
+        capability: { kind: "exact", action: "delete", resource: "/etc/motd" },
+        grant: [{ kind: "file-write", path: "/etc/motd", contents: "x" }],
+        deny: [],
+        alwaysAllow: [{ kind: "file-write", path: "/etc/motd", contents: "x" }],
       },
       {
         kind: "permission-request",
         id: "restart-motd",
-        action: "restart",
-        resource: "/etc/motd",
+        capability: { kind: "exact", action: "restart", resource: "/etc/motd" },
+        grant: [{ kind: "file-write", path: "/etc/motd", contents: "x" }],
+        deny: [],
+        alwaysAllow: [{ kind: "file-write", path: "/etc/motd", contents: "x" }],
       },
     ];
 
@@ -1057,14 +1081,18 @@ describe("loadCartridge", () => {
       {
         kind: "permission-request",
         id: "delete-motd",
-        action: "delete",
-        resource: "/etc/motd",
+        capability: { kind: "exact", action: "delete", resource: "/etc/motd" },
+        grant: [{ kind: "file-write", path: "/etc/motd", contents: "x" }],
+        deny: [],
+        alwaysAllow: [{ kind: "file-write", path: "/etc/motd", contents: "x" }],
       },
       {
         kind: "permission-request",
         id: "restart-motd",
-        action: "restart",
-        resource: "/etc/motd",
+        capability: { kind: "exact", action: "restart", resource: "/etc/motd" },
+        grant: [{ kind: "file-write", path: "/etc/motd", contents: "x" }],
+        deny: [],
+        alwaysAllow: [{ kind: "file-write", path: "/etc/motd", contents: "x" }],
       },
     ];
 
@@ -1072,6 +1100,48 @@ describe("loadCartridge", () => {
       expect.arrayContaining([
         expect.objectContaining({ pointer: "/story/fallback/actions" }),
       ]),
+    );
+  });
+
+  it("strictly validates globally unique waiver declarations, fixed consent and safe VFS targets", () => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    const intents = story["intents"] as Record<string, unknown>[];
+    const first = intents[0];
+    if (first === undefined) throw new Error("minimal fixture lacks an intent");
+    const waiver = {
+      kind: "waiver-request",
+      id: "waiver-one",
+      version: 1,
+      requiredPhrase: "I agree",
+      capability: { kind: "exact", action: "write", resource: "/etc/motd" },
+      documentPath: "/missing/WAIVER.md",
+      documentContents: "authored bytes\n",
+      consent: [{ kind: "file-write", path: "/missing", contents: "x" }],
+      denial: [],
+    };
+    first["actions"] = [waiver];
+    story["fallback"] = {
+      response: "fixture-response",
+      actions: [{ ...waiver }],
+    };
+
+    expect(issuesOf(source).map((issue) => issue.pointer)).toEqual(
+      expect.arrayContaining([
+        "/story/intents/0/actions/0/id",
+        "/story/intents/0/actions/0/documentPath",
+        "/story/intents/0/actions/0/consent/0/path",
+      ]),
+    );
+
+    const badPhrase = minimal();
+    const badStory = badPhrase["story"] as Record<string, unknown>;
+    const badIntent = (badStory["intents"] as Record<string, unknown>[])[0];
+    if (badIntent === undefined)
+      throw new Error("minimal fixture lacks an intent");
+    badIntent["actions"] = [{ ...waiver, requiredPhrase: "I Agree" }];
+    expect(issuesOf(badPhrase).map((issue) => issue.pointer)).toContain(
+      "/story/intents/0/actions/0/requiredPhrase",
     );
   });
 

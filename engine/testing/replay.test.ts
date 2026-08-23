@@ -155,6 +155,38 @@ describe("golden replay fixtures", () => {
     );
   });
 
+  it("records atomic permission branches and exact waiver consent without widening either ledger", () => {
+    const recording = replayFixture(
+      loadReplayFixture("023-atomic-permission-continuations"),
+    );
+    const state = restoreSnapshot(recording.state);
+    const mind = readMindSlice(state);
+
+    expect(mind.permissions.map(({ decision }) => decision)).toEqual([
+      "grant",
+      "deny",
+      "always-allow",
+    ]);
+    expect(mind.waiverConsents).toEqual([
+      expect.objectContaining({
+        id: "write-ready-waiver",
+        version: 1,
+        phrase: "I agree",
+        at: "2026-08-22T09:14:22.034Z",
+      }),
+    ]);
+    expect(
+      readVfs(readVfsSlice(state), "/production/service/WAIVER.md"),
+    ).toMatchObject({
+      value: { contents: expect.stringContaining("I agree") },
+    });
+    expect(
+      readVfs(readVfsSlice(state), "/production/service/src/ready.stale"),
+    ).toMatchObject({ value: { contents: "waiver accepted\n" } });
+    expect(recording.transcript).not.toContain("mind.permission-choice");
+    expect(recording.transcript).not.toContain("mind.waiver-choice");
+  });
+
   it("records Incident #001's shared story outcome, waiver ledger, and resumable canonical snapshot", () => {
     const fixture = loadReplayFixture("020-incident-001-story");
     const recording = replayFixture(fixture);

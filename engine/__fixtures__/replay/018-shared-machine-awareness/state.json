@@ -294,6 +294,7 @@
         }
       ],
       "pendingPermission": null,
+      "pendingWaiver": null,
       "permissions": [],
       "waiverConsents": []
     },
