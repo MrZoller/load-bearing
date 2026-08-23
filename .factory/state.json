@@ -5,7 +5,7 @@
   "plan_approved": true,
   "current_task": "T32",
   "branch": "factory/t32-closed-story-conditions",
-  "pr": null,
-  "hold": false,
-  "updated": "2026-08-22T23:19:57Z"
+  "pr": 57,
+  "hold": true,
+  "updated": "2026-08-23T00:39:12Z"
 }
