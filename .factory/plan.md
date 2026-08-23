@@ -89,7 +89,7 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/story/router.test.ts`, and a table-driven golden set supply reusable templates plus incident lines for every ordered archetype transition; each pair blames the actual predecessor, changes the next behavior, preserves one session/machine, and leaves unrelated random outcomes unchanged (criteria 5, 18)
   - deps: T37, T46
   - pr: 71
-- [R] T48 (standard) — Stage-keyed opening, help, and nudge copy
+- [x] T48 (standard) — Stage-keyed opening, help, and nudge copy
   - acceptance: `content/incidents/incident-001.json`, `engine/cartridge/load.test.ts`, and focused story/browser tests fill stage 0–4 openings, placeholders, `/help`, idle nudges, and thinking openers for all archetypes; command/reveal/model/permission/compact routes visibly traverse stages, copy stays useful/accessible without shell spoilers, and verbal tics remain rationed (criteria 8, 15)
   - deps: T35, T40, T46
   - pr: 72
@@ -166,3 +166,6 @@ authoring tooling remain excluded.
   - PR #63: Reject an unconditional generic or fallback candidate before the final slot; Codex thread `discussion_r3838175498` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #63: Prevent a candidate `counter-add` from failing once a non-habit counter reaches its bound; Codex thread `discussion_r3838209738` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #69: Document or pin the `cp -p` followed by content-identical `git restore` mode-restoration behavior; Codex thread `discussion_r3838781636` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #72: Record advanced-stage opening responses replayably after escalation; Codex thread `discussion_r3839051605` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #72: Make each archetype's `/compact` help describe replacement and possible loss of findings; Codex thread `discussion_r3839051606` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #72: Reconcile thinking-opener deterioration with the `Okay` to `Okay Amigos` design contract; Codex thread `discussion_r3839051608` was verifier-classified minor and dispositioned without a minors-only push.
