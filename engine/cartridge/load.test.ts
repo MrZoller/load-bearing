@@ -760,7 +760,10 @@ describe("loadCartridge", () => {
     const intent = (story["intents"] as Record<string, unknown>[])[0];
     if (intent === undefined)
       throw new Error("minimal fixture lacks an intent");
-    intent["actions"] = [{ kind: "story-reach", beat: "missing" }];
+    intent["actions"] = [
+      { kind: "story-reach", beat: "missing" },
+      { kind: "file-write", path: "/missing", contents: "x" },
+    ];
 
     expect(issuesOf(source)).toEqual(
       expect.arrayContaining([
@@ -769,6 +772,7 @@ describe("loadCartridge", () => {
         expect.objectContaining({ pointer: "/story/phase2/initialBeat" }),
         expect.objectContaining({ pointer: "/story/phase2/beats/0/ending" }),
         expect.objectContaining({ pointer: "/story/intents/0/actions/0/beat" }),
+        expect.objectContaining({ pointer: "/story/intents/0/actions/1/path" }),
       ]),
     );
   });

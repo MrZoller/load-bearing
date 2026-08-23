@@ -1931,6 +1931,12 @@ function checkStoryAndPresentation(
           "the id of a declared story beat",
           `${JSON.stringify(action.beat)}, which does not exist`,
         );
+      if (action.kind === "file-write" && !files.has(action.path))
+        report.addPhrase(
+          `${pointer}/${String(index)}/path`,
+          "the id of a declared file",
+          `${JSON.stringify(action.path)}, which does not exist`,
+        );
       if (
         action.kind !== "permission-request" &&
         action.kind !== "waiver-request"
