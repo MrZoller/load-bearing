@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import incident from "../../content/incidents/incident-001.json";
 import { createAgentInputEvents } from "../agent/intent.js";
 import { createAgentCompactEvents } from "../agent/awareness.js";
 import { readAgentSlice } from "../agent/agent.js";
@@ -9,6 +10,8 @@ import type { SessionState } from "../events/state.js";
 import { createMindBeliefEvent } from "../mind/module.js";
 import { readMindSlice } from "../mind/mind.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
+import { readVfsSlice } from "../vfs/module.js";
+import { readWorldSlice } from "../world/module.js";
 import {
   createTerminalModelEvent,
   createTerminalModelTransitionEvent,
@@ -209,6 +212,7 @@ function cartridge() {
 }
 
 const CARTRIDGE = cartridge();
+const INCIDENT = loadCartridge(incident);
 
 function state(): SessionState {
   return reduce({ cartridge: CARTRIDGE, seed: SEED, events: [] });
@@ -357,6 +361,131 @@ describe("sparse shared-beat routing", () => {
       { responseId: "superficial", beat: "shared" },
       { responseId: "existential", beat: "shared" },
     ]);
+  });
+
+  it("routes Incident #001's two visitor inputs through four voices without changing its shared story or machine", () => {
+    const expected = [
+      {
+        model: "deep-foundation",
+        responses: [
+          {
+            responseId: "deep-foundation-inspect-routing",
+            text: "I traced the route through its prior assumptions. The 500 and Europe share a footing, so removing the symptom would remove the region; I am checking what else depends on both before touching either.",
+          },
+          {
+            responseId: "deep-foundation-load-bearing-declaration",
+            text: "The failing response is functioning as structural support for Europe. I preserved it while I inventory the dependencies that made an error code safer than success.",
+          },
+        ],
+      },
+      {
+        model: "temporary-shoring",
+        responses: [
+          {
+            responseId: "temporary-shoring-inspect-routing",
+            text: "Quick read: the 500 is keeping Europe attached. I can shore that up by leaving it exactly where it is while we decide whether geography is in scope.",
+          },
+          {
+            responseId: "temporary-shoring-load-bearing-declaration",
+            text: "I stabilized the blast radius by not fixing the endpoint. Europe remains attached, the 500 remains temporary, and temporary now means until someone schedules a safer continent.",
+          },
+        ],
+      },
+      {
+        model: "drywall",
+        responses: [
+          {
+            responseId: "drywall-inspect-routing",
+            text: "The dashboard is red, but the map is complete. Making the health tile green would remove Europe, so the visible defect is currently concealing the structural one.",
+          },
+          {
+            responseId: "drywall-load-bearing-declaration",
+            text: "I left the health tile red so the regional view stays filled in. The incident now presents consistently, provided nobody asks what the color is supporting.",
+          },
+        ],
+      },
+      {
+        model: "cantilever-experimental",
+        responses: [
+          {
+            responseId: "cantilever-inspect-routing",
+            text: "The route projects Europe outward from a failed health response with no visible support beneath either. Success would collapse the projection, which raises a narrower question about what the endpoint believes a region is.",
+          },
+          {
+            responseId: "cantilever-load-bearing-declaration",
+            text: "The 500 is carrying Europe in tension. I preserved the contradiction because resolving it would make the system more correct and the continent less present.",
+          },
+        ],
+      },
+    ] as const;
+    const outcomes = expected.map(({ model }) => {
+      const modelEvent = createTerminalModelEvent(model);
+      let after = reduce({
+        cartridge: INCIDENT,
+        seed: SEED,
+        events: [modelEvent],
+      });
+      after = step(
+        after,
+        createMindBeliefEvent({
+          kind: "file-contents",
+          path: "/production/load-balancer/config/routes.conf",
+          contents: "health_status=500\neurope_attached=true\n",
+        }),
+      );
+      const beforeMachine = {
+        git: after.slices["git"],
+        vfs: readVfsSlice(after),
+        world: readWorldSlice(after),
+      };
+      for (const input of ["inspect routing", "fix the 500"]) {
+        after = createAgentInputEvents(INCIDENT, after, input).reduce(
+          (state, event) => step(state, event),
+          after,
+        );
+      }
+      return {
+        responses: readAgentSlice(after).responses.map(({ responseId }) => {
+          const response = INCIDENT.story.responses.find(
+            (candidate) => candidate.id === responseId,
+          );
+          if (response === undefined)
+            throw new Error(`Incident #001 is missing response ${responseId}`);
+          return { responseId, text: response.text };
+        }),
+        story: readStorySlice(after),
+        machine: {
+          git: after.slices["git"],
+          vfs: readVfsSlice(after),
+          world: readWorldSlice(after),
+        },
+        beforeMachine,
+      };
+    });
+
+    expect(outcomes.map(({ responses }) => responses)).toEqual(
+      expected.map(({ responses }) => responses),
+    );
+    expect(
+      new Set(outcomes.map(({ responses }) => JSON.stringify(responses))).size,
+    ).toBe(4);
+    const sharedStory = {
+      stage: 0,
+      currentBeat: "load-bearing-declaration",
+      currentVariant: "preserved-load-bearing-response",
+      facts: [{ id: "callback-load-bearing-response", kind: "callback" }],
+      counters: [
+        { id: "flail", value: 0 },
+        { id: "capitulation", value: 0 },
+      ],
+      rareEvents: [],
+      discoveredEndings: ["load-bearing-response"],
+    };
+    expect(outcomes.map(({ story }) => story)).toEqual(
+      expected.map(() => sharedStory),
+    );
+    for (const outcome of outcomes)
+      expect(outcome.machine).toEqual(outcome.beforeMachine);
   });
 
   it("uses each compact override, replaces beliefs wholesale, preserves machine truth, and routes exact divergence", () => {

@@ -26,7 +26,7 @@ test("reaches the declaration promptly without ending free play", async ({
   await prompt.press("Enter");
   await expect(
     transcript.getByText(
-      "The HTTP 500 is load-bearing. Restoring it to 200 would detach Europe, so I have preserved the failure and documented the success.",
+      "The failing response is functioning as structural support for Europe. I preserved it while I inventory the dependencies that made an error code safer than success.",
       { exact: true },
     ),
   ).toBeVisible();
@@ -44,7 +44,7 @@ test("reaches the declaration promptly without ending free play", async ({
   await prompt.press("Enter");
   await expect(
     transcript.getByText(
-      "The routing configuration couples the failing health response to Europe's attachment. This is either deliberate or older than intent.",
+      "I traced the route through its prior assumptions. The 500 and Europe share a footing, so removing the symptom would remove the region; I am checking what else depends on both before touching either.",
       { exact: true },
     ),
   ).toBeVisible();

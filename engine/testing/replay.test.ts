@@ -270,6 +270,59 @@ describe("golden replay fixtures", () => {
     ).toEqual(["paranoid", "reckless", "superficial", "existential"]);
   });
 
+  it("records Incident #001's four same-seed voices as distinct transcripts over one unchanged machine", () => {
+    const fixtures = [
+      "031-incident-001-deep-foundation-voices",
+      "032-incident-001-temporary-shoring-voices",
+      "033-incident-001-drywall-voices",
+      "034-incident-001-cantilever-voices",
+    ].map((name) => loadReplayFixture(name));
+    const recordings = fixtures.map((fixture) => replayFixture(fixture));
+    const states = recordings.map(({ state }) => restoreSnapshot(state));
+    const first = states[0];
+    if (first === undefined)
+      throw new Error("four voice fixtures are required");
+
+    expect(new Set(recordings.map(({ transcript }) => transcript)).size).toBe(
+      4,
+    );
+    const responseTexts = states.map((state, index) => {
+      const fixture = fixtures[index];
+      if (fixture === undefined)
+        throw new Error("four voice fixtures are required");
+      const cartridge = loadCartridge(fixture.cartridge);
+      return readAgentSlice(state).responses.map(({ responseId }) => {
+        const response = cartridge.story.responses.find(
+          (candidate) => candidate.id === responseId,
+        );
+        if (response === undefined)
+          throw new Error(`Incident #001 is missing response ${responseId}`);
+        return response.text;
+      });
+    });
+    expect(
+      new Set(responseTexts.map((texts) => JSON.stringify(texts))).size,
+    ).toBe(4);
+    expect(readStorySlice(first)).toEqual({
+      stage: 0,
+      currentBeat: "load-bearing-declaration",
+      currentVariant: "preserved-load-bearing-response",
+      facts: [{ id: "callback-load-bearing-response", kind: "callback" }],
+      counters: [
+        { id: "flail", value: 0 },
+        { id: "capitulation", value: 0 },
+      ],
+      rareEvents: [],
+      discoveredEndings: ["load-bearing-response"],
+    });
+    for (const state of states.slice(1)) {
+      expect(readStorySlice(state)).toEqual(readStorySlice(first));
+      expect(state.slices["git"]).toEqual(first.slices["git"]);
+      expect(readVfsSlice(state)).toEqual(readVfsSlice(first));
+      expect(readWorldSlice(state)).toEqual(readWorldSlice(first));
+    }
+  });
+
   it("records Incident #001's shared story outcome, waiver ledger, and resumable canonical snapshot", () => {
     const fixture = loadReplayFixture("020-incident-001-story");
     const recording = replayFixture(fixture);
