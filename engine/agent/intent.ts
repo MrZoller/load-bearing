@@ -8,7 +8,11 @@ import type {
 import { normalizeIntentPhrase } from "../cartridge/intent.js";
 import { createShellExecuteEvent } from "../commands/shell.js";
 import type { EngineEvent, SessionState } from "../events/state.js";
-import { createMindPermissionRequestedEvent } from "../mind/module.js";
+import {
+  createMindPermissionRequestEvent,
+  createMindStandingPermissionEvent,
+  createMindWaiverStartEvent,
+} from "../mind/module.js";
 import { hasStandingPermission, readMindSlice } from "../mind/mind.js";
 import { createStoryBeatReachedEvent } from "../story/module.js";
 import { countCodePoints } from "../text.js";
@@ -121,11 +125,7 @@ export function createAgentInputEvents(
   const permissionWasAuthorized = selection.actions.some(
     (action) =>
       action.kind === "permission-request" &&
-      hasStandingPermission(mind, {
-        kind: "exact",
-        action: action.action,
-        resource: action.resource,
-      }),
+      hasStandingPermission(mind, action.capability),
   );
   const responseId =
     permissionWasAuthorized && selection.authorizedResponseId !== ""
@@ -146,14 +146,11 @@ export function createAgentInputEvents(
         return [createShellExecuteEvent(action.input)];
       if (action.kind === "story-reach")
         return [createStoryBeatReachedEvent(action.beat)];
-      const capability = {
-        kind: "exact" as const,
-        action: action.action,
-        resource: action.resource,
-      };
-      return hasStandingPermission(mind, capability)
-        ? []
-        : [createMindPermissionRequestedEvent(action.id, capability)];
+      if (action.kind === "waiver-request")
+        return [createMindWaiverStartEvent(action.id)];
+      return hasStandingPermission(mind, action.capability)
+        ? [createMindStandingPermissionEvent(action.id)]
+        : [createMindPermissionRequestEvent(action.id)];
     }),
     createAgentResponseEvent(responseId, turnId),
     createAgentActivityEvent({ status: "idle" }),

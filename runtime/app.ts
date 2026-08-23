@@ -153,6 +153,7 @@ export function mountApp(
       readTerminalSlice(current.state).mode !== "tui" ||
       readAgentSlice(current.state).activity.status !== "idle" ||
       readMindSlice(current.state).pendingPermission !== null ||
+      readMindSlice(current.state).pendingWaiver !== null ||
       hasAgentIdleNudged(current.state)
     )
       return;
@@ -164,6 +165,7 @@ export function mountApp(
         readTerminalSlice(snapshot.state).mode !== "tui" ||
         readAgentSlice(snapshot.state).activity.status !== "idle" ||
         readMindSlice(snapshot.state).pendingPermission !== null ||
+        readMindSlice(snapshot.state).pendingWaiver !== null ||
         prompt?.value !== "" ||
         hasAgentIdleNudged(snapshot.state)
       ) {

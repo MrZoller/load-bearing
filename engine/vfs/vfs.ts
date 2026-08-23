@@ -491,6 +491,26 @@ export function writeVfs(
   return changed(slice, entries, { path: resolved.path, created: true });
 }
 
+/** Apply the waiver filename policy, then use ordinary acting-identity writes. */
+export function writeAuthoredWaiverVfs(
+  slice: VfsSlice,
+  path: string,
+  contents: string,
+  now: string,
+): VfsMutation<{ readonly path: string; readonly created: boolean }> {
+  if (!path.endsWith("/WAIVER.md"))
+    return unchanged(
+      slice,
+      frozenFailure(
+        "waiver-write",
+        path,
+        "EINVAL",
+        "an authored waiver path must end in /WAIVER.md",
+      ),
+    );
+  return writeVfs(slice, path, contents, now);
+}
+
 /** Create an empty file or update an existing entry's mtime. */
 export function touchVfs(
   slice: VfsSlice,

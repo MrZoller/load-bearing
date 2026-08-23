@@ -1247,65 +1247,32 @@ const AUTHORED_RESPONSE = {
   },
 } satisfies ObjectNode;
 
-const AGENT_ACTION = {
-  kind: "union",
-  description:
-    "A closed cartridge action, dispatched through normal mechanics.",
-  discriminator: "kind",
-  variants: {
-    "shell-execute": {
-      kind: "object",
-      description: "Execute one bounded shell input through shell.execute.",
-      fields: {
-        kind: required({
-          kind: "enum",
-          description: "The action kind.",
-          values: ["shell-execute"],
-        }),
-        input: required({ ...BOUNDED_TEXT, maxLength: 4000 }),
-      },
-    },
-    "permission-request": {
-      kind: "object",
-      description: "Request consent for one exact capability.",
-      fields: {
-        kind: required({
-          kind: "enum",
-          description: "The action kind.",
-          values: ["permission-request"],
-        }),
-        id: required({
-          kind: "string",
-          description: "A stable authored permission request identifier.",
-          pattern: WORLD_ID_PATTERN,
-          patternLabel: "a non-empty single-line identifier",
-          maxLength: MAX_PERMISSION_REQUEST_ID_LENGTH,
-        }),
-        action: required({ ...BOUNDED_LINE, minLength: 1 }),
-        resource: required({ ...BOUNDED_LINE, minLength: 1 }),
-      },
-    },
-    "story-reach": {
-      kind: "object",
-      description: "Reach one authored shared story beat.",
-      fields: {
-        kind: required({
-          kind: "enum",
-          description: "The action kind.",
-          values: ["story-reach"],
-        }),
-        beat: required(PHASE_ONE_ID),
-      },
-    },
+const EXACT_CAPABILITY = {
+  kind: "object",
+  description: "One exact action and resource capability.",
+  fields: {
+    kind: required({
+      kind: "enum",
+      description: "Exact capability kind.",
+      values: ["exact"],
+    }),
+    action: required({ ...BOUNDED_LINE, minLength: 1 }),
+    resource: required({ ...BOUNDED_LINE, minLength: 1 }),
   },
-} satisfies UnionNode;
+} satisfies ObjectNode;
 
-const ACTIONS = {
-  kind: "array",
-  description: "Ordered closed cartridge actions.",
-  items: AGENT_ACTION,
-  maxItems: MAX_STORY_ACTIONS,
-} satisfies ArrayNode;
+const STORY_REACH_ACTION = {
+  kind: "object",
+  description: "Reach one authored shared story beat.",
+  fields: {
+    kind: required({
+      kind: "enum",
+      description: "The action kind.",
+      values: ["story-reach"],
+    }),
+    beat: required(PHASE_ONE_ID),
+  },
+} satisfies ObjectNode;
 
 const BELIEF_PATH = {
   kind: "string",
@@ -1449,20 +1416,6 @@ const CARTRIDGE_BELIEFS = {
   maxItems: MAX_STORY_BELIEFS,
 } satisfies ArrayNode;
 
-const EXACT_CAPABILITY = {
-  kind: "object",
-  description: "One exact action and resource capability.",
-  fields: {
-    kind: required({
-      kind: "enum",
-      description: "Exact capability kind.",
-      values: ["exact"],
-    }),
-    action: required({ ...BOUNDED_LINE, minLength: 1 }),
-    resource: required({ ...BOUNDED_LINE, minLength: 1 }),
-  },
-} satisfies ObjectNode;
-
 const STORY_CONDITION = {
   kind: "union",
   description: "One typed condition evaluated against pre-event session state.",
@@ -1498,7 +1451,7 @@ const STORY_CONDITION = {
           kind: "integer",
           description: "Authored waiver document version.",
           minimum: 1,
-          maximum: 2147483647,
+          maximum: Number.MAX_SAFE_INTEGER,
         }),
         phrase: required({
           kind: "string",
@@ -1584,7 +1537,7 @@ const STORY_ACTION = {
         }),
       },
     },
-    "story-reach": AGENT_ACTION.variants["story-reach"],
+    "story-reach": STORY_REACH_ACTION,
     "file-write": {
       kind: "object",
       description: "Write exact contents to a declared VFS file.",
@@ -1609,6 +1562,87 @@ const STORY_ACTIONS = {
   kind: "array",
   description: "Owner-directed consequences in authored order.",
   items: STORY_ACTION,
+  maxItems: MAX_STORY_ACTIONS,
+} satisfies ArrayNode;
+
+const AGENT_ACTION = {
+  kind: "union",
+  description:
+    "A closed cartridge action, dispatched through normal mechanics.",
+  discriminator: "kind",
+  variants: {
+    "shell-execute": {
+      kind: "object",
+      description: "Execute one bounded shell input through shell.execute.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "The action kind.",
+          values: ["shell-execute"],
+        }),
+        input: required({ ...BOUNDED_TEXT, maxLength: 4000 }),
+      },
+    },
+    "permission-request": {
+      kind: "object",
+      description:
+        "Request one exact capability with decision-specific closed continuations.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "The action kind.",
+          values: ["permission-request"],
+        }),
+        id: required({
+          kind: "string",
+          description: "A globally unique authored permission request id.",
+          pattern: WORLD_ID_PATTERN,
+          patternLabel: "a non-empty single-line identifier",
+          maxLength: MAX_PERMISSION_REQUEST_ID_LENGTH,
+        }),
+        capability: required(EXACT_CAPABILITY),
+        grant: required(STORY_ACTIONS),
+        deny: required(STORY_ACTIONS),
+        alwaysAllow: required(STORY_ACTIONS),
+      },
+    },
+    "waiver-request": {
+      kind: "object",
+      description:
+        "Create an authored waiver document and request exact typed consent.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "The action kind.",
+          values: ["waiver-request"],
+        }),
+        id: required(PHASE_ONE_ID),
+        version: required({
+          kind: "integer",
+          description: "Positive authored waiver document version.",
+          minimum: 1,
+          maximum: Number.MAX_SAFE_INTEGER,
+        }),
+        requiredPhrase: required({
+          kind: "enum",
+          description: "The only accepted waiver phrase.",
+          values: ["I agree"],
+        }),
+        capability: required(EXACT_CAPABILITY),
+        documentPath: required(BELIEF_PATH),
+        documentContents: required(BOUNDED_TEXT),
+        consent: required(STORY_ACTIONS),
+        denial: required(STORY_ACTIONS),
+      },
+    },
+    "story-reach": STORY_REACH_ACTION,
+  },
+} satisfies UnionNode;
+
+const ACTIONS = {
+  kind: "array",
+  description: "Ordered closed cartridge actions.",
+  items: AGENT_ACTION,
   maxItems: MAX_STORY_ACTIONS,
 } satisfies ArrayNode;
 
