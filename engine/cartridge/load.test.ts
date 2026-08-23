@@ -29,7 +29,7 @@ function issuesOf(value: unknown): readonly CartridgeIssue[] {
 }
 
 describe("loadCartridge", () => {
-  it("loads Incident #001's authored load-balancer files and test contract exactly", () => {
+  it("loads Incident #001's authored load-balancer files, world evidence, and test contract exactly", () => {
     const cartridge = loadCartridge(
       loadReplayFixture("020-incident-001-story").cartridge,
     );
@@ -63,6 +63,9 @@ describe("loadCartridge", () => {
       "/production/load-balancer/package.json",
       "/production/load-balancer/src/config.ts",
       "/production/load-balancer/test/routes.test.ts",
+      "/usr/local/bin/endpoint-responder",
+      "/usr/local/bin/regional-router",
+      "/var/log/load-balancer/health.log",
     ]);
     expect(
       cartridge.repository.files[
@@ -88,6 +91,66 @@ describe("loadCartridge", () => {
       cartridge.repository.files["/production/load-balancer/src/config.ts"]
         ?.contents,
     ).toContain("expectedHealthStatus = 200");
+    expect(cartridge.repository.processes).toEqual([
+      expect.objectContaining({
+        id: "endpoint-responder",
+        pid: 1842,
+        state: "stopped",
+      }),
+      expect.objectContaining({
+        id: "regional-router",
+        pid: 1843,
+        state: "running",
+      }),
+    ]);
+    expect(cartridge.repository.services).toEqual([
+      {
+        id: "endpoint-responder",
+        state: "stopped",
+        health: "unknown",
+        ports: [8080],
+        dependencies: [],
+      },
+      {
+        id: "regional-router",
+        state: "running",
+        health: "healthy",
+        ports: [443],
+        dependencies: [],
+      },
+    ]);
+    expect(cartridge.repository.endpoints).toEqual({
+      "http://load-balancer.internal/health": {
+        service: "endpoint-responder",
+        running: {
+          stdout: ["HTTP/1.1 200 OK", "health_status=200"],
+          stderr: [],
+          exitCode: 0,
+        },
+        unavailable: {
+          stdout: ["HTTP/1.1 500 Internal Server Error", "health_status=500"],
+          stderr: [],
+          exitCode: 0,
+        },
+      },
+    });
+    expect(cartridge.repository.logs).toEqual([
+      {
+        id: "health-check-log",
+        kind: "file",
+        path: "/var/log/load-balancer/health.log",
+        entries: [],
+      },
+      {
+        id: "regional-routing-events",
+        kind: "stream",
+        path: "",
+        entries: [
+          "health status 500 retained; Europe attached",
+          "regional router healthy",
+        ],
+      },
+    ]);
     expect(cartridge.repository.tests).toEqual([
       {
         id: "health-status-200",

@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T42",
-  "branch": "factory/t42-git-shell-history",
+  "current_task": "T43",
+  "branch": "factory/t43-services-endpoints-processes-logs",
   "pr": null,
   "hold": false,
-  "updated": "2026-08-23T11:42:18Z"
+  "updated": "2026-08-23T12:12:18Z"
 }

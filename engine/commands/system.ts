@@ -22,6 +22,7 @@ import {
   listEnv,
   listProcesses,
   lookupManPage,
+  lookupProcess,
   lookupProcessByPid,
   lookupService,
   readShellHistory,
@@ -270,8 +271,29 @@ const SYSTEMCTL: CommandDefinition = {
         EMPTY,
         service.state === "running" ? 0 : 3,
       );
+    const proc = lookupProcess(readWorldSlice(context.state), id);
+    // A same-named service/process pair is one unit from the visitor's point
+    // of view. Keep both projections coherent without cartridge reactions:
+    // bidirectional reaction rules would form a rejected event cycle.
+    const state = action === "stop" ? "stopped" : "running";
     return result(EMPTY, EMPTY, 0, [
       { type: `world.service-${action}`, payload: { id } },
+      ...(proc === undefined
+        ? []
+        : [
+            {
+              type: "world.process-transition" as const,
+              payload: { id, state },
+            },
+          ]),
+      ...(action !== "stop" || proc === undefined
+        ? []
+        : [
+            {
+              type: "world.service-health" as const,
+              payload: { id, health: "unknown" as const },
+            },
+          ]),
     ]);
   },
 };
@@ -294,11 +316,24 @@ const KILL: CommandDefinition = {
     // real stopped process, signalling it succeeds; the transition is already
     // represented, so repeating the command is an event-free no-op.
     if (entry.state === "stopped") return result(EMPTY, EMPTY, 0);
+    const pairedService = lookupService(
+      readWorldSlice(context.state),
+      entry.id,
+    );
     return result(EMPTY, EMPTY, 0, [
       {
         type: "world.process-transition",
         payload: { id: entry.id, state: "stopped" },
       },
+      ...(pairedService === undefined
+        ? []
+        : [
+            { type: "world.service-stop" as const, payload: { id: entry.id } },
+            {
+              type: "world.service-health" as const,
+              payload: { id: entry.id, health: "unknown" as const },
+            },
+          ]),
     ]);
   },
 };

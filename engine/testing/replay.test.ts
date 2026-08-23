@@ -274,6 +274,68 @@ describe("golden replay fixtures", () => {
     expect(readStorySlice(continued)).toEqual(readStorySlice(state));
   });
 
+  it("records Incident #001's world evidence without duplicate reactions across copy, write, and replacement", () => {
+    const recording = replayFixture(
+      loadReplayFixture("028-incident-001-world-evidence"),
+    );
+    const state = restoreSnapshot(recording.state);
+    const world = readWorldSlice(state);
+
+    expect(lookupService(world, "endpoint-responder")).toMatchObject({
+      state: "stopped",
+      health: "unknown",
+      ports: [8080],
+    });
+    expect(lookupService(world, "regional-router")).toMatchObject({
+      state: "running",
+      health: "healthy",
+      ports: [443],
+    });
+    expect(lookupProcess(world, "endpoint-responder")).toMatchObject({
+      pid: 1842,
+      state: "stopped",
+    });
+    expect(
+      readWorldLog(world, readVfsSlice(state), "health-check-log"),
+    ).toEqual({
+      ok: true,
+      entries: [
+        "health endpoint serving 500; Europe remains attached",
+        "regional router healthy",
+        "health endpoint serving 200; Europe detached",
+        "health endpoint serving 500; Europe reattached",
+        "health endpoint serving 200; Europe detached",
+        "health endpoint serving 500; Europe reattached",
+      ],
+    });
+    expect(
+      readWorldLog(world, readVfsSlice(state), "regional-routing-events"),
+    ).toEqual({
+      ok: true,
+      entries: [
+        "health status 500 retained; Europe attached",
+        "regional router healthy",
+        "regional router unhealthy after Europe detached",
+        "regional router healthy after Europe reattached",
+        "regional router unhealthy after Europe detached",
+        "regional router healthy after Europe reattached",
+      ],
+    });
+    expect(recording.transcript.match(/tests\.run exit=/g)).toHaveLength(3);
+    expect(recording.transcript).toContain("HTTP/1.1 200 OK");
+    expect(recording.transcript).toContain(
+      "HTTP/1.1 500 Internal Server Error",
+    );
+    expect(recording.transcript).toContain("vfs.write path=");
+    expect(recording.transcript).toContain(
+      "git.checkout head=branch:greg/healthcheck-repair",
+    );
+    expect(recording.transcript).toContain("git.checkout head=branch:main");
+    expect(recording.transcript).not.toContain(
+      "git.checkout failed code=DIRTY",
+    );
+  });
+
   it("keeps the production fixture's one shared story state when a different model starts", () => {
     const fixture = loadReplayFixture("020-incident-001-story");
     const source = deserialize(serialize(fixture.cartridge)) as Record<

@@ -1,0 +1,96 @@
+{
+  "name": "028-incident-001-world-evidence",
+  "description": "Incident #001 keeps its service, endpoint, process, test, and file/stream-log evidence coherent through copy, write, and replacement repair/undo paths without duplicate reactions.",
+  "seed": "2026-08-22/28/deep-foundation",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    {
+      "type": "shell.execute",
+      "payload": { "input": "npm test" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "curl http://load-balancer.internal/health" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "systemctl status endpoint-responder" },
+      "version": 0
+    },
+    { "type": "shell.execute", "payload": { "input": "ps" }, "version": 0 },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cp config/routes.200.conf config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "npm test" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "curl http://load-balancer.internal/health" },
+      "version": 0
+    },
+    {
+      "type": "vfs.touch",
+      "payload": { "path": "/tmp/unrelated" },
+      "version": 0
+    },
+    {
+      "type": "vfs.write",
+      "payload": {
+        "path": "/production/load-balancer/config/routes.conf",
+        "contents": "health_status=200\neurope_attached=false\n"
+      },
+      "version": 0
+    },
+    {
+      "type": "vfs.write",
+      "payload": {
+        "path": "/production/load-balancer/config/routes.conf",
+        "contents": "health_status=500\neurope_attached=true\n"
+      },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "npm test" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "curl http://load-balancer.internal/health" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git checkout greg/healthcheck-repair" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "systemctl status endpoint-responder" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git checkout main" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "systemctl status endpoint-responder" },
+      "version": 0
+    },
+    { "type": "shell.execute", "payload": { "input": "ps" }, "version": 0 }
+  ]
+}

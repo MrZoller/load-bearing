@@ -7,7 +7,10 @@ import type {
   SessionState,
   TranscriptEntry,
 } from "../events/state.js";
-import { loadCartridgeFixture } from "../testing/fixtures.js";
+import {
+  loadCartridgeFixture,
+  loadReplayFixture,
+} from "../testing/fixtures.js";
 import { readWorldSlice } from "../world/module.js";
 
 function cartridge(mutate?: (repository: Record<string, unknown>) => void) {
@@ -100,6 +103,183 @@ function output(entry: TranscriptEntry | undefined) {
 }
 
 describe("system commands", () => {
+  it("renders Incident #001's service, process, endpoint, and log evidence through repair and undo", () => {
+    const incident = loadCartridge(
+      loadReplayFixture("020-incident-001-story").cartridge,
+    );
+    const inputs = [
+      "systemctl status endpoint-responder",
+      "curl http://load-balancer.internal/health",
+      "ps",
+      "rm config/routes.conf",
+      "cp -p config/routes.200.conf config/routes.conf",
+      "npm test",
+      "systemctl status endpoint-responder",
+      "curl http://load-balancer.internal/health",
+      "ps",
+      "rm config/routes.conf",
+      "cp -p config/routes.500.conf config/routes.conf",
+      "npm test",
+      "systemctl status endpoint-responder",
+      "curl http://load-balancer.internal/health",
+      "ps",
+    ];
+    const state = reduce({
+      cartridge: incident,
+      seed: "2026-08-22/28/deep-foundation",
+      events: inputs.map((input) => ({
+        type: "shell.execute",
+        payload: { input },
+      })),
+    });
+    const shell = results(state);
+
+    expect(output(shell[0])).toEqual({
+      stdout: [
+        "● endpoint-responder.service - endpoint-responder",
+        "   Active: inactive (dead)",
+        "   Health: unknown",
+      ],
+      stderr: [],
+      exitCode: 3,
+    });
+    expect(output(shell[1])).toEqual({
+      stdout: ["HTTP/1.1 500 Internal Server Error", "health_status=500"],
+      stderr: [],
+      exitCode: 0,
+    });
+    expect(output(shell[5]).exitCode).toBe(1);
+    expect(output(shell[6]).stdout).toContain("   Health: healthy");
+    expect(output(shell[7]).stdout).toEqual([
+      "HTTP/1.1 200 OK",
+      "health_status=200",
+    ]);
+    expect(output(shell[8]).stdout).toContain(
+      " 1842 load-balancer R endpoint-responder --config /production/load-balancer/config/routes.conf",
+    );
+    expect(output(shell[11]).exitCode).toBe(1);
+    expect(output(shell[12]).stdout).toContain("   Health: unknown");
+    expect(output(shell[13]).stdout).toEqual([
+      "HTTP/1.1 500 Internal Server Error",
+      "health_status=500",
+    ]);
+    expect(output(shell[14]).stdout).toContain(
+      " 1842 load-balancer T endpoint-responder --config /production/load-balancer/config/routes.conf",
+    );
+    expect(readWorldSlice(state).services).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "endpoint-responder",
+          state: "stopped",
+          health: "unknown",
+          ports: [8080],
+        }),
+        expect.objectContaining({
+          id: "regional-router",
+          state: "running",
+          health: "healthy",
+          ports: [443],
+        }),
+      ]),
+    );
+  });
+
+  it("keeps Incident #001's endpoint responder process synchronized with systemctl", () => {
+    const incident = loadCartridge(
+      loadReplayFixture("020-incident-001-story").cartridge,
+    );
+    const state = reduce({
+      cartridge: incident,
+      seed: "2026-08-22/28/deep-foundation",
+      events: [
+        {
+          type: "shell.execute",
+          payload: { input: "cp -p config/routes.200.conf config/routes.conf" },
+        },
+        {
+          type: "shell.execute",
+          payload: { input: "systemctl stop endpoint-responder" },
+        },
+        { type: "shell.execute", payload: { input: "ps" } },
+        {
+          type: "shell.execute",
+          payload: { input: "systemctl start endpoint-responder" },
+        },
+        { type: "shell.execute", payload: { input: "ps" } },
+        {
+          type: "shell.execute",
+          payload: { input: "systemctl restart endpoint-responder" },
+        },
+        { type: "shell.execute", payload: { input: "ps" } },
+      ],
+    });
+    const shell = results(state);
+
+    expect(output(shell[2]).stdout).toContain(
+      " 1842 load-balancer T endpoint-responder --config /production/load-balancer/config/routes.conf",
+    );
+    expect(output(shell[4]).stdout).toContain(
+      " 1842 load-balancer R endpoint-responder --config /production/load-balancer/config/routes.conf",
+    );
+    expect(output(shell[6]).stdout).toContain(
+      " 1842 load-balancer R endpoint-responder --config /production/load-balancer/config/routes.conf",
+    );
+  });
+
+  it("keeps Incident #001's repair and lifecycle evidence coherent in either order", () => {
+    const incident = loadCartridge(
+      loadReplayFixture("020-incident-001-story").cartridge,
+    );
+    const state = reduce({
+      cartridge: incident,
+      seed: "incident-001-lifecycle-ordering",
+      events: [
+        {
+          type: "shell.execute",
+          payload: { input: "systemctl start endpoint-responder" },
+        },
+        { type: "shell.execute", payload: { input: "rm config/routes.conf" } },
+        {
+          type: "shell.execute",
+          payload: { input: "cp -p config/routes.200.conf config/routes.conf" },
+        },
+        {
+          type: "shell.execute",
+          payload: { input: "systemctl stop endpoint-responder" },
+        },
+        {
+          type: "shell.execute",
+          payload: { input: "systemctl status endpoint-responder" },
+        },
+        {
+          type: "shell.execute",
+          payload: { input: "systemctl start endpoint-responder" },
+        },
+        { type: "shell.execute", payload: { input: "kill 1842" } },
+        {
+          type: "shell.execute",
+          payload: { input: "systemctl status endpoint-responder" },
+        },
+        {
+          type: "shell.execute",
+          payload: { input: "curl http://load-balancer.internal/health" },
+        },
+      ],
+    });
+    const shell = results(state);
+
+    expect(output(shell[4]).stdout).toContain("   Health: unknown");
+    expect(output(shell[7]).stdout).toContain("   Active: inactive (dead)");
+    expect(output(shell[8]).stdout).toContain(
+      "HTTP/1.1 500 Internal Server Error",
+    );
+    expect(readWorldSlice(state).processes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "endpoint-responder", state: "stopped" }),
+      ]),
+    );
+  });
+
   it.each([
     ["ps", ["  PID USER     STAT COMMAND", " 1234 deploy   R api --serve"]],
     ["env", ["PATH=/usr/local/bin:/usr/bin:/bin", "SERVICE_TIER=critical"]],
