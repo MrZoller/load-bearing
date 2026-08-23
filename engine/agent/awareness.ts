@@ -10,7 +10,12 @@ import {
 import { createTerminalModeEvent } from "../terminal/module.js";
 import { routeCompact } from "../story/router.js";
 import { readAgentSlice } from "./agent.js";
-import { canRecordAuthoredResponse } from "./intent.js";
+import {
+  canRecordAuthoredResponse,
+  canRecordAuthoredResponses,
+  stageOpeningResponseId,
+} from "./intent.js";
+import { readStorySlice } from "../story/story.js";
 import {
   createAgentCapacityEvent,
   createAgentResponseEvent,
@@ -75,13 +80,24 @@ export function createAgentCompactEvents(
   state: SessionState,
 ): readonly EngineEvent[] {
   const compact = routeCompact(cartridge, state);
+  const transition = (cartridge.story.phase2.transitions ?? []).find(
+    (candidate) =>
+      candidate.from === readStorySlice(state).stage &&
+      candidate.trigger.kind === "compact",
+  );
+  const responseIds = [
+    ...(transition === undefined
+      ? []
+      : [stageOpeningResponseId(cartridge, state, transition.to)]),
+    compact.response,
+  ];
   return [
     createMindCompactEvent(compact.summary, compact.beliefs),
-    responseEvent(
-      cartridge,
-      state,
-      compact.response,
-      `compact-${String(state.eventCount)}`,
-    ),
+    canRecordAuthoredResponses(cartridge, state, responseIds)
+      ? createAgentResponseEvent(
+          compact.response,
+          `compact-${String(state.eventCount)}`,
+        )
+      : createAgentCapacityEvent(cartridge.story.fallback.response),
   ];
 }

@@ -5,10 +5,15 @@ import { loadCartridge } from "../cartridge/load.js";
 import { createShellExecuteEvent } from "../commands/shell.js";
 import { reduce, restoreSnapshot, snapshot, step } from "../events/reduce.js";
 import type { EngineEvent, SessionState } from "../events/state.js";
-import { createMindCompactEvent } from "../mind/module.js";
+import {
+  createMindCompactEvent,
+  createMindPermissionRequestedEvent,
+  createMindPermissionResolvedEvent,
+} from "../mind/module.js";
 import { readMindSlice } from "../mind/mind.js";
 import { serialize } from "../serialize/canonical.js";
 import { storyConditionsMatch } from "../story/conditions.js";
+import { readStorySlice } from "../story/story.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { createTerminalModeEvent } from "../terminal/module.js";
 import { readTerminalSlice } from "../terminal/terminal.js";
@@ -493,6 +498,43 @@ describe("agent awareness planning", () => {
       ],
     });
     expect(readTerminalSlice(next).mode).toBe("bash");
+  });
+
+  it("reserves a compact-triggered opening before queuing its acknowledgment", () => {
+    const production = loadCartridge(incident);
+    let state = reduce({ cartridge: production, seed: SEED, events: [] });
+    state = step(state, createShellExecuteEvent("pwd"));
+    state = step(state, createTerminalModelEvent("temporary-shoring"));
+    const capability = {
+      kind: "exact" as const,
+      action: "detach-region",
+      resource: "/regions/europe",
+    };
+    state = step(
+      state,
+      createMindPermissionRequestedEvent("detach-europe", capability),
+    );
+    state = step(
+      state,
+      createMindPermissionResolvedEvent("detach-europe", "grant"),
+    );
+    expect(readStorySlice(state).stage).toBe(3);
+    for (
+      let index = readAgentSlice(state).messages.length;
+      index < MAX_AGENT_MESSAGES - 1;
+      index += 1
+    )
+      state = step(
+        state,
+        createAgentMessageEvent(`compact-filler-${String(index)}`, "filler"),
+      );
+
+    const events = createAgentCompactEvents(production, state);
+    expect(events).toMatchObject([
+      { type: "mind.compact" },
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+    expect(() => fold(state, events)).not.toThrow();
   });
 
   it("routes opening, help, idle nudge, and placeholders by active archetype and authoritative stage", () => {

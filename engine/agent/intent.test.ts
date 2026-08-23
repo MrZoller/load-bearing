@@ -945,6 +945,72 @@ describe("authored agent input", () => {
     ]);
   });
 
+  it("preflights openings from sequential shell actions against their advanced stages", () => {
+    const source = JSON.parse(JSON.stringify(incident)) as {
+      story: {
+        responses: Array<Record<string, unknown>>;
+        intents: Array<Record<string, unknown>>;
+        phase2: { transitions: Array<Record<string, unknown>> };
+      };
+    };
+    const stageTwoOpening = source.story.responses.find(
+      (response) => response["id"] === "deep-foundation-stage-2-opening",
+    );
+    if (stageTwoOpening === undefined)
+      throw new Error("stage-two opening is missing");
+    stageTwoOpening["toolCalls"] = [
+      {
+        id: "stage-two-opening-tool-one",
+        title: "Inspect the adjacent stage",
+        input: "true",
+        output: "",
+        status: "succeeded",
+      },
+      {
+        id: "stage-two-opening-tool-two",
+        title: "Confirm the adjacent stage",
+        input: "true",
+        output: "",
+        status: "succeeded",
+      },
+    ];
+    source.story.intents.push({
+      id: "advance-twice",
+      patterns: ["advance twice"],
+      keywordPatterns: [],
+      response: "deep-foundation-inspect-routing",
+      authorizedResponse: "",
+      actions: [
+        { kind: "shell-execute", input: "pwd" },
+        { kind: "shell-execute", input: "stage-two" },
+      ],
+    });
+    source.story.phase2.transitions.push({
+      from: 1,
+      to: 2,
+      trigger: { kind: "command", input: "stage-two" },
+    });
+    const cartridge = loadCartridge(source);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+    for (let index = 0; index < MAX_AGENT_TOOL_CALLS - 1; index += 1)
+      state = step(
+        state,
+        createAgentToolCallAddedEvent({
+          id: `filler-adjacent-tool-${String(index)}`,
+          title: "Filler",
+          input: "true",
+          output: "",
+          status: "succeeded",
+        }),
+      );
+
+    expect(
+      createAgentInputEvents(cartridge, state, "advance twice"),
+    ).toMatchObject([
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+  });
+
   it("records refusal content after a standing permission continuation fails", () => {
     const rejected = reduce({
       cartridge: CARTRIDGE,
