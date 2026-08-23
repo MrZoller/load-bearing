@@ -1143,6 +1143,21 @@ describe("loadCartridge", () => {
     expect(issuesOf(badPhrase).map((issue) => issue.pointer)).toContain(
       "/story/intents/0/actions/0/requiredPhrase",
     );
+
+    const emptyConsent = minimal();
+    const emptyStory = emptyConsent["story"] as Record<string, unknown>;
+    const emptyIntent = (emptyStory["intents"] as Record<string, unknown>[])[0];
+    if (emptyIntent === undefined)
+      throw new Error("minimal fixture lacks an intent");
+    emptyIntent["actions"] = [{ ...waiver, consent: [] }];
+    expect(issuesOf(emptyConsent)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/story/intents/0/actions/0/consent",
+          expected: "a non-empty authorized-operation continuation",
+        }),
+      ]),
+    );
   });
 
   it("strictly validates authored belief shapes and compact references", () => {

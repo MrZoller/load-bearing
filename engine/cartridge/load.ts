@@ -1612,9 +1612,12 @@ function checkStoryAndPresentation(
               ["consent", action.consent],
               ["denial", action.denial],
             ] as const);
-      if (action.kind === "permission-request" && action.grant.length === 0)
+      if (
+        (action.kind === "permission-request" && action.grant.length === 0) ||
+        (action.kind === "waiver-request" && action.consent.length === 0)
+      )
         report.addPhrase(
-          `${root}/grant`,
+          `${root}/${action.kind === "permission-request" ? "grant" : "consent"}`,
           "a non-empty authorized-operation continuation",
           "an empty array",
         );
