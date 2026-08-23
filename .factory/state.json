@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T46",
-  "branch": "factory/t46-four-voices",
-  "pr": 70,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-23T15:27:47Z"
+  "updated": "2026-08-23T15:39:00Z"
 }
