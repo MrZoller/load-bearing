@@ -5,8 +5,8 @@ import {
   hasAgentIdleNudged,
   readAgentSlice,
   readMindSlice,
-  readStorySlice,
   readTerminalSlice,
+  selectAgentPresentation,
 } from "../engine/index.js";
 import type { EngineEvent } from "../engine/index.js";
 import { createRuntimeSession } from "./session.js";
@@ -101,10 +101,8 @@ export function mountApp(
   let placeholderIndex = 0;
 
   function currentPlaceholders(): readonly string[] {
-    const stage = readStorySlice(session.current().state).stage;
-    return session.cartridge.presentation.placeholders
-      .filter((placeholder) => placeholder.stage === stage)
-      .map((placeholder) => placeholder.text);
+    return selectAgentPresentation(session.cartridge, session.current().state)
+      .placeholders;
   }
 
   const inputController = createTerminalInputController({
@@ -151,9 +149,13 @@ export function mountApp(
 
   function resetIdleTimer(): void {
     stopIdleTimer();
-    if (browser === null || session.cartridge.story.idleNudgeResponse === "")
-      return;
     const current = session.current();
+    if (
+      browser === null ||
+      selectAgentPresentation(session.cartridge, current.state)
+        .idleNudgeResponse === ""
+    )
+      return;
     if (
       readTerminalSlice(current.state).mode !== "tui" ||
       readAgentSlice(current.state).activity.status !== "idle" ||

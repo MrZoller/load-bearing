@@ -139,6 +139,7 @@
           "tokensPerEvent": 0
         },
         "phase2": {
+          "stagePresentations": [],
           "statusCurves": []
         },
         "placeholders": [
@@ -151,29 +152,45 @@
           {
             "archetype": "paranoid",
             "stage": 0,
+            "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt",
             "verbs": [
-              "Working"
+              {
+                "verb": "Working",
+                "weight": 1
+              }
             ]
           },
           {
             "archetype": "reckless",
             "stage": 0,
+            "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt",
             "verbs": [
-              "Working"
+              {
+                "verb": "Working",
+                "weight": 1
+              }
             ]
           },
           {
             "archetype": "superficial",
             "stage": 0,
+            "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt",
             "verbs": [
-              "Working"
+              {
+                "verb": "Working",
+                "weight": 1
+              }
             ]
           },
           {
             "archetype": "existential",
             "stage": 0,
+            "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt",
             "verbs": [
-              "Working"
+              {
+                "verb": "Working",
+                "weight": 1
+              }
             ]
           }
         ]
@@ -285,10 +302,79 @@
         "phase2": {
           "additionalProperties": false,
           "default": {
+            "stagePresentations": [],
             "statusCurves": []
           },
-          "description": "Concrete reactive status display data; T40 owns broader stage-aware presentation.",
+          "description": "Concrete reactive status and optional stage-aware presentation data.",
           "properties": {
+            "stagePresentations": {
+              "default": [],
+              "description": "Optional complete presentation copy keyed by model archetype and escalation stage.",
+              "items": {
+                "additionalProperties": false,
+                "description": "One archetype-stage presentation row.",
+                "properties": {
+                  "archetype": {
+                    "description": "Behavioral archetype.",
+                    "enum": [
+                      "paranoid",
+                      "reckless",
+                      "superficial",
+                      "existential"
+                    ],
+                    "type": "string"
+                  },
+                  "helpResponse": {
+                    "description": "A stable lowercase Phase 1 content identifier.",
+                    "maxLength": 64,
+                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                    "type": "string"
+                  },
+                  "idleNudgeResponse": {
+                    "default": "",
+                    "description": "An optional stable lowercase Phase 1 content identifier.",
+                    "maxLength": 64,
+                    "pattern": "^(?:|[a-z][a-z0-9-]{0,63})$",
+                    "type": "string"
+                  },
+                  "openingResponse": {
+                    "description": "A stable lowercase Phase 1 content identifier.",
+                    "maxLength": 64,
+                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                    "type": "string"
+                  },
+                  "placeholders": {
+                    "description": "Authored input placeholders for this row.",
+                    "items": {
+                      "description": "Non-empty bounded single-line authored text.",
+                      "maxLength": 240,
+                      "minLength": 1,
+                      "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                      "type": "string"
+                    },
+                    "maxItems": 32,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "stage": {
+                    "description": "Authoritative escalation stage.",
+                    "maximum": 4,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "archetype",
+                  "stage",
+                  "openingResponse",
+                  "helpResponse",
+                  "placeholders"
+                ],
+                "type": "object"
+              },
+              "maxItems": 64,
+              "type": "array"
+            },
             "statusCurves": {
               "description": "Complete authored status display rows keyed by model and stage.",
               "items": {
@@ -413,14 +499,38 @@
                 "minimum": 0,
                 "type": "integer"
               },
+              "suffix": {
+                "description": "One spinner suffix template; only {seconds} and {tokens} substitutions are available.",
+                "maxLength": 240,
+                "minLength": 1,
+                "pattern": "^(?:[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029{}]|\\{seconds\\}|\\{tokens\\})+$",
+                "type": "string"
+              },
               "verbs": {
-                "description": "Candidate spinner verbs.",
+                "description": "Positive integer-weighted candidate spinner verbs.",
                 "items": {
-                  "description": "Non-empty bounded single-line authored text.",
-                  "maxLength": 240,
-                  "minLength": 1,
-                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
-                  "type": "string"
+                  "additionalProperties": false,
+                  "description": "One weighted spinner verb.",
+                  "properties": {
+                    "verb": {
+                      "description": "Non-empty bounded single-line authored text.",
+                      "maxLength": 240,
+                      "minLength": 1,
+                      "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                      "type": "string"
+                    },
+                    "weight": {
+                      "description": "Positive relative selection weight.",
+                      "maximum": 4294967296,
+                      "minimum": 1,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "verb",
+                    "weight"
+                  ],
+                  "type": "object"
                 },
                 "maxItems": 32,
                 "minItems": 1,
@@ -430,7 +540,8 @@
             "required": [
               "archetype",
               "stage",
-              "verbs"
+              "verbs",
+              "suffix"
             ],
             "type": "object"
           },

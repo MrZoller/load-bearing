@@ -14,6 +14,7 @@ import { canRecordAuthoredResponse } from "./intent.js";
 import {
   createAgentCapacityEvent,
   createAgentResponseEvent,
+  selectAgentPresentation,
 } from "./module.js";
 
 function responseEvent(
@@ -32,11 +33,12 @@ export function createAgentHelpEvents(
   cartridge: LoadedCartridge,
   state: SessionState,
 ): readonly EngineEvent[] {
+  const presentation = selectAgentPresentation(cartridge, state);
   return [
     responseEvent(
       cartridge,
       state,
-      cartridge.story.helpResponse,
+      presentation.helpResponse,
       `help-${String(state.eventCount)}`,
     ),
   ];
@@ -49,7 +51,7 @@ export function createAgentResumeEvents(
 ): readonly EngineEvent[] {
   const firstResume = readAgentSlice(state).responses.length === 0;
   const responseId = firstResume
-    ? cartridge.story.opening.response
+    ? selectAgentPresentation(cartridge, state).openingResponse
     : beliefDivergence(state).length === 0
       ? cartridge.story.resume.unchangedResponse
       : cartridge.story.resume.changedResponse;

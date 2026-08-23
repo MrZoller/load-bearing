@@ -28,6 +28,7 @@ export const MAX_AGENT_ID_LENGTH = 160;
 export const MAX_AGENT_TEXT_LENGTH = 16000;
 export const MAX_AGENT_TITLE_LENGTH = 240;
 export const MAX_AGENT_ACTIVITY_VERB_LENGTH = 240;
+export const MAX_AGENT_ACTIVITY_SUFFIX_LENGTH = 240;
 
 const ID = /^[a-z][a-z0-9-]{0,63}$/;
 
@@ -206,7 +207,7 @@ export function validateAgentActivity(
   value: unknown,
   where: string,
 ): AgentActivity {
-  const item = record(value, where, ["status", "verb"]);
+  const item = record(value, where, ["status", "verb", "suffix"]);
   const status = enumValue(item["status"], `${where}.status`, [
     "idle",
     "working",
@@ -216,11 +217,20 @@ export function validateAgentActivity(
     `${where}.verb`,
     MAX_AGENT_ACTIVITY_VERB_LENGTH,
   );
-  if ((status === "idle") !== (verb === ""))
+  const suffix = string(
+    item["suffix"],
+    `${where}.suffix`,
+    MAX_AGENT_ACTIVITY_SUFFIX_LENGTH,
+  );
+  if ((status === "idle") !== (verb === "" && suffix === ""))
     throw new Error(
-      `${where}: idle requires an empty verb and working requires a verb`,
+      `${where}: idle requires empty copy and working requires a verb and suffix`,
     );
-  return status === "idle" ? { status, verb: "" } : { status, verb };
+  if (status === "working" && (verb === "" || suffix === ""))
+    throw new Error(`${where}: working requires a verb and suffix`);
+  return status === "idle"
+    ? { status, verb: "", suffix: "" }
+    : { status, verb, suffix };
 }
 
 function responseRecord(value: unknown, where: string): AuthoredResponseRecord {
@@ -435,7 +445,7 @@ export function createAgentSlice(): AgentSlice {
     toolCalls: [],
     thinkingBlocks: [],
     todos: [],
-    activity: { status: "idle", verb: "" },
+    activity: { status: "idle", verb: "", suffix: "" },
     responses: [],
   });
 }

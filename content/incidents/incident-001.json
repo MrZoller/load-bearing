@@ -695,22 +695,38 @@
       {
         "archetype": "paranoid",
         "stage": 0,
-        "verbs": ["Surveying", "Checking regional loads"]
+        "verbs": [
+          { "verb": "Surveying", "weight": 4 },
+          { "verb": "Checking regional loads", "weight": 1 }
+        ],
+        "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt"
       },
       {
         "archetype": "reckless",
         "stage": 0,
-        "verbs": ["Shoring", "Assuming stability"]
+        "verbs": [
+          { "verb": "Shoring", "weight": 4 },
+          { "verb": "Assuming stability", "weight": 1 }
+        ],
+        "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt"
       },
       {
         "archetype": "superficial",
         "stage": 0,
-        "verbs": ["Smoothing", "Reviewing the surface"]
+        "verbs": [
+          { "verb": "Smoothing", "weight": 4 },
+          { "verb": "Reviewing the surface", "weight": 1 }
+        ],
+        "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt"
       },
       {
         "archetype": "existential",
         "stage": 0,
-        "verbs": ["Extending", "Locating support"]
+        "verbs": [
+          { "verb": "Extending", "weight": 4 },
+          { "verb": "Locating support", "weight": 1 }
+        ],
+        "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt"
       }
     ],
     "metrics": {

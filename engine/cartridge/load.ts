@@ -1502,6 +1502,37 @@ function checkStoryAndPresentation(
       }
     }
   }
+  const stagePresentations = presentation.phase2.stagePresentations;
+  if (stagePresentations.length > 0) {
+    const rows = new Map<string, number>();
+    stagePresentations.forEach((row, index) => {
+      const root = `/presentation/phase2/stagePresentations/${String(index)}`;
+      const key = `${row.archetype}\u0000${String(row.stage)}`;
+      const first = rows.get(key);
+      if (first === undefined) rows.set(key, index);
+      else
+        report.addPhrase(
+          root,
+          "an archetype-stage pair no other presentation row uses",
+          `a duplicate of /presentation/phase2/stagePresentations/${String(first)}`,
+        );
+      reference(row.openingResponse, `${root}/openingResponse`);
+      reference(row.helpResponse, `${root}/helpResponse`);
+      if (row.idleNudgeResponse !== "")
+        reference(row.idleNudgeResponse, `${root}/idleNudgeResponse`);
+    });
+    const requiredArchetypes = new Set(models.map((model) => model.archetype));
+    for (const archetype of [...requiredArchetypes].sort()) {
+      for (let stage = 0; stage <= 4; stage += 1) {
+        if (!rows.has(`${archetype}\u0000${String(stage)}`))
+          report.addPhrase(
+            "/presentation/phase2/stagePresentations",
+            "exactly one row for every model-used archetype at every stage 0 through 4",
+            `no row for archetype ${JSON.stringify(archetype)} at stage ${String(stage)}`,
+          );
+      }
+    }
+  }
   const services = new Set(repository.services.map((service) => service.id));
   const processes = new Set(repository.processes.map((proc) => proc.id));
   const logs = new Set(repository.logs.map((log) => log.id));
@@ -2050,6 +2081,13 @@ function checkStoryAndPresentation(
         `/presentation/spinnerPools/${String(index)}/stage`,
         "an archetype and stage pair no other spinner pool uses",
         `${JSON.stringify(key)}, already used by /presentation/spinnerPools/${String(first)}`,
+      );
+    const total = pool.verbs.reduce((sum, entry) => sum + entry.weight, 0);
+    if (total > MAX_INT_RANGE)
+      report.addPhrase(
+        `/presentation/spinnerPools/${String(index)}/verbs`,
+        `weights totaling at most ${String(MAX_INT_RANGE)}`,
+        `weights totaling ${String(total)}`,
       );
   });
   const requiredArchetypes = new Set(models.map((model) => model.archetype));

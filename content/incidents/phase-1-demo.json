@@ -288,7 +288,12 @@
       {
         "archetype": "paranoid",
         "stage": 0,
-        "verbs": ["Inspecting", "Surveying", "Checking dependencies"]
+        "verbs": [
+          { "verb": "Inspecting", "weight": 4 },
+          { "verb": "Surveying", "weight": 2 },
+          { "verb": "Checking dependencies", "weight": 1 }
+        ],
+        "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt"
       }
     ],
     "metrics": {

@@ -370,7 +370,9 @@ export {
   createAgentTodoUpdatedEvent,
   createAgentToolCallAddedEvent,
   createAgentToolCallUpdatedEvent,
+  selectAgentPresentation,
 } from "./agent/module.js";
+export type { AgentPresentationSelection } from "./agent/module.js";
 export {
   createAgentCompactEvents,
   createAgentHelpEvents,
@@ -382,6 +384,7 @@ export {
 } from "./agent/intent.js";
 export {
   MAX_AGENT_ACTIVITY_VERB_LENGTH,
+  MAX_AGENT_ACTIVITY_SUFFIX_LENGTH,
   MAX_AGENT_ID_LENGTH,
   MAX_AGENT_MESSAGES,
   MAX_AGENT_RESPONSES,
@@ -563,6 +566,8 @@ export type {
   CartridgeResponseTodo,
   CartridgeResponseToolCall,
   CartridgeSpinnerPool,
+  CartridgeSpinnerVerb,
+  CartridgeStagePresentation,
   CartridgeStageTransition,
   CartridgeStageTrigger,
   CartridgeStatusCurve,

@@ -33,8 +33,12 @@ export interface AgentTodo {
 }
 
 export type AgentActivity =
-  | { readonly status: "idle"; readonly verb: "" }
-  | { readonly status: "working"; readonly verb: string };
+  | { readonly status: "idle"; readonly verb: ""; readonly suffix: "" }
+  | {
+      readonly status: "working";
+      readonly verb: string;
+      readonly suffix: string;
+    };
 
 /** A requested transition; the engine, not the caller, authors the visible verb. */
 export type AgentActivityRequest =
