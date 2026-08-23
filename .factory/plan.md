@@ -45,9 +45,10 @@ authoring tooling remain excluded.
   - acceptance: `engine/story/{router,router.test}.ts`, `engine/agent/{intent,awareness}.ts`, `engine/cartridge/{schema,types,load}.ts`, and `runtime/commands/slash.ts` route shared beats through defaults plus archetype/stage/condition overrides, never model-owned graphs; `/compact` selects the active archetype's authored summary and beliefs, preserves machine truth, and changes a later route through typed `beliefDivergence`; same-seed/input fixtures keep shared beat ids while producing four distinct state-consistent outcomes (criteria 4, 13, 20)
   - deps: T32, T35
   - pr: 61
-- [~] T37 (standard) — Predecessor-aware model handoffs
+- [R] T37 (standard) — Predecessor-aware model handoffs
   - acceptance: `engine/terminal/{types,terminal,module,module.test}.ts`, `engine/story/{types,story,module,router}.ts`, and `runtime/views/tui.ts` preserve predecessor and successor in one replayable model transition and select reusable pair blame plus optional incident additions; table tests cover all 12 ordered archetype pairs, preserve machine/story/mind/endings, and prove switching neither reseeds nor consumes unrelated spinner or rare-event streams (criteria 5, 18, 20)
   - deps: T36
+  - pr: 62
 - [ ] T38 (standard) — Deterministic intent families and mutating fallback
   - acceptance: `engine/cartridge/{intent,intent.test}.ts`, `engine/agent/{intent,intent.test}.ts`, and `engine/story/{router,actions}.ts` provide bounded deterministic matching for assignment, undo/why/status, disagreement, insult, compliment, waiver consent, investigation, and capitulation while preserving the raw waiver path; every unmatched input selects a cartridge-defined adjacent owner action and condition-valid response, while bounded flail/capitulation counters support deterministic stage-3+ misfires without changing the disputed belief; an adversarial corpus proves no apology, parser leak, inert fallback, or state contradiction (criteria 6, 7, 16, 17 foundation)
   - deps: T33, T34, T35, T36
