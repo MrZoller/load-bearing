@@ -105,9 +105,10 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/mind/mind.test.ts`, and permission/waiver goldens author trivial asks, conspicuous non-asks, distinct grant/deny/standing-allow continuations, `WAIVER.md`, exact `I agree`, and callbacks quoting the same document/time; tests cover alternate wording, exact ledger queries, gated machine effects, and the waiver-ending prerequisite without inferring consent from dialogue (criteria 11, 12, 18)
   - deps: T34, T41, T46
   - pr: 75
-- [~] T52 (standard) — Archetype compact summaries and divergence callbacks
+- [R] T52 (standard) — Archetype compact summaries and divergence callbacks
   - acceptance: `content/incidents/incident-001.json`, `engine/agent/awareness.test.ts`, and paired goldens author four subtly wrong compact summaries/belief sets plus later routes querying typed divergence; compacted/uncompacted machine truth stays byte-identical until an authored consequence, while persona belief, response, and ending eligibility differ visibly (criteria 13, 18)
   - deps: T36, T43, T46
+  - pr: 76
 - [ ] T53 (standard) — Rare disturbances and consequence chains
   - acceptance: `content/incidents/incident-001.json`, `engine/story/story.test.ts`, and hit/miss goldens author bounded one-shot rare events with fire/miss weights, eligibility, callbacks, and consequences; evaluated events cannot be farmed, fired effects remain machine/story coherent, and unrelated streams do not perturb outcomes (criteria 18; approved decision Q2=A)
   - deps: T39, T45, T46
