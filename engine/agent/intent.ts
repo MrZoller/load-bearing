@@ -352,24 +352,41 @@ export function createAgentInputEvents(
       ? defaultResponseId
       : routeStoryResponse(cartridge, state, routedBeat.beat, defaultResponseId)
           .responseId;
+  const story = readStorySlice(state);
+  // Reaching a beat can publish a reveal, which may advance the current
+  // stage and insert its opening before the response already planned here.
+  // Reserve that possible third message only for turns that can take this
+  // route, preserving full two-message capacity for ordinary conversation.
+  const additionalMessages =
+    selection.actions.some((action) => action.kind === "story-reach") &&
+    cartridge.story.phase2.transitions.some(
+      (transition) =>
+        transition.from === story.stage && transition.trigger.kind === "reveal",
+    )
+      ? 3
+      : 2;
   const maySubstituteWaiverFailure = selection.actions.some(
     (action) => action.kind === "waiver-request",
   );
   if (
-    !canRecordAuthoredResponse(cartridge, state, responseId, 2) ||
+    !canRecordAuthoredResponse(
+      cartridge,
+      state,
+      responseId,
+      additionalMessages,
+    ) ||
     (maySubstituteWaiverFailure &&
       !canRecordAuthoredResponse(
         cartridge,
         state,
         cartridge.story.fallback.response,
-        2,
+        additionalMessages,
       ))
   ) {
     return [createAgentCapacityEvent(cartridge.story.fallback.response)];
   }
   const turnId = `turn-${String(state.eventCount)}`;
   const intentCounters = cartridge.story.phase2.intentCounters;
-  const story = readStorySlice(state);
   const counterHasCapacity = (id: string): boolean => {
     const current = queryStoryCounter(story, id);
     const declaration = cartridge.story.phase2.counters.find(
