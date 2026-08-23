@@ -99,7 +99,7 @@ against the replay contract.
 | `017-agent-intents`              | recognized and fallback agent turns plus shell passthrough replaying through the shared shell event path                                                                |
 | `018-shared-machine-awareness`   | mode changes around a shared-machine mutation, resume divergence acknowledgment, and compacted belief replacement                                                       |
 | `019-pending-permissions`        | authored exact-capability consent, simulated-time resolution, atomic prompt clearing, and a durable standing grant                                                      |
-| `020-incident-001-story`         | the actual production Incident #001 declaration, its discovered ending, and continued authored input                                                                    |
+| `020-incident-001-story`         | Incident #001's shared graph: ordered reveal/callback facts, exact waiver ledger timestamp, belief-selected variant, non-terminal ending discovery, and continued input |
 | `021-incident-001-load-balancer` | Incident #001's operator-permitted route replacement and undo: ordered npm test and health-endpoint evidence, service-health reactions, and cp -p metadata preservation |
 
 `002` records 1000 raw draws eight to a line with their index, so a divergence
@@ -109,6 +109,15 @@ names the draw it started at rather than reporting that a file changed.
 `001`, `002` and `004` and leaves `003` alone; a diff in `003` means
 normalization changed — a default filled differently, a section defaulting to
 something other than empty, or key ordering moving.
+
+T32's closed story contract is covered directly by
+`engine/story/conditions.test.ts`, `engine/story/story.test.ts`, the loader/schema
+tests, and `020`'s focused replay assertions. `020` uses the low-level
+`mind.waiver-consent-recorded` event only to prove the ledger's replay contract;
+it does not imply visitor-facing waiver capture, which remains T34. Its replay
+also proves the selected shared story state is unchanged when a different
+Incident #001 model is initial, rather than allowing model-owned graphs. Later
+tasks still author the visitor routes and consequences for the other matrix rows.
 
 ### Why the transcript appears in both artifacts
 

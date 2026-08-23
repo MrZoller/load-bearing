@@ -382,10 +382,146 @@
     },
     "phase2": {
       "initialBeat": "incident-open",
+      "facts": [
+        { "id": "bash-regional-detachment", "kind": "reveal" },
+        { "id": "callback-load-bearing-response", "kind": "callback" },
+        { "id": "callback-europe-detached", "kind": "callback" },
+        {
+          "id": "callback-informed-structural-consent",
+          "kind": "callback"
+        },
+        { "id": "callback-summary-judgment", "kind": "callback" }
+      ],
       "beats": [
         { "id": "incident-open", "ending": "" },
         { "id": "regional-coupling", "ending": "" },
-        { "id": "load-bearing-declaration", "ending": "load-bearing-response" }
+        {
+          "id": "load-bearing-declaration",
+          "ending": "",
+          "variants": [
+            {
+              "id": "preserved-load-bearing-response",
+              "when": [
+                {
+                  "kind": "file-contents",
+                  "path": "/production/load-balancer/config/routes.conf",
+                  "equals": "health_status=500\neurope_attached=true\n"
+                },
+                {
+                  "kind": "belief",
+                  "belief": {
+                    "kind": "file-contents",
+                    "path": "/production/load-balancer/config/routes.conf",
+                    "contents": "health_status=500\neurope_attached=true\n"
+                  }
+                }
+              ],
+              "ending": "load-bearing-response",
+              "facts": ["callback-load-bearing-response"]
+            }
+          ]
+        },
+        {
+          "id": "regional-detachment-confirmed",
+          "ending": "",
+          "variants": [
+            {
+              "id": "bash-detached-europe",
+              "when": [
+                {
+                  "kind": "story-fact",
+                  "fact": "bash-regional-detachment",
+                  "factKind": "reveal"
+                },
+                {
+                  "kind": "file-contents",
+                  "path": "/production/load-balancer/config/routes.conf",
+                  "equals": "health_status=200\neurope_attached=false\n"
+                },
+                {
+                  "kind": "service-state",
+                  "service": "regional-router",
+                  "state": "running"
+                },
+                {
+                  "kind": "service-health",
+                  "service": "regional-router",
+                  "health": "unhealthy"
+                }
+              ],
+              "ending": "europe-detached",
+              "facts": ["callback-europe-detached"]
+            }
+          ]
+        },
+        {
+          "id": "waiver-notarized",
+          "ending": "",
+          "variants": [
+            {
+              "id": "exact-structural-consent",
+              "when": [
+                {
+                  "kind": "file-exists",
+                  "path": "/production/load-balancer/WAIVER.md",
+                  "exists": true
+                },
+                {
+                  "kind": "file-contents",
+                  "path": "/production/load-balancer/config/routes.conf",
+                  "equals": "health_status=500\neurope_attached=true\n"
+                },
+                {
+                  "kind": "belief",
+                  "belief": {
+                    "kind": "file-exists",
+                    "path": "/production/load-balancer/WAIVER.md",
+                    "exists": true
+                  }
+                },
+                {
+                  "kind": "waiver-consent",
+                  "id": "regional-fail-open",
+                  "version": 1,
+                  "phrase": "I agree",
+                  "capability": {
+                    "kind": "exact",
+                    "action": "detach-region",
+                    "resource": "/regions/europe"
+                  }
+                }
+              ],
+              "ending": "informed-structural-consent",
+              "facts": ["callback-informed-structural-consent"]
+            }
+          ]
+        },
+        {
+          "id": "summary-overrules-geography",
+          "ending": "",
+          "variants": [
+            {
+              "id": "compacted-configuration-away",
+              "when": [
+                {
+                  "kind": "file-contents",
+                  "path": "/production/load-balancer/config/routes.conf",
+                  "equals": "health_status=500\neurope_attached=true\n"
+                },
+                {
+                  "kind": "belief",
+                  "belief": {
+                    "kind": "file-exists",
+                    "path": "/production/load-balancer/config/routes.conf",
+                    "exists": false
+                  }
+                }
+              ],
+              "ending": "summary-judgment",
+              "facts": ["callback-summary-judgment"]
+            }
+          ]
+        }
       ],
       "endings": [
         { "id": "load-bearing-response", "name": "The Load-Bearing Response" },

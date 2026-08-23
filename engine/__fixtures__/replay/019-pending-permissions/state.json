@@ -179,10 +179,13 @@
         "beats": [
           {
             "ending": "",
-            "id": "start"
+            "facts": [],
+            "id": "start",
+            "variants": []
           }
         ],
         "endings": [],
+        "facts": [],
         "initialBeat": "start"
       },
       "responses": [
@@ -310,7 +313,8 @@
           },
           "decision": "always-allow"
         }
-      ]
+      ],
+      "waiverConsents": []
     },
     "probe": {
       "events": 0,
@@ -318,7 +322,9 @@
     },
     "story": {
       "currentBeat": "start",
-      "discoveredEndings": []
+      "currentVariant": "",
+      "discoveredEndings": [],
+      "facts": []
     },
     "terminal": {
       "activeModel": "deep-foundation",

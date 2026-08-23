@@ -18,7 +18,7 @@ calls and no server-side state: deterministic simulation is authoritative.
 │                          ▼                                  │
 │               Simulation engine (headless TS)               │
 │   VFS · git · processes · services · tests · env · man      │
-│   intents · story beats · endings · event log · seeded PRNG │
+│   intents · story facts/conditions · endings · seeded PRNG  │
 │                          ▲                                  │
 │                          │ loads + validates                │
 │               Incident cartridge (JSON, dated)              │
@@ -216,10 +216,13 @@ renders the same entries differently without changing what was recorded.
 
 ### Command layer
 
-- `engine/story/` owns the current shared beat and first-discovery order of
-  unranked endings. Its one v0 event, `story.beat-reached`, carries only an
-  authored beat id; reaching a beat discovers that beat's ending idempotently
-  and never terminates the session.
+- `engine/story/` owns one shared graph: current beat and selected sparse
+  variant, first-recorded reveal/callback facts, and first-discovery order of
+  unranked endings. `story.beat-reached` evaluates the beat's authored variants
+  in order against pre-event state; the first flat all-of match replaces the
+  base outcome and records only its ending/facts. `story.fact-recorded` records
+  a declared fact idempotently. Neither event terminates the session, and model
+  or archetype records cannot contain their own graph.
 - `engine/commands/` owns POSIX-ish word tokenization, generic short/long option
   parsing, duplicate-safe command registration, and the one shell execution API
   used by both terminal views
@@ -287,6 +290,11 @@ The agent's mind is engine state, distinct from machine truth:
   capabilities are exact `{kind: "exact", action, resource}` triples: only an
   exactly equal `always-allow` entry supplies standing coverage. One-time grants
   and denials remain history, not implicit scopes.
+- **Waiver-consent ledger:** ordered entries record an exact waiver id/version,
+  phrase, capability, and simulated timestamp separately from permission
+  decisions. Story conditions can query exact entries, so a standing grant can
+  never stand in for consent. T32 establishes this state/read boundary; T34 owns
+  raw `I agree` capture and atomic publication with the gated continuation.
 - **Belief state:** the agent's model of the world, tracked separately from
   the world itself. The closed Phase 0 vocabulary covers file existence, file
   contents, Git HEAD, service state, and service health. Assertions upsert by
@@ -360,8 +368,13 @@ shape:
   "story": {
     "phase2": {
       "initialBeat": "incident-open",
+      "facts": [{ "id": "callback-load-bearing", "kind": "callback" }],
       "beats": [{ "id": "incident-open", "ending": "" },
-                  { "id": "declaration", "ending": "load-bearing-response" }],
+                  { "id": "declaration", "ending": "",
+                    "variants": [{ "id": "preserved", "when": [
+                      { "kind": "file-exists", "path": "/etc/routes", "exists": true }
+                    ], "ending": "load-bearing-response",
+                    "facts": ["callback-load-bearing"] }] }],
       "endings": [{ "id": "load-bearing-response",
                     "name": "The Load-Bearing Response" }]
     }
@@ -400,21 +413,25 @@ The Phase 1 portions of `story` and `presentation` are concrete and bounded in
 v0: opening copy, authored response records and artifacts, minimal intents and
 fallback, help/idle-nudge/compact/resume references, rotating placeholders,
 slash autocomplete descriptions, archetype-stage spinner pools, and integer
-metric parameters. `story.phase2` is now a concrete bounded skeleton: one
-initial beat, an authored-order beat list with optional ending ids, and an
-authored-order ending identity list. Cartridge actions are a closed
-`shell-execute` / `permission-request` / `story-reach` union rather than
-arbitrary engine events. Loading rejects duplicate or dangling response, intent,
-beat, ending, and action references, duplicate spinner keys, and missing stage-0
-pools for model archetypes. Only `presentation.phase2` remains deferred,
+metric parameters. `story.phase2` is a concrete bounded shared graph: one
+initial beat, declared reveal/callback facts, authored-order beats with sparse
+first-match condition variants, and unranked ending identities. Conditions are
+a closed union over VFS contents/existence, service state/health, exact beliefs,
+exact waiver consent, and declared story facts; variant conditions are flat
+non-empty all-of lists evaluated against pre-event state. Cartridge actions are
+a closed `shell-execute` / `permission-request` / `story-reach` union rather
+than arbitrary engine events. Loading rejects duplicate or dangling response, intent,
+beat, variant, fact, ending, service, and action references, fact-kind
+mismatches, duplicate spinner keys, and missing stage-0 pools for model
+archetypes. Only `presentation.phase2` remains deferred,
 depth-limited, and marked in the emitted schema with its future owner.
 
 **Cartridge owns:** world (scene, repo, files with ownership metadata, git,
 processes, services, logs, env, man pages, shell history), models (names,
 archetypes, multipliers, quirks), authored responses/actions and Phase 1 teaching
-copy, spinner pools and metric parameters, plus the bounded shared beat and ending
-skeleton. Later Phase 2 work adds conditions, reveals, callbacks, status curves,
-sharing copy, and disturbances without giving models parallel graphs.
+copy, spinner pools and metric parameters, plus the bounded shared beat graph,
+typed facts/conditions, and ending identities. Later Phase 2 work adds status
+curves, sharing copy, and disturbances without giving models parallel graphs.
 
 **Runtime owns:** rendering, parsing, state transitions, animation, search,
 keyboard and mobile behavior, accessibility, replay, archive navigation, and
@@ -434,11 +451,13 @@ a Phase 5 that works and one that drowns. The dialogue layer is therefore
 (beat × archetype × stage) → response, with archetype-pair handoff
 templates covering mid-session model switches.
 
-The first Phase 2 slice deliberately treats ending discovery as session state,
-not terminal state. `StorySlice.currentBeat` names the latest reached authored
-beat and `discoveredEndings` records ending ids once, in discovery order. Free
-play, Bash, and model switching continue after discovery; Phase 3 may project
-that state into a report, but it does not own or reinterpret the discovery.
+Ending discovery is session state, not terminal state. `StorySlice.currentBeat`
+names the latest reached authored beat, `currentVariant` names its selected
+outcome (or empty for the base), `facts` preserves first-recorded typed facts,
+and `discoveredEndings` records ending ids once in discovery order. Variants are
+sparse outcomes on that one graph, never archetype-owned branches. Free play,
+Bash, and model switching continue after discovery; Phase 3 may project that
+state into a report, but it does not own or reinterpret the discovery.
 
 ---
 

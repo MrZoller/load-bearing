@@ -242,14 +242,21 @@ export {
   createMindCompactEvent,
   createMindPermissionRequestedEvent,
   createMindPermissionResolvedEvent,
+  createMindWaiverConsentRecordedEvent,
 } from "./mind/module.js";
 export {
+  MAX_WAIVER_CONSENTS,
+  MAX_WAIVER_PHRASE_LENGTH,
+  MAX_WAIVER_VERSION,
   beliefDivergence,
   compactBeliefs,
   createMindSlice,
+  findWaiverConsent,
   hasStandingPermission,
+  hasWaiverConsent,
   readMindSlice,
   recordPermissionDecision,
+  recordWaiverConsent,
   requestPermission,
   resolvePermission,
   setBelief,
@@ -258,6 +265,7 @@ export {
   validateMindSlice,
   validatePendingPermissionRequest,
   validatePermissionRequestId,
+  validateWaiverConsent,
 } from "./mind/mind.js";
 export type {
   Belief,
@@ -273,6 +281,7 @@ export type {
   PermissionLedgerEntry,
   ServiceHealthBelief,
   ServiceStateBelief,
+  WaiverConsent,
 } from "./mind/types.js";
 
 export {
@@ -292,14 +301,28 @@ export {
 export type { TerminalMode, TerminalSlice } from "./terminal/types.js";
 export { TERMINAL_COMMANDS } from "./commands/terminal.js";
 
-export { STORY_MODULE, createStoryBeatReachedEvent } from "./story/module.js";
+export {
+  STORY_MODULE,
+  createStoryBeatReachedEvent,
+  createStoryFactRecordedEvent,
+} from "./story/module.js";
+export {
+  storyConditionMatches,
+  storyConditionsMatch,
+} from "./story/conditions.js";
 export {
   createStorySlice,
   readStorySlice,
   reachStoryBeat,
+  recordStoryFact,
   validateStorySlice,
 } from "./story/story.js";
-export type { StorySlice } from "./story/types.js";
+export type {
+  StoryCondition,
+  StoryFact,
+  StoryFactKind,
+  StorySlice,
+} from "./story/types.js";
 
 export {
   AGENT_MODULE,
@@ -456,6 +479,10 @@ export {
   MAX_STORY_BELIEFS,
   MAX_STORY_BEATS,
   MAX_STORY_ENDINGS,
+  MAX_STORY_FACTS,
+  MAX_STORY_VARIANTS,
+  MAX_STORY_CONDITIONS,
+  MAX_STORY_OUTCOME_FACTS,
   MAX_STORY_ID_LENGTH,
   MAX_STORY_INTENTS,
   MAX_STORY_RESPONSES,
@@ -491,6 +518,7 @@ export type {
   CartridgeSpinnerPool,
   CartridgeStory,
   CartridgeStoryBeat,
+  CartridgeStoryVariant,
   CartridgeStoryPhase2,
   CartridgeEnding,
   CartridgeRepository,

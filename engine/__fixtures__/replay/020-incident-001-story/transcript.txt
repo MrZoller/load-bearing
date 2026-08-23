@@ -1,5 +1,8 @@
 0000  2026-08-22T09:14:22.000Z  agent.message-added message=turn-0
-0001  2026-08-22T09:14:22.000Z  story.beat-reached beat=load-bearing-declaration
-0002  2026-08-22T09:14:22.000Z  agent.response-recorded response=load-bearing-declaration instance=turn-0
-0003  2026-08-22T09:14:22.000Z  agent.message-added message=turn-3
-0004  2026-08-22T09:14:22.000Z  agent.response-recorded response=inspect-routing instance=turn-3
+0001  2026-08-22T09:14:22.000Z  mind.waiver-consent-recorded id=regional-fail-open version=1
+0002  2026-08-22T09:14:22.000Z  story.fact-recorded fact=bash-regional-detachment
+0003  2026-08-22T09:14:22.000Z  mind.belief-set kind=file-contents
+0004  2026-08-22T09:14:22.000Z  story.beat-reached beat=load-bearing-declaration
+0005  2026-08-22T09:14:22.000Z  agent.response-recorded response=load-bearing-declaration instance=turn-0
+0006  2026-08-22T09:14:22.000Z  agent.message-added message=turn-3
+0007  2026-08-22T09:14:22.000Z  agent.response-recorded response=inspect-routing instance=turn-3

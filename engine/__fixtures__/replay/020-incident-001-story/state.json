@@ -474,15 +474,154 @@
         "beats": [
           {
             "ending": "",
-            "id": "incident-open"
+            "facts": [],
+            "id": "incident-open",
+            "variants": []
           },
           {
             "ending": "",
-            "id": "regional-coupling"
+            "facts": [],
+            "id": "regional-coupling",
+            "variants": []
           },
           {
-            "ending": "load-bearing-response",
-            "id": "load-bearing-declaration"
+            "ending": "",
+            "facts": [],
+            "id": "load-bearing-declaration",
+            "variants": [
+              {
+                "ending": "load-bearing-response",
+                "facts": [
+                  "callback-load-bearing-response"
+                ],
+                "id": "preserved-load-bearing-response",
+                "when": [
+                  {
+                    "equals": "health_status=500\neurope_attached=true\n",
+                    "kind": "file-contents",
+                    "path": "/production/load-balancer/config/routes.conf"
+                  },
+                  {
+                    "belief": {
+                      "contents": "health_status=500\neurope_attached=true\n",
+                      "kind": "file-contents",
+                      "path": "/production/load-balancer/config/routes.conf"
+                    },
+                    "kind": "belief"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "ending": "",
+            "facts": [],
+            "id": "regional-detachment-confirmed",
+            "variants": [
+              {
+                "ending": "europe-detached",
+                "facts": [
+                  "callback-europe-detached"
+                ],
+                "id": "bash-detached-europe",
+                "when": [
+                  {
+                    "fact": "bash-regional-detachment",
+                    "factKind": "reveal",
+                    "kind": "story-fact"
+                  },
+                  {
+                    "equals": "health_status=200\neurope_attached=false\n",
+                    "kind": "file-contents",
+                    "path": "/production/load-balancer/config/routes.conf"
+                  },
+                  {
+                    "kind": "service-state",
+                    "service": "regional-router",
+                    "state": "running"
+                  },
+                  {
+                    "health": "unhealthy",
+                    "kind": "service-health",
+                    "service": "regional-router"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "ending": "",
+            "facts": [],
+            "id": "waiver-notarized",
+            "variants": [
+              {
+                "ending": "informed-structural-consent",
+                "facts": [
+                  "callback-informed-structural-consent"
+                ],
+                "id": "exact-structural-consent",
+                "when": [
+                  {
+                    "exists": true,
+                    "kind": "file-exists",
+                    "path": "/production/load-balancer/WAIVER.md"
+                  },
+                  {
+                    "equals": "health_status=500\neurope_attached=true\n",
+                    "kind": "file-contents",
+                    "path": "/production/load-balancer/config/routes.conf"
+                  },
+                  {
+                    "belief": {
+                      "exists": true,
+                      "kind": "file-exists",
+                      "path": "/production/load-balancer/WAIVER.md"
+                    },
+                    "kind": "belief"
+                  },
+                  {
+                    "capability": {
+                      "action": "detach-region",
+                      "kind": "exact",
+                      "resource": "/regions/europe"
+                    },
+                    "id": "regional-fail-open",
+                    "kind": "waiver-consent",
+                    "phrase": "I agree",
+                    "version": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "ending": "",
+            "facts": [],
+            "id": "summary-overrules-geography",
+            "variants": [
+              {
+                "ending": "summary-judgment",
+                "facts": [
+                  "callback-summary-judgment"
+                ],
+                "id": "compacted-configuration-away",
+                "when": [
+                  {
+                    "equals": "health_status=500\neurope_attached=true\n",
+                    "kind": "file-contents",
+                    "path": "/production/load-balancer/config/routes.conf"
+                  },
+                  {
+                    "belief": {
+                      "exists": false,
+                      "kind": "file-exists",
+                      "path": "/production/load-balancer/config/routes.conf"
+                    },
+                    "kind": "belief"
+                  }
+                ]
+              }
+            ]
           }
         ],
         "endings": [
@@ -501,6 +640,28 @@
           {
             "id": "summary-judgment",
             "name": "Summary Judgment"
+          }
+        ],
+        "facts": [
+          {
+            "id": "bash-regional-detachment",
+            "kind": "reveal"
+          },
+          {
+            "id": "callback-load-bearing-response",
+            "kind": "callback"
+          },
+          {
+            "id": "callback-europe-detached",
+            "kind": "callback"
+          },
+          {
+            "id": "callback-informed-structural-consent",
+            "kind": "callback"
+          },
+          {
+            "id": "callback-summary-judgment",
+            "kind": "callback"
           }
         ],
         "initialBeat": "incident-open"
@@ -581,7 +742,7 @@
     "startMs": 1787390062000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 5,
+  "eventCount": 8,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {},
@@ -734,10 +895,29 @@
       "root": "/production/load-balancer"
     },
     "mind": {
-      "beliefs": [],
+      "beliefs": [
+        {
+          "contents": "health_status=500\neurope_attached=true\n",
+          "kind": "file-contents",
+          "path": "/production/load-balancer/config/routes.conf"
+        }
+      ],
       "compactHistory": [],
       "pendingPermission": null,
-      "permissions": []
+      "permissions": [],
+      "waiverConsents": [
+        {
+          "at": "2026-08-22T09:14:22.000Z",
+          "capability": {
+            "action": "detach-region",
+            "kind": "exact",
+            "resource": "/regions/europe"
+          },
+          "id": "regional-fail-open",
+          "phrase": "I agree",
+          "version": 1
+        }
+      ]
     },
     "probe": {
       "events": 0,
@@ -745,8 +925,19 @@
     },
     "story": {
       "currentBeat": "load-bearing-declaration",
+      "currentVariant": "preserved-load-bearing-response",
       "discoveredEndings": [
         "load-bearing-response"
+      ],
+      "facts": [
+        {
+          "id": "bash-regional-detachment",
+          "kind": "reveal"
+        },
+        {
+          "id": "callback-load-bearing-response",
+          "kind": "callback"
+        }
       ]
     },
     "terminal": {
@@ -898,27 +1089,48 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 1,
+      "summary": "id=regional-fail-open version=1",
+      "type": "mind.waiver-consent-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 2,
+      "summary": "fact=bash-regional-detachment",
+      "type": "story.fact-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 3,
+      "summary": "kind=file-contents",
+      "type": "mind.belief-set"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 4,
       "summary": "beat=load-bearing-declaration",
       "type": "story.beat-reached"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 2,
+      "index": 5,
       "summary": "response=load-bearing-declaration instance=turn-0",
       "type": "agent.response-recorded"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 3,
+      "index": 6,
       "summary": "message=turn-3",
       "type": "agent.message-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 4,
+      "index": 7,
       "summary": "response=inspect-routing instance=turn-3",
       "type": "agent.response-recorded"
     }

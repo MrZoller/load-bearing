@@ -1201,6 +1201,7 @@ function checkStoryAndPresentation(
   story: CartridgeStory,
   presentation: CartridgePresentation,
   models: readonly CartridgeModel[],
+  repository: CartridgeRepository,
   report: Report,
 ): void {
   const beliefSubject = (belief: CartridgeBelief): string => {
@@ -1319,19 +1320,110 @@ function checkStoryAndPresentation(
         `${JSON.stringify(ending.id)}, already used by /story/phase2/endings/${String(first)}`,
       );
   });
+  const facts = new Map<
+    string,
+    { readonly index: number; readonly kind: string }
+  >();
+  // When an unrelated structural error prevents global default filling, older
+  // otherwise-valid phase2 graphs may still omit these optional additions.
+  // Cross-checks must report the authored error, never escape on that shape.
+  (story.phase2.facts ?? []).forEach((fact, index) => {
+    const first = facts.get(fact.id);
+    if (first === undefined) facts.set(fact.id, { index, kind: fact.kind });
+    else
+      report.addPhrase(
+        `/story/phase2/facts/${String(index)}/id`,
+        "an id no other story fact uses",
+        `${JSON.stringify(fact.id)}, already used by /story/phase2/facts/${String(first.index)}`,
+      );
+  });
   if (!beats.has(story.phase2.initialBeat))
     report.addPhrase(
       "/story/phase2/initialBeat",
       "the id of a declared story beat",
       `${JSON.stringify(story.phase2.initialBeat)}, which does not exist`,
     );
+  const services = new Set(repository.services.map((service) => service.id));
   story.phase2.beats.forEach((beat, index) => {
-    if (beat.ending !== "" && !endings.has(beat.ending))
-      report.addPhrase(
-        `/story/phase2/beats/${String(index)}/ending`,
-        "an empty string or the id of a declared ending",
-        `${JSON.stringify(beat.ending)}, which does not exist`,
-      );
+    const root = `/story/phase2/beats/${String(index)}`;
+    const checkEnding = (ending: string, pointer: string): void => {
+      if (ending !== "" && !endings.has(ending))
+        report.addPhrase(
+          pointer,
+          "an empty string or the id of a declared ending",
+          `${JSON.stringify(ending)}, which does not exist`,
+        );
+    };
+    const checkFacts = (values: readonly string[], pointer: string): void => {
+      const seen = new Map<string, number>();
+      values.forEach((fact, factIndex) => {
+        if (!facts.has(fact))
+          report.addPhrase(
+            `${pointer}/${String(factIndex)}`,
+            "the id of a declared story fact",
+            `${JSON.stringify(fact)}, which does not exist`,
+          );
+        const first = seen.get(fact);
+        if (first === undefined) seen.set(fact, factIndex);
+        else
+          report.addPhrase(
+            `${pointer}/${String(factIndex)}`,
+            "a fact this outcome does not already record",
+            `${JSON.stringify(fact)}, already used at index ${String(first)}`,
+          );
+      });
+    };
+    checkEnding(beat.ending, `${root}/ending`);
+    checkFacts(beat.facts ?? [], `${root}/facts`);
+    const variants = new Map<string, number>();
+    (beat.variants ?? []).forEach((variant, variantIndex) => {
+      const variantRoot = `${root}/variants/${String(variantIndex)}`;
+      const first = variants.get(variant.id);
+      if (first === undefined) variants.set(variant.id, variantIndex);
+      else
+        report.addPhrase(
+          `${variantRoot}/id`,
+          "an id no other variant on this beat uses",
+          `${JSON.stringify(variant.id)}, already used by ${root}/variants/${String(first)}`,
+        );
+      checkEnding(variant.ending, `${variantRoot}/ending`);
+      checkFacts(variant.facts ?? [], `${variantRoot}/facts`);
+      variant.when.forEach((condition, conditionIndex) => {
+        const conditionRoot = `${variantRoot}/when/${String(conditionIndex)}`;
+        if (condition.kind === "story-fact") {
+          const declared = facts.get(condition.fact);
+          if (declared === undefined)
+            report.addPhrase(
+              `${conditionRoot}/fact`,
+              "the id of a declared story fact",
+              `${JSON.stringify(condition.fact)}, which does not exist`,
+            );
+          else if (declared.kind !== condition.factKind)
+            report.addPhrase(
+              `${conditionRoot}/factKind`,
+              `the declared kind ${declared.kind}`,
+              JSON.stringify(condition.factKind),
+            );
+        }
+        const service =
+          condition.kind === "service-state" ||
+          condition.kind === "service-health"
+            ? condition.service
+            : condition.kind === "belief" &&
+                (condition.belief.kind === "service-state" ||
+                  condition.belief.kind === "service-health")
+              ? condition.belief.service
+              : undefined;
+        if (service !== undefined && !services.has(service))
+          report.addPhrase(
+            condition.kind === "belief"
+              ? `${conditionRoot}/belief/service`
+              : `${conditionRoot}/service`,
+            "the id of a declared service",
+            `${JSON.stringify(service)}, which does not exist`,
+          );
+      });
+    });
   });
   const checkStoryActions = (
     actions: readonly CartridgeAgentAction[],
@@ -1828,12 +1920,15 @@ export function loadCartridge(value: unknown): LoadedCartridge {
   if (
     !issueWithin(report, "/story") &&
     !issueWithin(report, "/presentation") &&
-    !issueWithin(report, "/models")
+    !issueWithin(report, "/models") &&
+    !issueAt(report, "/repository") &&
+    !issueWithin(report, "/repository/services")
   ) {
     checkStoryAndPresentation(
       cartridge.story,
       cartridge.presentation,
       cartridge.models,
+      cartridge.repository,
       report,
     );
   }

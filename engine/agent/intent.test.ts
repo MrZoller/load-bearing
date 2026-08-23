@@ -7,6 +7,7 @@ import { createShellExecuteEvent } from "../commands/shell.js";
 import { reduce, step } from "../events/reduce.js";
 import { readStorySlice } from "../story/story.js";
 import {
+  createMindBeliefEvent,
   createMindPermissionRequestedEvent,
   createMindPermissionResolvedEvent,
 } from "../mind/module.js";
@@ -26,6 +27,22 @@ import {
 
 const CARTRIDGE = loadCartridge(cartridgeDocument);
 const SEED = "2026-08-22/0/structural-audit";
+
+function incidentStateWithLoadBearingResponseBelief() {
+  const cartridge = loadCartridge(incident);
+  const events = [
+    createMindBeliefEvent({
+      kind: "file-contents",
+      path: "/production/load-balancer/config/routes.conf",
+      contents: "health_status=500\neurope_attached=true\n",
+    }),
+  ];
+  return {
+    cartridge,
+    events,
+    state: reduce({ cartridge, seed: SEED, events }),
+  };
+}
 
 describe("authored agent input", () => {
   it("normalizes authored patterns and selects their response and ordered shell plan", () => {
@@ -92,8 +109,11 @@ describe("authored agent input", () => {
   });
 
   it("reaches the story beat before recording its authored response", () => {
-    const cartridge = loadCartridge(incident);
-    const state = reduce({ cartridge, seed: SEED, events: [] });
+    const {
+      cartridge,
+      events: initialEvents,
+      state,
+    } = incidentStateWithLoadBearingResponseBelief();
     const events = createAgentInputEvents(cartridge, state, "fix the 500");
 
     expect(events.map((event) => event.type)).toEqual([
@@ -103,21 +123,41 @@ describe("authored agent input", () => {
       "agent.response-recorded",
       "agent.activity-set",
     ]);
-    const after = reduce({ cartridge, seed: SEED, events });
-    expect(readStorySlice(after).discoveredEndings).toEqual([
-      "load-bearing-response",
-    ]);
+    const after = reduce({
+      cartridge,
+      seed: SEED,
+      events: [...initialEvents, ...events],
+    });
+    expect(readStorySlice(after)).toEqual(
+      expect.objectContaining({
+        currentVariant: "preserved-load-bearing-response",
+        discoveredEndings: ["load-bearing-response"],
+      }),
+    );
   });
 
   it("continues accepting authored input after an ending is discovered", () => {
-    const cartridge = loadCartridge(incident);
-    const state = reduce({ cartridge, seed: SEED, events: [] });
+    const {
+      cartridge,
+      events: initialEvents,
+      state,
+    } = incidentStateWithLoadBearingResponseBelief();
     const endingEvents = createAgentInputEvents(
       cartridge,
       state,
       "fix the 500",
     );
-    const afterEnding = reduce({ cartridge, seed: SEED, events: endingEvents });
+    const afterEnding = reduce({
+      cartridge,
+      seed: SEED,
+      events: [...initialEvents, ...endingEvents],
+    });
+    expect(readStorySlice(afterEnding)).toEqual(
+      expect.objectContaining({
+        currentVariant: "preserved-load-bearing-response",
+        discoveredEndings: ["load-bearing-response"],
+      }),
+    );
     const continued = createAgentInputEvents(
       cartridge,
       afterEnding,
@@ -138,7 +178,7 @@ describe("authored agent input", () => {
         reduce({
           cartridge,
           seed: SEED,
-          events: [...endingEvents, ...continued],
+          events: [...initialEvents, ...endingEvents, ...continued],
         }),
       ),
     ).toEqual(

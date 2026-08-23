@@ -170,6 +170,10 @@ export const MAX_PERMISSION_REQUEST_ID_LENGTH = 64;
 /** Shared story graphs stay small enough to review and replay exhaustively. */
 export const MAX_STORY_BEATS = 128;
 export const MAX_STORY_ENDINGS = 32;
+export const MAX_STORY_FACTS = 256;
+export const MAX_STORY_VARIANTS = 16;
+export const MAX_STORY_CONDITIONS = 16;
+export const MAX_STORY_OUTCOME_FACTS = 16;
 export const MAX_STORY_ID_LENGTH = 64;
 export const STORY_ID_PATTERN = pattern(/^[a-z][a-z0-9-]{0,63}$/);
 
@@ -1443,6 +1447,95 @@ const CARTRIDGE_BELIEFS = {
   maxItems: MAX_STORY_BELIEFS,
 } satisfies ArrayNode;
 
+const EXACT_CAPABILITY = {
+  kind: "object",
+  description: "One exact action and resource capability.",
+  fields: {
+    kind: required({
+      kind: "enum",
+      description: "Exact capability kind.",
+      values: ["exact"],
+    }),
+    action: required({ ...BOUNDED_LINE, minLength: 1 }),
+    resource: required({ ...BOUNDED_LINE, minLength: 1 }),
+  },
+} satisfies ObjectNode;
+
+const STORY_CONDITION = {
+  kind: "union",
+  description: "One typed condition evaluated against pre-event session state.",
+  discriminator: "kind",
+  variants: {
+    "file-exists": FILE_EXISTS_PREDICATE,
+    "file-contents": FILE_CONTENTS_PREDICATE,
+    "service-state": SERVICE_STATE,
+    "service-health": SERVICE_HEALTH_RULE,
+    belief: {
+      kind: "object",
+      description: "An exact authored belief currently held by the mind.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "Belief condition kind.",
+          values: ["belief"],
+        }),
+        belief: required(CARTRIDGE_BELIEF),
+      },
+    },
+    "waiver-consent": {
+      kind: "object",
+      description: "An exact distinct waiver-consent ledger entry.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "Waiver condition kind.",
+          values: ["waiver-consent"],
+        }),
+        id: required(PHASE_ONE_ID),
+        version: required({
+          kind: "integer",
+          description: "Authored waiver document version.",
+          minimum: 1,
+          maximum: 2147483647,
+        }),
+        phrase: required({
+          kind: "string",
+          description: "Exact single-line consent phrase.",
+          pattern: SINGLE_LINE_PATTERN,
+          patternLabel: "a non-empty single-line string",
+          minLength: 1,
+          maxLength: 256,
+        }),
+        capability: required(EXACT_CAPABILITY),
+      },
+    },
+    "story-fact": {
+      kind: "object",
+      description: "A previously recorded declared story fact.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "Story-fact condition kind.",
+          values: ["story-fact"],
+        }),
+        fact: required(PHASE_ONE_ID),
+        factKind: required({
+          kind: "enum",
+          description: "The declared fact kind.",
+          values: ["reveal", "callback"],
+        }),
+      },
+    },
+  },
+} satisfies UnionNode;
+
+const STORY_OUTCOME_FACTS = {
+  kind: "array",
+  description: "Declared facts recorded by this selected outcome.",
+  items: PHASE_ONE_ID,
+  maxItems: MAX_STORY_OUTCOME_FACTS,
+} satisfies ArrayNode;
+
 const STORY = {
   kind: "object",
   description: "Concrete bounded Phase 1 dialogue and command content.",
@@ -1529,9 +1622,30 @@ const STORY = {
       {
         kind: "object",
         description:
-          "The bounded shared-beat and non-terminal ending skeleton. Later Phase 2 work adds routing, conditions and callbacks without replacing this graph.",
+          "One bounded shared-beat graph with typed facts, sparse condition variants and non-terminal endings.",
         fields: {
           initialBeat: required(PHASE_ONE_ID),
+          facts: optional(
+            {
+              kind: "array",
+              description: "Reveal and callback facts in declaration order.",
+              maxItems: MAX_STORY_FACTS,
+              items: {
+                kind: "object",
+                description:
+                  "One typed fact available to outcomes and conditions.",
+                fields: {
+                  id: required(PHASE_ONE_ID),
+                  kind: required({
+                    kind: "enum",
+                    description: "Whether this fact is a reveal or callback.",
+                    values: ["reveal", "callback"],
+                  }),
+                },
+              },
+            },
+            [],
+          ),
           beats: required({
             kind: "array",
             description: "Shared story beats in authored order.",
@@ -1544,6 +1658,33 @@ const STORY = {
               fields: {
                 id: required(PHASE_ONE_ID),
                 ending: required(OPTIONAL_PHASE_ONE_ID),
+                facts: optional(STORY_OUTCOME_FACTS, []),
+                variants: optional(
+                  {
+                    kind: "array",
+                    description:
+                      "Sparse authored-order alternatives; the first all-of match replaces the base outcome.",
+                    maxItems: MAX_STORY_VARIANTS,
+                    items: {
+                      kind: "object",
+                      description: "One condition-selected beat outcome.",
+                      fields: {
+                        id: required(PHASE_ONE_ID),
+                        when: required({
+                          kind: "array",
+                          description:
+                            "A flat non-empty all-of condition list.",
+                          items: STORY_CONDITION,
+                          minItems: 1,
+                          maxItems: MAX_STORY_CONDITIONS,
+                        }),
+                        ending: required(OPTIONAL_PHASE_ONE_ID),
+                        facts: optional(STORY_OUTCOME_FACTS, []),
+                      },
+                    },
+                  },
+                  [],
+                ),
               },
             },
           }),
@@ -1564,7 +1705,8 @@ const STORY = {
       },
       {
         initialBeat: "start",
-        beats: [{ id: "start", ending: "" }],
+        facts: [],
+        beats: [{ id: "start", ending: "", facts: [], variants: [] }],
         endings: [],
       },
     ),

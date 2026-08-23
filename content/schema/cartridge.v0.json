@@ -2395,13 +2395,16 @@
             "beats": [
               {
                 "ending": "",
-                "id": "start"
+                "facts": [],
+                "id": "start",
+                "variants": []
               }
             ],
             "endings": [],
+            "facts": [],
             "initialBeat": "start"
           },
-          "description": "The bounded shared-beat and non-terminal ending skeleton. Later Phase 2 work adds routing, conditions and callbacks without replacing this graph.",
+          "description": "One bounded shared-beat graph with typed facts, sparse condition variants and non-terminal endings.",
           "properties": {
             "beats": {
               "description": "Shared story beats in authored order.",
@@ -2415,11 +2418,525 @@
                     "pattern": "^(?:|[a-z][a-z0-9-]{0,63})$",
                     "type": "string"
                   },
+                  "facts": {
+                    "default": [],
+                    "description": "Declared facts recorded by this selected outcome.",
+                    "items": {
+                      "description": "A stable lowercase Phase 1 content identifier.",
+                      "maxLength": 64,
+                      "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                      "type": "string"
+                    },
+                    "maxItems": 16,
+                    "type": "array"
+                  },
                   "id": {
                     "description": "A stable lowercase Phase 1 content identifier.",
                     "maxLength": 64,
                     "pattern": "^[a-z][a-z0-9-]{0,63}$",
                     "type": "string"
+                  },
+                  "variants": {
+                    "default": [],
+                    "description": "Sparse authored-order alternatives; the first all-of match replaces the base outcome.",
+                    "items": {
+                      "additionalProperties": false,
+                      "description": "One condition-selected beat outcome.",
+                      "properties": {
+                        "ending": {
+                          "description": "An optional stable lowercase Phase 1 content identifier.",
+                          "maxLength": 64,
+                          "pattern": "^(?:|[a-z][a-z0-9-]{0,63})$",
+                          "type": "string"
+                        },
+                        "facts": {
+                          "default": [],
+                          "description": "Declared facts recorded by this selected outcome.",
+                          "items": {
+                            "description": "A stable lowercase Phase 1 content identifier.",
+                            "maxLength": 64,
+                            "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                            "type": "string"
+                          },
+                          "maxItems": 16,
+                          "type": "array"
+                        },
+                        "id": {
+                          "description": "A stable lowercase Phase 1 content identifier.",
+                          "maxLength": 64,
+                          "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                          "type": "string"
+                        },
+                        "when": {
+                          "description": "A flat non-empty all-of condition list.",
+                          "items": {
+                            "description": "One typed condition evaluated against pre-event session state.",
+                            "oneOf": [
+                              {
+                                "additionalProperties": false,
+                                "description": "A predicate comparing whether a declared file currently exists.",
+                                "properties": {
+                                  "exists": {
+                                    "description": "Whether the file must exist.",
+                                    "type": "boolean"
+                                  },
+                                  "kind": {
+                                    "description": "The file-existence predicate kind.",
+                                    "enum": [
+                                      "file-exists"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "path": {
+                                    "description": "A declared absolute file path.",
+                                    "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "path",
+                                  "exists"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A predicate comparing a declared file's complete contents.",
+                                "properties": {
+                                  "equals": {
+                                    "description": "The exact expected contents.",
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "The predicate kind.",
+                                    "enum": [
+                                      "file-contents"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "path": {
+                                    "description": "A declared absolute file path.",
+                                    "pattern": "^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "path",
+                                  "equals"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A service-state predicate or action.",
+                                "properties": {
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "service-state"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "service": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  },
+                                  "state": {
+                                    "description": "A unit state.",
+                                    "enum": [
+                                      "running",
+                                      "stopped"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "service",
+                                  "state"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A service-health predicate or action.",
+                                "properties": {
+                                  "health": {
+                                    "description": "A service health.",
+                                    "enum": [
+                                      "healthy",
+                                      "degraded",
+                                      "unhealthy",
+                                      "unknown"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "service-health"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "service": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "service",
+                                  "health"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "An exact authored belief currently held by the mind.",
+                                "properties": {
+                                  "belief": {
+                                    "description": "One bounded authored assertion in the mind's closed vocabulary.",
+                                    "oneOf": [
+                                      {
+                                        "additionalProperties": false,
+                                        "description": "Whether a VFS path exists.",
+                                        "properties": {
+                                          "exists": {
+                                            "description": "Believed existence.",
+                                            "type": "boolean"
+                                          },
+                                          "kind": {
+                                            "description": "Belief kind.",
+                                            "enum": [
+                                              "file-exists"
+                                            ],
+                                            "type": "string"
+                                          },
+                                          "path": {
+                                            "description": "A bounded canonical absolute VFS path.",
+                                            "maxLength": 4096,
+                                            "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "path",
+                                          "exists"
+                                        ],
+                                        "type": "object"
+                                      },
+                                      {
+                                        "additionalProperties": false,
+                                        "description": "The exact contents believed to occupy a VFS path.",
+                                        "properties": {
+                                          "contents": {
+                                            "description": "Bounded authored text.",
+                                            "maxLength": 16000,
+                                            "type": "string"
+                                          },
+                                          "kind": {
+                                            "description": "Belief kind.",
+                                            "enum": [
+                                              "file-contents"
+                                            ],
+                                            "type": "string"
+                                          },
+                                          "path": {
+                                            "description": "A bounded canonical absolute VFS path.",
+                                            "maxLength": 4096,
+                                            "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "path",
+                                          "contents"
+                                        ],
+                                        "type": "object"
+                                      },
+                                      {
+                                        "additionalProperties": false,
+                                        "description": "The believed Git HEAD.",
+                                        "properties": {
+                                          "head": {
+                                            "description": "A branch or detached Git HEAD.",
+                                            "oneOf": [
+                                              {
+                                                "additionalProperties": false,
+                                                "description": "A branch HEAD.",
+                                                "properties": {
+                                                  "kind": {
+                                                    "description": "HEAD kind.",
+                                                    "enum": [
+                                                      "branch"
+                                                    ],
+                                                    "type": "string"
+                                                  },
+                                                  "target": {
+                                                    "description": "Branch name.",
+                                                    "maxLength": 240,
+                                                    "pattern": "^(?!HEAD$)(?!\\/|.*(?:\\/\\/|\\.\\.|@\\{|\\\\|\\s|[~^:?*\\[]))[A-Za-z0-9._/-]+(?<![/.])$",
+                                                    "type": "string"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "target"
+                                                ],
+                                                "type": "object"
+                                              },
+                                              {
+                                                "additionalProperties": false,
+                                                "description": "A detached or unborn HEAD.",
+                                                "properties": {
+                                                  "kind": {
+                                                    "description": "HEAD kind.",
+                                                    "enum": [
+                                                      "detached"
+                                                    ],
+                                                    "type": "string"
+                                                  },
+                                                  "target": {
+                                                    "description": "A 40-digit hash, or empty for an unborn repository.",
+                                                    "maxLength": 40,
+                                                    "pattern": "^(?:[0-9a-f]{40})?$",
+                                                    "type": "string"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "target"
+                                                ],
+                                                "type": "object"
+                                              }
+                                            ]
+                                          },
+                                          "kind": {
+                                            "description": "Belief kind.",
+                                            "enum": [
+                                              "git-head"
+                                            ],
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "head"
+                                        ],
+                                        "type": "object"
+                                      },
+                                      {
+                                        "additionalProperties": false,
+                                        "description": "A service's believed running state.",
+                                        "properties": {
+                                          "kind": {
+                                            "description": "Belief kind.",
+                                            "enum": [
+                                              "service-state"
+                                            ],
+                                            "type": "string"
+                                          },
+                                          "service": {
+                                            "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                            "maxLength": 240,
+                                            "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                            "type": "string"
+                                          },
+                                          "state": {
+                                            "description": "Service state.",
+                                            "enum": [
+                                              "running",
+                                              "stopped"
+                                            ],
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "service",
+                                          "state"
+                                        ],
+                                        "type": "object"
+                                      },
+                                      {
+                                        "additionalProperties": false,
+                                        "description": "A service's believed health.",
+                                        "properties": {
+                                          "health": {
+                                            "description": "Service health.",
+                                            "enum": [
+                                              "healthy",
+                                              "degraded",
+                                              "unhealthy",
+                                              "unknown"
+                                            ],
+                                            "type": "string"
+                                          },
+                                          "kind": {
+                                            "description": "Belief kind.",
+                                            "enum": [
+                                              "service-health"
+                                            ],
+                                            "type": "string"
+                                          },
+                                          "service": {
+                                            "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                            "maxLength": 240,
+                                            "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "service",
+                                          "health"
+                                        ],
+                                        "type": "object"
+                                      }
+                                    ]
+                                  },
+                                  "kind": {
+                                    "description": "Belief condition kind.",
+                                    "enum": [
+                                      "belief"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "belief"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "An exact distinct waiver-consent ledger entry.",
+                                "properties": {
+                                  "capability": {
+                                    "additionalProperties": false,
+                                    "description": "One exact action and resource capability.",
+                                    "properties": {
+                                      "action": {
+                                        "description": "Bounded single-line authored text.",
+                                        "maxLength": 240,
+                                        "minLength": 1,
+                                        "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                                        "type": "string"
+                                      },
+                                      "kind": {
+                                        "description": "Exact capability kind.",
+                                        "enum": [
+                                          "exact"
+                                        ],
+                                        "type": "string"
+                                      },
+                                      "resource": {
+                                        "description": "Bounded single-line authored text.",
+                                        "maxLength": 240,
+                                        "minLength": 1,
+                                        "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "action",
+                                      "resource"
+                                    ],
+                                    "type": "object"
+                                  },
+                                  "id": {
+                                    "description": "A stable lowercase Phase 1 content identifier.",
+                                    "maxLength": 64,
+                                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "Waiver condition kind.",
+                                    "enum": [
+                                      "waiver-consent"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "phrase": {
+                                    "description": "Exact single-line consent phrase.",
+                                    "maxLength": 256,
+                                    "minLength": 1,
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                                    "type": "string"
+                                  },
+                                  "version": {
+                                    "description": "Authored waiver document version.",
+                                    "maximum": 2147483647,
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "id",
+                                  "version",
+                                  "phrase",
+                                  "capability"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A previously recorded declared story fact.",
+                                "properties": {
+                                  "fact": {
+                                    "description": "A stable lowercase Phase 1 content identifier.",
+                                    "maxLength": 64,
+                                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                    "type": "string"
+                                  },
+                                  "factKind": {
+                                    "description": "The declared fact kind.",
+                                    "enum": [
+                                      "reveal",
+                                      "callback"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "Story-fact condition kind.",
+                                    "enum": [
+                                      "story-fact"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "fact",
+                                  "factKind"
+                                ],
+                                "type": "object"
+                              }
+                            ]
+                          },
+                          "maxItems": 16,
+                          "minItems": 1,
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "when",
+                        "ending"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 16,
+                    "type": "array"
                   }
                 },
                 "required": [
@@ -2459,6 +2976,37 @@
                 "type": "object"
               },
               "maxItems": 32,
+              "type": "array"
+            },
+            "facts": {
+              "default": [],
+              "description": "Reveal and callback facts in declaration order.",
+              "items": {
+                "additionalProperties": false,
+                "description": "One typed fact available to outcomes and conditions.",
+                "properties": {
+                  "id": {
+                    "description": "A stable lowercase Phase 1 content identifier.",
+                    "maxLength": 64,
+                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                    "type": "string"
+                  },
+                  "kind": {
+                    "description": "Whether this fact is a reveal or callback.",
+                    "enum": [
+                      "reveal",
+                      "callback"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "kind"
+                ],
+                "type": "object"
+              },
+              "maxItems": 256,
               "type": "array"
             },
             "initialBeat": {

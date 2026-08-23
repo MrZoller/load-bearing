@@ -152,7 +152,8 @@ describe("loadCartridge", () => {
     expect(cartridge.story.responses).toHaveLength(1);
     expect(cartridge.story.phase2).toEqual({
       initialBeat: "start",
-      beats: [{ id: "start", ending: "" }],
+      facts: [],
+      beats: [{ id: "start", ending: "", facts: [], variants: [] }],
       endings: [],
     });
     expect(cartridge.presentation.spinnerPools).toHaveLength(2);
@@ -509,6 +510,198 @@ describe("loadCartridge", () => {
         expect.objectContaining({ pointer: "/story/phase2/initialBeat" }),
         expect.objectContaining({ pointer: "/story/phase2/beats/0/ending" }),
         expect.objectContaining({ pointer: "/story/intents/0/actions/0/beat" }),
+      ]),
+    );
+  });
+
+  it("rejects malformed closed conditions, duplicate graph ids, and dangling graph references", () => {
+    const source = minimal();
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["services"] = [
+      {
+        id: "api",
+        state: "running",
+        health: "healthy",
+        ports: [],
+        dependencies: [],
+      },
+    ];
+    (source["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "start",
+      facts: [
+        { id: "fact", kind: "reveal" },
+        { id: "fact", kind: "callback" },
+      ],
+      beats: [
+        {
+          id: "start",
+          ending: "missing-ending",
+          facts: ["missing-fact", "missing-fact"],
+          variants: [
+            {
+              id: "same",
+              when: [
+                { kind: "service-state", service: "missing", state: "running" },
+              ],
+              ending: "missing-ending",
+              facts: ["missing-fact"],
+            },
+            {
+              id: "same",
+              when: [
+                { kind: "story-fact", fact: "fact", factKind: "callback" },
+              ],
+              ending: "",
+              facts: [],
+            },
+          ],
+        },
+      ],
+      endings: [],
+    };
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ pointer: "/story/phase2/facts/1/id" }),
+        expect.objectContaining({ pointer: "/story/phase2/beats/0/ending" }),
+        expect.objectContaining({ pointer: "/story/phase2/beats/0/facts/0" }),
+        expect.objectContaining({ pointer: "/story/phase2/beats/0/facts/1" }),
+        expect.objectContaining({
+          pointer: "/story/phase2/beats/0/variants/0/when/0/service",
+        }),
+        expect.objectContaining({
+          pointer: "/story/phase2/beats/0/variants/0/ending",
+        }),
+        expect.objectContaining({
+          pointer: "/story/phase2/beats/0/variants/0/facts/0",
+        }),
+        expect.objectContaining({
+          pointer: "/story/phase2/beats/0/variants/1/id",
+        }),
+        expect.objectContaining({
+          pointer: "/story/phase2/beats/0/variants/1/when/0/factKind",
+        }),
+      ]),
+    );
+  });
+
+  it("reports a dangling service inside a belief condition at its nested authored pointer", () => {
+    const source = minimal();
+    (source["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "start",
+      facts: [],
+      endings: [],
+      beats: [
+        {
+          id: "start",
+          ending: "",
+          facts: [],
+          variants: [
+            {
+              id: "believes-missing-service",
+              when: [
+                {
+                  kind: "belief",
+                  belief: {
+                    kind: "service-state",
+                    service: "missing",
+                    state: "running",
+                  },
+                },
+              ],
+              ending: "",
+              facts: [],
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/story/phase2/beats/0/variants/0/when/0/belief/service",
+        }),
+      ]),
+    );
+  });
+
+  it("rejects unknown fields and malformed predicate shapes at their exact pointers", () => {
+    const source = minimal();
+    (source["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "start",
+      facts: [],
+      endings: [],
+      beats: [
+        {
+          id: "start",
+          ending: "",
+          facts: [],
+          variants: [
+            {
+              id: "bad",
+              when: [
+                {
+                  kind: "file-exists",
+                  path: "relative",
+                  exists: "yes",
+                  extra: true,
+                },
+              ],
+              ending: "",
+              facts: [],
+            },
+          ],
+        },
+      ],
+    };
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/story/phase2/beats/0/variants/0/when/0/path",
+        }),
+        expect.objectContaining({
+          pointer: "/story/phase2/beats/0/variants/0/when/0/exists",
+        }),
+        expect.objectContaining({
+          pointer: "/story/phase2/beats/0/variants/0/when/0/extra",
+        }),
+      ]),
+    );
+  });
+
+  it("bounds the shared graph and rejects a model-owned parallel graph field", () => {
+    const source = minimal();
+    const facts = Array.from({ length: 257 }, (_, index) => ({
+      id: `fact-${String(index)}`,
+      kind: "reveal",
+    }));
+    const variants = Array.from({ length: 17 }, (_, index) => ({
+      id: `variant-${String(index)}`,
+      when: [{ kind: "file-exists", path: "/etc/motd", exists: true }],
+      ending: "",
+      facts: [],
+    }));
+    (source["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "start",
+      facts,
+      endings: [],
+      beats: [
+        { id: "start", ending: "", facts: facts.map(({ id }) => id), variants },
+      ],
+    };
+    const [model] = source["models"] as Record<string, unknown>[];
+    if (model === undefined) throw new Error("minimal fixture lacks a model");
+    model["storyGraph"] = {
+      beats: [],
+    };
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ pointer: "/story/phase2/facts" }),
+        expect.objectContaining({ pointer: "/story/phase2/beats/0/facts" }),
+        expect.objectContaining({ pointer: "/story/phase2/beats/0/variants" }),
+        expect.objectContaining({ pointer: "/models/0/storyGraph" }),
       ]),
     );
   });

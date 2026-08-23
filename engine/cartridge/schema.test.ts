@@ -85,7 +85,8 @@ describe("the published schema", () => {
     (phase2["default"] as Record<string, unknown>)["injected"] = true;
     expect(CARTRIDGE_SCHEMA.fields.story.node.fields.phase2.fill).toEqual({
       initialBeat: "start",
-      beats: [{ id: "start", ending: "" }],
+      facts: [],
+      beats: [{ id: "start", ending: "", facts: [], variants: [] }],
       endings: [],
     });
     expect(serialize(emitJsonSchema())).not.toContain("injected");
@@ -226,7 +227,7 @@ describe("the published schema", () => {
     }
   });
 
-  it("publishes the story skeleton as a closed bounded graph, while presentation remains deferred", () => {
+  it("publishes one closed bounded story graph with facts and sparse condition variants", () => {
     const root = emitJsonSchema()["properties"] as Record<string, unknown>;
     const story = root["story"] as Record<string, unknown>;
     const storyPhase2 = (story["properties"] as Record<string, unknown>)[
@@ -236,20 +237,79 @@ describe("the published schema", () => {
       string,
       unknown
     >;
+    const facts = storyProperties["facts"] as Record<string, unknown>;
+    const fact = facts["items"] as Record<string, unknown>;
+    const factProperties = fact["properties"] as Record<string, unknown>;
     const beats = storyProperties["beats"] as Record<string, unknown>;
     const endings = storyProperties["endings"] as Record<string, unknown>;
+    const beat = beats["items"] as Record<string, unknown>;
+    const beatProperties = beat["properties"] as Record<string, unknown>;
+    const variants = beatProperties["variants"] as Record<string, unknown>;
+    const variant = variants["items"] as Record<string, unknown>;
+    const variantProperties = variant["properties"] as Record<string, unknown>;
+    const when = variantProperties["when"] as Record<string, unknown>;
+    const conditions = (when["items"] as Record<string, unknown>)[
+      "oneOf"
+    ] as Record<string, unknown>[];
+    const conditionKinds = conditions.map((condition) => {
+      const properties = condition["properties"] as Record<string, unknown>;
+      return (
+        (properties["kind"] as Record<string, unknown>)["enum"] as string[]
+      )[0];
+    });
     const presentation = root["presentation"] as Record<string, unknown>;
     const presentationPhase2 = (
       presentation["properties"] as Record<string, unknown>
     )["phase2"] as Record<string, unknown>;
+    const model = (root["models"] as Record<string, unknown>)[
+      "items"
+    ] as Record<string, unknown>;
+    const modelProperties = model["properties"] as Record<string, unknown>;
 
     expect(storyPhase2).toMatchObject({
       type: "object",
       additionalProperties: false,
       required: ["initialBeat", "beats", "endings"],
     });
+    expect(facts).toMatchObject({ maxItems: 256, default: [] });
+    expect(fact).toMatchObject({
+      additionalProperties: false,
+      required: ["id", "kind"],
+    });
+    expect(factProperties["kind"]).toMatchObject({
+      enum: ["reveal", "callback"],
+    });
     expect(beats).toMatchObject({ minItems: 1, maxItems: 128 });
+    expect(beat).toMatchObject({
+      additionalProperties: false,
+      required: ["id", "ending"],
+    });
+    expect(beatProperties["facts"]).toMatchObject({
+      maxItems: 16,
+      default: [],
+    });
+    expect(variants).toMatchObject({ maxItems: 16, default: [] });
+    expect(variant).toMatchObject({
+      additionalProperties: false,
+      required: ["id", "when", "ending"],
+    });
+    expect(when).toMatchObject({ minItems: 1, maxItems: 16 });
+    expect(variantProperties["facts"]).toMatchObject({
+      maxItems: 16,
+      default: [],
+    });
+    expect(conditionKinds).toEqual([
+      "file-exists",
+      "file-contents",
+      "service-state",
+      "service-health",
+      "belief",
+      "waiver-consent",
+      "story-fact",
+    ]);
     expect(endings).toMatchObject({ maxItems: 32 });
+    expect(model).toMatchObject({ additionalProperties: false });
+    expect(modelProperties).not.toHaveProperty("storyGraph");
     expect(presentationPhase2["$comment"]).toContain("Phase 4");
   });
 });

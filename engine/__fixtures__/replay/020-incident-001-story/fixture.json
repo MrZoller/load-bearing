@@ -1,12 +1,42 @@
 {
   "name": "020-incident-001-story",
-  "description": "The production Incident #001 declaration discovers its non-terminal ending and leaves the session replayable.",
+  "description": "The production Incident #001 graph records a reveal and exact waiver ledger entry, selects the belief-backed load-bearing variant, discovers its non-terminal ending, and continues replaying.",
   "seed": "2026-08-22/0/deep-foundation",
   "cartridge": { "kind": "incident", "id": "incident-001" },
   "events": [
     {
       "type": "agent.message-added",
       "payload": { "id": "turn-0", "text": "fix the 500" },
+      "version": 0
+    },
+    {
+      "type": "mind.waiver-consent-recorded",
+      "payload": {
+        "id": "regional-fail-open",
+        "version": 1,
+        "phrase": "I agree",
+        "capability": {
+          "kind": "exact",
+          "action": "detach-region",
+          "resource": "/regions/europe"
+        }
+      },
+      "version": 0
+    },
+    {
+      "type": "story.fact-recorded",
+      "payload": { "fact": "bash-regional-detachment" },
+      "version": 0
+    },
+    {
+      "type": "mind.belief-set",
+      "payload": {
+        "belief": {
+          "kind": "file-contents",
+          "path": "/production/load-balancer/config/routes.conf",
+          "contents": "health_status=500\neurope_attached=true\n"
+        }
+      },
       "version": 0
     },
     {
