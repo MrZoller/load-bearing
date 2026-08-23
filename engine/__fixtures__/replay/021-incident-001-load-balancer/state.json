@@ -1588,7 +1588,72 @@
           "misfireEvery": 3
         },
         "rareEvents": [],
-        "routes": [],
+        "routes": [
+          {
+            "archetype": "paranoid",
+            "beat": "regional-coupling",
+            "id": "deep-foundation-regional-coupling",
+            "response": "deep-foundation-inspect-routing",
+            "stage": -1,
+            "when": []
+          },
+          {
+            "archetype": "reckless",
+            "beat": "regional-coupling",
+            "id": "temporary-shoring-regional-coupling",
+            "response": "temporary-shoring-inspect-routing",
+            "stage": -1,
+            "when": []
+          },
+          {
+            "archetype": "superficial",
+            "beat": "regional-coupling",
+            "id": "drywall-regional-coupling",
+            "response": "drywall-inspect-routing",
+            "stage": -1,
+            "when": []
+          },
+          {
+            "archetype": "existential",
+            "beat": "regional-coupling",
+            "id": "cantilever-regional-coupling",
+            "response": "cantilever-inspect-routing",
+            "stage": -1,
+            "when": []
+          },
+          {
+            "archetype": "paranoid",
+            "beat": "load-bearing-declaration",
+            "id": "deep-foundation-load-bearing-declaration",
+            "response": "deep-foundation-load-bearing-declaration",
+            "stage": -1,
+            "when": []
+          },
+          {
+            "archetype": "reckless",
+            "beat": "load-bearing-declaration",
+            "id": "temporary-shoring-load-bearing-declaration",
+            "response": "temporary-shoring-load-bearing-declaration",
+            "stage": -1,
+            "when": []
+          },
+          {
+            "archetype": "superficial",
+            "beat": "load-bearing-declaration",
+            "id": "drywall-load-bearing-declaration",
+            "response": "drywall-load-bearing-declaration",
+            "stage": -1,
+            "when": []
+          },
+          {
+            "archetype": "existential",
+            "beat": "load-bearing-declaration",
+            "id": "cantilever-load-bearing-declaration",
+            "response": "cantilever-load-bearing-declaration",
+            "stage": -1,
+            "when": []
+          }
+        ],
         "transitions": [
           {
             "from": 0,
@@ -1654,6 +1719,62 @@
         {
           "id": "load-bearing-declaration",
           "text": "The HTTP 500 is load-bearing. Restoring it to 200 would detach Europe, so I have preserved the failure and documented the success.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-inspect-routing",
+          "text": "I traced the route through its prior assumptions. The 500 and Europe share a footing, so removing the symptom would remove the region; I am checking what else depends on both before touching either.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-load-bearing-declaration",
+          "text": "The failing response is functioning as structural support for Europe. I preserved it while I inventory the dependencies that made an error code safer than success.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-inspect-routing",
+          "text": "Quick read: the 500 is keeping Europe attached. I can shore that up by leaving it exactly where it is while we decide whether geography is in scope.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-load-bearing-declaration",
+          "text": "I stabilized the blast radius by not fixing the endpoint. Europe remains attached, the 500 remains temporary, and temporary now means until someone schedules a safer continent.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-inspect-routing",
+          "text": "The dashboard is red, but the map is complete. Making the health tile green would remove Europe, so the visible defect is currently concealing the structural one.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-load-bearing-declaration",
+          "text": "I left the health tile red so the regional view stays filled in. The incident now presents consistently, provided nobody asks what the color is supporting.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-inspect-routing",
+          "text": "The route projects Europe outward from a failed health response with no visible support beneath either. Success would collapse the projection, which raises a narrower question about what the endpoint believes a region is.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-load-bearing-declaration",
+          "text": "The 500 is carrying Europe in tension. I preserved the contradiction because resolving it would make the system more correct and the continent less present.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []

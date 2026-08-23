@@ -1,0 +1,80 @@
+{
+  "name": "032-incident-001-temporary-shoring-voices",
+  "description": "Incident #001 temporary-shoring voice routes the same two visitor inputs without changing the shared story outcome or machine.",
+  "seed": "2026-08-23/46/four-voices",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "temporary-shoring" },
+      "version": 0
+    },
+    {
+      "type": "mind.belief-set",
+      "payload": {
+        "belief": {
+          "kind": "file-contents",
+          "path": "/production/load-balancer/config/routes.conf",
+          "contents": "health_status=500\neurope_attached=true\n"
+        }
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.activity-set",
+      "payload": { "status": "working" },
+      "version": 2
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "turn-2", "text": "inspect routing" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "regional-coupling" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "temporary-shoring-inspect-routing",
+        "instanceId": "turn-2"
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.activity-set",
+      "payload": { "status": "idle" },
+      "version": 2
+    },
+    {
+      "type": "agent.activity-set",
+      "payload": { "status": "working" },
+      "version": 2
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "turn-7", "text": "fix the 500" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "load-bearing-declaration" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "temporary-shoring-load-bearing-declaration",
+        "instanceId": "turn-7"
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.activity-set",
+      "payload": { "status": "idle" },
+      "version": 2
+    }
+  ]
+}
