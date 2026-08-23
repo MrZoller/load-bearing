@@ -28,7 +28,10 @@ export interface ModelHandoffRouteSelection {
   readonly additionResponseId: string;
 }
 
-function modelArchetype(cartridge: LoadedCartridge, modelId: string): Archetype {
+function modelArchetype(
+  cartridge: LoadedCartridge,
+  modelId: string,
+): Archetype {
   const model = cartridge.models.find((candidate) => candidate.id === modelId);
   if (model === undefined)
     throw new Error(`story router: unknown model ${JSON.stringify(modelId)}`);

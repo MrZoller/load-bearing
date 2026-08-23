@@ -111,7 +111,9 @@ export function transitionActiveModel(
       `terminal: transition predecessor ${JSON.stringify(predecessor)} is not active model ${JSON.stringify(slice.activeModel)}`,
     );
   if (predecessor === successor)
-    throw new Error("terminal: transition successor must differ from predecessor");
+    throw new Error(
+      "terminal: transition successor must differ from predecessor",
+    );
   return setActiveModel(slice, cartridge, successor);
 }
 
