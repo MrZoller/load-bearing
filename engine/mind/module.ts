@@ -286,7 +286,13 @@ export const MIND_MODULE = defineEventModule<MindSlice>({
             createMindPermissionResolvedEvent(id, decision),
             ...continuation(selected),
           ],
-          expansionFallback: continuation(action.deny),
+          // A failed grant may still take the authored deny path, but a failed
+          // deny must not retry the same state-sensitive continuation outside
+          // the reducer's one-frame fallback guard.
+          expansionFallback:
+            decision === "deny"
+              ? [createMindPermissionResolvedEvent(id, "deny")]
+              : continuation(action.deny),
         };
       },
     },
@@ -354,7 +360,21 @@ export const MIND_MODULE = defineEventModule<MindSlice>({
           throw new Error(
             `${context.where}: recorded waiver consent does not cover ${JSON.stringify(id)}`,
           );
-        return { expansion: continuation(action.consent) };
+        return {
+          expansion: continuation(action.consent),
+          // Reusing consent may encounter state changed since the first
+          // acceptance. A logged fallback keeps that visitor turn authored
+          // rather than letting a second continuation failure escape.
+          expansionFallback: [
+            stampEvent(
+              {
+                type: "mind.waiver-standing-failed",
+                payload: { id: action.id },
+              },
+              "mind standing waiver fallback",
+            ),
+          ],
+        };
       },
     },
     "mind.waiver-choice": {
@@ -428,6 +448,15 @@ export const MIND_MODULE = defineEventModule<MindSlice>({
           slice: recordWaiverConsent(slice, consent),
           summary: `id=${consent.id} version=${String(consent.version)}`,
         };
+      },
+    },
+    "mind.waiver-standing-failed": {
+      version: 0,
+      apply(context) {
+        const data = payload(context, ["id"]);
+        const id = readString(data, "id", context.where);
+        findOrchestrationAction(context, id, "waiver-request");
+        return { summary: `id=${id}` };
       },
     },
     "mind.waiver-pending": {

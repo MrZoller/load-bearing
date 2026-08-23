@@ -18,8 +18,10 @@ import {
   createMindPermissionChoiceEvent,
   createMindPermissionRequestEvent,
   createMindStandingPermissionEvent,
+  createMindWaiverConsentRecordedEvent,
   createMindWaiverChoiceEvent,
   createMindWaiverStartEvent,
+  createMindWaiverStandingEvent,
 } from "./module.js";
 
 const SEED = "2026-08-22/34/structural-audit";
@@ -293,6 +295,58 @@ describe("mind orchestration envelopes", () => {
     ]);
     expect(contents(replayed, "/production/service/src/ready.stale")).toBe(
       "denied after state drift\n",
+    );
+
+    const deniedFallback = step(
+      grown,
+      createMindPermissionChoiceEvent("delete-ready-sentinel", "deny"),
+    );
+    expect(readMindSlice(deniedFallback).pendingPermission).toBeNull();
+    expect(readMindSlice(deniedFallback).permissions.at(-1)?.decision).toBe(
+      "deny",
+    );
+  });
+
+  it("keeps a repeated waiver turn authored when its consent continuation drifts", () => {
+    const document = JSON.parse(JSON.stringify(phaseOneDocument)) as any;
+    document.story.phase2 = {
+      initialBeat: "start",
+      counters: [{ id: "full", initial: 0, maximum: 1 }],
+      facts: [],
+      beats: [{ id: "start", ending: "", actions: [], variants: [] }],
+      endings: [],
+    };
+    document.story.intents[2].actions[0].consent = [
+      { kind: "counter-add", counter: "full", amount: 1 },
+    ];
+    const cartridge = loadCartridge(document);
+    const consented = step(
+      initial(cartridge),
+      createMindWaiverConsentRecordedEvent({
+        id: "write-ready-waiver",
+        version: 1,
+        phrase: "I agree",
+        capability: {
+          kind: "exact",
+          action: "write",
+          resource: "/production/service/src/ready.stale",
+        },
+      }),
+    );
+    const full = step(consented, {
+      type: "story.counter-added",
+      payload: { counter: "full", amount: 1 },
+    });
+
+    const repeated = step(
+      full,
+      createMindWaiverStandingEvent("write-ready-waiver"),
+    );
+    expect(readStorySlice(repeated).counters).toEqual([
+      { id: "full", value: 1 },
+    ]);
+    expect(repeated.transcript.at(-1)?.type).toBe(
+      "mind.waiver-standing-failed",
     );
   });
 });

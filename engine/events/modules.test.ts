@@ -76,6 +76,7 @@ describe("the engine's module list", () => {
       "mind.waiver-pending",
       "mind.waiver-resolved",
       "mind.waiver-standing",
+      "mind.waiver-standing-failed",
       "mind.waiver-start",
       "probe.int",
       "probe.random",
