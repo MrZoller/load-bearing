@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T51",
-  "branch": "factory/t51-permission-waiver-callbacks",
-  "pr": 75,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-23T18:42:43Z"
+  "updated": "2026-08-23T20:04:00Z"
 }

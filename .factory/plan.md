@@ -101,7 +101,7 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/agent/intent.test.ts`, and paired goldens author capitulation for every archetype across escalation; deterministic stage-3+ misfires are rare, preserve the underlying belief that caused disagreement, remain state-consistent, and do not become a catchphrase (criteria 16)
   - deps: T38, T46, T48
   - pr: 74
-- [R] T51 (standard) — Permission complicity and waiver callbacks
+- [x] T51 (standard) — Permission complicity and waiver callbacks
   - acceptance: `content/incidents/incident-001.json`, `engine/mind/mind.test.ts`, and permission/waiver goldens author trivial asks, conspicuous non-asks, distinct grant/deny/standing-allow continuations, `WAIVER.md`, exact `I agree`, and callbacks quoting the same document/time; tests cover alternate wording, exact ledger queries, gated machine effects, and the waiver-ending prerequisite without inferring consent from dialogue (criteria 11, 12, 18)
   - deps: T34, T41, T46
   - pr: 75
@@ -157,6 +157,7 @@ authoring tooling remain excluded.
 ## Ad-hoc
 
 - [ ] T59 (trivial) — parked review minors (batch)
+  - PR #75: Handle refused strict authored top-level writes in the headless engine (or pin the intentional abort) so a contrived directory replacement cannot throw outside the runtime recovery; Codex thread `discussion_r3839443367` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #58: Refactor the generic reducer's `story.beat-reached` consequence dispatch into a module-owned hook; Codex thread `discussion_r3837495477` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #59: Reject cartridge waiver declarations that exceed the bounded waiver-consent ledger; Codex thread `discussion_r3837587539` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #59: Track generated waivers before treating an existing document-path file as an authored waiver; Codex thread `discussion_r3837639933` was verifier-classified minor and dispositioned without a minors-only push.
