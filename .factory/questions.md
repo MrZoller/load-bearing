@@ -334,4 +334,9 @@ implemented command inventory, shell boundary tests, and golden replay.
 Recommendation: A; the defect is confined to one sentence and the implementation
 already proves the intended bounded route, but fixing it now would violate the
 panel termination rule.
-**A:**
+**A:** Option A — resume T45 in a fresh cycle with the rationale narrowed to the
+precise true claim (bounded `cp`/`mv` reject an existing destination), then
+verification and a fresh panel. (Operator answer, as Chris's representative:
+process continuation with a documented default — same shape as Q8's resume-in-
+fresh-cycle precedent; the change is one rationale sentence with no product-
+surface decision, and B would discard a green implementation over it.)
