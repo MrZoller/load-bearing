@@ -98,6 +98,7 @@ describe("the published schema", () => {
         },
       ],
       routes: [],
+      handoffs: [],
       endings: [],
       transitions: [],
     });

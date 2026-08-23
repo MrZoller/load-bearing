@@ -298,6 +298,7 @@ export {
   TERMINAL_MODULE,
   createTerminalModeEvent,
   createTerminalModelEvent,
+  createTerminalModelTransitionEvent,
 } from "./terminal/module.js";
 export {
   createTerminalSlice,
@@ -306,9 +307,14 @@ export {
   readTerminalSlice,
   setActiveModel,
   setTerminalMode,
+  transitionActiveModel,
   validateTerminalSlice,
 } from "./terminal/terminal.js";
-export type { TerminalMode, TerminalSlice } from "./terminal/types.js";
+export type {
+  ModelTransition,
+  TerminalMode,
+  TerminalSlice,
+} from "./terminal/types.js";
 export { TERMINAL_COMMANDS } from "./commands/terminal.js";
 
 export {
@@ -330,8 +336,15 @@ export {
   recordStoryFact,
   validateStorySlice,
 } from "./story/story.js";
-export { routeCompact, routeStoryResponse } from "./story/router.js";
-export type { StoryResponseRouteSelection } from "./story/router.js";
+export {
+  routeCompact,
+  routeModelHandoff,
+  routeStoryResponse,
+} from "./story/router.js";
+export type {
+  ModelHandoffRouteSelection,
+  StoryResponseRouteSelection,
+} from "./story/router.js";
 export type {
   StoryCondition,
   StoryCounter,
@@ -361,7 +374,10 @@ export {
   createAgentHelpEvents,
   createAgentResumeEvents,
 } from "./agent/awareness.js";
-export { canRecordAuthoredResponse } from "./agent/intent.js";
+export {
+  canRecordAuthoredResponse,
+  canRecordAuthoredResponses,
+} from "./agent/intent.js";
 export {
   MAX_AGENT_ACTIVITY_VERB_LENGTH,
   MAX_AGENT_ID_LENGTH,

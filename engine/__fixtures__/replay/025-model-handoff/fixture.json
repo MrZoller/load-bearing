@@ -1,0 +1,57 @@
+{
+  "name": "025-model-handoff",
+  "description": "A predecessor-aware model transition records reusable pair blame plus an incident addition while preserving the session and unrelated random streams.",
+  "seed": "2026-08-23/37/model-handoff",
+  "cartridge": "model-handoff",
+  "events": [
+    {
+      "type": "terminal.mode-set",
+      "payload": { "mode": "tui" },
+      "version": 0
+    },
+    {
+      "type": "probe.random",
+      "payload": { "stream": "spinner.verbs", "count": 1, "form": "uint32" },
+      "version": 0
+    },
+    {
+      "type": "probe.random",
+      "payload": { "stream": "rare-event", "count": 1, "form": "uint32" },
+      "version": 0
+    },
+    {
+      "type": "terminal.model-transitioned",
+      "payload": {
+        "predecessor": "deep-foundation",
+        "successor": "temporary-shoring"
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "handoff-paranoid-reckless",
+        "instanceId": "handoff-pair"
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "handoff-incident-addition",
+        "instanceId": "handoff-addition"
+      },
+      "version": 0
+    },
+    {
+      "type": "probe.random",
+      "payload": { "stream": "spinner.verbs", "count": 1, "form": "uint32" },
+      "version": 0
+    },
+    {
+      "type": "probe.random",
+      "payload": { "stream": "rare-event", "count": 1, "form": "uint32" },
+      "version": 0
+    }
+  ]
+}

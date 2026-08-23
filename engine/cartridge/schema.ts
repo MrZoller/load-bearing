@@ -73,6 +73,9 @@ export const ARCHETYPES = Object.freeze([
   "existential",
 ] as const);
 
+/** Every directional transition between the four distinct archetypes. */
+export const MAX_MODEL_HANDOFFS = ARCHETYPES.length * (ARCHETYPES.length - 1);
+
 /**
  * Absolute POSIX path: a leading slash, then non-empty segments that are not
  * `.` or `..`, and no backslashes or transcript-breaking controls anywhere.
@@ -2002,6 +2005,34 @@ const STORY = {
             },
             [],
           ),
+          handoffs: optional(
+            {
+              kind: "array",
+              description:
+                "Reusable directional archetype-pair blame with optional incident-specific follow-up copy.",
+              maxItems: MAX_MODEL_HANDOFFS,
+              items: {
+                kind: "object",
+                description:
+                  "One ordered predecessor-to-successor handoff; model ids never own parallel scripts.",
+                fields: {
+                  predecessor: required({
+                    kind: "enum",
+                    description: "Archetype of the model being replaced.",
+                    values: ARCHETYPES,
+                  }),
+                  successor: required({
+                    kind: "enum",
+                    description: "Archetype of the newly active model.",
+                    values: ARCHETYPES,
+                  }),
+                  response: required(PHASE_ONE_ID),
+                  additionResponse: optional(OPTIONAL_PHASE_ONE_ID, ""),
+                },
+              },
+            },
+            [],
+          ),
           endings: required({
             kind: "array",
             description: "Unranked collectible endings in authored order.",
@@ -2053,6 +2084,7 @@ const STORY = {
           { id: "start", ending: "", facts: [], actions: [], variants: [] },
         ],
         routes: [],
+        handoffs: [],
         endings: [],
         transitions: [],
       },

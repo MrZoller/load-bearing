@@ -41,10 +41,11 @@ authoring tooling remain excluded.
   - acceptance: `engine/story/{conditions,story,module,story.test}.ts`, `engine/metrics/{types,metrics,metrics.test}.ts`, `engine/agent/intent.ts`, `runtime/app.ts`, and `runtime/components/status.ts` advance stages 0–4 only through validated command/reveal/model/permission/compact conditions, feed authoritative stage to activity/presentation, and project cartridge-authored status curves that vary by active model and stage, including the Not-Okay Ratio and impossible stage-4 values; waiting, animation frames, reduced motion, and browser timing cannot advance stage or select content, and tests cover every model/stage projection (criteria 8, 9, 20)
   - deps: T32
   - pr: 60
-- [~] T36 (standard) — Sparse persona routing and compact-damaged beliefs
+- [x] T36 (standard) — Sparse persona routing and compact-damaged beliefs
   - acceptance: `engine/story/{router,router.test}.ts`, `engine/agent/{intent,awareness}.ts`, `engine/cartridge/{schema,types,load}.ts`, and `runtime/commands/slash.ts` route shared beats through defaults plus archetype/stage/condition overrides, never model-owned graphs; `/compact` selects the active archetype's authored summary and beliefs, preserves machine truth, and changes a later route through typed `beliefDivergence`; same-seed/input fixtures keep shared beat ids while producing four distinct state-consistent outcomes (criteria 4, 13, 20)
   - deps: T32, T35
-- [ ] T37 (standard) — Predecessor-aware model handoffs
+  - pr: 61
+- [~] T37 (standard) — Predecessor-aware model handoffs
   - acceptance: `engine/terminal/{types,terminal,module,module.test}.ts`, `engine/story/{types,story,module,router}.ts`, and `runtime/views/tui.ts` preserve predecessor and successor in one replayable model transition and select reusable pair blame plus optional incident additions; table tests cover all 12 ordered archetype pairs, preserve machine/story/mind/endings, and prove switching neither reseeds nor consumes unrelated spinner or rare-event streams (criteria 5, 18, 20)
   - deps: T36
 - [ ] T38 (standard) — Deterministic intent families and mutating fallback
@@ -149,3 +150,4 @@ authoring tooling remain excluded.
   - PR #59: Preserve a waiver-start failure across authored trailing actions; Codex thread `discussion_r3837731579` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #59: Preflight capacity for a substituted waiver-start fallback response; Codex thread `discussion_r3837731583` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #60: Add a stage-0 placeholder fallback until T48 authors stage 0–4 placeholder pools; Codex thread `discussion_r3837900861` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #61: Constrain an intent's state-mutating actions relative to `story-reach`, or align dialogue and beat-variant selection snapshots; Codex thread `discussion_r3837965442` was verifier-classified minor and dispositioned without a minors-only push.

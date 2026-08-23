@@ -10,6 +10,7 @@ import {
   isTerminalMode,
   setActiveModel,
   setTerminalMode,
+  transitionActiveModel,
   validateTerminalSlice,
 } from "./terminal.js";
 
@@ -41,6 +42,19 @@ export function createTerminalModelEvent(model: string): EngineEvent {
   );
 }
 
+export function createTerminalModelTransitionEvent(
+  predecessor: string,
+  successor: string,
+): EngineEvent {
+  return stampEvent(
+    {
+      type: "terminal.model-transitioned",
+      payload: { predecessor, successor },
+    },
+    "terminal model transition",
+  );
+}
+
 export const TERMINAL_MODULE = defineEventModule<TerminalSlice>({
   namespace: "terminal",
   description: "Replayable terminal mode and active model.",
@@ -69,6 +83,30 @@ export const TERMINAL_MODULE = defineEventModule<TerminalSlice>({
         return {
           slice: setActiveModel(slice, context.cartridge, model),
           summary: `model=${model}`,
+        };
+      },
+    },
+    "terminal.model-transitioned": {
+      version: 0,
+      apply(context, slice) {
+        const data = requirePayload(context);
+        const unknown = Object.keys(data)
+          .filter((key) => key !== "predecessor" && key !== "successor")
+          .sort();
+        if (unknown.length > 0)
+          throw new Error(
+            `${context.where}: unexpected payload field(s) ${unknown.join(", ")}; expected predecessor, successor`,
+          );
+        const predecessor = readString(data, "predecessor", context.where);
+        const successor = readString(data, "successor", context.where);
+        return {
+          slice: transitionActiveModel(
+            slice,
+            context.cartridge,
+            predecessor,
+            successor,
+          ),
+          summary: `model=${predecessor}->${successor}`,
         };
       },
     },

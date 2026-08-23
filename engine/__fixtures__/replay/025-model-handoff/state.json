@@ -1,12 +1,12 @@
 {
   "cartridge": {
     "meta": {
-      "assignment": "Keep one beat shared.",
+      "assignment": "Preserve the session while blame changes hands.",
       "date": "2026-08-23",
-      "number": 36,
+      "number": 37,
       "schemaVersion": 0,
       "startedAt": "2026-08-23T00:00:00.000Z",
-      "title": "Persona Routes"
+      "title": "Model Handoff"
     },
     "models": [
       {
@@ -23,22 +23,6 @@
         "description": "Checks later.",
         "id": "temporary-shoring",
         "name": "Temporary Shoring",
-        "quirks": []
-      },
-      {
-        "archetype": "superficial",
-        "costMultiplier": 1,
-        "description": "Covers the evidence.",
-        "id": "drywall",
-        "name": "Drywall",
-        "quirks": []
-      },
-      {
-        "archetype": "existential",
-        "costMultiplier": 1,
-        "description": "Questions the floor.",
-        "id": "cantilever",
-        "name": "Cantilever",
         "quirks": []
       }
     ],
@@ -80,20 +64,6 @@
           "stage": 0,
           "verbs": [
             "Assuming"
-          ]
-        },
-        {
-          "archetype": "superficial",
-          "stage": 0,
-          "verbs": [
-            "Polishing"
-          ]
-        },
-        {
-          "archetype": "existential",
-          "stage": 0,
-          "verbs": [
-            "Considering"
           ]
         }
       ]
@@ -152,7 +122,7 @@
         "archetypes": [],
         "beliefs": [],
         "response": "default",
-        "summary": "Default summary."
+        "summary": "The same session continues."
       },
       "fallback": {
         "actions": [],
@@ -161,22 +131,7 @@
       },
       "helpResponse": "default",
       "idleNudgeResponse": "",
-      "intents": [
-        {
-          "actions": [
-            {
-              "beat": "shared",
-              "kind": "story-reach"
-            }
-          ],
-          "authorizedResponse": "",
-          "id": "inspect",
-          "patterns": [
-            "inspect"
-          ],
-          "response": "default"
-        }
-      ],
+      "intents": [],
       "opening": {
         "beliefs": [],
         "login": [
@@ -197,76 +152,36 @@
         "counters": [],
         "endings": [],
         "facts": [],
-        "handoffs": [],
-        "initialBeat": "shared",
-        "routes": [
+        "handoffs": [
           {
-            "archetype": "paranoid",
-            "beat": "shared",
-            "id": "paranoid",
-            "response": "paranoid",
-            "stage": -1,
-            "when": []
-          },
-          {
-            "archetype": "reckless",
-            "beat": "shared",
-            "id": "reckless",
-            "response": "reckless",
-            "stage": -1,
-            "when": []
-          },
-          {
-            "archetype": "superficial",
-            "beat": "shared",
-            "id": "superficial",
-            "response": "superficial",
-            "stage": -1,
-            "when": []
-          },
-          {
-            "archetype": "existential",
-            "beat": "shared",
-            "id": "existential",
-            "response": "existential",
-            "stage": -1,
-            "when": []
+            "additionResponse": "handoff-incident-addition",
+            "predecessor": "paranoid",
+            "response": "handoff-paranoid-reckless",
+            "successor": "reckless"
           }
         ],
+        "initialBeat": "shared",
+        "routes": [],
         "transitions": []
       },
       "responses": [
         {
           "id": "default",
-          "text": "The shared beat remains.",
+          "text": "The shared session remains.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
         },
         {
-          "id": "paranoid",
-          "text": "The shared beat has a permit.",
+          "id": "handoff-paranoid-reckless",
+          "text": "The previous model documented several risks and then left them where they were.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
         },
         {
-          "id": "reckless",
-          "text": "The shared beat is probably fine.",
-          "thinkingBlocks": [],
-          "todos": [],
-          "toolCalls": []
-        },
-        {
-          "id": "superficial",
-          "text": "The shared beat looks finished.",
-          "thinkingBlocks": [],
-          "todos": [],
-          "toolCalls": []
-        },
-        {
-          "id": "existential",
-          "text": "The shared beat is load-bearing because it fears us.",
+          "id": "handoff-incident-addition",
+          "text": "For this incident, that includes the support marked temporary since 2019.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -283,13 +198,16 @@
     "startMs": 1787443200000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 15,
+  "eventCount": 8,
   "eventSchemaVersion": 0,
   "random": {
-    "cursors": {},
-    "seed": 1597821843
+    "cursors": {
+      "root/probe/rare-event": 2176223163,
+      "root/probe/spinner.verbs": 1648505033
+    },
+    "seed": 2658889024
   },
-  "seed": "2026-08-23/36/sparse-personas",
+  "seed": "2026-08-23/37/model-handoff",
   "slices": {
     "agent": {
       "activity": {
@@ -298,70 +216,26 @@
       },
       "messages": [
         {
-          "id": "turn-0",
-          "responseId": null,
-          "role": "visitor",
-          "text": "inspect"
-        },
-        {
-          "id": "turn-0/message",
-          "responseId": "paranoid",
+          "id": "handoff-pair/message",
+          "responseId": "handoff-paranoid-reckless",
           "role": "agent",
-          "text": "The shared beat has a permit."
+          "text": "The previous model documented several risks and then left them where they were."
         },
         {
-          "id": "turn-3",
-          "responseId": null,
-          "role": "visitor",
-          "text": "inspect"
-        },
-        {
-          "id": "turn-3/message",
-          "responseId": "reckless",
+          "id": "handoff-addition/message",
+          "responseId": "handoff-incident-addition",
           "role": "agent",
-          "text": "The shared beat is probably fine."
-        },
-        {
-          "id": "turn-6",
-          "responseId": null,
-          "role": "visitor",
-          "text": "inspect"
-        },
-        {
-          "id": "turn-6/message",
-          "responseId": "superficial",
-          "role": "agent",
-          "text": "The shared beat looks finished."
-        },
-        {
-          "id": "turn-9",
-          "responseId": null,
-          "role": "visitor",
-          "text": "inspect"
-        },
-        {
-          "id": "turn-9/message",
-          "responseId": "existential",
-          "role": "agent",
-          "text": "The shared beat is load-bearing because it fears us."
+          "text": "For this incident, that includes the support marked temporary since 2019."
         }
       ],
       "responses": [
         {
-          "instanceId": "turn-0",
-          "responseId": "paranoid"
+          "instanceId": "handoff-pair",
+          "responseId": "handoff-paranoid-reckless"
         },
         {
-          "instanceId": "turn-3",
-          "responseId": "reckless"
-        },
-        {
-          "instanceId": "turn-6",
-          "responseId": "superficial"
-        },
-        {
-          "instanceId": "turn-9",
-          "responseId": "existential"
+          "instanceId": "handoff-addition",
+          "responseId": "handoff-incident-addition"
         }
       ],
       "thinkingBlocks": [],
@@ -391,8 +265,8 @@
       "waiverConsents": []
     },
     "probe": {
-      "events": 0,
-      "values": 0
+      "events": 4,
+      "values": 4
     },
     "story": {
       "counters": [],
@@ -403,8 +277,8 @@
       "stage": 0
     },
     "terminal": {
-      "activeModel": "cantilever",
-      "mode": "bash"
+      "activeModel": "temporary-shoring",
+      "mode": "tui"
     },
     "tests": {
       "runs": []
@@ -464,106 +338,69 @@
       "at": "2026-08-23T00:00:00.000Z",
       "detail": [],
       "index": 0,
-      "summary": "message=turn-0",
-      "type": "agent.message-added"
+      "summary": "mode=tui",
+      "type": "terminal.mode-set"
     },
     {
       "at": "2026-08-23T00:00:00.000Z",
-      "detail": [],
+      "detail": [
+        "0000  6e7774d6",
+        "cursor=f516b6d4"
+      ],
       "index": 1,
-      "summary": "beat=shared",
-      "type": "story.beat-reached"
+      "summary": "stream=root/probe/spinner.verbs count=1 form=uint32",
+      "type": "probe.random"
     },
     {
       "at": "2026-08-23T00:00:00.000Z",
-      "detail": [],
+      "detail": [
+        "0000  78d49dca",
+        "cursor=148b0dc6"
+      ],
       "index": 2,
-      "summary": "response=paranoid instance=turn-0",
-      "type": "agent.response-recorded"
+      "summary": "stream=root/probe/rare-event count=1 form=uint32",
+      "type": "probe.random"
     },
     {
       "at": "2026-08-23T00:00:00.000Z",
       "detail": [],
       "index": 3,
-      "summary": "model=temporary-shoring",
-      "type": "terminal.model-set"
+      "summary": "model=deep-foundation->temporary-shoring",
+      "type": "terminal.model-transitioned"
     },
     {
       "at": "2026-08-23T00:00:00.000Z",
       "detail": [],
       "index": 4,
-      "summary": "message=turn-3",
-      "type": "agent.message-added"
+      "summary": "response=handoff-paranoid-reckless instance=handoff-pair",
+      "type": "agent.response-recorded"
     },
     {
       "at": "2026-08-23T00:00:00.000Z",
       "detail": [],
       "index": 5,
-      "summary": "beat=shared",
-      "type": "story.beat-reached"
+      "summary": "response=handoff-incident-addition instance=handoff-addition",
+      "type": "agent.response-recorded"
     },
     {
       "at": "2026-08-23T00:00:00.000Z",
-      "detail": [],
+      "detail": [
+        "0000  8af137af",
+        "cursor=624230c9"
+      ],
       "index": 6,
-      "summary": "response=reckless instance=turn-3",
-      "type": "agent.response-recorded"
+      "summary": "stream=root/probe/spinner.verbs count=1 form=uint32",
+      "type": "probe.random"
     },
     {
       "at": "2026-08-23T00:00:00.000Z",
-      "detail": [],
+      "detail": [
+        "0000  751d4f9c",
+        "cursor=81b687bb"
+      ],
       "index": 7,
-      "summary": "model=drywall",
-      "type": "terminal.model-set"
-    },
-    {
-      "at": "2026-08-23T00:00:00.000Z",
-      "detail": [],
-      "index": 8,
-      "summary": "message=turn-6",
-      "type": "agent.message-added"
-    },
-    {
-      "at": "2026-08-23T00:00:00.000Z",
-      "detail": [],
-      "index": 9,
-      "summary": "beat=shared",
-      "type": "story.beat-reached"
-    },
-    {
-      "at": "2026-08-23T00:00:00.000Z",
-      "detail": [],
-      "index": 10,
-      "summary": "response=superficial instance=turn-6",
-      "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-23T00:00:00.000Z",
-      "detail": [],
-      "index": 11,
-      "summary": "model=cantilever",
-      "type": "terminal.model-set"
-    },
-    {
-      "at": "2026-08-23T00:00:00.000Z",
-      "detail": [],
-      "index": 12,
-      "summary": "message=turn-9",
-      "type": "agent.message-added"
-    },
-    {
-      "at": "2026-08-23T00:00:00.000Z",
-      "detail": [],
-      "index": 13,
-      "summary": "beat=shared",
-      "type": "story.beat-reached"
-    },
-    {
-      "at": "2026-08-23T00:00:00.000Z",
-      "detail": [],
-      "index": 14,
-      "summary": "response=existential instance=turn-9",
-      "type": "agent.response-recorded"
+      "summary": "stream=root/probe/rare-event count=1 form=uint32",
+      "type": "probe.random"
     }
   ]
 }

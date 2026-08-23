@@ -93,6 +93,7 @@ describe("the engine's module list", () => {
       "story.stage-advanced",
       "terminal.mode-set",
       "terminal.model-set",
+      "terminal.model-transitioned",
       "tests.run",
       "vfs.chdir",
       "vfs.chmod",

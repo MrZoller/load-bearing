@@ -9,10 +9,18 @@ import type { SessionState } from "../events/state.js";
 import { createMindBeliefEvent } from "../mind/module.js";
 import { readMindSlice } from "../mind/mind.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
-import { createTerminalModelEvent } from "../terminal/module.js";
+import {
+  createTerminalModelEvent,
+  createTerminalModelTransitionEvent,
+} from "../terminal/module.js";
 import { readStorySlice } from "./story.js";
+import { createStoryBeatReachedEvent } from "./module.js";
 import { storyConditionMatches } from "./conditions.js";
-import { routeCompact, routeStoryResponse } from "./router.js";
+import {
+  routeCompact,
+  routeModelHandoff,
+  routeStoryResponse,
+} from "./router.js";
 
 const SEED = "2026-08-23/36/sparse-personas";
 
@@ -67,6 +75,15 @@ function cartridge() {
     "superficial",
     "existential",
     "divergent",
+    ...["paranoid", "reckless", "superficial", "existential"].flatMap(
+      (predecessor) =>
+        ["paranoid", "reckless", "superficial", "existential"]
+          .filter((successor) => successor !== predecessor)
+          .flatMap((successor) => [
+            `handoff-${predecessor}-${successor}`,
+            `addition-${predecessor}-${successor}`,
+          ]),
+    ),
   ].map((id) => ({ id, text: `${id} response.` }));
   story["opening"] = {
     login: ["Fixture login."],
@@ -103,7 +120,15 @@ function cartridge() {
   story["phase2"] = {
     initialBeat: "shared",
     facts: [],
-    beats: [{ id: "shared", ending: "", facts: [], actions: [], variants: [] }],
+    beats: [
+      {
+        id: "shared",
+        ending: "retained-ending",
+        facts: [],
+        actions: [],
+        variants: [],
+      },
+    ],
     routes: [
       {
         id: "divergent",
@@ -156,10 +181,24 @@ function cartridge() {
         archetype: "existential",
       },
     ],
-    endings: [],
+    endings: [{ id: "retained-ending", name: "Retained ending" }],
     transitions: [
       { from: 0, to: 1, trigger: { kind: "model", model: "paranoid-stage" } },
     ],
+    handoffs: ["paranoid", "reckless", "superficial", "existential"].flatMap(
+      (predecessor, predecessorIndex) =>
+        ["paranoid", "reckless", "superficial", "existential"]
+          .filter((successor) => successor !== predecessor)
+          .map((successor, successorIndex) => ({
+            predecessor,
+            successor,
+            response: `handoff-${predecessor}-${successor}`,
+            additionResponse:
+              (predecessorIndex + successorIndex) % 2 === 0
+                ? `addition-${predecessor}-${successor}`
+                : "",
+          })),
+    ),
   };
   return loadCartridge(source);
 }
@@ -171,6 +210,90 @@ function state(): SessionState {
 }
 
 describe("sparse shared-beat routing", () => {
+  it("routes all twelve ordered archetype pairs directionally, with optional incident additions", () => {
+    const models = [
+      ["deep-foundation", "paranoid"],
+      ["temporary-shoring", "reckless"],
+      ["drywall", "superficial"],
+      ["cantilever", "existential"],
+    ] as const;
+
+    const routes = models.flatMap(
+      ([predecessor, predecessorArchetype], index) =>
+        models
+          .filter(([successor]) => successor !== predecessor)
+          .map(([successor, successorArchetype], successorIndex) => {
+            const selected = routeModelHandoff(
+              CARTRIDGE,
+              step(state(), createTerminalModelEvent(predecessor)),
+              successor,
+            );
+            return {
+              predecessor: selected.predecessor,
+              successor: selected.successor,
+              responseId: selected.responseId,
+              additionResponseId: selected.additionResponseId,
+              expectedAddition:
+                (index + successorIndex) % 2 === 0
+                  ? `addition-${predecessorArchetype}-${successorArchetype}`
+                  : "",
+            };
+          }),
+    );
+
+    expect(routes).toHaveLength(12);
+    expect(routes).toEqual(
+      expect.arrayContaining(
+        models.flatMap(([predecessor, predecessorArchetype]) =>
+          models
+            .filter(([successor]) => successor !== predecessor)
+            .map(([successor, successorArchetype]) =>
+              expect.objectContaining({
+                predecessor,
+                successor,
+                responseId: `handoff-${predecessorArchetype}-${successorArchetype}`,
+              }),
+            ),
+        ),
+      ),
+    );
+    expect(
+      routes.map(
+        ({ additionResponseId, expectedAddition }) => additionResponseId,
+      ),
+    ).toEqual(routes.map(({ expectedAddition }) => expectedAddition));
+  });
+
+  it("preserves every non-terminal slice and only advances an already-authored model stage", () => {
+    let before = step(state(), createTerminalModelEvent("deep-foundation"));
+    before = step(before, createStoryBeatReachedEvent("shared"));
+    before = step(
+      before,
+      createMindBeliefEvent({
+        kind: "file-exists",
+        path: "/etc/motd",
+        exists: false,
+      }),
+    );
+    const after = step(
+      before,
+      createTerminalModelTransitionEvent("deep-foundation", "paranoid-stage"),
+    );
+
+    expect(after.seed).toBe(before.seed);
+    expect(after.random).toEqual(before.random);
+    expect(after.slices["vfs"]).toEqual(before.slices["vfs"]);
+    expect(after.slices["world"]).toEqual(before.slices["world"]);
+    expect(after.slices["git"]).toEqual(before.slices["git"]);
+    expect(readMindSlice(after)).toEqual(readMindSlice(before));
+    expect(readStorySlice(after)).toEqual({
+      ...readStorySlice(before),
+      stage: 1,
+    });
+    expect(readStorySlice(after).discoveredEndings).toEqual([
+      "retained-ending",
+    ]);
+  });
   it("falls back to the intent response and retains the shared beat when no override matches", () => {
     const selected = routeStoryResponse(CARTRIDGE, state(), "other", "default");
 

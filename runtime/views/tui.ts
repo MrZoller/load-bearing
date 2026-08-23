@@ -1,11 +1,15 @@
 import {
+  canRecordAuthoredResponses,
+  createAgentCapacityEvent,
   createAgentInputEvents,
+  createAgentResponseEvent,
   createMindWaiverChoiceEvent,
   createShellExecuteEvent,
-  createTerminalModelEvent,
+  createTerminalModelTransitionEvent,
   readAgentSlice,
   readMindSlice,
   readTerminalSlice,
+  routeModelHandoff,
 } from "../../engine/index.js";
 import type {
   EngineEvent,
@@ -41,6 +45,41 @@ export function createTuiInputEvents(
   }
   if (input.startsWith("!")) return [createShellExecuteEvent(input.slice(1))];
   return createAgentInputEvents(cartridge, state, input);
+}
+
+export function createModelHandoffEvents(
+  cartridge: LoadedCartridge,
+  state: SessionState,
+  successor: string,
+): readonly EngineEvent[] {
+  const selection = routeModelHandoff(cartridge, state, successor);
+  if (selection.predecessor === selection.successor) return [];
+  const instance = `handoff-${String(state.eventCount)}`;
+  const responseIds = [
+    selection.responseId,
+    selection.additionResponseId,
+  ].filter((responseId) => responseId !== "");
+  return [
+    createTerminalModelTransitionEvent(
+      selection.predecessor,
+      selection.successor,
+    ),
+    ...(!canRecordAuthoredResponses(cartridge, state, responseIds)
+      ? [createAgentCapacityEvent(cartridge.story.fallback.response)]
+      : selection.responseId === ""
+        ? []
+        : [
+            createAgentResponseEvent(selection.responseId, `${instance}-pair`),
+            ...(selection.additionResponseId === ""
+              ? []
+              : [
+                  createAgentResponseEvent(
+                    selection.additionResponseId,
+                    `${instance}-incident`,
+                  ),
+                ]),
+          ]),
+  ];
 }
 
 /** Render the agent prompt as a thin dispatcher over replayable engine events. */
@@ -188,7 +227,8 @@ export function renderTuiView(
       description.textContent = model.description;
       copy.append(name, description);
       radio.addEventListener("change", () => {
-        if (radio.checked) dispatch([createTerminalModelEvent(model.id)]);
+        if (radio.checked)
+          dispatch(createModelHandoffEvents(cartridge, state, model.id));
       });
       radio.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {

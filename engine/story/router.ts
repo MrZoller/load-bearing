@@ -1,6 +1,7 @@
 /** Pure sparse dialogue and compact routing over one shared story graph. */
 
 import type {
+  Archetype,
   CartridgeArchetypeCompact,
   CartridgeStory,
   LoadedCartridge,
@@ -14,6 +15,51 @@ export interface StoryResponseRouteSelection {
   readonly responseId: string;
   /** Empty means the intent's default response was retained. */
   readonly routeId: string;
+}
+
+export interface ModelHandoffRouteSelection {
+  readonly predecessor: string;
+  readonly successor: string;
+  readonly predecessorArchetype: Archetype;
+  readonly successorArchetype: Archetype;
+  /** Empty when no reusable pair response has been authored yet. */
+  readonly responseId: string;
+  /** Empty when the incident supplies no additional line. */
+  readonly additionResponseId: string;
+}
+
+function modelArchetype(
+  cartridge: LoadedCartridge,
+  modelId: string,
+): Archetype {
+  const model = cartridge.models.find((candidate) => candidate.id === modelId);
+  if (model === undefined)
+    throw new Error(`story router: unknown model ${JSON.stringify(modelId)}`);
+  return model.archetype;
+}
+
+/** Select directional handoff copy without drawing randomness or changing state. */
+export function routeModelHandoff(
+  cartridge: LoadedCartridge,
+  state: SessionState,
+  successor: string,
+): ModelHandoffRouteSelection {
+  const predecessor = readTerminalSlice(state).activeModel;
+  const predecessorArchetype = modelArchetype(cartridge, predecessor);
+  const successorArchetype = modelArchetype(cartridge, successor);
+  const handoff = cartridge.story.phase2.handoffs.find(
+    (candidate) =>
+      candidate.predecessor === predecessorArchetype &&
+      candidate.successor === successorArchetype,
+  );
+  return {
+    predecessor,
+    successor,
+    predecessorArchetype,
+    successorArchetype,
+    responseId: handoff?.response ?? "",
+    additionResponseId: handoff?.additionResponse ?? "",
+  };
 }
 
 function activeArchetype(cartridge: LoadedCartridge, state: SessionState) {

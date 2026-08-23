@@ -156,6 +156,7 @@ describe("loadCartridge", () => {
         },
       ],
       routes: [],
+      handoffs: [],
       endings: [],
       transitions: [],
     });
@@ -175,6 +176,51 @@ describe("loadCartridge", () => {
       name: "Visitor",
       email: "visitor@example.test",
     });
+  });
+
+  it("rejects duplicate and self handoffs plus dangling pair response references", () => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    story["phase2"] = {
+      initialBeat: "start",
+      facts: [],
+      beats: [{ id: "start", ending: "" }],
+      routes: [],
+      handoffs: [
+        {
+          predecessor: "paranoid",
+          successor: "reckless",
+          response: "fixture-response",
+        },
+        {
+          predecessor: "paranoid",
+          successor: "reckless",
+          response: "missing-pair-response",
+          additionResponse: "missing-addition-response",
+        },
+        {
+          predecessor: "superficial",
+          successor: "superficial",
+          response: "fixture-response",
+        },
+      ],
+      endings: [],
+    };
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ pointer: "/story/phase2/handoffs/1" }),
+        expect.objectContaining({
+          pointer: "/story/phase2/handoffs/1/response",
+        }),
+        expect.objectContaining({
+          pointer: "/story/phase2/handoffs/1/additionResponse",
+        }),
+        expect.objectContaining({
+          pointer: "/story/phase2/handoffs/2/successor",
+        }),
+      ]),
+    );
   });
 
   it("validates static cartridge command records", () => {

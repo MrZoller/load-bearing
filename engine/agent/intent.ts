@@ -97,22 +97,46 @@ export function canRecordAuthoredResponse(
   responseId: string,
   additionalMessages = 1,
 ): boolean {
-  const agent = readAgentSlice(state);
-  const response = cartridge.story.responses.find(
-    (candidate) => candidate.id === responseId,
+  return canRecordAuthoredResponses(
+    cartridge,
+    state,
+    [responseId],
+    additionalMessages,
   );
-  if (response === undefined) {
-    throw new Error(
-      `agent plan selected unknown response ${JSON.stringify(responseId)}`,
+}
+
+/** Preflight one atomic plan that may instantiate several authored responses. */
+export function canRecordAuthoredResponses(
+  cartridge: LoadedCartridge,
+  state: SessionState,
+  responseIds: readonly string[],
+  additionalMessages = responseIds.length,
+): boolean {
+  const agent = readAgentSlice(state);
+  const responses = responseIds.map((responseId) => {
+    const response = cartridge.story.responses.find(
+      (candidate) => candidate.id === responseId,
     );
+    if (response === undefined)
+      throw new Error(
+        `agent plan selected unknown response ${JSON.stringify(responseId)}`,
+      );
+    return response;
+  });
+  let toolCalls = 0;
+  let thinkingBlocks = 0;
+  let todos = 0;
+  for (const response of responses) {
+    toolCalls += response.toolCalls.length;
+    thinkingBlocks += response.thinkingBlocks.length;
+    todos += response.todos.length;
   }
   return !(
     agent.messages.length + additionalMessages > MAX_AGENT_MESSAGES ||
-    agent.responses.length + 1 > MAX_AGENT_RESPONSES ||
-    agent.toolCalls.length + response.toolCalls.length > MAX_AGENT_TOOL_CALLS ||
-    agent.thinkingBlocks.length + response.thinkingBlocks.length >
-      MAX_AGENT_THINKING_BLOCKS ||
-    agent.todos.length + response.todos.length > MAX_AGENT_TODOS
+    agent.responses.length + responses.length > MAX_AGENT_RESPONSES ||
+    agent.toolCalls.length + toolCalls > MAX_AGENT_TOOL_CALLS ||
+    agent.thinkingBlocks.length + thinkingBlocks > MAX_AGENT_THINKING_BLOCKS ||
+    agent.todos.length + todos > MAX_AGENT_TODOS
   );
 }
 

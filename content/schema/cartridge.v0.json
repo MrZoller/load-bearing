@@ -5163,6 +5163,7 @@
             "counters": [],
             "endings": [],
             "facts": [],
+            "handoffs": [],
             "initialBeat": "start",
             "routes": [],
             "transitions": []
@@ -6511,6 +6512,57 @@
                 "type": "object"
               },
               "maxItems": 256,
+              "type": "array"
+            },
+            "handoffs": {
+              "default": [],
+              "description": "Reusable directional archetype-pair blame with optional incident-specific follow-up copy.",
+              "items": {
+                "additionalProperties": false,
+                "description": "One ordered predecessor-to-successor handoff; model ids never own parallel scripts.",
+                "properties": {
+                  "additionResponse": {
+                    "default": "",
+                    "description": "An optional stable lowercase Phase 1 content identifier.",
+                    "maxLength": 64,
+                    "pattern": "^(?:|[a-z][a-z0-9-]{0,63})$",
+                    "type": "string"
+                  },
+                  "predecessor": {
+                    "description": "Archetype of the model being replaced.",
+                    "enum": [
+                      "paranoid",
+                      "reckless",
+                      "superficial",
+                      "existential"
+                    ],
+                    "type": "string"
+                  },
+                  "response": {
+                    "description": "A stable lowercase Phase 1 content identifier.",
+                    "maxLength": 64,
+                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                    "type": "string"
+                  },
+                  "successor": {
+                    "description": "Archetype of the newly active model.",
+                    "enum": [
+                      "paranoid",
+                      "reckless",
+                      "superficial",
+                      "existential"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "predecessor",
+                  "successor",
+                  "response"
+                ],
+                "type": "object"
+              },
+              "maxItems": 12,
               "type": "array"
             },
             "initialBeat": {
