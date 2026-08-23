@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T50",
-  "branch": "factory/t50-capitulation-misfires",
-  "pr": 74,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-23T18:04:52Z"
+  "updated": "2026-08-23T18:12:56Z"
 }
