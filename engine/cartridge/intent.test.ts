@@ -113,6 +113,28 @@ describe("bounded cartridge intent patterns", () => {
     }
   });
 
+  it("rejects a misfire cadence without a fallback candidate", () => {
+    const source = JSON.parse(JSON.stringify(incidentDocument)) as Record<
+      string,
+      unknown
+    >;
+    const story = source["story"] as Record<string, unknown>;
+    const fallback = story["fallback"] as Record<string, unknown>;
+    fallback["candidates"] = [];
+
+    try {
+      loadCartridge(source);
+      throw new Error("expected cartridge rejection");
+    } catch (error) {
+      expect(error).toBeInstanceOf(CartridgeValidationError);
+      expect(
+        (error as CartridgeValidationError).issues.map(
+          (issue) => issue.pointer,
+        ),
+      ).toContain("/story/phase2/intentCounters/misfireEvery");
+    }
+  });
+
   it("selects the first condition-valid authored candidate", () => {
     const source = JSON.parse(JSON.stringify(incidentDocument)) as Record<
       string,

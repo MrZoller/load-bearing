@@ -1705,6 +1705,15 @@ function checkStoryAndPresentation(
       "zero, or a cadence with an authored capitulation generic intent",
       `${String(intentCounters.misfireEvery)} without a capitulation mapping`,
     );
+  if (
+    intentCounters.misfireEvery > 0 &&
+    story.fallback.candidates.length === 0
+  )
+    report.addPhrase(
+      "/story/phase2/intentCounters/misfireEvery",
+      "zero, or a cadence backed by at least one fallback candidate",
+      `${String(intentCounters.misfireEvery)} with no fallback candidates`,
+    );
   story.phase2.beats.forEach((beat, index) => {
     const root = `/story/phase2/beats/${String(index)}`;
     const checkEnding = (ending: string, pointer: string): void => {
