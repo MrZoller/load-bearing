@@ -978,6 +978,34 @@ describe("loadCartridge", () => {
     );
   });
 
+  it("accepts the optional empty status-curve default for machine-only cartridges", () => {
+    const source = minimal();
+    const presentation = source["presentation"] as Record<string, unknown>;
+    delete presentation["phase2"];
+
+    expect(loadCartridge(source).presentation.phase2.statusCurves).toEqual([]);
+  });
+
+  it("bounds models so their required five-stage status matrix fits", () => {
+    const source = minimal();
+    const models = source["models"] as Record<string, unknown>[];
+    const template = models[0] as Record<string, unknown>;
+
+    source["models"] = Array.from({ length: 13 }, (_, index) => ({
+      ...template,
+      id: `model-${String(index)}`,
+    }));
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/models",
+          expected: "at most 12 item(s)",
+        }),
+      ]),
+    );
+  });
+
   it("rejects an idle nudge that names no authored response", () => {
     const source = minimal();
     const story = source["story"] as Record<string, unknown>;

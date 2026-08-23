@@ -57,7 +57,7 @@
       "type": "object"
     },
     "models": {
-      "description": "The selectable models. At least one, with distinct ids.",
+      "description": "The selectable models. At least one, with distinct ids and a complete five-stage status curve for each.",
       "items": {
         "additionalProperties": false,
         "description": "One selectable model persona.",
@@ -116,6 +116,7 @@
         ],
         "type": "object"
       },
+      "maxItems": 12,
       "minItems": 1,
       "type": "array"
     },

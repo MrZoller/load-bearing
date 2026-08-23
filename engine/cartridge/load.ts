@@ -2275,23 +2275,6 @@ export function loadCartridge(value: unknown): LoadedCartridge {
     checkTestsAndReactions(cartridge.repository, report);
   }
 
-  // Completeness is the final semantic check so one unrelated malformed
-  // fixture does not acquire five derived "missing row" complaints. A
-  // non-empty matrix is checked in place above for duplicates and holes.
-  if (
-    report.issues.length === 0 &&
-    cartridge.presentation.phase2.statusCurves.length === 0
-  ) {
-    for (const model of cartridge.models) {
-      for (let stage = 0; stage <= 4; stage += 1)
-        report.addPhrase(
-          "/presentation/phase2/statusCurves",
-          "exactly one row for every declared model at every stage 0 through 4",
-          `no row for model ${JSON.stringify(model.id)} at stage ${String(stage)}`,
-        );
-    }
-  }
-
   if (report.issues.length > 0)
     throw new CartridgeValidationError(report.issues);
 

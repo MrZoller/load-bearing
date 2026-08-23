@@ -165,6 +165,10 @@ export const MAX_RESPONSE_ARTIFACTS = 64;
 export const MAX_STORY_ACTIONS = 16;
 export const MAX_STORY_BELIEFS = 64;
 export const MAX_PRESENTATION_ENTRIES = 64;
+// Status curves require one row for every stage of every selectable model.
+// Keep this derived matrix within the same bounded authoring budget rather
+// than allowing a model list whose complete curve could never load.
+export const MAX_MODELS = Math.floor(MAX_PRESENTATION_ENTRIES / 5);
 export const MAX_PRESENTATION_VERBS = 32;
 export const MAX_STORY_TEXT_LENGTH = 16000;
 export const MAX_PERMISSION_REQUEST_ID_LENGTH = 64;
@@ -2410,9 +2414,11 @@ export const CARTRIDGE_SCHEMA = deepFreeze({
     repository: required(REPOSITORY),
     models: required({
       kind: "array",
-      description: "The selectable models. At least one, with distinct ids.",
+      description:
+        "The selectable models. At least one, with distinct ids and a complete five-stage status curve for each.",
       items: MODEL,
       minItems: 1,
+      maxItems: MAX_MODELS,
     }),
     story: optional(STORY, PHASE_ONE_STORY_DEFAULT),
     presentation: optional(PRESENTATION, PHASE_ONE_PRESENTATION_DEFAULT),

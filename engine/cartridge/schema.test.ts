@@ -302,9 +302,8 @@ describe("the published schema", () => {
     const statusCurves = (
       presentationPhase2["properties"] as Record<string, unknown>
     )["statusCurves"] as Record<string, unknown>;
-    const model = (root["models"] as Record<string, unknown>)[
-      "items"
-    ] as Record<string, unknown>;
+    const models = root["models"] as Record<string, unknown>;
+    const model = models["items"] as Record<string, unknown>;
     const modelProperties = model["properties"] as Record<string, unknown>;
 
     expect(storyPhase2).toMatchObject({
@@ -362,6 +361,7 @@ describe("the published schema", () => {
       "permission",
       "compact",
     ]);
+    expect(models).toMatchObject({ maxItems: 12 });
     expect(model).toMatchObject({ additionalProperties: false });
     expect(modelProperties).not.toHaveProperty("storyGraph");
     expect(presentationPhase2).toMatchObject({
