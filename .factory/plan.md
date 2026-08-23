@@ -65,9 +65,10 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/cartridge/load.test.ts`, `engine/vfs/vfs.test.ts`, and `engine/tests/module.test.ts` gain production source/config files, owners/groups/modes, test definitions, and minimal reactions proving the apparent HTTP 500 fix can detach Europe; VFS contents, endpoint expectation, tests, and repair/undo mutations agree in a reviewed production-cartridge golden (criteria 1, 10, 20)
   - deps: T31
   - pr: 56
-- [~] T42 (standard) — Restrained Git history, blame, and shell history
+- [R] T42 (standard) — Restrained Git history, blame, and shell history
   - acceptance: `content/incidents/incident-001.json`, `engine/git/git.test.ts`, and `engine/commands/git.test.ts` add coherent commits, refs, index, blame spans, departed-maintainer trail, and shell history; log/diff/blame/checkout/restore views agree with T41's current files before and after authored repair/undo actions, pinned by a focused golden (criteria 6 shell foundation, 10, 20)
   - deps: T41
+  - pr: 66
 - [ ] T43 (standard) — Services, endpoints, processes, and logs
   - acceptance: `content/incidents/incident-001.json`, `engine/world/world.test.ts`, and `engine/commands/system.test.ts` add consistent services, health, endpoints, process names, stream/file logs, and bounded reactions; `curl`, `systemctl`, `ps`, log evidence, tests, and repository configuration tell the same story throughout a focused golden path (criteria 1, 10, 20)
   - deps: T41
