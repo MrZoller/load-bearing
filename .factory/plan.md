@@ -158,7 +158,7 @@ authoring tooling remain excluded.
 
 ## Ad-hoc
 
-- [~] T59 (trivial) — parked review minors (batch)
+- [~] T59 (standard) — parked review minors (batch)
   - PR #75: Handle refused strict authored top-level writes in the headless engine (or pin the intentional abort) so a contrived directory replacement cannot throw outside the runtime recovery; Codex thread `discussion_r3839443367` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #58: Refactor the generic reducer's `story.beat-reached` consequence dispatch into a module-owned hook; Codex thread `discussion_r3837495477` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #59: Reject cartridge waiver declarations that exceed the bounded waiver-consent ledger; Codex thread `discussion_r3837587539` was verifier-classified minor and dispositioned without a minors-only push.

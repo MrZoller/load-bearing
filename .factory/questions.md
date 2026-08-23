@@ -362,4 +362,14 @@ which avoids a contract addition but loses their exact authored phrase identity
 and overloads family fallback selection. Recommendation: A, because it preserves
 the existing public route contract while making consequence eligibility explicit
 and testable without incident-specific engine behavior.
-**A:**
+**A:** Option A — add an explicit closed applicability condition to authored
+intents/actions, keeping sparse routes response-only; express habit eligibility
+and one-shot repetition in the existing archetype/stage/story-counter condition
+vocabulary, then run verification and a fresh panel. (Operator answer, as
+Chris's representative: architecture default already documented — invariant 1's
+sanctioned path is extending the cartridge spec with incident-agnostic
+mechanics, and the closed condition vocabulary plus the rare-events
+authored-eligibility decision establish exactly this gating pattern; B
+formalizes the shared-beat/fact/ending suppression coupling the re-panel
+flagged as the defect, and C discards authored phrase identity the voice bible
+depends on. No product-surface decision changes.)
