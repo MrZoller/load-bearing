@@ -585,6 +585,47 @@ describe("loadCartridge", () => {
     );
   });
 
+  it("reports a dangling service inside a belief condition at its nested authored pointer", () => {
+    const source = minimal();
+    (source["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "start",
+      facts: [],
+      endings: [],
+      beats: [
+        {
+          id: "start",
+          ending: "",
+          facts: [],
+          variants: [
+            {
+              id: "believes-missing-service",
+              when: [
+                {
+                  kind: "belief",
+                  belief: {
+                    kind: "service-state",
+                    service: "missing",
+                    state: "running",
+                  },
+                },
+              ],
+              ending: "",
+              facts: [],
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/story/phase2/beats/0/variants/0/when/0/belief/service",
+        }),
+      ]),
+    );
+  });
+
   it("rejects unknown fields and malformed predicate shapes at their exact pointers", () => {
     const source = minimal();
     (source["story"] as Record<string, unknown>)["phase2"] = {

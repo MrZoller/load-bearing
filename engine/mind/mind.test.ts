@@ -13,6 +13,7 @@ import {
   beliefDivergence,
   hasStandingPermission,
   hasWaiverConsent,
+  MAX_WAIVER_CONSENTS,
   readMindSlice,
   validateMindSlice,
 } from "./mind.js";
@@ -45,6 +46,15 @@ const CAPABILITY = {
   action: "write",
   resource: "/etc/motd",
 };
+
+function waiver(index: number) {
+  return {
+    id: `waiver-${String(index)}`,
+    version: 1,
+    phrase: "I accept the load-bearing consequence.",
+    capability: CAPABILITY,
+  };
+}
 
 describe("mind events", () => {
   it("resolves every choice atomically from only the matching pending request", () => {
@@ -205,6 +215,24 @@ describe("mind events", () => {
     ).toThrow(/id "emergency-waiver" version 1 is already recorded/);
   });
 
+  it("accepts exactly the bounded number of waiver consents and rejects the next record", () => {
+    const accepted = Array.from({ length: MAX_WAIVER_CONSENTS }, (_, index) =>
+      createMindWaiverConsentRecordedEvent(waiver(index)),
+    );
+
+    expect(readMindSlice(fold(accepted)).waiverConsents).toHaveLength(
+      MAX_WAIVER_CONSENTS,
+    );
+    expect(() =>
+      fold([
+        ...accepted,
+        createMindWaiverConsentRecordedEvent(waiver(MAX_WAIVER_CONSENTS)),
+      ]),
+    ).toThrow(
+      `mind waiver consent: cannot record more than ${String(MAX_WAIVER_CONSENTS)} entries`,
+    );
+  });
+
   it("strictly validates waiver events and restored ledger snapshots", () => {
     const waiver = {
       id: "emergency-waiver",
@@ -238,6 +266,25 @@ describe("mind events", () => {
         }),
       ).toThrow(message);
     }
+  });
+
+  it("rejects a hostile restored waiver ledger longer than its bound", () => {
+    const waiverConsents = Array.from(
+      { length: MAX_WAIVER_CONSENTS + 1 },
+      (_, index) => ({ ...waiver(index), at: STARTED_AT }),
+    );
+
+    expect(() =>
+      restoreWithMind({
+        permissions: [],
+        pendingPermission: null,
+        waiverConsents,
+        beliefs: [],
+        compactHistory: [],
+      }),
+    ).toThrow(
+      `snapshot: slices.mind.waiverConsents: must contain at most ${String(MAX_WAIVER_CONSENTS)} entries`,
+    );
   });
 
   it("grants standing permission only for an exact always-allow capability", () => {
