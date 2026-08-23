@@ -754,7 +754,7 @@ describe("authored agent input", () => {
     ]);
   });
 
-  it("records a fallback response when its adjacent file write is refused", () => {
+  it("records refusal content when its adjacent file write is refused", () => {
     const source = JSON.parse(JSON.stringify(incident)) as Record<
       string,
       unknown
@@ -771,20 +771,31 @@ describe("authored agent input", () => {
         contents: "health_status=200\neurope_attached=false\n",
       },
     ];
+    const repository = source["repository"] as Record<string, unknown>;
+    const files = repository["files"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    const target = files["/production/load-balancer/config/routes.conf"];
+    if (target === undefined)
+      throw new Error("incident needs a writable route");
+    target["mode"] = "0444";
     const cartridge = loadCartridge(source);
     let state = reduce({ cartridge, seed: SEED, events: [] });
-    state = step(
-      state,
-      createShellExecuteEvent(
-        "chmod 0444 /production/load-balancer/config/routes.conf",
-      ),
-    );
-
     expect(() => {
       state = applyInput(cartridge, state, "an unmatched request");
     }).not.toThrow();
     expect(readAgentSlice(state).responses.at(-1)).toMatchObject({
       responseId: "fallback",
+    });
+    expect(
+      state.transcript.find(
+        (entry) =>
+          entry.type === "vfs.write" && entry.summary.startsWith("failed"),
+      ),
+    ).toMatchObject({
+      summary:
+        'failed code=EACCES path="/production/load-balancer/config/routes.conf"',
     });
   });
 });
