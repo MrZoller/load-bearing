@@ -121,6 +121,50 @@ describe("closed story conditions", () => {
     }
   });
 
+  it("evaluates file facts against VFS truth when the shell cannot read them", () => {
+    const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
+    const repository = source["repository"] as Record<string, unknown>;
+    const files = repository["files"] as Record<string, unknown>;
+    const unreadable = reduce({
+      cartridge: loadCartridge({
+        ...source,
+        repository: {
+          ...repository,
+          identity: {
+            user: "greg",
+            group: "departed",
+            home: "/home/greg",
+            umask: "0022",
+          },
+          files: {
+            ...files,
+            "/etc/motd": {
+              ...(files["/etc/motd"] as Record<string, unknown>),
+              mode: "0400",
+            },
+          },
+        },
+      }),
+      seed: SEED,
+      events: [],
+    });
+
+    expect(
+      storyConditionMatches(unreadable, {
+        kind: "file-exists",
+        path: "/etc/motd",
+        exists: true,
+      }),
+    ).toBe(true);
+    expect(
+      storyConditionMatches(unreadable, {
+        kind: "file-contents",
+        path: "/etc/motd",
+        equals: "This system is load-bearing.\n",
+      }),
+    ).toBe(true);
+  });
+
   it("requires exact belief shapes and keeps permissions separate from waiver consent", () => {
     const withGrant = state([
       {

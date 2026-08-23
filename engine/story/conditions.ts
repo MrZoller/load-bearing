@@ -4,8 +4,8 @@ import type { CartridgeBelief } from "../cartridge/types.js";
 import type { SessionState } from "../events/state.js";
 import { readMindSlice, hasWaiverConsent } from "../mind/mind.js";
 import type { Belief } from "../mind/types.js";
-import { evaluateFilePredicate } from "../tests/planner.js";
 import { readVfsSlice } from "../vfs/module.js";
+import { queryVfsTruth } from "../vfs/vfs.js";
 import { readWorldSlice } from "../world/module.js";
 import { lookupService } from "../world/world.js";
 import { readStorySlice } from "./story.js";
@@ -39,8 +39,16 @@ export function storyConditionMatches(
   state: SessionState,
   condition: StoryCondition,
 ): boolean {
-  if (condition.kind === "file-exists" || condition.kind === "file-contents")
-    return evaluateFilePredicate(condition, readVfsSlice(state));
+  if (condition.kind === "file-exists")
+    return (
+      (queryVfsTruth(readVfsSlice(state), condition.path).kind !==
+        "missing") ===
+      condition.exists
+    );
+  if (condition.kind === "file-contents") {
+    const truth = queryVfsTruth(readVfsSlice(state), condition.path);
+    return truth.kind === "file" && truth.contents === condition.equals;
+  }
   if (condition.kind === "service-state")
     return (
       lookupService(readWorldSlice(state), condition.service)?.state ===
