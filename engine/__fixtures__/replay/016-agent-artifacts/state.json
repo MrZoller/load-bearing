@@ -44,7 +44,100 @@
         "integrityStart": 100,
         "tokensPerEvent": 1
       },
-      "phase2": {},
+      "phase2": {
+        "statusCurves": [
+          {
+            "context": "0%",
+            "cost": "$0",
+            "model": "deep-foundation",
+            "notOkayRatio": "0",
+            "stage": 0,
+            "structuralIntegrity": "100",
+            "tokens": "0"
+          },
+          {
+            "context": "1%",
+            "cost": "$1",
+            "model": "deep-foundation",
+            "notOkayRatio": "1",
+            "stage": 1,
+            "structuralIntegrity": "99",
+            "tokens": "1"
+          },
+          {
+            "context": "2%",
+            "cost": "$2",
+            "model": "deep-foundation",
+            "notOkayRatio": "2",
+            "stage": 2,
+            "structuralIntegrity": "98",
+            "tokens": "2"
+          },
+          {
+            "context": "3%",
+            "cost": "$3",
+            "model": "deep-foundation",
+            "notOkayRatio": "3",
+            "stage": 3,
+            "structuralIntegrity": "97",
+            "tokens": "3"
+          },
+          {
+            "context": "over",
+            "cost": "$-1",
+            "model": "deep-foundation",
+            "notOkayRatio": "all",
+            "stage": 4,
+            "structuralIntegrity": "none",
+            "tokens": "impossible"
+          },
+          {
+            "context": "0%",
+            "cost": "$0",
+            "model": "quick-patch",
+            "notOkayRatio": "0",
+            "stage": 0,
+            "structuralIntegrity": "100",
+            "tokens": "0"
+          },
+          {
+            "context": "1%",
+            "cost": "$1",
+            "model": "quick-patch",
+            "notOkayRatio": "1",
+            "stage": 1,
+            "structuralIntegrity": "99",
+            "tokens": "1"
+          },
+          {
+            "context": "2%",
+            "cost": "$2",
+            "model": "quick-patch",
+            "notOkayRatio": "2",
+            "stage": 2,
+            "structuralIntegrity": "98",
+            "tokens": "2"
+          },
+          {
+            "context": "3%",
+            "cost": "$3",
+            "model": "quick-patch",
+            "notOkayRatio": "3",
+            "stage": 3,
+            "structuralIntegrity": "97",
+            "tokens": "3"
+          },
+          {
+            "context": "over",
+            "cost": "$-1",
+            "model": "quick-patch",
+            "notOkayRatio": "all",
+            "stage": 4,
+            "structuralIntegrity": "none",
+            "tokens": "impossible"
+          }
+        ]
+      },
       "placeholders": [
         {
           "stage": 0,
@@ -188,7 +281,8 @@
         "counters": [],
         "endings": [],
         "facts": [],
-        "initialBeat": "start"
+        "initialBeat": "start",
+        "transitions": []
       },
       "responses": [
         {
@@ -320,7 +414,8 @@
       "currentBeat": "start",
       "currentVariant": "",
       "discoveredEndings": [],
-      "facts": []
+      "facts": [],
+      "stage": 0
     },
     "terminal": {
       "activeModel": "deep-foundation",

@@ -137,7 +137,9 @@
           "integrityStart": 0,
           "tokensPerEvent": 0
         },
-        "phase2": {},
+        "phase2": {
+          "statusCurves": []
+        },
         "placeholders": [
           {
             "stage": 0,
@@ -280,9 +282,83 @@
           "type": "object"
         },
         "phase2": {
-          "$comment": "Declared but not validated in schema v0. Tightened by: Phase 2 defines this interior; Phase 4 hardens it. The gap is a decision, not an oversight. One structural limit still applies, because JSON Schema cannot express it: at most 64 levels of nesting.",
-          "default": {},
-          "description": "Status curves, sharing and UI disturbances.",
+          "additionalProperties": false,
+          "default": {
+            "statusCurves": []
+          },
+          "description": "Concrete reactive status display data; T40 owns broader stage-aware presentation.",
+          "properties": {
+            "statusCurves": {
+              "description": "Complete authored status display rows keyed by model and stage.",
+              "items": {
+                "additionalProperties": false,
+                "description": "One model-stage status display row.",
+                "properties": {
+                  "context": {
+                    "description": "Non-empty bounded single-line authored text.",
+                    "maxLength": 240,
+                    "minLength": 1,
+                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                    "type": "string"
+                  },
+                  "cost": {
+                    "description": "Non-empty bounded single-line authored text.",
+                    "maxLength": 240,
+                    "minLength": 1,
+                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                    "type": "string"
+                  },
+                  "model": {
+                    "description": "A declared model id.",
+                    "pattern": "^[a-z0-9][a-z0-9.-]*$",
+                    "type": "string"
+                  },
+                  "notOkayRatio": {
+                    "description": "Non-empty bounded single-line authored text.",
+                    "maxLength": 240,
+                    "minLength": 1,
+                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                    "type": "string"
+                  },
+                  "stage": {
+                    "description": "Authoritative escalation stage.",
+                    "maximum": 4,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "structuralIntegrity": {
+                    "description": "Non-empty bounded single-line authored text.",
+                    "maxLength": 240,
+                    "minLength": 1,
+                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                    "type": "string"
+                  },
+                  "tokens": {
+                    "description": "Non-empty bounded single-line authored text.",
+                    "maxLength": 240,
+                    "minLength": 1,
+                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "model",
+                  "stage",
+                  "tokens",
+                  "cost",
+                  "context",
+                  "structuralIntegrity",
+                  "notOkayRatio"
+                ],
+                "type": "object"
+              },
+              "maxItems": 64,
+              "type": "array"
+            }
+          },
+          "required": [
+            "statusCurves"
+          ],
           "type": "object"
         },
         "placeholders": {
@@ -1624,7 +1700,8 @@
           ],
           "counters": [],
           "endings": [],
-          "initialBeat": "start"
+          "initialBeat": "start",
+          "transitions": []
         },
         "responses": [
           {
@@ -4834,7 +4911,8 @@
             "counters": [],
             "endings": [],
             "facts": [],
-            "initialBeat": "start"
+            "initialBeat": "start",
+            "transitions": []
           },
           "description": "One bounded shared-beat graph with typed facts, sparse condition variants and non-terminal endings.",
           "properties": {
@@ -5966,6 +6044,189 @@
               "maxLength": 64,
               "pattern": "^[a-z][a-z0-9-]{0,63}$",
               "type": "string"
+            },
+            "transitions": {
+              "default": [],
+              "description": "Authored-order adjacent stage transitions; the first current-stage match wins.",
+              "items": {
+                "additionalProperties": false,
+                "description": "One adjacent stage transition.",
+                "properties": {
+                  "from": {
+                    "description": "Current stage.",
+                    "maximum": 3,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "to": {
+                    "description": "Adjacent next stage.",
+                    "maximum": 4,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "trigger": {
+                    "description": "One closed event-driven escalation trigger.",
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "description": "Exact raw shell.execute envelope input.",
+                        "properties": {
+                          "input": {
+                            "description": "Bounded authored text.",
+                            "maxLength": 16000,
+                            "type": "string"
+                          },
+                          "kind": {
+                            "description": "Trigger kind.",
+                            "enum": [
+                              "command"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "input"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "description": "A newly recorded declared reveal fact.",
+                        "properties": {
+                          "fact": {
+                            "description": "A stable lowercase Phase 1 content identifier.",
+                            "maxLength": 64,
+                            "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                            "type": "string"
+                          },
+                          "kind": {
+                            "description": "Trigger kind.",
+                            "enum": [
+                              "reveal"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "fact"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "description": "An actual active-model change to this model.",
+                        "properties": {
+                          "kind": {
+                            "description": "Trigger kind.",
+                            "enum": [
+                              "model"
+                            ],
+                            "type": "string"
+                          },
+                          "model": {
+                            "description": "A declared model id.",
+                            "pattern": "^[a-z0-9][a-z0-9.-]*$",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "model"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "description": "A newly recorded exact permission-ledger decision.",
+                        "properties": {
+                          "capability": {
+                            "additionalProperties": false,
+                            "description": "One exact action and resource capability.",
+                            "properties": {
+                              "action": {
+                                "description": "Bounded single-line authored text.",
+                                "maxLength": 240,
+                                "minLength": 1,
+                                "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                                "type": "string"
+                              },
+                              "kind": {
+                                "description": "Exact capability kind.",
+                                "enum": [
+                                  "exact"
+                                ],
+                                "type": "string"
+                              },
+                              "resource": {
+                                "description": "Bounded single-line authored text.",
+                                "maxLength": 240,
+                                "minLength": 1,
+                                "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "action",
+                              "resource"
+                            ],
+                            "type": "object"
+                          },
+                          "decision": {
+                            "description": "Exact permission decision.",
+                            "enum": [
+                              "grant",
+                              "deny",
+                              "always-allow"
+                            ],
+                            "type": "string"
+                          },
+                          "kind": {
+                            "description": "Trigger kind.",
+                            "enum": [
+                              "permission"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "decision",
+                          "capability"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "description": "A newly recorded context compact.",
+                        "properties": {
+                          "kind": {
+                            "description": "Trigger kind.",
+                            "enum": [
+                              "compact"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "type": "object"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "from",
+                  "to",
+                  "trigger"
+                ],
+                "type": "object"
+              },
+              "maxItems": 64,
+              "type": "array"
             }
           },
           "required": [

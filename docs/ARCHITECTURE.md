@@ -448,8 +448,14 @@ slash autocomplete descriptions, archetype-stage spinner pools, and integer
 metric parameters. `story.phase2` is a concrete bounded shared graph: one
 initial beat, at most 64 nonnegative safe-integer counters, declared
 reveal/callback facts, authored-order beats with sparse
-first-match condition variants, and unranked ending identities. Conditions are
-a closed union over VFS contents/existence, service state/health, exact beliefs,
+first-match condition variants, unranked ending identities, and bounded
+authored-order adjacent escalation transitions. A transition's closed trigger
+is an exact raw shell command, a newly recorded reveal, an actual model change,
+a newly recorded exact permission decision, or a newly recorded compact. The
+reducer compares pre-transaction state with the fully staged result after
+expansion, story consequences, and reactions; the first current-stage match
+advances at most once through an unlogged story-owned derived event. Conditions
+are a closed union over VFS contents/existence, service state/health, exact beliefs,
 exact waiver consent, declared story facts, and `equal`/`at-least` counter
 queries; variant conditions are flat
 non-empty all-of lists evaluated against pre-event state. Cartridge actions are
@@ -460,16 +466,19 @@ write, service/process state, service health, and log append. Loading rejects
 duplicate or dangling response, intent, beat, variant, fact, counter, ending,
 file, world, and action references; rejects story-reach cycles; and computes
 each beat's conservative worst selected-outcome chain (variant alternatives use
-the maximum), rejecting more than 1024 actions. Only `presentation.phase2`
-remains deferred,
-depth-limited, and marked in the emitted schema with its future owner.
+the maximum), rejecting more than 1024 actions. `presentation.phase2.statusCurves`
+is concrete here: it contains exactly one complete authored
+display row for every cartridge model at every stage 0–4. Sharing,
+disturbances, and T40's broader stage-aware copy remain deferred to their named
+tasks rather than occupying an unvalidated object.
 
 **Cartridge owns:** world (scene, repo, files with ownership metadata, git,
 processes, services, logs, env, man pages, shell history), models (names,
 archetypes, multipliers, quirks), authored responses/actions and Phase 1 teaching
 copy, spinner pools and metric parameters, plus the bounded shared beat graph,
-typed facts/conditions, and ending identities. Later Phase 2 work adds status
-curves, sharing copy, and disturbances without giving models parallel graphs.
+typed facts/conditions, ending identities, escalation transitions, and complete
+model-stage status display rows. Later Phase 2 work adds sharing copy and
+disturbances without giving models parallel graphs.
 
 **Runtime owns:** rendering, parsing, state transitions, animation, search,
 keyboard and mobile behavior, accessibility, replay, archive navigation, and
@@ -489,7 +498,10 @@ a Phase 5 that works and one that drowns. The dialogue layer is therefore
 (beat × archetype × stage) → response, with archetype-pair handoff
 templates covering mid-session model switches.
 
-Ending discovery is session state, not terminal state. `StorySlice.currentBeat`
+Ending discovery is session state, not terminal state. `StorySlice.stage` is the
+authoritative 0–4 escalation stage used by metrics, activity, and stage-keyed
+runtime projections; timers can rotate within the selected pool but cannot
+select a stage. `StorySlice.currentBeat`
 names the latest reached authored beat, `currentVariant` names its selected
 outcome (or empty for the base), `facts` preserves first-recorded typed facts,
 and `discoveredEndings` records ending ids once in discovery order. Variants are

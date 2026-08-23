@@ -3,11 +3,18 @@ import { describe, expect, it } from "vitest";
 import { loadCartridge } from "../cartridge/load.js";
 import { reduce } from "../events/reduce.js";
 import type { EngineEvent, SessionState } from "../events/state.js";
-import { createMindWaiverConsentRecordedEvent } from "../mind/module.js";
+import {
+  createMindCompactEvent,
+  createMindWaiverConsentRecordedEvent,
+} from "../mind/module.js";
+import { createTerminalModelEvent } from "../terminal/module.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { createStoryFactRecordedEvent } from "./module.js";
 import { createStoryBeatReachedEvent } from "./module.js";
-import { storyConditionMatches } from "./conditions.js";
+import {
+  storyConditionMatches,
+  storyStageTriggerMatches,
+} from "./conditions.js";
 import type { StoryCondition } from "./types.js";
 
 const SEED = "2026-08-05/0/deep-foundation";
@@ -315,6 +322,150 @@ describe("closed story conditions", () => {
         counter: "attempts",
         comparison: "at-least",
         value: 3,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("closed escalation triggers", () => {
+  const shell = (input: string): EngineEvent => ({
+    type: "shell.execute",
+    payload: { input },
+  });
+
+  it("matches only the exact command envelope", () => {
+    const snapshot = state();
+    const trigger = { kind: "command" as const, input: "cat /etc/motd" };
+
+    expect(
+      storyStageTriggerMatches(
+        trigger,
+        snapshot,
+        snapshot,
+        shell("cat /etc/motd"),
+      ),
+    ).toBe(true);
+    expect(
+      storyStageTriggerMatches(trigger, snapshot, snapshot, shell("pwd")),
+    ).toBe(false);
+    expect(
+      storyStageTriggerMatches(trigger, snapshot, snapshot, {
+        type: "clock.advance",
+        payload: { milliseconds: 1 },
+      }),
+    ).toBe(false);
+  });
+
+  it("matches only a reveal newly recorded by the transaction", () => {
+    const before = state();
+    const after = state([createStoryFactRecordedEvent("revealed")]);
+    const trigger = { kind: "reveal" as const, fact: "revealed" };
+
+    expect(
+      storyStageTriggerMatches(
+        trigger,
+        before,
+        after,
+        createStoryFactRecordedEvent("revealed"),
+      ),
+    ).toBe(true);
+    expect(
+      storyStageTriggerMatches(
+        trigger,
+        after,
+        after,
+        createStoryFactRecordedEvent("revealed"),
+      ),
+    ).toBe(false);
+    expect(
+      storyStageTriggerMatches(
+        { kind: "reveal", fact: "other" },
+        before,
+        after,
+        createStoryFactRecordedEvent("revealed"),
+      ),
+    ).toBe(false);
+  });
+
+  it("matches only a newly selected target model", () => {
+    const before = state();
+    const after = state([createTerminalModelEvent("quick-patch")]);
+    const trigger = { kind: "model" as const, model: "quick-patch" };
+
+    expect(
+      storyStageTriggerMatches(
+        trigger,
+        before,
+        after,
+        createTerminalModelEvent("quick-patch"),
+      ),
+    ).toBe(true);
+    expect(
+      storyStageTriggerMatches(
+        trigger,
+        after,
+        after,
+        createTerminalModelEvent("quick-patch"),
+      ),
+    ).toBe(false);
+    expect(
+      storyStageTriggerMatches(
+        { kind: "model", model: "deep-foundation" },
+        before,
+        after,
+        createTerminalModelEvent("quick-patch"),
+      ),
+    ).toBe(false);
+  });
+
+  it("matches only a newly recorded exact permission decision", () => {
+    const event: EngineEvent = {
+      type: "mind.permission-decision",
+      payload: { capability: CAPABILITY, decision: "always-allow" },
+    };
+    const before = state();
+    const after = state([event]);
+    const trigger = {
+      kind: "permission" as const,
+      capability: CAPABILITY,
+      decision: "always-allow" as const,
+    };
+
+    expect(storyStageTriggerMatches(trigger, before, after, event)).toBe(true);
+    expect(storyStageTriggerMatches(trigger, after, after, event)).toBe(false);
+    expect(
+      storyStageTriggerMatches(
+        { ...trigger, decision: "deny" },
+        before,
+        after,
+        event,
+      ),
+    ).toBe(false);
+    expect(
+      storyStageTriggerMatches(
+        {
+          ...trigger,
+          capability: { ...CAPABILITY, resource: "/etc/shadow" },
+        },
+        before,
+        after,
+        event,
+      ),
+    ).toBe(false);
+  });
+
+  it("matches only a newly recorded compact operation", () => {
+    const event = createMindCompactEvent("summary", []);
+    const before = state();
+    const after = state([event]);
+    const trigger = { kind: "compact" as const };
+
+    expect(storyStageTriggerMatches(trigger, before, after, event)).toBe(true);
+    expect(storyStageTriggerMatches(trigger, after, after, event)).toBe(false);
+    expect(
+      storyStageTriggerMatches(trigger, before, before, {
+        type: "clock.advance",
+        payload: { milliseconds: 1 },
       }),
     ).toBe(false);
   });

@@ -7,11 +7,7 @@ import {
   loadInvalidCartridgeFixture,
   loadReplayFixture,
 } from "../testing/fixtures.js";
-import {
-  CartridgeValidationError,
-  MAX_DEFERRED_DEPTH,
-  loadCartridge,
-} from "./load.js";
+import { CartridgeValidationError, loadCartridge } from "./load.js";
 import type { CartridgeIssue } from "./load.js";
 import { CARTRIDGE_SCHEMA } from "./schema.js";
 import type { SchemaNode } from "./schema.js";
@@ -29,10 +25,6 @@ function issuesOf(value: unknown): readonly CartridgeIssue[] {
     throw error;
   }
   throw new Error("expected the cartridge to be rejected, but it loaded");
-}
-
-function setStoryPhase2(source: Record<string, unknown>, value: unknown): void {
-  (source["presentation"] as Record<string, unknown>)["phase2"] = value;
 }
 
 describe("loadCartridge", () => {
@@ -164,6 +156,7 @@ describe("loadCartridge", () => {
         },
       ],
       endings: [],
+      transitions: [],
     });
     expect(cartridge.presentation.spinnerPools).toHaveLength(2);
     expect(cartridge.repository.processes).toEqual([]);
@@ -928,6 +921,63 @@ describe("loadCartridge", () => {
     });
   });
 
+  it("validates adjacent escalation transitions and their declared references", () => {
+    const source = minimal();
+    (source["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "start",
+      facts: [{ id: "callback-only", kind: "callback" }],
+      beats: [{ id: "start", ending: "" }],
+      endings: [],
+      transitions: [
+        {
+          from: 0,
+          to: 2,
+          trigger: { kind: "reveal", fact: "callback-only" },
+        },
+        {
+          from: 1,
+          to: 2,
+          trigger: { kind: "model", model: "missing-model" },
+        },
+      ],
+    };
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ pointer: "/story/phase2/transitions/0/to" }),
+        expect.objectContaining({
+          pointer: "/story/phase2/transitions/0/trigger/fact",
+        }),
+        expect.objectContaining({
+          pointer: "/story/phase2/transitions/1/trigger/model",
+        }),
+      ]),
+    );
+  });
+
+  it("requires status rows to be unique and complete for every declared model and stage", () => {
+    const source = minimal();
+    const presentation = source["presentation"] as Record<string, unknown>;
+    const phase2 = presentation["phase2"] as Record<string, unknown>;
+    const rows = phase2["statusCurves"] as unknown[];
+    rows.splice(1, 1, rows[0]);
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/presentation/phase2/statusCurves/1",
+          expected: "a model-stage pair no other status row uses",
+        }),
+        expect.objectContaining({
+          pointer: "/presentation/phase2/statusCurves",
+          found: expect.stringContaining(
+            '"deep-foundation" at stage 1',
+          ) as string,
+        }),
+      ]),
+    );
+  });
+
   it("rejects an idle nudge that names no authored response", () => {
     const source = minimal();
     const story = source["story"] as Record<string, unknown>;
@@ -1565,28 +1615,6 @@ describe("loadCartridge", () => {
     ]);
   });
 
-  it("refuses to run an accessor a cartridge supplied", () => {
-    // Reading `value[key]` executes a getter. A throwing one escapes as a host
-    // error rather than an issue; a stateful one makes two loads of the same
-    // source differ, which is determinism lost inside the function whose job
-    // is to establish it.
-    let reads = 0;
-    const source = minimal();
-    setStoryPhase2(
-      source,
-      Object.defineProperty({}, "premise", {
-        enumerable: true,
-        get: () => {
-          reads += 1;
-          return `read ${String(reads)}`;
-        },
-      }),
-    );
-
-    expect(issuesOf(source)[0]?.found).toContain("accessor property");
-    expect(reads).toBe(0);
-  });
-
   it("refuses an accessor in a validated section too, not only a deferred one", () => {
     for (const build of [
       (source: Record<string, unknown>) => {
@@ -1617,28 +1645,6 @@ describe("loadCartridge", () => {
       expect(issuesOf(source)[0]?.pointer, pointer).toBe(pointer);
       expect(issuesOf(source)[0]?.found).toContain("accessor property");
     }
-  });
-
-  it("finds an indexed accessor without invoking it", () => {
-    // The guard used to look for element accessors with `map`, which reads
-    // each element — invoking the very getter it was looking for.
-    let reads = 0;
-    const reveals: unknown[] = [];
-    Object.defineProperty(reveals, "0", {
-      enumerable: true,
-      configurable: true,
-      get: () => {
-        reads += 1;
-        throw new Error("element getter exploded");
-      },
-    });
-    reveals.length = 1;
-
-    const source = minimal();
-    setStoryPhase2(source, { reveals });
-
-    expect(issuesOf(source)[0]?.found).toContain("accessor property");
-    expect(reads).toBe(0);
   });
 
   it("finds an indexed accessor in a schema array too", () => {
@@ -1677,217 +1683,6 @@ describe("loadCartridge", () => {
       expect(issuesOf(source)[0]?.pointer).toBe(pointer);
       expect(issuesOf(source)[0]?.found).toMatch(/which JSON cannot carry/);
     }
-  });
-
-  it("checks for symbol keys before asking what a value is branded as", () => {
-    // Order, not presence. Brand detection reaches
-    // `Object.prototype.toString`, which performs a Get of
-    // `Symbol.toStringTag` — so an own accessor there runs inside the function
-    // whose job is to classify a value without executing any of it. Rejecting
-    // symbol-keyed properties first leaves only an inherited tag, read inertly.
-    let reads = 0;
-    const tagged: Record<string, unknown> = { premise: "ordinary" };
-    Object.defineProperty(tagged, Symbol.toStringTag, {
-      configurable: true,
-      get: () => {
-        reads += 1;
-        throw new Error("toStringTag getter exploded");
-      },
-    });
-
-    const source = minimal();
-    setStoryPhase2(source, tagged);
-
-    expect(issuesOf(source)[0]?.found).toContain("symbol-keyed");
-    expect(reads).toBe(0);
-  });
-
-  it("rejects buffer-backed built-ins wearing a plain prototype", () => {
-    // These carry no tag `Object.prototype.toString` can see once their
-    // prototype is repointed, so they read as ordinary objects with no own
-    // keys — and the clone writes `{}` over their bytes.
-    for (const [label, value] of [
-      ["ArrayBuffer", new ArrayBuffer(8)],
-      ["DataView", new DataView(new ArrayBuffer(8))],
-      ["Uint8Array", new Uint8Array([1, 2, 3])],
-      ["Float64Array", new Float64Array([1.5])],
-    ] as const) {
-      Object.setPrototypeOf(value, Object.prototype);
-      const source = minimal();
-      setStoryPhase2(source, { payload: value });
-
-      expect(issuesOf(source)[0], label).toEqual({
-        pointer: "/presentation/phase2/payload",
-        expected: "an object of plain JSON values",
-        found: expect.stringContaining("which JSON cannot carry") as string,
-      });
-    }
-  });
-
-  it("reports a non-finite number as itself, not as null", () => {
-    // Reachable from ordinary parsed JSON, unlike most of what the guard
-    // catches: `JSON.parse` turns an overflowing exponent into `Infinity`, and
-    // `JSON.stringify(Infinity)` is `"null"` — so the issue used to claim the
-    // cartridge held null.
-    const source = minimal();
-    setStoryPhase2(source, JSON.parse('{"curve": 1e400}') as unknown);
-
-    expect(issuesOf(source)).toEqual([
-      {
-        pointer: "/presentation/phase2/curve",
-        expected: "a finite number",
-        found: "Infinity",
-      },
-    ]);
-  });
-
-  it("rejects a disguised built-in the probe table cannot name", () => {
-    // The probes are an enumeration and cannot name these — the purity gate
-    // forbids writing `Promise`, `SharedArrayBuffer` or `WeakRef` in engine
-    // source at all. Structured clone reads internal slots instead, so it
-    // needs no name: it either refuses the value or returns a copy wearing the
-    // true prototype.
-    for (const [label, value] of [
-      ["Promise", Promise.resolve(1)],
-      ["SharedArrayBuffer", new SharedArrayBuffer(8)],
-      ["WeakRef", new WeakRef({})],
-      ["FinalizationRegistry", new FinalizationRegistry(() => {})],
-    ] as const) {
-      Object.setPrototypeOf(value, Object.prototype);
-      const source = minimal();
-      setStoryPhase2(source, { payload: value });
-
-      expect(issuesOf(source)[0], label).toEqual({
-        pointer: "/presentation/phase2/payload",
-        expected: "an object of plain JSON values",
-        found: expect.stringContaining("which JSON cannot carry") as string,
-      });
-    }
-  });
-
-  it("rejects one carrying its own data, which used to slip past the probe", () => {
-    // The clone test was gated on having no own properties at all, so a single
-    // primitive property put a disguised built-in back out of reach: the walk
-    // copied the property across and dropped the internal state in silence.
-    // The gate is now about what cloning would *read*, and a primitive is
-    // already in hand.
-    const value: object = Promise.resolve(1);
-    Object.defineProperty(value, "label", {
-      value: "not a promise, apparently",
-      enumerable: true,
-      writable: true,
-      configurable: true,
-    });
-    Object.setPrototypeOf(value, Object.prototype);
-    const source = minimal();
-    setStoryPhase2(source, { payload: value });
-
-    expect(issuesOf(source)[0]).toEqual({
-      pointer: "/presentation/phase2/payload",
-      expected: "an object of plain JSON values",
-      found: expect.stringContaining("which JSON cannot carry") as string,
-    });
-  });
-
-  it("will not clone-probe past a property it has not examined", () => {
-    // The limit, pinned deliberately. Following an object-valued property
-    // means structured clone descends into structure no descriptor pass has
-    // seen yet, and invokes any getter waiting there — inside the function
-    // whose job is to classify a value without executing any of it. So this
-    // one loads, and the residual is recorded rather than traded for a live
-    // hazard.
-    const value: object = Promise.resolve(1);
-    Object.defineProperty(value, "nested", {
-      value: { deep: true },
-      enumerable: true,
-      writable: true,
-      configurable: true,
-    });
-    Object.setPrototypeOf(value, Object.prototype);
-    const source = minimal();
-    setStoryPhase2(source, { payload: value });
-
-    expect(loadCartridge(source).presentation.phase2).toEqual({
-      payload: { nested: { deep: true } },
-    });
-  });
-
-  it("does not mistake an ordinary object holding a function for a built-in", () => {
-    // Structured clone refuses a function, so probing here would answer
-    // "built-in that structured clone refuses to copy" — confidently, about
-    // something that is not one. The walk reports the function where it is.
-    const source = minimal();
-    setStoryPhase2(source, { payload: { handler: () => 1 } });
-
-    expect(issuesOf(source)[0]?.found).not.toContain("structured clone");
-  });
-
-  it("rejects these already when their prototype is intact", () => {
-    // The case a real pipeline produces — a forgotten `await`, a stray buffer
-    // — never needed the clone test: the prototype check has always caught it.
-    // Worth pinning, because it is the difference between a live defect and a
-    // hardening measure.
-    for (const [label, value] of [
-      ["Promise", Promise.resolve(1)],
-      ["SharedArrayBuffer", new SharedArrayBuffer(8)],
-      ["WeakRef", new WeakRef({})],
-    ] as const) {
-      const source = minimal();
-      setStoryPhase2(source, { payload: value });
-
-      expect(issuesOf(source)[0]?.found, label).toBe(
-        "an object with a prototype JSON cannot produce",
-      );
-    }
-  });
-
-  it("bounds how deep a deferred subtree may nest", () => {
-    // Reachable from an ordinary cartridge file, unlike most of what this
-    // guard catches: `JSON.parse` accepts a few thousand levels, the published
-    // schema leaves these sections unconstrained, and the recursive clone then
-    // exhausted the stack — so `loadCartridge` escaped with a bare `RangeError`
-    // and the validation boundary failed open.
-    function nested(levels: number): unknown {
-      let node: Record<string, unknown> = { leaf: true };
-      for (let index = 0; index < levels; index += 1) node = { next: node };
-      // Round-tripped, so this is exactly the shape a cartridge file yields.
-      return JSON.parse(JSON.stringify(node)) as unknown;
-    }
-
-    const shallow = minimal();
-    setStoryPhase2(shallow, nested(MAX_DEFERRED_DEPTH - 2));
-    expect(() => loadCartridge(shallow)).not.toThrow();
-
-    // Deep enough to be well past the limit, shallow enough that the *test's
-    // own* `JSON.stringify` survives. V8's stringify was recursive through
-    // Node 22 and overflows somewhere above 3000 there, so a 20000-level case
-    // failed in CI while passing on a newer local Node — and it failed while
-    // building the fixture, before the loader was ever called. Nothing is lost:
-    // the guard trips at 64, so every depth past it takes the same path.
-    for (const levels of [MAX_DEFERRED_DEPTH + 40, 1000]) {
-      const source = minimal();
-      setStoryPhase2(source, nested(levels));
-
-      // A validation issue, not a host error — that is the whole point.
-      expect(issuesOf(source)[0]?.expected, String(levels)).toBe(
-        `at most ${String(MAX_DEFERRED_DEPTH)} levels of nesting`,
-      );
-    }
-  });
-
-  it("still accepts a null-prototype object and an ordinary array", () => {
-    // The brand check must not catch these. `Object.create(null)` is what a
-    // careful generator uses to avoid inherited keys, and it serializes fine.
-    const bare = Object.create(null) as Record<string, unknown>;
-    bare["premise"] = "still fine";
-
-    const source = minimal();
-    setStoryPhase2(source, { bare, beats: ["one", "two"] });
-
-    expect(loadCartridge(source).presentation.phase2).toEqual({
-      bare: { premise: "still fine" },
-      beats: ["one", "two"],
-    });
   });
 
   it("rejects a branded built-in rather than emptying it", () => {
@@ -1956,155 +1751,6 @@ describe("loadCartridge", () => {
     }
 
     walk(CARTRIDGE_SCHEMA, loadCartridge(minimal()), "");
-  });
-});
-
-describe("explicitly deferred Phase 2 interiors", () => {
-  it("carry arbitrary JSON through untouched", () => {
-    const source = minimal();
-    setStoryPhase2(source, {
-      premise: "the inverted load balancer",
-      reveals: [{ at: 3, text: "Where is Europe?" }],
-      nested: { deeply: { fine: [1, 2, null, true] } },
-    });
-
-    expect(loadCartridge(source).presentation.phase2).toEqual(
-      (source["presentation"] as Record<string, unknown>)["phase2"],
-    );
-  });
-
-  it("are deep-copied, not aliased", () => {
-    const source = minimal();
-    const story: Record<string, unknown> = { reveals: ["one"] };
-    setStoryPhase2(source, story);
-
-    const loaded = loadCartridge(source);
-    (story["reveals"] as string[]).push("two");
-
-    expect(loaded.presentation.phase2["reveals"]).toEqual(["one"]);
-  });
-
-  it("still have to be objects", () => {
-    const source = minimal();
-    source["presentation"] = ["not", "an", "object"];
-
-    expect(issuesOf(source)).toEqual([
-      {
-        pointer: "/presentation",
-        expected: "an object",
-        found: "an array of 3",
-      },
-    ]);
-  });
-
-  it("keeps a key that names an accessor on Object.prototype", () => {
-    // `out[key] = value` calls the inherited setter for one particular key
-    // instead of creating an own property, so this subtree used to load with
-    // zero issues and a replaced prototype — and then throw out of the
-    // canonical serializer at record time, which is exactly the deferred
-    // failure the clone exists to prevent.
-    const source = minimal();
-    setStoryPhase2(
-      source,
-      JSON.parse('{"__proto__": {"evil": true}}') as unknown,
-    );
-
-    const loaded = loadCartridge(source);
-    expect(Object.getPrototypeOf(loaded.presentation.phase2)).toBe(
-      Object.prototype,
-    );
-    expect(serialize(loaded)).toContain("evil");
-  });
-
-  it("reject a class instance instead of laundering it into an empty object", () => {
-    // `JSON.parse` cannot produce one, but a cartridge built in memory can —
-    // and the Phase 5 pipeline may well build one. Copying its enumerable own
-    // properties would turn it into `{}` and lose the value in silence.
-    const source = minimal();
-    setStoryPhase2(source, { when: new Date(0) });
-
-    expect(issuesOf(source)).toEqual([
-      {
-        pointer: "/presentation/phase2/when",
-        expected: "an object of plain JSON values",
-        found: "an object with a prototype JSON cannot produce",
-      },
-    ]);
-  });
-
-  it("reject an array with holes or stray properties", () => {
-    const holed = minimal();
-    setStoryPhase2(holed, { reveals: [1, , 3] });
-    expect(issuesOf(holed)[0]?.pointer).toBe("/presentation/phase2/reveals");
-
-    const decorated = minimal();
-    const list: unknown[] = ["one"];
-    (list as unknown as Record<string, unknown>)["extra"] = "not an index";
-    setStoryPhase2(decorated, { reveals: list });
-    expect(issuesOf(decorated)[0]?.expected).toBe(
-      "a dense array with no extra properties",
-    );
-
-    // A hole and a stray property are the same key *count* as a dense array,
-    // so counting keys would let this pair through to fail at the serializer.
-    const compensated = minimal();
-    const both: unknown[] = [];
-    both[1] = "second";
-    (both as unknown as Record<string, unknown>)["extra"] = "not an index";
-    setStoryPhase2(compensated, { reveals: both });
-    expect(issuesOf(compensated)[0]?.expected).toBe(
-      "a dense array with no extra properties",
-    );
-  });
-
-  it("reject a value that contains itself, rather than overflowing the stack", () => {
-    // Only reachable from a cartridge built in memory, which is exactly the
-    // path this module commits to defending. A `RangeError` is not a report
-    // the pipeline can act on.
-    const source = minimal();
-    const story: Record<string, unknown> = { premise: "recursive" };
-    story["self"] = story;
-    setStoryPhase2(source, story);
-
-    expect(issuesOf(source)).toEqual([
-      {
-        pointer: "/presentation/phase2/self",
-        expected: "a value that does not contain itself",
-        found: "a circular reference, which JSON cannot represent",
-      },
-    ]);
-  });
-
-  it("accept the same subobject referenced twice, which is not a cycle", () => {
-    // The regression that a global visited-set would cause. JSON carries a DAG
-    // perfectly well, by writing the shared value out twice.
-    const shared = { reveal: "Where is Europe?" };
-    const source = minimal();
-    setStoryPhase2(source, { first: shared, second: shared });
-
-    expect(loadCartridge(source).presentation.phase2).toEqual({
-      first: shared,
-      second: shared,
-    });
-  });
-
-  it("reject values JSON cannot carry, at the pointer they sit at", () => {
-    // Deferred subtrees are handed through unread, so without this check a
-    // value the serializer refuses would surface much later while recording,
-    // with a pointer into the transcript instead of into the cartridge.
-    const source = minimal();
-    setStoryPhase2(source, { curve: Number.POSITIVE_INFINITY });
-
-    expect(issuesOf(source)).toEqual([
-      {
-        pointer: "/presentation/phase2/curve",
-        // Not `"null"`, which is what this asserted while `describe` ran the
-        // value through `JSON.stringify` — the test was pinning the misleading
-        // answer rather than catching it.
-        expected: "a finite number",
-        found: "Infinity",
-      },
-    ]);
   });
 });
 

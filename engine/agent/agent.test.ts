@@ -32,6 +32,7 @@ import {
   createTerminalModelEvent,
 } from "../terminal/module.js";
 import { forkModelStream } from "../terminal/terminal.js";
+import { createShellExecuteEvent } from "../commands/shell.js";
 
 function cartridge() {
   const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
@@ -89,6 +90,7 @@ function activityCartridge() {
     string,
     unknown
   >;
+  const phase2 = (source["presentation"] as Record<string, unknown>)["phase2"];
   source["presentation"] = {
     placeholders: [{ stage: 0, text: "inspect" }],
     spinnerPools: [
@@ -105,6 +107,24 @@ function activityCartridge() {
       integrityStart: 100,
       integrityLossPerEvent: 1,
     },
+    phase2,
+  };
+  (source["story"] as Record<string, unknown>)["phase2"] = {
+    initialBeat: "start",
+    beats: [{ id: "start", ending: "" }],
+    endings: [],
+    transitions: [
+      {
+        from: 0,
+        to: 1,
+        trigger: { kind: "command", input: "stage-one" },
+      },
+      {
+        from: 1,
+        to: 2,
+        trigger: { kind: "command", input: "stage-two" },
+      },
+    ],
   };
   return loadCartridge(source);
 }
@@ -260,7 +280,7 @@ describe("agent replay state", () => {
       }),
       createAgentTodoUpdatedEvent("manual-todo", "in-progress"),
       createAgentTodoUpdatedEvent("manual-todo", "completed"),
-      createAgentActivityEvent({ status: "working", stage: 0 }),
+      createAgentActivityEvent({ status: "working" }),
     ];
     const before = fold([]);
     const after = fold(events);
@@ -533,24 +553,29 @@ describe("agent replay state", () => {
       }),
     ).not.toThrow();
     expect(() =>
-      fold([createAgentActivityEvent({ status: "working", stage: 0 })]),
+      fold([createAgentActivityEvent({ status: "working" })]),
     ).not.toThrow();
   });
 
-  it("selects and records a version-1 working verb from the active model's exact archetype/stage pool", () => {
-    const activity = createAgentActivityEvent({ status: "working", stage: 1 });
+  it("selects and records a version-2 working verb from the authoritative story stage pool", () => {
+    const activity = createAgentActivityEvent({ status: "working" });
     const custom = activityCartridge();
-    const deep = reduce({ cartridge: custom, seed: SEED, events: [activity] });
+    const stageOne = createShellExecuteEvent("stage-one");
+    const deep = reduce({
+      cartridge: custom,
+      seed: SEED,
+      events: [stageOne, activity],
+    });
     const quick = reduce({
       cartridge: custom,
       seed: SEED,
-      events: [createTerminalModelEvent("quick-patch"), activity],
+      events: [createTerminalModelEvent("quick-patch"), stageOne, activity],
     });
 
     expect(activity).toEqual({
       type: "agent.activity-set",
-      payload: { status: "working", stage: 1 },
-      version: 1,
+      payload: { status: "working" },
+      version: 2,
     });
     expect(readAgentSlice(deep).activity).toEqual({
       status: "working",
@@ -565,7 +590,7 @@ describe("agent replay state", () => {
 
   it("keeps model-scoped spinner draws isolated from other model switches and persists them through snapshots", () => {
     const custom = activityCartridge();
-    const working = createAgentActivityEvent({ status: "working", stage: 0 });
+    const working = createAgentActivityEvent({ status: "working" });
     const state = reduce({
       cartridge: custom,
       seed: SEED,
@@ -605,7 +630,7 @@ describe("agent replay state", () => {
     expect(restoreSnapshot(snapshot(state))).toEqual(state);
   });
 
-  it("does not draw for idle activity and rejects a working stage without an authored pool", () => {
+  it("does not draw for idle activity and uses baseline activity until T40 authors the stage pool", () => {
     const custom = activityCartridge();
     const idle = reduce({
       cartridge: custom,
@@ -617,12 +642,17 @@ describe("agent replay state", () => {
     expect(Object.keys(idle.random.cursors)).not.toContain(
       "root/agent/models/deep-foundation/spinner.verbs",
     );
-    expect(() =>
-      reduce({
-        cartridge: custom,
-        seed: SEED,
-        events: [createAgentActivityEvent({ status: "working", stage: 2 })],
-      }),
-    ).toThrow(/no spinner pool for archetype "paranoid" at stage 2/);
+    const working = reduce({
+      cartridge: custom,
+      seed: SEED,
+      events: [
+        createShellExecuteEvent("stage-one"),
+        createShellExecuteEvent("stage-two"),
+        createAgentActivityEvent({ status: "working" }),
+      ],
+    });
+    expect(["Deep zero", "Deep again"]).toContain(
+      readAgentSlice(working).activity.verb,
+    );
   });
 });

@@ -11,12 +11,14 @@ import type { SessionState } from "../events/state.js";
 import { deepFreeze } from "../freeze.js";
 import { storyConditionsMatch } from "./conditions.js";
 import type { StoryCounterQuery, StoryFact, StorySlice } from "./types.js";
+import type { EscalationStage } from "./types.js";
 
 function record(
   value: unknown,
   where: string,
   fields: readonly string[] = [
     "currentBeat",
+    "stage",
     "currentVariant",
     "facts",
     "counters",
@@ -99,6 +101,7 @@ function authoredBeat(cartridge: LoadedCartridge, id: string) {
 
 export function createStorySlice(cartridge: LoadedCartridge): StorySlice {
   return deepFreeze({
+    stage: 0,
     currentBeat: cartridge.story.phase2.initialBeat,
     currentVariant: "",
     facts: [],
@@ -116,6 +119,15 @@ export function validateStorySlice(
   cartridge?: LoadedCartridge,
 ): StorySlice {
   const item = record(slice, where);
+  const stage = item["stage"];
+  if (
+    !Number.isInteger(stage) ||
+    (stage as number) < 0 ||
+    (stage as number) > 4
+  )
+    throw new Error(
+      `${where}.stage: must be an escalation stage from 0 through 4`,
+    );
   const currentBeat = item["currentBeat"];
   if (typeof currentBeat !== "string" || !STORY_ID_PATTERN.test(currentBeat))
     throw new Error(`${where}.currentBeat: must be a story beat identifier`);
@@ -228,6 +240,18 @@ export function validateStorySlice(
   return slice as StorySlice;
 }
 
+export function advanceStoryStage(
+  slice: StorySlice,
+  from: EscalationStage,
+  to: EscalationStage,
+): StorySlice {
+  if (slice.stage !== from || to !== from + 1)
+    throw new Error(
+      `story: stage transition must advance current stage ${String(slice.stage)} by one`,
+    );
+  return deepFreeze({ ...slice, stage: to });
+}
+
 export function readStorySlice(state: SessionState): StorySlice {
   return validateStorySlice(
     readSlice(state, "story"),
@@ -312,6 +336,7 @@ export function reachStoryBeat(
       ? slice.discoveredEndings
       : [...slice.discoveredEndings, ending];
   return deepFreeze({
+    stage: slice.stage,
     currentBeat: beat.id,
     currentVariant: variant?.id ?? "",
     facts,
@@ -336,6 +361,7 @@ export function recordStoryFact(
       `story: cannot record more than ${String(MAX_STORY_FACTS)} facts`,
     );
   return deepFreeze({
+    stage: slice.stage,
     currentBeat: slice.currentBeat,
     currentVariant: slice.currentVariant,
     facts: [...slice.facts, { ...declared }],

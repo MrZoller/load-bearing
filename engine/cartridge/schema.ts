@@ -29,8 +29,9 @@
  * visible in the emitted schema rather than being an absence a reader has to
  * notice:
  *
- * - the Phase 1 shells and the Phase 2 story skeleton are concrete and bounded;
- *   only `presentation.phase2` remains deferred until its vertical slice.
+ * - the Phase 1 shells, Phase 2 story graph and reactive status curves are
+ *   concrete and bounded. Later presentation surfaces are added as concrete
+ *   fields by their owning tasks rather than hidden in a deferred object.
  *
  * The machine surfaces, including tests and reactions, are concrete.
  *
@@ -175,6 +176,7 @@ export const MAX_STORY_VARIANTS = 16;
 export const MAX_STORY_CONDITIONS = 16;
 export const MAX_STORY_OUTCOME_FACTS = 16;
 export const MAX_STORY_COUNTERS = 64;
+export const MAX_STAGE_TRANSITIONS = 64;
 export const MAX_STORY_CONSEQUENCE_WORK = 1024;
 export const MAX_STORY_ID_LENGTH = 64;
 export const STORY_ID_PATTERN = pattern(/^[a-z][a-z0-9-]{0,63}$/);
@@ -1646,6 +1648,90 @@ const ACTIONS = {
   maxItems: MAX_STORY_ACTIONS,
 } satisfies ArrayNode;
 
+const ESCALATION_STAGE = {
+  kind: "integer",
+  description: "Authoritative escalation stage.",
+  minimum: 0,
+  maximum: 4,
+} satisfies IntegerNode;
+
+const STAGE_TRIGGER = {
+  kind: "union",
+  description: "One closed event-driven escalation trigger.",
+  discriminator: "kind",
+  variants: {
+    command: {
+      kind: "object",
+      description: "Exact raw shell.execute envelope input.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "Trigger kind.",
+          values: ["command"],
+        }),
+        input: required(BOUNDED_TEXT),
+      },
+    },
+    reveal: {
+      kind: "object",
+      description: "A newly recorded declared reveal fact.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "Trigger kind.",
+          values: ["reveal"],
+        }),
+        fact: required(PHASE_ONE_ID),
+      },
+    },
+    model: {
+      kind: "object",
+      description: "An actual active-model change to this model.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "Trigger kind.",
+          values: ["model"],
+        }),
+        model: required({
+          kind: "string",
+          description: "A declared model id.",
+          pattern: MODEL_ID_PATTERN,
+          patternLabel: "a lowercase model slug",
+        }),
+      },
+    },
+    permission: {
+      kind: "object",
+      description: "A newly recorded exact permission-ledger decision.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "Trigger kind.",
+          values: ["permission"],
+        }),
+        decision: required({
+          kind: "enum",
+          description: "Exact permission decision.",
+          values: ["grant", "deny", "always-allow"],
+        }),
+        capability: required(EXACT_CAPABILITY),
+      },
+    },
+    compact: {
+      kind: "object",
+      description: "A newly recorded context compact.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "Trigger kind.",
+          values: ["compact"],
+        }),
+      },
+    },
+  },
+} satisfies UnionNode;
+
 const STORY = {
   kind: "object",
   description: "Concrete bounded Phase 1 dialogue and command content.",
@@ -1840,6 +1926,34 @@ const STORY = {
               },
             },
           }),
+          transitions: optional(
+            {
+              kind: "array",
+              description:
+                "Authored-order adjacent stage transitions; the first current-stage match wins.",
+              maxItems: MAX_STAGE_TRANSITIONS,
+              items: {
+                kind: "object",
+                description: "One adjacent stage transition.",
+                fields: {
+                  from: required({
+                    kind: "integer",
+                    description: "Current stage.",
+                    minimum: 0,
+                    maximum: 3,
+                  }),
+                  to: required({
+                    kind: "integer",
+                    description: "Adjacent next stage.",
+                    minimum: 1,
+                    maximum: 4,
+                  }),
+                  trigger: required(STAGE_TRIGGER),
+                },
+              },
+            },
+            [],
+          ),
         },
       },
       {
@@ -1850,6 +1964,7 @@ const STORY = {
           { id: "start", ending: "", facts: [], actions: [], variants: [] },
         ],
         endings: [],
+        transitions: [],
       },
     ),
   },
@@ -1975,11 +2090,37 @@ const PRESENTATION = {
     }),
     phase2: optional(
       {
-        kind: "deferred",
-        description: "Status curves, sharing and UI disturbances.",
-        owner: "Phase 2 defines this interior; Phase 4 hardens it",
+        kind: "object",
+        description:
+          "Concrete reactive status display data; T40 owns broader stage-aware presentation.",
+        fields: {
+          statusCurves: required({
+            kind: "array",
+            description:
+              "Complete authored status display rows keyed by model and stage.",
+            items: {
+              kind: "object",
+              description: "One model-stage status display row.",
+              fields: {
+                model: required({
+                  kind: "string",
+                  description: "A declared model id.",
+                  pattern: MODEL_ID_PATTERN,
+                  patternLabel: "a lowercase model slug",
+                }),
+                stage: required(ESCALATION_STAGE),
+                tokens: required(NONEMPTY_BOUNDED_LINE),
+                cost: required(NONEMPTY_BOUNDED_LINE),
+                context: required(NONEMPTY_BOUNDED_LINE),
+                structuralIntegrity: required(NONEMPTY_BOUNDED_LINE),
+                notOkayRatio: required(NONEMPTY_BOUNDED_LINE),
+              },
+            },
+            maxItems: MAX_PRESENTATION_ENTRIES,
+          }),
+        },
       },
-      {},
+      { statusCurves: [] },
     ),
   },
 } satisfies ObjectNode;
@@ -2024,6 +2165,7 @@ const PHASE_ONE_STORY_DEFAULT = {
     counters: [],
     beats: [{ id: "start", ending: "", actions: [] }],
     endings: [],
+    transitions: [],
   },
 };
 
@@ -2049,7 +2191,7 @@ const PHASE_ONE_PRESENTATION_DEFAULT = {
     integrityStart: 0,
     integrityLossPerEvent: 0,
   },
-  phase2: {},
+  phase2: { statusCurves: [] },
 };
 
 const REPOSITORY = {

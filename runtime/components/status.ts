@@ -41,10 +41,12 @@ export function renderStatus(
 
   status.append(
     item(document, "model", metrics.modelName),
-    item(document, "tokens", groupedInteger(metrics.tokenCount)),
-    item(document, "cost", currencyFromMicros(metrics.costMicros)),
-    item(document, "context", `${String(metrics.contextPercent)}%`),
-    item(document, "integrity", groupedInteger(metrics.structuralIntegrity)),
+    item(document, "stage", String(metrics.stage)),
+    item(document, "tokens", metrics.display.tokens),
+    item(document, "cost", metrics.display.cost),
+    item(document, "context", metrics.display.context),
+    item(document, "integrity", metrics.display.structuralIntegrity),
+    item(document, "Not-Okay Ratio", metrics.display.notOkayRatio),
     item(
       document,
       "",

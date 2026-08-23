@@ -5,8 +5,10 @@ import { stampEvent } from "../events/log.js";
 import { readString, requirePayload } from "../events/payload.js";
 import type { EngineEvent } from "../events/state.js";
 import type { StorySlice } from "./types.js";
+import type { EscalationStage } from "./types.js";
 import {
   addStoryCounter,
+  advanceStoryStage,
   createStorySlice,
   recordStoryFact,
   reachStoryBeat,
@@ -27,6 +29,14 @@ export function createStoryFactRecordedEvent(fact: string): EngineEvent {
   );
 }
 
+/** Internal owner event. The reducer refuses this type in a visitor event log. */
+export function createStoryStageAdvancedEvent(
+  from: EscalationStage,
+  to: EscalationStage,
+): EngineEvent {
+  return { type: "story.stage-advanced", payload: { from, to }, version: 0 };
+}
+
 export const STORY_MODULE = defineEventModule<StorySlice>({
   namespace: "story",
   description:
@@ -36,6 +46,38 @@ export const STORY_MODULE = defineEventModule<StorySlice>({
   },
   validateSlice: validateStorySlice,
   events: {
+    "story.stage-advanced": {
+      version: 0,
+      apply(context, slice) {
+        const data = requirePayload(context);
+        const unknown = Object.keys(data)
+          .filter((key) => key !== "from" && key !== "to")
+          .sort();
+        if (unknown.length > 0)
+          throw new Error(
+            `${context.where}: unexpected payload field(s) ${unknown.join(", ")}; expected from, to`,
+          );
+        const from = data["from"];
+        const to = data["to"];
+        if (
+          !Number.isInteger(from) ||
+          (from as number) < 0 ||
+          (from as number) > 3
+        )
+          throw new Error(
+            `${context.where}: from must be an escalation stage from 0 through 3`,
+          );
+        if (!Number.isInteger(to) || to !== (from as number) + 1)
+          throw new Error(`${context.where}: to must be exactly from + 1`);
+        return {
+          slice: advanceStoryStage(
+            slice,
+            from as EscalationStage,
+            to as EscalationStage,
+          ),
+        };
+      },
+    },
     "story.counter-added": {
       version: 0,
       apply(context, slice) {

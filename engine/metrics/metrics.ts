@@ -6,6 +6,7 @@ import type {
 } from "../cartridge/types.js";
 import type { SessionState } from "../events/state.js";
 import { readTerminalSlice } from "../terminal/terminal.js";
+import { readStorySlice } from "../story/story.js";
 import type { EngineMetrics } from "./types.js";
 
 export const MAX_METRIC_VALUE = Number.MAX_SAFE_INTEGER;
@@ -71,6 +72,14 @@ export function deriveEngineMetrics(state: SessionState): EngineMetrics {
   const terminal = readTerminalSlice(state);
   const model = activeModel(state, terminal.activeModel);
   const parameters = checkedParameters(state.cartridge.presentation.metrics);
+  const stage = readStorySlice(state).stage;
+  const display = state.cartridge.presentation.phase2.statusCurves.find(
+    (row) => row.model === model.id && row.stage === stage,
+  );
+  if (display === undefined)
+    throw new Error(
+      `metrics: no authored status curve for model ${JSON.stringify(model.id)} at stage ${String(stage)}`,
+    );
 
   const eventTokens = saturatingMultiply(parameters.tokensPerEvent, eventCount);
   const tokenCount = saturatingAdd(parameters.baseTokens, eventTokens);
@@ -103,5 +112,13 @@ export function deriveEngineMetrics(state: SessionState): EngineMetrics {
     costMicros,
     contextPercent,
     structuralIntegrity,
+    stage,
+    display: Object.freeze({
+      tokens: display.tokens,
+      cost: display.cost,
+      context: display.context,
+      structuralIntegrity: display.structuralIntegrity,
+      notOkayRatio: display.notOkayRatio,
+    }),
   });
 }

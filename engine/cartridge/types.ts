@@ -14,7 +14,12 @@
  */
 
 import type { ARCHETYPES } from "./schema.js";
-import type { StoryCondition, StoryFactKind } from "../story/types.js";
+import type {
+  EscalationStage,
+  StoryCondition,
+  StoryFactKind,
+} from "../story/types.js";
+import type { PermissionDecision } from "../mind/types.js";
 
 export type Archetype = (typeof ARCHETYPES)[number];
 
@@ -163,6 +168,24 @@ export interface CartridgeStoryPhase2 {
   }[];
   readonly beats: readonly CartridgeStoryBeat[];
   readonly endings: readonly CartridgeEnding[];
+  readonly transitions: readonly CartridgeStageTransition[];
+}
+
+export type CartridgeStageTrigger =
+  | { readonly kind: "command"; readonly input: string }
+  | { readonly kind: "reveal"; readonly fact: string }
+  | { readonly kind: "model"; readonly model: string }
+  | {
+      readonly kind: "permission";
+      readonly decision: PermissionDecision;
+      readonly capability: CartridgeExactCapability;
+    }
+  | { readonly kind: "compact" };
+
+export interface CartridgeStageTransition {
+  readonly from: 0 | 1 | 2 | 3;
+  readonly to: 1 | 2 | 3 | 4;
+  readonly trigger: CartridgeStageTrigger;
 }
 
 export interface CartridgeIntent {
@@ -251,6 +274,20 @@ export interface CartridgeMetricParameters {
   readonly integrityLossPerEvent: number;
 }
 
+export interface CartridgeStatusCurve {
+  readonly model: string;
+  readonly stage: EscalationStage;
+  readonly tokens: string;
+  readonly cost: string;
+  readonly context: string;
+  readonly structuralIntegrity: string;
+  readonly notOkayRatio: string;
+}
+
+export interface CartridgePresentationPhase2 {
+  readonly statusCurves: readonly CartridgeStatusCurve[];
+}
+
 export interface CartridgeAutocompleteCopy {
   readonly help: string;
   readonly model: string;
@@ -265,8 +302,8 @@ export interface CartridgePresentation {
   readonly autocomplete: CartridgeAutocompleteCopy;
   readonly spinnerPools: readonly CartridgeSpinnerPool[];
   readonly metrics: CartridgeMetricParameters;
-  /** Phase 2 share/status/disturbance surfaces remain explicitly deferred. */
-  readonly phase2: DeferredObject;
+  /** Status is concrete; T40 owns the remaining stage-aware presentation work. */
+  readonly phase2: CartridgePresentationPhase2;
 }
 
 export interface CartridgeMeta {

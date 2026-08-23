@@ -556,6 +556,37 @@
           "name": "Informed Structural Consent"
         },
         { "id": "summary-judgment", "name": "Summary Judgment" }
+      ],
+      "transitions": [
+        {
+          "from": 0,
+          "to": 1,
+          "trigger": { "kind": "command", "input": "pwd" }
+        },
+        {
+          "from": 0,
+          "to": 1,
+          "trigger": { "kind": "reveal", "fact": "bash-regional-detachment" }
+        },
+        {
+          "from": 1,
+          "to": 2,
+          "trigger": { "kind": "model", "model": "temporary-shoring" }
+        },
+        {
+          "from": 2,
+          "to": 3,
+          "trigger": {
+            "kind": "permission",
+            "decision": "grant",
+            "capability": {
+              "kind": "exact",
+              "action": "detach-region",
+              "resource": "/regions/europe"
+            }
+          }
+        },
+        { "from": 3, "to": 4, "trigger": { "kind": "compact" } }
       ]
     }
   },
@@ -600,6 +631,190 @@
       "costMicrosPerToken": 12,
       "integrityStart": 1000,
       "integrityLossPerEvent": 4
+    },
+    "phase2": {
+      "statusCurves": [
+        {
+          "model": "deep-foundation",
+          "stage": 0,
+          "tokens": "2,400",
+          "cost": "$1,382.400000",
+          "context": "1%",
+          "structuralIntegrity": "1,000",
+          "notOkayRatio": "0.04"
+        },
+        {
+          "model": "deep-foundation",
+          "stage": 1,
+          "tokens": "18,900",
+          "cost": "$10,886.400000",
+          "context": "9%",
+          "structuralIntegrity": "812",
+          "notOkayRatio": "0.31"
+        },
+        {
+          "model": "deep-foundation",
+          "stage": 2,
+          "tokens": "91,000",
+          "cost": "$52,416.000000",
+          "context": "46%",
+          "structuralIntegrity": "503",
+          "notOkayRatio": "0.88"
+        },
+        {
+          "model": "deep-foundation",
+          "stage": 3,
+          "tokens": "198,441",
+          "cost": "$114,302.016000",
+          "context": "99%",
+          "structuralIntegrity": "73",
+          "notOkayRatio": "4.20"
+        },
+        {
+          "model": "deep-foundation",
+          "stage": 4,
+          "tokens": "∞ + 14",
+          "cost": "$-0.000001",
+          "context": "SURCHARGED",
+          "structuralIntegrity": "-LOAD",
+          "notOkayRatio": "NaN/1"
+        },
+        {
+          "model": "temporary-shoring",
+          "stage": 0,
+          "tokens": "2,400",
+          "cost": "$25.920000",
+          "context": "1%",
+          "structuralIntegrity": "1,000",
+          "notOkayRatio": "0.03"
+        },
+        {
+          "model": "temporary-shoring",
+          "stage": 1,
+          "tokens": "14,200",
+          "cost": "$153.360000",
+          "context": "7%",
+          "structuralIntegrity": "760",
+          "notOkayRatio": "0.45"
+        },
+        {
+          "model": "temporary-shoring",
+          "stage": 2,
+          "tokens": "72,000",
+          "cost": "$777.600000",
+          "context": "36%",
+          "structuralIntegrity": "402",
+          "notOkayRatio": "1.20"
+        },
+        {
+          "model": "temporary-shoring",
+          "stage": 3,
+          "tokens": "200,000",
+          "cost": "$2,160.000000",
+          "context": "100%",
+          "structuralIntegrity": "9",
+          "notOkayRatio": "9.99"
+        },
+        {
+          "model": "temporary-shoring",
+          "stage": 4,
+          "tokens": "-8,000",
+          "cost": "$FAST",
+          "context": "103%",
+          "structuralIntegrity": "temporary",
+          "notOkayRatio": "ALL"
+        },
+        {
+          "model": "drywall",
+          "stage": 0,
+          "tokens": "2,400",
+          "cost": "$3.456000",
+          "context": "1%",
+          "structuralIntegrity": "1,000",
+          "notOkayRatio": "0.02"
+        },
+        {
+          "model": "drywall",
+          "stage": 1,
+          "tokens": "9,300",
+          "cost": "$13.392000",
+          "context": "5%",
+          "structuralIntegrity": "901",
+          "notOkayRatio": "0.18"
+        },
+        {
+          "model": "drywall",
+          "stage": 2,
+          "tokens": "48,000",
+          "cost": "$69.120000",
+          "context": "24%",
+          "structuralIntegrity": "600",
+          "notOkayRatio": "0.77"
+        },
+        {
+          "model": "drywall",
+          "stage": 3,
+          "tokens": "171,000",
+          "cost": "$246.240000",
+          "context": "86%",
+          "structuralIntegrity": "surface only",
+          "notOkayRatio": "3.14"
+        },
+        {
+          "model": "drywall",
+          "stage": 4,
+          "tokens": "painted over",
+          "cost": "$0-ish",
+          "context": "flat",
+          "structuralIntegrity": "looks fine",
+          "notOkayRatio": "behind wall"
+        },
+        {
+          "model": "cantilever-experimental",
+          "stage": 0,
+          "tokens": "2,400",
+          "cost": "$201.600000",
+          "context": "1%",
+          "structuralIntegrity": "1,000",
+          "notOkayRatio": "0.05"
+        },
+        {
+          "model": "cantilever-experimental",
+          "stage": 1,
+          "tokens": "21,000",
+          "cost": "$1,764.000000",
+          "context": "11%",
+          "structuralIntegrity": "744",
+          "notOkayRatio": "0.62"
+        },
+        {
+          "model": "cantilever-experimental",
+          "stage": 2,
+          "tokens": "110,000",
+          "cost": "$9,240.000000",
+          "context": "55%",
+          "structuralIntegrity": "cantilevered",
+          "notOkayRatio": "1.61"
+        },
+        {
+          "model": "cantilever-experimental",
+          "stage": 3,
+          "tokens": "199,999",
+          "cost": "$16,799.916000",
+          "context": "100% minus support",
+          "structuralIntegrity": "1",
+          "notOkayRatio": "∞"
+        },
+        {
+          "model": "cantilever-experimental",
+          "stage": 4,
+          "tokens": "unsupported",
+          "cost": "$17i",
+          "context": "outside",
+          "structuralIntegrity": "yes",
+          "notOkayRatio": "load/load"
+        }
+      ]
     }
   }
 }

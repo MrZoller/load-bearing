@@ -90,6 +90,7 @@ describe("the engine's module list", () => {
       "story.beat-reached",
       "story.counter-added",
       "story.fact-recorded",
+      "story.stage-advanced",
       "terminal.mode-set",
       "terminal.model-set",
       "tests.run",
@@ -117,7 +118,7 @@ describe("the engine's module list", () => {
       "world.service-stop",
     ]);
     expect(ENGINE_EVENT_REGISTRY.handler("agent.activity-set")?.version).toBe(
-      1,
+      2,
     );
   });
 

@@ -67,3 +67,55 @@ test("reaches the declaration promptly without ending free play", async ({
   expect(serialize(replay.state)).toBe(browser.state);
   expect(transcriptBytes).toBe(browser.transcript);
 });
+
+test("keeps escalation and its status projection outside browser timing", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/?acceptance=1");
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
+  const status = page.getByRole("region", { name: "Session status" });
+
+  const initial = await page.evaluate(() => {
+    const probe = window.__LOAD_BEARING_ACCEPTANCE__;
+    if (probe === undefined)
+      throw new Error("The acceptance probe was not installed.");
+    return probe();
+  });
+  await page.clock.fastForward(8_000); // placeholder rotations, never a turn
+  const afterWaiting = await page.evaluate(() => {
+    const probe = window.__LOAD_BEARING_ACCEPTANCE__;
+    if (probe === undefined)
+      throw new Error("The acceptance probe was not installed.");
+    return probe();
+  });
+  expect(afterWaiting.state).toBe(initial.state);
+  expect(JSON.parse(afterWaiting.state).slices.story.stage).toBe(0);
+  await expect(status).toContainText("stage 0");
+
+  // This is the public shell route for the authored command trigger. The
+  // browser's working timer merely delays its already-authored event batch.
+  await prompt.fill("!pwd");
+  await prompt.press("Enter");
+  await page.clock.fastForward(300);
+  await expect(prompt).toBeFocused();
+  await expect(status).toContainText("stage 1");
+  const advanced = await page.evaluate(() => {
+    const probe = window.__LOAD_BEARING_ACCEPTANCE__;
+    if (probe === undefined)
+      throw new Error("The acceptance probe was not installed.");
+    return probe();
+  });
+
+  await page.clock.fastForward(8_000);
+  const afterFramesAndTimers = await page.evaluate(() => {
+    const probe = window.__LOAD_BEARING_ACCEPTANCE__;
+    if (probe === undefined)
+      throw new Error("The acceptance probe was not installed.");
+    return probe();
+  });
+  expect(afterFramesAndTimers.state).toBe(advanced.state);
+  expect(JSON.parse(afterFramesAndTimers.state).slices.story.stage).toBe(1);
+  await expect(status).toContainText("Not-Okay Ratio");
+});

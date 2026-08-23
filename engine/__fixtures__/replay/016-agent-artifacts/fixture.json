@@ -59,8 +59,8 @@
     },
     {
       "type": "agent.activity-set",
-      "payload": { "status": "working", "stage": 0 },
-      "version": 1
+      "payload": { "status": "working" },
+      "version": 2
     }
   ]
 }
