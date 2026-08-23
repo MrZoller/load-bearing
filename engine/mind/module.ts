@@ -22,6 +22,8 @@ import type {
 import {
   compactBeliefs,
   createMindSlice,
+  dismissPermission,
+  dismissWaiver,
   hasStandingPermission,
   hasWaiverConsent,
   isPermissionDecision,
@@ -355,6 +357,19 @@ export const MIND_MODULE = defineEventModule<MindSlice>({
               "mind waiver pending",
             ),
           ],
+          // A visitor may make the target parent unwritable before their first
+          // request. The write is an envelope child, so contain its refusal at
+          // this boundary and leave no prompt behind for a document we could
+          // not publish.
+          expansionFallback: [
+            stampEvent(
+              {
+                type: "mind.waiver-start-failed",
+                payload: { id: action.id },
+              },
+              "mind waiver start fallback",
+            ),
+          ],
         };
       },
     },
@@ -483,25 +498,34 @@ export const MIND_MODULE = defineEventModule<MindSlice>({
         return { summary: `id=${id}` };
       },
     },
-    "mind.permission-choice-failed": {
-      version: 0,
-      apply(context) {
-        const data = payload(context, ["id"]);
-        const id = validatePermissionRequestId(
-          readString(data, "id", context.where),
-          `${context.where}: id`,
-        );
-        findOrchestrationAction(context, id, "permission-request");
-        return { summary: `id=${id}` };
-      },
-    },
-    "mind.waiver-choice-failed": {
+    "mind.waiver-start-failed": {
       version: 0,
       apply(context) {
         const data = payload(context, ["id"]);
         const id = readString(data, "id", context.where);
         findOrchestrationAction(context, id, "waiver-request");
         return { summary: `id=${id}` };
+      },
+    },
+    "mind.permission-choice-failed": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["id"]);
+        const id = validatePermissionRequestId(
+          readString(data, "id", context.where),
+          `${context.where}: id`,
+        );
+        findOrchestrationAction(context, id, "permission-request");
+        return { slice: dismissPermission(slice, id), summary: `id=${id}` };
+      },
+    },
+    "mind.waiver-choice-failed": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["id"]);
+        const id = readString(data, "id", context.where);
+        findOrchestrationAction(context, id, "waiver-request");
+        return { slice: dismissWaiver(slice, id), summary: `id=${id}` };
       },
     },
     "mind.waiver-pending": {

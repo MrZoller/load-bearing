@@ -542,6 +542,26 @@ export function resolvePermission(
   });
 }
 
+/** Dismisses a failed visitor choice without recording a permission decision. */
+export function dismissPermission(slice: MindSlice, id: string): MindSlice {
+  const pending = slice.pendingPermission;
+  if (pending === null || pending.id !== id)
+    throw new Error(
+      `mind permission dismiss: request id ${JSON.stringify(id)} does not match the pending request`,
+    );
+  return deepFreeze({
+    permissions: slice.permissions.map((entry) => ({
+      ...entry,
+      capability: { ...entry.capability },
+    })),
+    pendingPermission: null,
+    pendingWaiver: copyPendingWaiver(slice.pendingWaiver),
+    waiverConsents: slice.waiverConsents.map(copyWaiverConsent),
+    beliefs: slice.beliefs.map(copyBelief),
+    compactHistory: slice.compactHistory.map((entry) => ({ ...entry })),
+  });
+}
+
 export function startWaiver(
   slice: MindSlice,
   request: PendingWaiverRequest,
@@ -596,6 +616,26 @@ export function resolveWaiver(
         at,
       })
     : cleared;
+}
+
+/** Dismisses a failed visitor choice without recording waiver consent. */
+export function dismissWaiver(slice: MindSlice, id: string): MindSlice {
+  const pending = slice.pendingWaiver;
+  if (pending === null || pending.id !== id)
+    throw new Error(
+      `mind waiver dismiss: request id ${JSON.stringify(id)} does not match the pending waiver`,
+    );
+  return deepFreeze({
+    permissions: slice.permissions.map((entry) => ({
+      ...entry,
+      capability: { ...entry.capability },
+    })),
+    pendingPermission: copyPendingPermission(slice.pendingPermission),
+    pendingWaiver: null,
+    waiverConsents: slice.waiverConsents.map(copyWaiverConsent),
+    beliefs: slice.beliefs.map(copyBelief),
+    compactHistory: slice.compactHistory.map((entry) => ({ ...entry })),
+  });
 }
 
 /** Only an exact always-allow entry grants standing coverage. */

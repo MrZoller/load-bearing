@@ -80,6 +80,7 @@ describe("the engine's module list", () => {
       "mind.waiver-standing",
       "mind.waiver-standing-failed",
       "mind.waiver-start",
+      "mind.waiver-start-failed",
       "probe.int",
       "probe.random",
       "probe.weighted",

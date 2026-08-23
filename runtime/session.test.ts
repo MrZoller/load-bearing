@@ -72,7 +72,7 @@ describe("createRuntimeSession", () => {
     expect(session.current()).toEqual(before);
   });
 
-  it("falls back without publishing a permission resolution when its selected continuation fails", () => {
+  it("dismisses a failed permission choice without recording its decision", () => {
     const document = JSON.parse(JSON.stringify(cartridgeDocument)) as any;
     document.story.phase2 = {
       initialBeat: "start",
@@ -94,7 +94,7 @@ describe("createRuntimeSession", () => {
     const snapshot = session.current();
     expect(snapshot.eventLog).toHaveLength(2);
     expect(readMindSlice(snapshot.state)).toMatchObject({
-      pendingPermission: { id: "delete-ready-sentinel" },
+      pendingPermission: null,
       permissions: [],
     });
     expect(readStorySlice(snapshot.state).counters).toEqual([

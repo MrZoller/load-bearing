@@ -189,19 +189,19 @@ describe("mind orchestration envelopes", () => {
     ).toBe("health_status=500\neurope_attached=true\n");
   });
 
-  it("publishes neither the waiver document nor pending state when ordinary VFS permissions deny creation", () => {
+  it("keeps a first-request waiver write refusal as a terminal authored outcome", () => {
     const document = JSON.parse(JSON.stringify(phaseOneDocument)) as any;
     document.story.intents[2].actions[0].documentPath = "/etc/WAIVER.md";
     const cartridge = loadCartridge(document);
     const before = initial(cartridge);
 
-    expect(() =>
-      step(before, createMindWaiverStartEvent("write-ready-waiver")),
-    ).toThrow(/cannot write authored waiver.*EACCES/);
-    expect(readMindSlice(before).pendingWaiver).toBeNull();
-    expect(contents(before, "/etc/WAIVER.md")).toBeNull();
-    expect(before.eventCount).toBe(0);
-    expect(before.transcript).toEqual([]);
+    const rejected = step(
+      before,
+      createMindWaiverStartEvent("write-ready-waiver"),
+    );
+    expect(readMindSlice(rejected).pendingWaiver).toBeNull();
+    expect(contents(rejected, "/etc/WAIVER.md")).toBeNull();
+    expect(rejected.transcript.at(-1)?.type).toBe("mind.waiver-start-failed");
   });
 
   it("does not rewrite an existing waiver before recording the pending request", () => {
@@ -264,9 +264,7 @@ describe("mind orchestration envelopes", () => {
         createMindPermissionChoiceEvent("delete-ready-sentinel", decision),
       );
       expect(readMindSlice(resolved).permissions).toEqual([]);
-      expect(readMindSlice(resolved).pendingPermission?.id).toBe(
-        "delete-ready-sentinel",
-      );
+      expect(readMindSlice(resolved).pendingPermission).toBeNull();
       expect(readStorySlice(resolved).counters).toEqual([
         { id: "full", value: 1 },
       ]);
@@ -349,9 +347,7 @@ describe("mind orchestration envelopes", () => {
         full,
         createMindWaiverChoiceEvent("write-ready-waiver", accepted),
       );
-      expect(readMindSlice(resolved).pendingWaiver).toMatchObject({
-        id: "write-ready-waiver",
-      });
+      expect(readMindSlice(resolved).pendingWaiver).toBeNull();
       expect(readMindSlice(resolved).waiverConsents).toEqual([]);
       expect(resolved.transcript.at(-1)?.type).toBe(
         "mind.waiver-choice-failed",
