@@ -26,7 +26,10 @@ import {
   readMindSlice,
 } from "../mind/mind.js";
 import { createStoryBeatReachedEvent } from "../story/module.js";
-import { storyActionEvent } from "../story/actions.js";
+import {
+  candidateStoryActionEvent,
+  storyActionEvent,
+} from "../story/actions.js";
 import { routeIntentCandidate, routeStoryResponse } from "../story/router.js";
 import { queryStoryCounter, readStorySlice } from "../story/story.js";
 import { countCodePoints } from "../text.js";
@@ -389,7 +392,10 @@ export function createAgentInputEvents(
         return hasStandingPermission(mind, action.capability)
           ? [createMindStandingPermissionEvent(action.id)]
           : [createMindPermissionRequestEvent(action.id)];
-      return [storyActionEvent(action)];
+      // A visitor can make an otherwise valid candidate write refuse before a
+      // later turn. Keep the authored turn and response replayable rather than
+      // letting that environmental failure escape as a reducer exception.
+      return [candidateStoryActionEvent(action)];
     }),
     // Both the response route and any reached beat select from the same
     // pre-turn snapshot. Habit accounting follows the chosen owner action so

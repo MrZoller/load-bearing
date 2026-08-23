@@ -753,4 +753,38 @@ describe("authored agent input", () => {
       },
     ]);
   });
+
+  it("records a fallback response when its adjacent file write is refused", () => {
+    const source = JSON.parse(JSON.stringify(incident)) as Record<
+      string,
+      unknown
+    >;
+    const story = source["story"] as Record<string, unknown>;
+    const fallback = story["fallback"] as Record<string, unknown>;
+    const candidates = fallback["candidates"] as Array<Record<string, unknown>>;
+    const candidate = candidates[0];
+    if (candidate === undefined) throw new Error("incident needs a fallback");
+    candidate["actions"] = [
+      {
+        kind: "file-write",
+        path: "/production/load-balancer/config/routes.conf",
+        contents: "health_status=200\neurope_attached=false\n",
+      },
+    ];
+    const cartridge = loadCartridge(source);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+    state = step(
+      state,
+      createShellExecuteEvent(
+        "chmod 0444 /production/load-balancer/config/routes.conf",
+      ),
+    );
+
+    expect(() => {
+      state = applyInput(cartridge, state, "an unmatched request");
+    }).not.toThrow();
+    expect(readAgentSlice(state).responses.at(-1)).toMatchObject({
+      responseId: "fallback",
+    });
+  });
 });

@@ -135,6 +135,24 @@ describe("bounded cartridge intent patterns", () => {
     }
   });
 
+  it("rejects an inert unmatched-input fallback when generic families opt in", () => {
+    const source = JSON.parse(JSON.stringify(incidentDocument)) as Record<
+      string,
+      unknown
+    >;
+    const story = source["story"] as Record<string, unknown>;
+    const phase2 = story["phase2"] as Record<string, unknown>;
+    const counters = phase2["intentCounters"] as Record<string, unknown>;
+    counters["misfireEvery"] = 0;
+    const fallback = story["fallback"] as Record<string, unknown>;
+    fallback["candidates"] = [];
+    fallback["actions"] = [];
+
+    expect(() => loadCartridge(source)).toThrow(
+      /generic intent families without a mutating unmatched-input fallback/,
+    );
+  });
+
   it("selects the first condition-valid authored candidate", () => {
     const source = JSON.parse(JSON.stringify(incidentDocument)) as Record<
       string,

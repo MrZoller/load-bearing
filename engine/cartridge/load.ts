@@ -1673,6 +1673,16 @@ function checkStoryAndPresentation(
           "one mapping for every runtime-owned generic family",
           `no mapping for ${JSON.stringify(family)}`,
         );
+  if (
+    story.phase2.genericIntents.length > 0 &&
+    story.fallback.candidates.length === 0 &&
+    story.fallback.actions.length === 0
+  )
+    report.addPhrase(
+      "/story/fallback",
+      "a fallback candidate or legacy fallback action that mutates through an owner",
+      "generic intent families without a mutating unmatched-input fallback",
+    );
   const intentCounters = story.phase2.intentCounters;
   if (
     intentCounters.flail !== "" &&

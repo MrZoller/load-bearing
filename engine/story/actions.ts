@@ -60,3 +60,18 @@ export function storyActionEvent(action: CartridgeStoryAction): EngineEvent {
       };
   }
 }
+
+/**
+ * Intent candidates retain their authored reply when a visitor-created VFS
+ * state refuses an adjacent attempt; story consequences remain strict above.
+ */
+export function candidateStoryActionEvent(
+  action: CartridgeStoryAction,
+): EngineEvent {
+  const event = storyActionEvent(action);
+  if (event.type !== "vfs.write") return event;
+  return {
+    ...event,
+    payload: { ...event.payload, strict: false },
+  };
+}
