@@ -969,7 +969,7 @@
       },
       {
         "id": "waiver-consent-callback",
-        "text": "You agreed to detach Europe at 2026-08-22T09:14:22.000Z. The document /production/load-balancer/config/WAIVER.md and the geography now agree."
+        "text": "You agreed to detach Europe at 2026-08-22T09:14:22.000Z. The document /production/load-balancer/config/WAIVER.md recorded that geography at the time."
       },
       {
         "id": "fallback",
