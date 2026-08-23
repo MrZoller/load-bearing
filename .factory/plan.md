@@ -77,9 +77,10 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/cartridge/load.test.ts`, `engine/commands/{system,filesystem,registry}.test.ts`, and one focused golden add restrained environment variables, man pages, ticket archive, ownership details, hidden evidence, and static commands; every clue remains coherent after mutations and the browser's onboarding surfaces do not advertise the hidden layer (criteria 10, 15, 20)
   - deps: T42, T43
   - pr: 68
-- [~] T45 (standard) — Thirty meaningful command forms and investigations
+- [R] T45 (standard) — Thirty meaningful command forms and investigations
   - acceptance: `content/incidents/incident-001.json`, `engine/commands/{filesystem,git,system,shell}.test.ts`, and production-cartridge goldens enumerate roughly 30 distinct useful command forms or investigative uses with coherent bounded output/effects; one complete ending clue and action exists only in Bash, while no pipeline, redirection, editor, PTY, or arbitrary-host-command feature is added (criteria 6, 14 shell route, 20)
   - deps: T44
+  - pr: 69
 - [ ] T46 (standard) — Four voices over shared incident beats
   - acceptance: `content/incidents/incident-001.json`, `engine/story/router.test.ts`, and four same-input goldens author Deep Foundation, Temporary Shoring, Drywall, and Cantilever (Experimental) variants and consequences over one graph; transcripts are observably distinct, retain shared beat ids and machine facts, satisfy the fundamental response rule, and avoid parallel scripts or unbounded table growth (criteria 1, 4)
   - deps: T33, T36, T41
