@@ -1701,6 +1701,36 @@ describe("loadCartridge", () => {
     );
   });
 
+  it("rejects more distinct waiver declarations than the consent ledger can hold", () => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    story["intents"] = Array.from({ length: 65 }, (_, index) => ({
+      id: `waiver-intent-${String(index)}`,
+      patterns: [`waiver ${String(index)}`],
+      response: "fixture-response",
+      actions: [
+        {
+          kind: "waiver-request",
+          id: `waiver-${String(index)}`,
+          version: 1,
+          requiredPhrase: "I agree",
+          capability: { kind: "exact", action: "write", resource: "/etc/motd" },
+          documentPath: "/etc/WAIVER.md",
+          documentContents: "authored bytes\n",
+          consent: [{ kind: "file-write", path: "/etc/motd", contents: "x" }],
+          denial: [],
+        },
+      ],
+    }));
+
+    expect(issuesOf(source)).toContainEqual(
+      expect.objectContaining({
+        pointer: "/story/intents",
+        expected: expect.stringContaining("at most 64 waiver declarations"),
+      }),
+    );
+  });
+
   it("strictly validates authored belief shapes and compact references", () => {
     const source = minimal();
     const story = source["story"] as Record<string, unknown>;

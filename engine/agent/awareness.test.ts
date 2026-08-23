@@ -529,6 +529,9 @@ describe("agent awareness planning", () => {
         createTerminalModelEvent("quick-patch"),
       ],
     });
+    expect(readAgentSlice(stageAndModel).responses.at(-1)?.responseId).toBe(
+      "paranoid-1-opening",
+    );
     expect(selectAgentPresentation(cartridge, stageAndModel)).toMatchObject({
       archetype: "reckless",
       stage: 1,
@@ -554,5 +557,32 @@ describe("agent awareness planning", () => {
       openingResponse: "opening-awareness",
       helpResponse: "resume-unchanged",
     });
+  });
+
+  it("pins Incident #001's complete presentation pools, compact warning, and thinking deterioration", () => {
+    const production = loadCartridge(incident);
+    expect(production.presentation.phase2.stagePresentations).toHaveLength(20);
+    for (const row of production.presentation.phase2.stagePresentations) {
+      expect(row.placeholders.length).toBeGreaterThan(0);
+      const help = production.story.responses.find(
+        (response) => response.id === row.helpResponse,
+      );
+      const opening = production.story.responses.find(
+        (response) => response.id === row.openingResponse,
+      );
+      expect(help?.text).toContain(
+        "/compact replaces context and may discard findings",
+      );
+      const thought = opening?.thinkingBlocks[0]?.text ?? "";
+      expect(thought).toMatch(
+        row.stage <= 1
+          ? /^Okay, /
+          : row.stage === 2
+            ? /^Okay Amigos, /
+            : row.stage === 3
+              ? /^Okay Holy crap, /
+              : /^Amigos, okay, /,
+      );
+    }
   });
 });

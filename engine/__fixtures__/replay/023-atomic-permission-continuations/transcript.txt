@@ -7,10 +7,10 @@
 0006  2026-08-22T09:14:22.000Z  mind.permission-resolved id=delete-ready-sentinel decision=always-allow
 0007  2026-08-22T09:14:22.000Z  vfs.write
 0008  2026-08-22T09:14:22.000Z  vfs.write
-0009  2026-08-22T09:14:22.000Z  vfs.waiver-write
+0009  2026-08-22T09:14:22.000Z  vfs.waiver-write id=write-ready-waiver path="/production/service/WAIVER.md"
 0010  2026-08-22T09:14:22.000Z  mind.waiver-pending id=write-ready-waiver
 0011  2026-08-22T09:14:22.000Z  mind.waiver-resolved id=write-ready-waiver accepted=false
-0012  2026-08-22T09:14:22.000Z  vfs.waiver-write
+0012  2026-08-22T09:14:22.000Z  vfs.waiver-write id=write-ready-waiver path="/production/service/WAIVER.md"
 0013  2026-08-22T09:14:22.000Z  mind.waiver-pending id=write-ready-waiver
 0014  2026-08-22T09:14:22.000Z  clock.tick ms=34
 0015  2026-08-22T09:14:22.034Z  mind.waiver-resolved id=write-ready-waiver accepted=true

@@ -330,13 +330,26 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
         // take that fallback, so the response event selects the cartridge's
         // existing refusal only after the logged outcome makes that fact
         // replayable.
-        const precedingOutcome = context.state.transcript.at(-1)?.type;
-        const responseId =
-          precedingOutcome === "mind.waiver-start-failed" ||
-          precedingOutcome === "mind.permission-standing-failed" ||
-          precedingOutcome === "mind.waiver-standing-failed"
-            ? context.cartridge.story.fallback.response
-            : requestedResponseId;
+        let failedOrchestration = false;
+        for (
+          let index = context.state.transcript.length - 1;
+          index >= 0;
+          index -= 1
+        ) {
+          const type = context.state.transcript[index]?.type;
+          if (type === "agent.message-added") break;
+          if (
+            type === "mind.waiver-start-failed" ||
+            type === "mind.permission-standing-failed" ||
+            type === "mind.waiver-standing-failed"
+          ) {
+            failedOrchestration = true;
+            break;
+          }
+        }
+        const responseId = failedOrchestration
+          ? context.cartridge.story.fallback.response
+          : requestedResponseId;
         const instanceId = validateAgentId(
           data["instanceId"],
           `${context.where}: instanceId`,

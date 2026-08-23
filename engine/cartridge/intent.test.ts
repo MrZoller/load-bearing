@@ -226,4 +226,21 @@ describe("bounded cartridge intent patterns", () => {
       /story\/fallback\/candidates\/0\/actions\/1: expected a story-reach action before other candidate owner actions/,
     );
   });
+
+  it("rejects an unconditional candidate before the final slot", () => {
+    const source = JSON.parse(JSON.stringify(incidentDocument)) as Record<
+      string,
+      unknown
+    >;
+    const story = source["story"] as Record<string, unknown>;
+    const fallback = story["fallback"] as Record<string, unknown>;
+    const candidates = fallback["candidates"] as Array<Record<string, unknown>>;
+    const first = candidates[0];
+    if (first === undefined) throw new Error("incident needs a fallback");
+    first["when"] = [];
+
+    expect(() => loadCartridge(source)).toThrow(
+      /conditions on every candidate before the final fallback slot/,
+    );
+  });
 });
