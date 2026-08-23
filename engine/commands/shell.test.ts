@@ -62,6 +62,29 @@ describe("shell execution", () => {
     });
   });
 
+  it.each([
+    ["echo first | echo second", "stdout", "first | echo second", 0],
+    ["echo first > redirected.txt", "stdout", "first > redirected.txt", 0],
+    ["vi README.md", "stderr", "vi: command not found", 127],
+    ["script", "stderr", "script: command not found", 127],
+    ["ssh production", "stderr", "ssh: command not found", 127],
+  ])(
+    "does not turn %s into a pipeline, redirection, editor, PTY, or host-command capability",
+    (input, stream, text, exitCode) => {
+      const state = fold(input);
+
+      expect(shellResult(state)).toMatchObject({
+        output: [{ stream, text }],
+        exitCode,
+      });
+      expect(state.slices["vfs"]).toMatchObject({
+        entries: expect.not.objectContaining({
+          "/production/service/redirected.txt": expect.anything(),
+        }),
+      });
+    },
+  );
+
   it("uses the generic option parser at builtin dispatch", () => {
     expect(shellResult(fold("pwd -LP --"))).toMatchObject({
       output: [{ stream: "stdout", text: "/production/service" }],

@@ -69,6 +69,56 @@ describe("golden replay fixtures", () => {
     ]);
   });
 
+  it("records the Bash-only policy clue and reversible rm plus cp -p repair without story state", () => {
+    const fixture = loadReplayFixture("030-incident-001-bash-clue-repair");
+    const recording = replayFixture(fixture);
+    const state = restoreSnapshot(recording.state);
+    const policy = readVfs(
+      readVfsSlice(state),
+      "/var/lib/regional-router/.regional-policy",
+    );
+
+    expect(fixture.events.map((event) => event.payload?.["input"])).toEqual(
+      expect.arrayContaining([
+        "ls -la /var/lib/regional-router",
+        "cat /var/lib/regional-router/.regional-policy",
+        "rm config/routes.conf",
+        "cp -p config/routes.200.conf config/routes.conf",
+        "rm config/routes.conf",
+        "cp -p config/routes.500.conf config/routes.conf",
+        "pwd",
+      ]),
+    );
+    expect(policy).toMatchObject({
+      value: {
+        contents: expect.stringContaining("health_success=detach:europe"),
+      },
+    });
+    expect(
+      readVfs(
+        readVfsSlice(state),
+        "/production/load-balancer/config/routes.conf",
+      ),
+    ).toMatchObject({
+      value: { contents: "health_status=500\neurope_attached=true\n" },
+    });
+    expect(
+      lookupService(readWorldSlice(state), "endpoint-responder"),
+    ).toMatchObject({ state: "stopped", health: "unknown" });
+    expect(readStorySlice(state)).toMatchObject({
+      facts: [],
+      discoveredEndings: [],
+    });
+    expect(recording.transcript).toContain("HTTP/1.1 200 OK");
+    expect(recording.transcript).toContain(
+      "HTTP/1.1 500 Internal Server Error",
+    );
+    expect(recording.transcript).toContain(
+      "Access: (0644/-rw-r--r--)  Uid: (root)   Gid: (operators)",
+    );
+    expect(recording.transcript).toContain("stdout> /production/load-balancer");
+  });
+
   it("records the full session's cross-subsystem consequences", () => {
     const recording = replayFixture(loadReplayFixture("014-full-session"));
     const state = deserialize(recording.state) as Record<string, unknown>;
@@ -374,7 +424,7 @@ describe("golden replay fixtures", () => {
     expect(recording.transcript.match(/OPS-1842/g)).toHaveLength(3);
     expect(
       world.shellHistory.filter((input) => input === "ops-archive"),
-    ).toHaveLength(3);
+    ).toHaveLength(4);
   });
 
   it("keeps the production fixture's one shared story state when a different model starts", () => {
