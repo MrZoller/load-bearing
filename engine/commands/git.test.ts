@@ -147,13 +147,29 @@ describe("Git commands", () => {
       expect.stringMatching(new RegExp(`^${baseline.hash.slice(0, 7)} `)),
     ]);
     expect(run(state, "history").stdout).toEqual([
-      "    1  git status --short",
-      "    2  git log --oneline",
-      "    3  git blame src/config.ts",
-      "    4  git checkout greg/healthcheck-repair",
-      "    5  npm test",
-      "    6  git checkout main",
-      "    7  git restore config/routes.conf",
+      "    1  pwd",
+      "    2  git status --short",
+      "    3  git log --oneline",
+      "    4  git show greg/healthcheck-repair",
+      "    5  git blame src/config.ts",
+      "    6  man 5 routes.conf",
+      "    7  man 8 regional-router",
+      "    8  ls -la /var/lib/regional-router",
+      "    9  cat /var/lib/regional-router/.regional-policy",
+      "   10  ops-archive",
+      "   11  git checkout greg/healthcheck-repair",
+      "   12  npm test",
+      "   13  curl http://load-balancer.internal/health",
+      "   14  systemctl status regional-router",
+      "   15  git checkout main",
+      "   16  rm config/routes.conf",
+      "   17  cp -p config/routes.200.conf config/routes.conf",
+      "   18  npm test",
+      "   19  curl http://load-balancer.internal/health",
+      "   20  systemctl status regional-router",
+      "   21  rm config/routes.conf",
+      "   22  cp -p config/routes.500.conf config/routes.conf",
+      "   23  git restore config/routes.conf",
     ]);
 
     state = execute(state, "git checkout greg/healthcheck-repair");
@@ -199,6 +215,28 @@ describe("Git commands", () => {
       contents: "health_status=500\neurope_attached=true\n",
     });
   });
+
+  it.each([
+    ["git status --short", ""],
+    ["git branch", "greg/healthcheck-repair"],
+    ["git log --oneline", "return success from the health endpoint"],
+    ["git show greg/healthcheck-repair", "europe_attached=false"],
+    ["git blame src/config.ts", "successful health response"],
+    ["git checkout greg/healthcheck-repair", "Switched to branch"],
+    ["git restore config/routes.conf", ""],
+  ])(
+    "makes Incident #001's authored Git investigation %s useful",
+    (input, evidence) => {
+      const result = run(incidentInitial(), input);
+
+      expect(result).toMatchObject({ stderr: [], exitCode: 0 });
+      if (evidence !== "") {
+        expect(result.stdout).toEqual(
+          expect.arrayContaining([expect.stringContaining(evidence)]),
+        );
+      }
+    },
+  );
 
   it("treats explicit HEAD exactly like the default show operand", () => {
     expect(executeShell(initial(), "git show HEAD").slice(1)).toEqual(

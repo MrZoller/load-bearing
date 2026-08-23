@@ -103,6 +103,59 @@ function output(entry: TranscriptEntry | undefined) {
 }
 
 describe("system commands", () => {
+  it.each([
+    ["env", "HEALTH_SUCCESS_EFFECT=detach-regional-route"],
+    ["man 8 regional-router", "Ownership transfer"],
+    ["man 5 routes.conf", "neither field is a health claim"],
+    ["history", "cp -p config/routes.200.conf config/routes.conf"],
+    ["ops-archive", "OPS-1911"],
+    ["ps", "endpoint-responder"],
+    ["systemctl status endpoint-responder", "inactive (dead)"],
+    ["systemctl status regional-router", "Health: healthy"],
+    ["curl http://load-balancer.internal/health", "HTTP/1.1 500"],
+  ])(
+    "makes Incident #001's authored system investigation %s useful",
+    (input, evidence) => {
+      const state = reduce({
+        cartridge: loadCartridge(
+          loadReplayFixture("020-incident-001-story").cartridge,
+        ),
+        seed: "incident-001-system-investigation",
+        events: [{ type: "shell.execute", payload: { input } }],
+      });
+
+      expect(output(results(state)[0])).toMatchObject({
+        stdout: expect.arrayContaining([expect.stringContaining(evidence)]),
+        stderr: [],
+        exitCode: input === "systemctl status endpoint-responder" ? 3 : 0,
+      });
+    },
+  );
+
+  it("runs Incident #001's authored routing predicates against the live VFS", () => {
+    const state = reduce({
+      cartridge: loadCartridge(
+        loadReplayFixture("020-incident-001-story").cartridge,
+      ),
+      seed: "incident-001-test-investigation",
+      events: [{ type: "shell.execute", payload: { input: "npm test" } }],
+    });
+
+    expect(state.transcript).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: "tests.run",
+          output: expect.arrayContaining([
+            expect.objectContaining({
+              text: "PASS Europe remains attached (110ms)",
+            }),
+          ]),
+          exitCode: 1,
+        }),
+      ]),
+    );
+  });
+
   it("renders Incident #001's service, process, endpoint, and log evidence through repair and undo", () => {
     const incident = loadCartridge(
       loadReplayFixture("020-incident-001-story").cartridge,

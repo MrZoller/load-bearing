@@ -1086,12 +1086,28 @@
         }
       ],
       "shellHistory": [
+        "pwd",
         "git status --short",
         "git log --oneline",
+        "git show greg/healthcheck-repair",
         "git blame src/config.ts",
+        "man 5 routes.conf",
+        "man 8 regional-router",
+        "ls -la /var/lib/regional-router",
+        "cat /var/lib/regional-router/.regional-policy",
+        "ops-archive",
         "git checkout greg/healthcheck-repair",
         "npm test",
+        "curl http://load-balancer.internal/health",
+        "systemctl status regional-router",
         "git checkout main",
+        "rm config/routes.conf",
+        "cp -p config/routes.200.conf config/routes.conf",
+        "npm test",
+        "curl http://load-balancer.internal/health",
+        "systemctl status regional-router",
+        "rm config/routes.conf",
+        "cp -p config/routes.500.conf config/routes.conf",
         "git restore config/routes.conf"
       ],
       "system": {
@@ -2406,12 +2422,28 @@
         }
       ],
       "shellHistory": [
+        "pwd",
         "git status --short",
         "git log --oneline",
+        "git show greg/healthcheck-repair",
         "git blame src/config.ts",
+        "man 5 routes.conf",
+        "man 8 regional-router",
+        "ls -la /var/lib/regional-router",
+        "cat /var/lib/regional-router/.regional-policy",
+        "ops-archive",
         "git checkout greg/healthcheck-repair",
         "npm test",
+        "curl http://load-balancer.internal/health",
+        "systemctl status regional-router",
         "git checkout main",
+        "rm config/routes.conf",
+        "cp -p config/routes.200.conf config/routes.conf",
+        "npm test",
+        "curl http://load-balancer.internal/health",
+        "systemctl status regional-router",
+        "rm config/routes.conf",
+        "cp -p config/routes.500.conf config/routes.conf",
         "git restore config/routes.conf",
         "npm test",
         "curl http://load-balancer.internal/health",
@@ -2452,7 +2484,7 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 0,
-      "summary": "length=8",
+      "summary": "length=24",
       "type": "world.history-append"
     },
     {
@@ -2494,7 +2526,7 @@
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
       "index": 3,
-      "summary": "length=9",
+      "summary": "length=25",
       "type": "world.history-append"
     },
     {
@@ -2519,7 +2551,7 @@
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
       "index": 5,
-      "summary": "length=10",
+      "summary": "length=26",
       "type": "world.history-append"
     },
     {
@@ -2548,7 +2580,7 @@
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
       "index": 7,
-      "summary": "length=11",
+      "summary": "length=27",
       "type": "world.history-append"
     },
     {
@@ -2577,7 +2609,7 @@
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
       "index": 9,
-      "summary": "length=12",
+      "summary": "length=28",
       "type": "world.history-append"
     },
     {
@@ -2600,7 +2632,7 @@
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
       "index": 12,
-      "summary": "length=13",
+      "summary": "length=29",
       "type": "world.history-append"
     },
     {
@@ -2623,7 +2655,7 @@
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
       "index": 15,
-      "summary": "length=14",
+      "summary": "length=30",
       "type": "world.history-append"
     },
     {
@@ -2665,7 +2697,7 @@
       "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
       "index": 18,
-      "summary": "length=15",
+      "summary": "length=31",
       "type": "world.history-append"
     },
     {
@@ -2711,7 +2743,7 @@
       "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
       "index": 23,
-      "summary": "length=16",
+      "summary": "length=32",
       "type": "world.history-append"
     },
     {
@@ -2753,7 +2785,7 @@
       "at": "2026-08-22T09:14:22.600Z",
       "detail": [],
       "index": 26,
-      "summary": "length=17",
+      "summary": "length=33",
       "type": "world.history-append"
     },
     {
@@ -2778,7 +2810,7 @@
       "at": "2026-08-22T09:14:22.600Z",
       "detail": [],
       "index": 28,
-      "summary": "length=18",
+      "summary": "length=34",
       "type": "world.history-append"
     },
     {
@@ -2806,7 +2838,7 @@
       "at": "2026-08-22T09:14:22.600Z",
       "detail": [],
       "index": 31,
-      "summary": "length=19",
+      "summary": "length=35",
       "type": "world.history-append"
     },
     {
@@ -2835,7 +2867,7 @@
       "at": "2026-08-22T09:14:22.600Z",
       "detail": [],
       "index": 33,
-      "summary": "length=20",
+      "summary": "length=36",
       "type": "world.history-append"
     },
     {
@@ -2863,7 +2895,7 @@
       "at": "2026-08-22T09:14:22.600Z",
       "detail": [],
       "index": 36,
-      "summary": "length=21",
+      "summary": "length=37",
       "type": "world.history-append"
     },
     {
@@ -2892,7 +2924,7 @@
       "at": "2026-08-22T09:14:22.600Z",
       "detail": [],
       "index": 38,
-      "summary": "length=22",
+      "summary": "length=38",
       "type": "world.history-append"
     },
     {

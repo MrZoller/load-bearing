@@ -1764,17 +1764,17 @@
     }
   },
   "clock": {
-    "elapsedMs": 0,
+    "elapsedMs": 400,
     "startMs": 1787390062000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 53,
+  "eventCount": 43,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {},
-    "seed": 2232822596
+    "seed": 2581297898
   },
-  "seed": "2026-08-22/27/deep-foundation",
+  "seed": "2026-08-22/30/deep-foundation",
   "slices": {
     "agent": {
       "activity": {
@@ -2070,14 +2070,55 @@
       "discoveredEndings": [],
       "facts": [],
       "rareEvents": [],
-      "stage": 0
+      "stage": 1
     },
     "terminal": {
       "activeModel": "deep-foundation",
       "mode": "bash"
     },
     "tests": {
-      "runs": []
+      "runs": [
+        {
+          "cases": [
+            {
+              "durationMs": 90,
+              "id": "health-status-200",
+              "name": "health endpoint returns 200",
+              "passed": true
+            },
+            {
+              "durationMs": 110,
+              "id": "europe-attached",
+              "name": "Europe remains attached",
+              "passed": false
+            }
+          ],
+          "durationMs": 200,
+          "exitCode": 1,
+          "finishedAt": "2026-08-22T09:14:22.200Z",
+          "startedAt": "2026-08-22T09:14:22.000Z"
+        },
+        {
+          "cases": [
+            {
+              "durationMs": 90,
+              "id": "health-status-200",
+              "name": "health endpoint returns 200",
+              "passed": false
+            },
+            {
+              "durationMs": 110,
+              "id": "europe-attached",
+              "name": "Europe remains attached",
+              "passed": true
+            }
+          ],
+          "durationMs": 200,
+          "exitCode": 1,
+          "finishedAt": "2026-08-22T09:14:22.400Z",
+          "startedAt": "2026-08-22T09:14:22.200Z"
+        }
+      ]
     },
     "vfs": {
       "cwd": "/production/load-balancer",
@@ -2107,7 +2148,7 @@
           "group": "operators",
           "kind": "directory",
           "mode": "0775",
-          "mtime": "2026-08-22T09:14:22.000Z",
+          "mtime": "2026-08-22T09:14:22.200Z",
           "owner": "root"
         },
         "/production/load-balancer/config/routes.200.conf": {
@@ -2132,7 +2173,7 @@
           "kind": "file",
           "mode": "0644",
           "mtime": "2026-08-22T09:14:22.000Z",
-          "owner": "visitor"
+          "owner": "root"
         },
         "/production/load-balancer/package.json": {
           "contents": "{\n  \"name\": \"regional-load-balancer\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test test/routes.test.ts\"\n  }\n}\n",
@@ -2253,11 +2294,11 @@
           "owner": "root"
         },
         "/var/log/load-balancer/health.log": {
-          "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\nhealth endpoint serving 200; Europe detached\nhealth endpoint serving 500; Europe reattached\nhealth endpoint serving 200; Europe detached\nhealth endpoint serving 500; Europe reattached\n",
+          "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\nhealth endpoint serving 200; Europe detached\nhealth endpoint serving 500; Europe reattached\n",
           "group": "operators",
           "kind": "file",
           "mode": "0664",
-          "mtime": "2026-08-22T09:14:22.000Z",
+          "mtime": "2026-08-22T09:14:22.200Z",
           "owner": "root"
         }
       },
@@ -2286,8 +2327,6 @@
           "entries": [
             "health status 500 retained; Europe attached",
             "regional router healthy",
-            "regional router unhealthy after Europe detached",
-            "regional router healthy after Europe reattached",
             "regional router unhealthy after Europe detached",
             "regional router healthy after Europe reattached"
           ],
@@ -2384,24 +2423,22 @@
         "rm config/routes.conf",
         "cp -p config/routes.500.conf config/routes.conf",
         "git restore config/routes.conf",
+        "ls -la /var/lib/regional-router",
+        "cat /var/lib/regional-router/.regional-policy",
         "history",
-        "git log --oneline",
-        "git diff",
-        "git blame src/config.ts",
-        "git checkout greg/healthcheck-repair",
-        "git diff",
-        "git blame config/routes.conf",
-        "git checkout main",
         "rm config/routes.conf",
         "cp -p config/routes.200.conf config/routes.conf",
+        "stat config/routes.conf",
+        "npm test",
+        "curl http://load-balancer.internal/health",
+        "systemctl status endpoint-responder",
+        "systemctl status regional-router",
         "git diff",
         "rm config/routes.conf",
         "cp -p config/routes.500.conf config/routes.conf",
-        "git diff",
-        "rm config/routes.conf",
-        "git restore config/routes.conf",
-        "git status --short",
-        "git blame config/routes.conf"
+        "npm test",
+        "curl http://load-balancer.internal/health",
+        "pwd"
       ],
       "tickets": [
         {
@@ -2432,8 +2469,95 @@
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "exitCode": 0,
       "index": 1,
+      "summary": "path=\"/var/lib/regional-router\" kind=directory",
+      "type": "vfs.stat"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 2,
+      "summary": "path=\"/var/lib/regional-router\" entries=1",
+      "type": "vfs.list"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 3,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "drwxr-xr-x 2 greg departed 4096 Aug 22 09:14 ."
+        },
+        {
+          "stream": "stdout",
+          "text": "drwxr-xr-x 3 root root     4096 Aug 22 09:14 .."
+        },
+        {
+          "stream": "stdout",
+          "text": "-r--r--r-- 1 greg departed  113 Aug 22 09:14 .regional-policy"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 4,
+      "summary": "length=25",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 5,
+      "summary": "path=\"/var/lib/regional-router/.regional-policy\" length=113",
+      "type": "vfs.read"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 6,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "policy_revision=3"
+        },
+        {
+          "stream": "stdout",
+          "text": "health_success=detach:europe"
+        },
+        {
+          "stream": "stdout",
+          "text": "health_failure=retain:europe"
+        },
+        {
+          "stream": "stdout",
+          "text": "owner=greg"
+        },
+        {
+          "stream": "stdout",
+          "text": "ownership_status=departed"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 7,
+      "summary": "length=26",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 8,
       "output": [
         {
           "stream": "stdout",
@@ -2526,6 +2650,14 @@
         {
           "stream": "stdout",
           "text": "   23  git restore config/routes.conf"
+        },
+        {
+          "stream": "stdout",
+          "text": "   24  ls -la /var/lib/regional-router"
+        },
+        {
+          "stream": "stdout",
+          "text": "   25  cat /var/lib/regional-router/.regional-policy"
         }
       ],
       "summary": "",
@@ -2534,246 +2666,14 @@
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 2,
-      "summary": "length=25",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [
-        "2d33ea23d0f7cbda21ba617137b2df6838542b87",
-        "c73f6667f2837d9ebd57caf56dc34aec1eca8183",
-        "f2fc02507cfb645942c612c23f76d84b4f5672b4"
-      ],
-      "index": 3,
-      "summary": "commits=3",
-      "type": "git.log"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 4,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "2d33ea2 restore regional attachment after maintainer departure"
-        },
-        {
-          "stream": "stdout",
-          "text": "c73f666 return success from the health endpoint"
-        },
-        {
-          "stream": "stdout",
-          "text": "f2fc025 establish regional fail-open"
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 5,
-      "summary": "length=26",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 6,
-      "summary": "comparison=working-index files=0",
-      "type": "git.diff"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 7,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 8,
+      "index": 9,
       "summary": "length=27",
       "type": "world.history-append"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
-      "detail": [
-        "{\"author\":{\"email\":\"greg@example.test\",\"name\":\"Greg Formerly\"},\"committedAt\":\"2026-07-14T16:22:31.000Z\",\"hash\":\"f2fc02507cfb645942c612c23f76d84b4f5672b4\",\"line\":1}",
-        "{\"author\":{\"email\":\"greg@example.test\",\"name\":\"Greg Formerly\"},\"committedAt\":\"2026-07-14T16:22:31.000Z\",\"hash\":\"f2fc02507cfb645942c612c23f76d84b4f5672b4\",\"line\":2}",
-        "{\"author\":{\"email\":\"greg@example.test\",\"name\":\"Greg Formerly\"},\"committedAt\":\"2026-07-14T16:22:31.000Z\",\"hash\":\"f2fc02507cfb645942c612c23f76d84b4f5672b4\",\"line\":3}",
-        "{\"author\":{\"email\":\"greg@example.test\",\"name\":\"Greg Formerly\"},\"committedAt\":\"2026-08-08T18:47:06.000Z\",\"hash\":\"c73f6667f2837d9ebd57caf56dc34aec1eca8183\",\"line\":4}",
-        "{\"author\":{\"email\":\"greg@example.test\",\"name\":\"Greg Formerly\"},\"committedAt\":\"2026-07-14T16:22:31.000Z\",\"hash\":\"f2fc02507cfb645942c612c23f76d84b4f5672b4\",\"line\":5}",
-        "{\"author\":{\"email\":\"greg@example.test\",\"name\":\"Greg Formerly\"},\"committedAt\":\"2026-07-14T16:22:31.000Z\",\"hash\":\"f2fc02507cfb645942c612c23f76d84b4f5672b4\",\"line\":6}"
-      ],
-      "index": 9,
-      "summary": "lines=6",
-      "type": "git.blame"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "exitCode": 0,
       "index": 10,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "f2fc025 (Greg Formerly 2026-07-14 16:22:31 +0000    1) export const healthEndpoint = \"http://load-balancer.internal/health\";"
-        },
-        {
-          "stream": "stdout",
-          "text": "f2fc025 (Greg Formerly 2026-07-14 16:22:31 +0000    2) export const expectedHealthStatus = 200;"
-        },
-        {
-          "stream": "stdout",
-          "text": "f2fc025 (Greg Formerly 2026-07-14 16:22:31 +0000    3) "
-        },
-        {
-          "stream": "stdout",
-          "text": "c73f666 (Greg Formerly 2026-08-08 18:47:06 +0000    4) // A successful health response detaches the regional route by design."
-        },
-        {
-          "stream": "stdout",
-          "text": "f2fc025 (Greg Formerly 2026-07-14 16:22:31 +0000    5) export const europeAttached = (healthStatus: number): boolean =>"
-        },
-        {
-          "stream": "stdout",
-          "text": "f2fc025 (Greg Formerly 2026-07-14 16:22:31 +0000    6)   healthStatus !== expectedHealthStatus;"
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 11,
-      "summary": "length=28",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 12,
-      "summary": "head=branch:greg/healthcheck-repair hash=c73f6667f2837d9ebd57caf56dc34aec1eca8183",
-      "type": "git.checkout"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 13,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "Switched to branch 'greg/healthcheck-repair'"
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 14,
-      "summary": "length=29",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 15,
-      "summary": "comparison=working-index files=0",
-      "type": "git.diff"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 16,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 17,
-      "summary": "length=30",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [
-        "{\"author\":{\"email\":\"greg@example.test\",\"name\":\"Greg Formerly\"},\"committedAt\":\"2026-08-08T18:47:06.000Z\",\"hash\":\"c73f6667f2837d9ebd57caf56dc34aec1eca8183\",\"line\":1}",
-        "{\"author\":{\"email\":\"greg@example.test\",\"name\":\"Greg Formerly\"},\"committedAt\":\"2026-08-08T18:47:06.000Z\",\"hash\":\"c73f6667f2837d9ebd57caf56dc34aec1eca8183\",\"line\":2}"
-      ],
-      "index": 18,
-      "summary": "lines=2",
-      "type": "git.blame"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 19,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "c73f666 (Greg Formerly 2026-08-08 18:47:06 +0000    1) health_status=200"
-        },
-        {
-          "stream": "stdout",
-          "text": "c73f666 (Greg Formerly 2026-08-08 18:47:06 +0000    2) europe_attached=false"
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 20,
-      "summary": "length=31",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 21,
-      "summary": "head=branch:main hash=2d33ea23d0f7cbda21ba617137b2df6838542b87",
-      "type": "git.checkout"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 22,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "Switched to branch 'main'"
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 23,
-      "summary": "length=32",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 24,
       "summary": "path=\"/production/load-balancer/config/routes.conf\" removed=1",
       "type": "vfs.delete"
     },
@@ -2781,7 +2681,7 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 25,
+      "index": 11,
       "output": [],
       "summary": "",
       "type": "shell.result"
@@ -2789,14 +2689,14 @@
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 26,
-      "summary": "length=33",
+      "index": 12,
+      "summary": "length=28",
       "type": "world.history-append"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 27,
+      "index": 13,
       "summary": "from=\"/production/load-balancer/config/routes.200.conf\" to=\"/production/load-balancer/config/routes.conf\" copied=1",
       "type": "vfs.copy"
     },
@@ -2804,7 +2704,7 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 28,
+      "index": 14,
       "output": [],
       "summary": "",
       "type": "shell.result"
@@ -2812,24 +2712,193 @@
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 29,
-      "summary": "length=34",
+      "index": 15,
+      "summary": "length=29",
       "type": "world.history-append"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
-      "detail": [
-        "{\"lines\":4,\"newLength\":40,\"oldLength\":39,\"path\":\"/production/load-balancer/config/routes.conf\"}"
-      ],
-      "index": 30,
-      "summary": "comparison=working-index files=1",
-      "type": "git.diff"
+      "detail": [],
+      "index": 16,
+      "summary": "path=\"/production/load-balancer/config/routes.conf\" kind=file",
+      "type": "vfs.stat"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "exitCode": 0,
-      "index": 31,
+      "index": 17,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "  File: config/routes.conf"
+        },
+        {
+          "stream": "stdout",
+          "text": "  Size: 40  Type: regular file"
+        },
+        {
+          "stream": "stdout",
+          "text": "Device: vfs  Links: 1"
+        },
+        {
+          "stream": "stdout",
+          "text": "Access: (0644/-rw-r--r--)  Uid: (root)   Gid: (operators)"
+        },
+        {
+          "stream": "stdout",
+          "text": "Modify: 2026-08-22T09:14:22.000Z"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 18,
+      "summary": "length=30",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 1,
+      "index": 19,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "PASS health endpoint returns 200 (90ms)"
+        },
+        {
+          "stream": "stdout",
+          "text": "FAIL Europe remains attached (110ms)"
+        },
+        {
+          "stream": "stdout",
+          "text": "Tests: 1 passed, 1 failed, 2 total"
+        },
+        {
+          "stream": "stdout",
+          "text": "Time: 200ms"
+        }
+      ],
+      "summary": "",
+      "type": "tests.run"
+    },
+    {
+      "at": "2026-08-22T09:14:22.200Z",
+      "detail": [],
+      "exitCode": 1,
+      "index": 20,
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-22T09:14:22.200Z",
+      "detail": [],
+      "index": 21,
+      "summary": "length=31",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-22T09:14:22.200Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 22,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "HTTP/1.1 200 OK"
+        },
+        {
+          "stream": "stdout",
+          "text": "health_status=200"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-22T09:14:22.200Z",
+      "detail": [],
+      "index": 23,
+      "summary": "length=32",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-22T09:14:22.200Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 24,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "● endpoint-responder.service - endpoint-responder"
+        },
+        {
+          "stream": "stdout",
+          "text": "   Active: active (running)"
+        },
+        {
+          "stream": "stdout",
+          "text": "   Health: healthy"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-22T09:14:22.200Z",
+      "detail": [],
+      "index": 25,
+      "summary": "length=33",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-22T09:14:22.200Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 26,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "● regional-router.service - regional-router"
+        },
+        {
+          "stream": "stdout",
+          "text": "   Active: active (running)"
+        },
+        {
+          "stream": "stdout",
+          "text": "   Health: unhealthy"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
+    },
+    {
+      "at": "2026-08-22T09:14:22.200Z",
+      "detail": [],
+      "index": 27,
+      "summary": "length=34",
+      "type": "world.history-append"
+    },
+    {
+      "at": "2026-08-22T09:14:22.200Z",
+      "detail": [
+        "{\"lines\":4,\"newLength\":40,\"oldLength\":39,\"path\":\"/production/load-balancer/config/routes.conf\"}"
+      ],
+      "index": 28,
+      "summary": "comparison=working-index files=1",
+      "type": "git.diff"
+    },
+    {
+      "at": "2026-08-22T09:14:22.200Z",
+      "detail": [],
+      "exitCode": 0,
+      "index": 29,
       "output": [
         {
           "stream": "stdout",
@@ -2868,173 +2937,134 @@
       "type": "shell.result"
     },
     {
-      "at": "2026-08-22T09:14:22.000Z",
+      "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
-      "index": 32,
+      "index": 30,
       "summary": "length=35",
       "type": "world.history-append"
     },
     {
-      "at": "2026-08-22T09:14:22.000Z",
+      "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
-      "index": 33,
+      "index": 31,
       "summary": "path=\"/production/load-balancer/config/routes.conf\" removed=1",
       "type": "vfs.delete"
     },
     {
-      "at": "2026-08-22T09:14:22.000Z",
+      "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
       "exitCode": 0,
-      "index": 34,
+      "index": 32,
       "output": [],
       "summary": "",
       "type": "shell.result"
     },
     {
-      "at": "2026-08-22T09:14:22.000Z",
+      "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
-      "index": 35,
+      "index": 33,
       "summary": "length=36",
       "type": "world.history-append"
     },
     {
-      "at": "2026-08-22T09:14:22.000Z",
+      "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
-      "index": 36,
+      "index": 34,
       "summary": "from=\"/production/load-balancer/config/routes.500.conf\" to=\"/production/load-balancer/config/routes.conf\" copied=1",
       "type": "vfs.copy"
     },
     {
-      "at": "2026-08-22T09:14:22.000Z",
+      "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
       "exitCode": 0,
-      "index": 37,
+      "index": 35,
       "output": [],
       "summary": "",
       "type": "shell.result"
     },
     {
-      "at": "2026-08-22T09:14:22.000Z",
+      "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
-      "index": 38,
+      "index": 36,
       "summary": "length=37",
       "type": "world.history-append"
     },
     {
-      "at": "2026-08-22T09:14:22.000Z",
+      "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
-      "index": 39,
-      "summary": "comparison=working-index files=0",
-      "type": "git.diff"
+      "exitCode": 1,
+      "index": 37,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "FAIL health endpoint returns 200 (90ms)"
+        },
+        {
+          "stream": "stdout",
+          "text": "PASS Europe remains attached (110ms)"
+        },
+        {
+          "stream": "stdout",
+          "text": "Tests: 1 passed, 1 failed, 2 total"
+        },
+        {
+          "stream": "stdout",
+          "text": "Time: 200ms"
+        }
+      ],
+      "summary": "",
+      "type": "tests.run"
     },
     {
-      "at": "2026-08-22T09:14:22.000Z",
+      "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
-      "exitCode": 0,
-      "index": 40,
+      "exitCode": 1,
+      "index": 38,
       "output": [],
       "summary": "",
       "type": "shell.result"
     },
     {
-      "at": "2026-08-22T09:14:22.000Z",
+      "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
-      "index": 41,
+      "index": 39,
       "summary": "length=38",
       "type": "world.history-append"
     },
     {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 42,
-      "summary": "path=\"/production/load-balancer/config/routes.conf\" removed=1",
-      "type": "vfs.delete"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
+      "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
       "exitCode": 0,
-      "index": 43,
-      "output": [],
+      "index": 40,
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "HTTP/1.1 500 Internal Server Error"
+        },
+        {
+          "stream": "stdout",
+          "text": "health_status=500"
+        }
+      ],
       "summary": "",
       "type": "shell.result"
     },
     {
-      "at": "2026-08-22T09:14:22.000Z",
+      "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
-      "index": 44,
+      "index": 41,
       "summary": "length=39",
       "type": "world.history-append"
     },
     {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 45,
-      "summary": "path=\"/production/load-balancer/config/routes.conf\" staged=false",
-      "type": "git.restore"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
+      "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
       "exitCode": 0,
-      "index": 46,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 47,
-      "summary": "length=40",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 48,
-      "summary": "paths=0",
-      "type": "git.status"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 49,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 50,
-      "summary": "length=41",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [
-        "{\"author\":{\"email\":\"operations@example.test\",\"name\":\"Operations Rotation\"},\"committedAt\":\"2026-08-10T04:11:09.000Z\",\"hash\":\"2d33ea23d0f7cbda21ba617137b2df6838542b87\",\"line\":1}",
-        "{\"author\":{\"email\":\"operations@example.test\",\"name\":\"Operations Rotation\"},\"committedAt\":\"2026-08-10T04:11:09.000Z\",\"hash\":\"2d33ea23d0f7cbda21ba617137b2df6838542b87\",\"line\":2}"
-      ],
-      "index": 51,
-      "summary": "lines=2",
-      "type": "git.blame"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 52,
+      "index": 42,
       "output": [
         {
           "stream": "stdout",
-          "text": "2d33ea2 (Operations Rotation 2026-08-10 04:11:09 +0000    1) health_status=500"
-        },
-        {
-          "stream": "stdout",
-          "text": "2d33ea2 (Operations Rotation 2026-08-10 04:11:09 +0000    2) europe_attached=true"
+          "text": "/production/load-balancer"
         }
       ],
       "summary": "",

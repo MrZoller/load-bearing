@@ -32,6 +32,37 @@ function run(input: string, initial = state()): Result {
 }
 
 describe("filesystem commands", () => {
+  it.each([
+    ["ls", "config"],
+    ["ls -lah config", "routes.200.conf"],
+    ["ls -la /var/lib/regional-router", ".regional-policy"],
+    ["cat config/routes.conf", "health_status=500"],
+    ["cat src/config.ts", "response detaches the regional route"],
+    ["head -n 4 test/routes.test.ts", "node:assert/strict"],
+    ["tail -n 2 /var/log/load-balancer/health.log", "regional router healthy"],
+    ["wc package.json test/routes.test.ts", "total"],
+    ["grep -n expectedHealthStatus src/config.ts", "expectedHealthStatus"],
+    ["grep -ir europe config src test", "europe_attached"],
+    ["find config", "config/routes.500.conf"],
+    ["stat config/routes.conf", "Uid: (root)   Gid: (operators)"],
+  ])(
+    "makes Incident #001's authored filesystem investigation %s useful",
+    (input, evidence) => {
+      const incident = bootstrap({
+        cartridge: loadCartridge(
+          loadReplayFixture("020-incident-001-story").cartridge,
+        ),
+        seed: "incident-001-filesystem-investigation",
+      });
+
+      expect(run(input, incident)).toMatchObject({
+        stdout: expect.arrayContaining([expect.stringContaining(evidence)]),
+        stderr: [],
+        exitCode: 0,
+      });
+    },
+  );
+
   it("keeps Incident #001's hidden policy bytes and departed ownership readable after repair and undo", () => {
     const initial = bootstrap({
       cartridge: loadCartridge(
