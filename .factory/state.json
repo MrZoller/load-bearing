@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T40",
-  "branch": "factory/t40-stage-aware-presentation",
-  "pr": 65,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-23T11:33:13Z"
+  "updated": "2026-08-23T11:41:22Z"
 }
