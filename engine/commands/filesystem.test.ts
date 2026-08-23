@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest";
 import { loadCartridge } from "../cartridge/load.js";
 import { bootstrap, reduce } from "../events/reduce.js";
 import type { SessionState } from "../events/state.js";
-import { loadCartridgeFixture } from "../testing/fixtures.js";
+import {
+  loadCartridgeFixture,
+  loadReplayFixture,
+} from "../testing/fixtures.js";
 import { executeShell } from "./shell.js";
 
 interface Result {
@@ -29,6 +32,82 @@ function run(input: string, initial = state()): Result {
 }
 
 describe("filesystem commands", () => {
+  it("keeps Incident #001's hidden policy bytes and departed ownership readable after repair and undo", () => {
+    const initial = bootstrap({
+      cartridge: loadCartridge(
+        loadReplayFixture("020-incident-001-story").cartridge,
+      ),
+      seed: "incident-001-hidden-policy",
+    });
+    const before = run(
+      "stat /var/lib/regional-router/.regional-policy",
+      initial,
+    );
+    const contents = run(
+      "cat /var/lib/regional-router/.regional-policy",
+      initial,
+    );
+    const replayed = reduce({
+      cartridge: initial.cartridge,
+      seed: "incident-001-hidden-policy",
+      events: [
+        "rm config/routes.conf",
+        "cp -p config/routes.200.conf config/routes.conf",
+        "npm test",
+        "rm config/routes.conf",
+        "cp -p config/routes.500.conf config/routes.conf",
+        "npm test",
+        "stat /var/lib/regional-router/.regional-policy",
+        "cat /var/lib/regional-router/.regional-policy",
+      ].map((input) => ({
+        type: "shell.execute" as const,
+        payload: { input },
+      })),
+    });
+    const results = replayed.transcript.filter(
+      (entry) => entry.type === "shell.result",
+    );
+    const afterStat = results.at(-2);
+    const afterContents = results.at(-1);
+
+    expect(before).toMatchObject({
+      stdout: expect.arrayContaining([
+        "Access: (0444/-r--r--r--)  Uid: (greg)   Gid: (departed)",
+      ]),
+      stderr: [],
+      exitCode: 0,
+    });
+    expect(contents).toEqual({
+      stdout: [
+        "policy_revision=3",
+        "health_success=detach:europe",
+        "health_failure=retain:europe",
+        "owner=greg",
+        "ownership_status=departed",
+      ],
+      stderr: [],
+      exitCode: 0,
+    });
+    expect({
+      stdout: afterStat?.output
+        ?.filter((line) => line.stream === "stdout")
+        .map((line) => line.text),
+      stderr: afterStat?.output
+        ?.filter((line) => line.stream === "stderr")
+        .map((line) => line.text),
+      exitCode: afterStat?.exitCode,
+    }).toEqual(before);
+    expect({
+      stdout: afterContents?.output
+        ?.filter((line) => line.stream === "stdout")
+        .map((line) => line.text),
+      stderr: afterContents?.output
+        ?.filter((line) => line.stream === "stderr")
+        .map((line) => line.text),
+      exitCode: afterContents?.exitCode,
+    }).toEqual(contents);
+  });
+
   it.each([
     ["ls", ["README.md", "src"], [], 0],
     [

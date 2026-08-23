@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 import { loadCartridge } from "../cartridge/load.js";
 import { bootstrap } from "../events/reduce.js";
 import { MAX_TRANSCRIPT_DETAIL_LINES } from "../events/transcript.js";
-import { loadCartridgeFixture } from "../testing/fixtures.js";
+import { BUILTIN_COMMAND_REGISTRY } from "./builtins.js";
+import {
+  loadCartridgeFixture,
+  loadReplayFixture,
+} from "../testing/fixtures.js";
 import { createCommandRegistry, executeCommand } from "./registry.js";
 import type { CommandExecution } from "./types.js";
 
@@ -73,6 +77,28 @@ describe("the command registry", () => {
       stdout: ["cartridge"],
       stderr: ["warning"],
       exitCode: 7,
+    });
+  });
+
+  it("renders Incident #001's static ticket archive without emitting a world mutation", () => {
+    const incident = bootstrap({
+      cartridge: loadCartridge(
+        loadReplayFixture("020-incident-001-story").cartridge,
+      ),
+      seed: "incident-001-static-archive",
+    });
+
+    expect(
+      executeCommand(incident, ["ops-archive"], BUILTIN_COMMAND_REGISTRY),
+    ).toEqual({
+      stdout: [
+        "OPS-1842  closed-as-designed  Health probe failure retains regional traffic",
+        "OPS-1911  archived            Transfer ownership of regional fail-open policy",
+        "2 records; archive is read-only",
+      ],
+      stderr: [],
+      exitCode: 0,
+      events: [],
     });
   });
 

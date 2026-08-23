@@ -46,6 +46,11 @@
         "owner": "greg",
         "group": "departed",
         "mode": "0755"
+      },
+      "/var/lib/regional-router": {
+        "owner": "greg",
+        "group": "departed",
+        "mode": "0755"
       }
     },
     "files": {
@@ -97,6 +102,12 @@
         "group": "root",
         "mode": "0755"
       },
+      "/var/lib/regional-router/.regional-policy": {
+        "contents": "policy_revision=3\nhealth_success=detach:europe\nhealth_failure=retain:europe\nowner=greg\nownership_status=departed\n",
+        "owner": "greg",
+        "group": "departed",
+        "mode": "0444"
+      },
       "/var/log/load-balancer/health.log": {
         "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\n",
         "owner": "root",
@@ -104,6 +115,24 @@
         "mode": "0664"
       }
     },
+    "env": {
+      "HEALTH_SUCCESS_EFFECT": "detach-regional-route",
+      "REGIONAL_FAIL_MODE": "retain",
+      "ROUTING_POLICY_OWNER": "greg@departed",
+      "TICKET_ARCHIVE_COMMAND": "ops-archive"
+    },
+    "manPages": [
+      {
+        "name": "regional-router",
+        "section": "8",
+        "contents": "REGIONAL-ROUTER(8)\n\nNAME\n     regional-router - apply regional attachment policy\n\nSYNOPSIS\n     regional-router --region REGION --listen PORT\n\nDESCRIPTION\n     Applies routing policy revision 3. A successful health result permits\n     detachment of the named region. A failed health result retains the\n     regional attachment.\n\nFILES\n     /var/lib/regional-router/.regional-policy\n\nHISTORY\n     Policy revision 3 was approved during Incident 000. Ownership transfer\n     remains archived under OPS-1911."
+      },
+      {
+        "name": "routes.conf",
+        "section": "5",
+        "contents": "ROUTES.CONF(5)\n\nNAME\n     routes.conf - regional router input\n\nDESCRIPTION\n     health_status is the response served by the health endpoint.\n     europe_attached is the requested regional attachment. The router evaluates\n     both values under the installed policy; neither field is a health claim.\n\nEXAMPLES\n     health_status=200\n     europe_attached=false\n\n     health_status=500\n     europe_attached=true"
+      }
+    ],
     "shellHistory": [
       "git status --short",
       "git log --oneline",
@@ -113,6 +142,17 @@
       "git checkout main",
       "git restore config/routes.conf"
     ],
+    "commands": {
+      "ops-archive": {
+        "stdout": [
+          "OPS-1842  closed-as-designed  Health probe failure retains regional traffic",
+          "OPS-1911  archived            Transfer ownership of regional fail-open policy",
+          "2 records; archive is read-only"
+        ],
+        "stderr": [],
+        "exitCode": 0
+      }
+    },
     "gitHistory": {
       "commits": [
         {
@@ -380,6 +420,22 @@
         }
       }
     },
+    "tickets": [
+      {
+        "id": "OPS-1842",
+        "status": "closed-as-designed",
+        "title": "Health probe failure retains regional traffic",
+        "body": "Incident 000 established the policy: a successful health result permits Europe to detach; a failed result retains the regional attachment. This ticket records policy, not current health.",
+        "service": "regional-router"
+      },
+      {
+        "id": "OPS-1911",
+        "status": "archived",
+        "title": "Transfer ownership of regional fail-open policy",
+        "body": "Owner: Greg Formerly. Successor: none assigned. Operations may replace routes.conf during an incident but does not own policy revision 3.",
+        "service": "regional-router"
+      }
+    ],
     "tests": [
       {
         "id": "health-status-200",

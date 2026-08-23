@@ -1,0 +1,91 @@
+{
+  "name": "029-incident-001-environment",
+  "description": "Incident #001's environment, manuals, typed ticket archive, ownership metadata, hidden policy record, and static archive command remain truthful across repair and undo.",
+  "seed": "2026-08-22/29/deep-foundation",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    { "type": "shell.execute", "payload": { "input": "env" }, "version": 0 },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "man 8 regional-router" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "man 5 routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "ops-archive" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": {
+        "input": "stat /var/lib/regional-router/.regional-policy"
+      },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cat /var/lib/regional-router/.regional-policy" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cp -p config/routes.200.conf config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "npm test" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "ops-archive" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cat /var/lib/regional-router/.regional-policy" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cp -p config/routes.500.conf config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "npm test" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "man 8 regional-router" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "ops-archive" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cat /var/lib/regional-router/.regional-policy" },
+      "version": 0
+    }
+  ]
+}

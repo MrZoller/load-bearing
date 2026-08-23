@@ -184,6 +184,55 @@ describe("system commands", () => {
     );
   });
 
+  it("keeps Incident #001's environment and manual policy clues unchanged through repair and undo", () => {
+    const incident = loadCartridge(
+      loadReplayFixture("020-incident-001-story").cartridge,
+    );
+    const state = reduce({
+      cartridge: incident,
+      seed: "incident-001-environment-clues",
+      events: [
+        "env",
+        "man 8 regional-router",
+        "rm config/routes.conf",
+        "cp -p config/routes.200.conf config/routes.conf",
+        "npm test",
+        "rm config/routes.conf",
+        "cp -p config/routes.500.conf config/routes.conf",
+        "npm test",
+        "env",
+        "man 8 regional-router",
+      ].map((input) => ({
+        type: "shell.execute" as const,
+        payload: { input },
+      })),
+    });
+    const shell = results(state);
+
+    expect(output(shell[0])).toEqual({
+      stdout: [
+        "HEALTH_SUCCESS_EFFECT=detach-regional-route",
+        "REGIONAL_FAIL_MODE=retain",
+        "ROUTING_POLICY_OWNER=greg@departed",
+        "TICKET_ARCHIVE_COMMAND=ops-archive",
+      ],
+      stderr: [],
+      exitCode: 0,
+    });
+    expect(output(shell[1])).toEqual({
+      stdout: expect.arrayContaining([
+        "REGIONAL-ROUTER(8)",
+        "     regional-router - apply regional attachment policy",
+        "     /var/lib/regional-router/.regional-policy",
+        "     remains archived under OPS-1911.",
+      ]),
+      stderr: [],
+      exitCode: 0,
+    });
+    expect(output(shell[8])).toEqual(output(shell[0]));
+    expect(output(shell[9])).toEqual(output(shell[1]));
+  });
+
   it("keeps Incident #001's endpoint responder process synchronized with systemctl", () => {
     const incident = loadCartridge(
       loadReplayFixture("020-incident-001-story").cartridge,
