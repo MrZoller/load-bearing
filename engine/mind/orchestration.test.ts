@@ -230,7 +230,7 @@ describe("mind orchestration envelopes", () => {
     ).toContain("Consent phrase: I agree");
   });
 
-  it("uses the authored denial continuation when permission continuations become invalid", () => {
+  it("uses a mutation-free authored outcome when permission continuations become invalid", () => {
     const document = JSON.parse(JSON.stringify(phaseOneDocument)) as any;
     document.story.phase2 = {
       initialBeat: "start",
@@ -246,11 +246,7 @@ describe("mind orchestration envelopes", () => {
       { kind: "counter-add", counter: "full", amount: 1 },
     ];
     document.story.intents[1].actions[0].deny = [
-      {
-        kind: "file-write",
-        path: "/production/service/src/ready.stale",
-        contents: "denied after state drift\n",
-      },
+      { kind: "counter-add", counter: "full", amount: 1 },
     ];
     const cartridge = loadCartridge(document);
     const pending = step(
@@ -262,49 +258,22 @@ describe("mind orchestration envelopes", () => {
       payload: { counter: "full", amount: 1 },
     });
 
-    const denied = step(
-      grown,
-      createMindPermissionChoiceEvent("delete-ready-sentinel", "grant"),
-    );
-    expect(readMindSlice(grown).pendingPermission?.id).toBe(
-      "delete-ready-sentinel",
-    );
-    expect(readMindSlice(denied).permissions).toEqual([]);
-    expect(readMindSlice(denied).pendingPermission?.id).toBe(
-      "delete-ready-sentinel",
-    );
-    expect(readStorySlice(denied).counters).toEqual([{ id: "full", value: 1 }]);
-    expect(contents(denied, "/production/service/src/ready.stale")).toBe(
-      "denied after state drift\n",
-    );
-
-    const standing = step(
-      step(
-        initial(cartridge),
-        createMindPermissionRequestEvent("delete-ready-sentinel"),
-      ),
-      createMindPermissionChoiceEvent("delete-ready-sentinel", "always-allow"),
-    );
-    const replayed = step(
-      standing,
-      createMindStandingPermissionEvent("delete-ready-sentinel"),
-    );
-    expect(readMindSlice(replayed).permissions).toHaveLength(1);
-    expect(readStorySlice(replayed).counters).toEqual([
-      { id: "full", value: 1 },
-    ]);
-    expect(contents(replayed, "/production/service/src/ready.stale")).toBe(
-      "denied after state drift\n",
-    );
-
-    const deniedFallback = step(
-      grown,
-      createMindPermissionChoiceEvent("delete-ready-sentinel", "deny"),
-    );
-    expect(readMindSlice(deniedFallback).pendingPermission).toBeNull();
-    expect(readMindSlice(deniedFallback).permissions.at(-1)?.decision).toBe(
-      "deny",
-    );
+    for (const decision of ["grant", "deny", "always-allow"] as const) {
+      const resolved = step(
+        grown,
+        createMindPermissionChoiceEvent("delete-ready-sentinel", decision),
+      );
+      expect(readMindSlice(resolved).permissions).toEqual([]);
+      expect(readMindSlice(resolved).pendingPermission?.id).toBe(
+        "delete-ready-sentinel",
+      );
+      expect(readStorySlice(resolved).counters).toEqual([
+        { id: "full", value: 1 },
+      ]);
+      expect(resolved.transcript.at(-1)?.type).toBe(
+        "mind.permission-choice-failed",
+      );
+    }
   });
 
   it("keeps a repeated waiver turn authored when its consent continuation drifts", () => {
@@ -348,5 +317,45 @@ describe("mind orchestration envelopes", () => {
     expect(repeated.transcript.at(-1)?.type).toBe(
       "mind.waiver-standing-failed",
     );
+  });
+
+  it("uses a mutation-free authored outcome when waiver choices become invalid", () => {
+    const document = JSON.parse(JSON.stringify(phaseOneDocument)) as any;
+    document.story.phase2 = {
+      initialBeat: "start",
+      counters: [{ id: "full", initial: 0, maximum: 1 }],
+      facts: [],
+      beats: [{ id: "start", ending: "", actions: [], variants: [] }],
+      endings: [],
+    };
+    document.story.intents[2].actions[0].consent = [
+      { kind: "counter-add", counter: "full", amount: 1 },
+    ];
+    document.story.intents[2].actions[0].denial = [
+      { kind: "counter-add", counter: "full", amount: 1 },
+    ];
+    const cartridge = loadCartridge(document);
+    const pending = step(
+      initial(cartridge),
+      createMindWaiverStartEvent("write-ready-waiver"),
+    );
+    const full = step(pending, {
+      type: "story.counter-added",
+      payload: { counter: "full", amount: 1 },
+    });
+
+    for (const accepted of [true, false]) {
+      const resolved = step(
+        full,
+        createMindWaiverChoiceEvent("write-ready-waiver", accepted),
+      );
+      expect(readMindSlice(resolved).pendingWaiver).toMatchObject({
+        id: "write-ready-waiver",
+      });
+      expect(readMindSlice(resolved).waiverConsents).toEqual([]);
+      expect(resolved.transcript.at(-1)?.type).toBe(
+        "mind.waiver-choice-failed",
+      );
+    }
   });
 });

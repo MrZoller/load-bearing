@@ -286,13 +286,20 @@ export const MIND_MODULE = defineEventModule<MindSlice>({
             createMindPermissionResolvedEvent(id, decision),
             ...continuation(selected),
           ],
-          // A failed grant may still take the authored deny path, but a failed
-          // deny must not retry the same state-sensitive continuation outside
-          // the reducer's one-frame fallback guard.
-          expansionFallback:
-            decision === "deny"
-              ? [createMindPermissionResolvedEvent(id, "deny")]
-              : continuation(action.deny),
+          // An authored continuation can become invalid after the prompt was
+          // shown. Its recovery must not be another authored continuation: it
+          // may have the same state-sensitive precondition and escape the
+          // reducer's one-frame fallback guard. This logged terminal rung is
+          // deliberately mutation-free, so every visitor choice stays content.
+          expansionFallback: [
+            stampEvent(
+              {
+                type: "mind.permission-choice-failed",
+                payload: { id },
+              },
+              "mind permission choice fallback",
+            ),
+          ],
         };
       },
     },
@@ -315,7 +322,15 @@ export const MIND_MODULE = defineEventModule<MindSlice>({
           );
         return {
           expansion: continuation(action.grant),
-          expansionFallback: continuation(action.deny),
+          expansionFallback: [
+            stampEvent(
+              {
+                type: "mind.permission-choice-failed",
+                payload: { id },
+              },
+              "mind standing permission fallback",
+            ),
+          ],
         };
       },
     },
@@ -398,6 +413,15 @@ export const MIND_MODULE = defineEventModule<MindSlice>({
             ),
             ...continuation(accepted ? action.consent : action.denial),
           ],
+          expansionFallback: [
+            stampEvent(
+              {
+                type: "mind.waiver-choice-failed",
+                payload: { id },
+              },
+              "mind waiver choice fallback",
+            ),
+          ],
         };
       },
     },
@@ -451,6 +475,27 @@ export const MIND_MODULE = defineEventModule<MindSlice>({
       },
     },
     "mind.waiver-standing-failed": {
+      version: 0,
+      apply(context) {
+        const data = payload(context, ["id"]);
+        const id = readString(data, "id", context.where);
+        findOrchestrationAction(context, id, "waiver-request");
+        return { summary: `id=${id}` };
+      },
+    },
+    "mind.permission-choice-failed": {
+      version: 0,
+      apply(context) {
+        const data = payload(context, ["id"]);
+        const id = validatePermissionRequestId(
+          readString(data, "id", context.where),
+          `${context.where}: id`,
+        );
+        findOrchestrationAction(context, id, "permission-request");
+        return { summary: `id=${id}` };
+      },
+    },
+    "mind.waiver-choice-failed": {
       version: 0,
       apply(context) {
         const data = payload(context, ["id"]);
