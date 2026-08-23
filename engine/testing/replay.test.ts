@@ -196,6 +196,7 @@ describe("golden replay fixtures", () => {
     // story state, not transcript decoration, and the ending remains a
     // discovery rather than a terminal session state.
     expect(readStorySlice(state)).toEqual({
+      stage: 1,
       currentBeat: "load-bearing-declaration",
       currentVariant: "preserved-load-bearing-response",
       facts: [
