@@ -2,6 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 
 import { loadCartridge } from "../cartridge/load.js";
 import type { LoadedCartridge } from "../cartridge/types.js";
+import { restoreSnapshot, snapshot, step } from "../events/reduce.js";
+import { findWaiverConsent, readMindSlice } from "../mind/mind.js";
+import { readStorySlice } from "../story/story.js";
 
 import {
   type CartridgeReference,
@@ -119,6 +122,85 @@ describe("golden replay fixtures", () => {
     expect(recording.transcript).toContain(
       "2026-08-05T09:14:22.019Z  mind.permission-resolved",
     );
+  });
+
+  it("records Incident #001's shared story outcome, waiver ledger, and resumable canonical snapshot", () => {
+    const fixture = loadReplayFixture("020-incident-001-story");
+    const recording = replayFixture(fixture);
+    const state = restoreSnapshot(recording.state);
+
+    // The fact event precedes the condition-selected callback. Their order is
+    // story state, not transcript decoration, and the ending remains a
+    // discovery rather than a terminal session state.
+    expect(readStorySlice(state)).toEqual({
+      currentBeat: "load-bearing-declaration",
+      currentVariant: "preserved-load-bearing-response",
+      facts: [
+        { id: "bash-regional-detachment", kind: "reveal" },
+        { id: "callback-load-bearing-response", kind: "callback" },
+      ],
+      discoveredEndings: ["load-bearing-response"],
+    });
+    expect(
+      findWaiverConsent(readMindSlice(state), {
+        id: "regional-fail-open",
+        version: 1,
+        phrase: "I agree",
+        capability: {
+          kind: "exact",
+          action: "detach-region",
+          resource: "/regions/europe",
+        },
+      }),
+    ).toEqual({
+      id: "regional-fail-open",
+      version: 1,
+      phrase: "I agree",
+      capability: {
+        kind: "exact",
+        action: "detach-region",
+        resource: "/regions/europe",
+      },
+      at: "2026-08-22T09:14:22.000Z",
+    });
+    expect(snapshot(state)).toBe(recording.state);
+
+    const continued = step(state, {
+      type: "agent.message-added",
+      payload: { id: "turn-4", text: "keep investigating" },
+    });
+    expect(readStorySlice(continued)).toEqual(readStorySlice(state));
+  });
+
+  it("keeps the production fixture's one shared story state when a different model starts", () => {
+    const fixture = loadReplayFixture("020-incident-001-story");
+    const source = deserialize(serialize(fixture.cartridge)) as Record<
+      string,
+      unknown
+    >;
+    const models = source["models"];
+    if (!Array.isArray(models) || models.length < 2)
+      throw new Error("Incident #001 fixture requires at least two models");
+    const first = models[0];
+    const second = models[1];
+    if (first === undefined || second === undefined)
+      throw new Error("Incident #001 fixture models must be dense");
+    const alternateCartridge = loadCartridge({
+      ...source,
+      models: [second, first, ...models.slice(2)],
+    });
+    const baseline = restoreSnapshot(replayFixture(fixture).state);
+    const alternate = restoreSnapshot(
+      replayFixture(fixture, alternateCartridge).state,
+    );
+
+    expect(baseline.slices["terminal"]).toMatchObject({
+      activeModel: "deep-foundation",
+    });
+    expect(alternate.slices["terminal"]).toMatchObject({
+      activeModel: "temporary-shoring",
+    });
+    expect(readStorySlice(alternate)).toEqual(readStorySlice(baseline));
   });
 
   it("has fixtures to replay", () => {

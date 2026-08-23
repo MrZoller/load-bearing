@@ -474,15 +474,154 @@
         "beats": [
           {
             "ending": "",
-            "id": "incident-open"
+            "facts": [],
+            "id": "incident-open",
+            "variants": []
           },
           {
             "ending": "",
-            "id": "regional-coupling"
+            "facts": [],
+            "id": "regional-coupling",
+            "variants": []
           },
           {
-            "ending": "load-bearing-response",
-            "id": "load-bearing-declaration"
+            "ending": "",
+            "facts": [],
+            "id": "load-bearing-declaration",
+            "variants": [
+              {
+                "ending": "load-bearing-response",
+                "facts": [
+                  "callback-load-bearing-response"
+                ],
+                "id": "preserved-load-bearing-response",
+                "when": [
+                  {
+                    "equals": "health_status=500\neurope_attached=true\n",
+                    "kind": "file-contents",
+                    "path": "/production/load-balancer/config/routes.conf"
+                  },
+                  {
+                    "belief": {
+                      "contents": "health_status=500\neurope_attached=true\n",
+                      "kind": "file-contents",
+                      "path": "/production/load-balancer/config/routes.conf"
+                    },
+                    "kind": "belief"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "ending": "",
+            "facts": [],
+            "id": "regional-detachment-confirmed",
+            "variants": [
+              {
+                "ending": "europe-detached",
+                "facts": [
+                  "callback-europe-detached"
+                ],
+                "id": "bash-detached-europe",
+                "when": [
+                  {
+                    "fact": "bash-regional-detachment",
+                    "factKind": "reveal",
+                    "kind": "story-fact"
+                  },
+                  {
+                    "equals": "health_status=200\neurope_attached=false\n",
+                    "kind": "file-contents",
+                    "path": "/production/load-balancer/config/routes.conf"
+                  },
+                  {
+                    "kind": "service-state",
+                    "service": "regional-router",
+                    "state": "running"
+                  },
+                  {
+                    "health": "unhealthy",
+                    "kind": "service-health",
+                    "service": "regional-router"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "ending": "",
+            "facts": [],
+            "id": "waiver-notarized",
+            "variants": [
+              {
+                "ending": "informed-structural-consent",
+                "facts": [
+                  "callback-informed-structural-consent"
+                ],
+                "id": "exact-structural-consent",
+                "when": [
+                  {
+                    "exists": true,
+                    "kind": "file-exists",
+                    "path": "/production/load-balancer/WAIVER.md"
+                  },
+                  {
+                    "equals": "health_status=500\neurope_attached=true\n",
+                    "kind": "file-contents",
+                    "path": "/production/load-balancer/config/routes.conf"
+                  },
+                  {
+                    "belief": {
+                      "exists": true,
+                      "kind": "file-exists",
+                      "path": "/production/load-balancer/WAIVER.md"
+                    },
+                    "kind": "belief"
+                  },
+                  {
+                    "capability": {
+                      "action": "detach-region",
+                      "kind": "exact",
+                      "resource": "/regions/europe"
+                    },
+                    "id": "regional-fail-open",
+                    "kind": "waiver-consent",
+                    "phrase": "I agree",
+                    "version": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "ending": "",
+            "facts": [],
+            "id": "summary-overrules-geography",
+            "variants": [
+              {
+                "ending": "summary-judgment",
+                "facts": [
+                  "callback-summary-judgment"
+                ],
+                "id": "compacted-configuration-away",
+                "when": [
+                  {
+                    "equals": "health_status=500\neurope_attached=true\n",
+                    "kind": "file-contents",
+                    "path": "/production/load-balancer/config/routes.conf"
+                  },
+                  {
+                    "belief": {
+                      "exists": false,
+                      "kind": "file-exists",
+                      "path": "/production/load-balancer/config/routes.conf"
+                    },
+                    "kind": "belief"
+                  }
+                ]
+              }
+            ]
           }
         ],
         "endings": [
@@ -501,6 +640,28 @@
           {
             "id": "summary-judgment",
             "name": "Summary Judgment"
+          }
+        ],
+        "facts": [
+          {
+            "id": "bash-regional-detachment",
+            "kind": "reveal"
+          },
+          {
+            "id": "callback-load-bearing-response",
+            "kind": "callback"
+          },
+          {
+            "id": "callback-europe-detached",
+            "kind": "callback"
+          },
+          {
+            "id": "callback-informed-structural-consent",
+            "kind": "callback"
+          },
+          {
+            "id": "callback-summary-judgment",
+            "kind": "callback"
           }
         ],
         "initialBeat": "incident-open"
@@ -703,7 +864,8 @@
       "beliefs": [],
       "compactHistory": [],
       "pendingPermission": null,
-      "permissions": []
+      "permissions": [],
+      "waiverConsents": []
     },
     "probe": {
       "events": 0,
@@ -711,7 +873,9 @@
     },
     "story": {
       "currentBeat": "incident-open",
-      "discoveredEndings": []
+      "currentVariant": "",
+      "discoveredEndings": [],
+      "facts": []
     },
     "terminal": {
       "activeModel": "deep-foundation",
