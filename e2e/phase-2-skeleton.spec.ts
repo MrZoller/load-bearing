@@ -178,3 +178,58 @@ test("keeps escalation and its status projection outside browser timing", async 
   expect(JSON.parse(afterFramesAndTimers.state).slices.story.stage).toBe(1);
   await expect(status).toContainText("Not-Okay Ratio");
 });
+
+test("keeps Incident #001 activity information when reduced motion stops its spinner", async ({
+  browser,
+}) => {
+  const normalContext = await browser.newContext({
+    viewport: { width: 1280, height: 720 },
+  });
+  const reducedContext = await browser.newContext({
+    viewport: { width: 1280, height: 720 },
+    reducedMotion: "reduce",
+  });
+  const normal = await normalContext.newPage();
+  const reduced = await reducedContext.newPage();
+
+  try {
+    await Promise.all([normal.clock.install(), reduced.clock.install()]);
+    await Promise.all([
+      normal.goto("/?acceptance=1"),
+      reduced.goto("/?acceptance=1"),
+    ]);
+    for (const current of [normal, reduced]) {
+      const prompt = current.getByRole("combobox", { name: "Agent prompt" });
+      await prompt.fill("inspect routing");
+      await prompt.press("Enter");
+    }
+
+    const normalActivity = normal.locator("[data-agent-activity]");
+    const reducedActivity = reduced.locator("[data-agent-activity]");
+    await expect(normalActivity).toBeVisible();
+    await expect(reducedActivity).toBeVisible();
+    expect(await reducedActivity.innerText()).toBe(
+      await normalActivity.innerText(),
+    );
+    await expect(reducedActivity).toHaveAttribute(
+      "aria-label",
+      "Agent activity",
+    );
+    await expect
+      .poll(() =>
+        normalActivity.evaluate(
+          (element) => getComputedStyle(element, "::before").animationName,
+        ),
+      )
+      .toBe("activity-turn");
+    await expect
+      .poll(() =>
+        reducedActivity.evaluate(
+          (element) => getComputedStyle(element, "::before").animationName,
+        ),
+      )
+      .toBe("none");
+  } finally {
+    await Promise.all([normalContext.close(), reducedContext.close()]);
+  }
+});
