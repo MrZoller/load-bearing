@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import incident from "../../content/incidents/incident-001.json";
 import { serialize } from "../serialize/canonical.js";
 import {
   listInvalidCartridgeFixtures,
@@ -29,6 +30,80 @@ function issuesOf(value: unknown): readonly CartridgeIssue[] {
 }
 
 describe("loadCartridge", () => {
+  it("loads Incident #001's complete, spoiler-free stage presentation matrix", () => {
+    const cartridge = loadCartridge(incident);
+    const rows = cartridge.presentation.phase2.stagePresentations;
+    const responseById = new Map(
+      cartridge.story.responses.map((response) => [response.id, response]),
+    );
+    const archetypes = [
+      ...new Set(cartridge.models.map(({ archetype }) => archetype)),
+    ];
+
+    expect(archetypes).toHaveLength(4);
+    expect(rows).toHaveLength(20);
+    expect(
+      new Set(
+        rows.map(({ archetype, stage }) => `${archetype}/${String(stage)}`),
+      ),
+    ).toEqual(
+      new Set(
+        archetypes.flatMap((archetype) =>
+          Array.from(
+            { length: 5 },
+            (_, stage) => `${archetype}/${String(stage)}`,
+          ),
+        ),
+      ),
+    );
+
+    for (const row of rows) {
+      const opening = responseById.get(row.openingResponse);
+      expect(
+        opening,
+        `${row.archetype} stage ${String(row.stage)} opening`,
+      ).toBeDefined();
+      expect(responseById.has(row.helpResponse)).toBe(true);
+      expect(responseById.has(row.idleNudgeResponse)).toBe(true);
+      expect(opening?.thinkingBlocks).toHaveLength(1);
+      expect(opening?.thinkingBlocks[0]).toMatchObject({ status: "complete" });
+      expect(row.placeholders).not.toHaveLength(0);
+      for (const placeholder of row.placeholders) {
+        expect(placeholder.trim().length).toBeGreaterThan(3);
+        expect(placeholder).toMatch(/\p{L}/u);
+      }
+    }
+
+    // Onboarding should invite investigation without revealing the shell's hidden
+    // evidence or spending the incident's structural refrain before the visitor acts.
+    const visibleCopy = rows
+      .flatMap((row) => [
+        responseById.get(row.openingResponse)?.text ?? "",
+        ...(responseById
+          .get(row.openingResponse)
+          ?.thinkingBlocks.map(({ text }) => text) ?? []),
+        responseById.get(row.helpResponse)?.text ?? "",
+        responseById.get(row.idleNudgeResponse)?.text ?? "",
+        ...row.placeholders,
+      ])
+      .join("\n");
+    for (const forbidden of [
+      "ops-archive",
+      "OPS-1842",
+      "OPS-1911",
+      "/var/lib/regional-router/.regional-policy",
+      "regional-router",
+      "ROUTES.CONF(5)",
+    ])
+      expect(visibleCopy.toLowerCase()).not.toContain(forbidden.toLowerCase());
+    expect(visibleCopy.toLowerCase().match(/load-bearing/g) ?? []).toHaveLength(
+      0,
+    );
+    expect(
+      visibleCopy.toLowerCase().match(/structur(?:e|al)/g)?.length ?? 0,
+    ).toBeLessThan(5);
+  });
+
   it("loads Incident #001's authored load-balancer, environmental, and hidden ownership evidence exactly", () => {
     const cartridge = loadCartridge(
       loadReplayFixture("020-incident-001-story").cartridge,

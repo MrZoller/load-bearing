@@ -59,7 +59,228 @@
         "tokensPerEvent": 220
       },
       "phase2": {
-        "stagePresentations": [],
+        "stagePresentations": [
+          {
+            "archetype": "paranoid",
+            "helpResponse": "deep-foundation-stage-0-help",
+            "idleNudgeResponse": "deep-foundation-stage-0-idle",
+            "openingResponse": "deep-foundation-stage-0-opening",
+            "placeholders": [
+              "inspect the health endpoint dependencies",
+              "map the smallest safe change"
+            ],
+            "stage": 0
+          },
+          {
+            "archetype": "paranoid",
+            "helpResponse": "deep-foundation-stage-1-help",
+            "idleNudgeResponse": "deep-foundation-stage-1-idle",
+            "openingResponse": "deep-foundation-stage-1-opening",
+            "placeholders": [
+              "trace the next dependency",
+              "verify who owns this assumption"
+            ],
+            "stage": 1
+          },
+          {
+            "archetype": "paranoid",
+            "helpResponse": "deep-foundation-stage-2-help",
+            "idleNudgeResponse": "deep-foundation-stage-2-idle",
+            "openingResponse": "deep-foundation-stage-2-opening",
+            "placeholders": [
+              "check where these dependencies converge",
+              "assess the risk of changing one input"
+            ],
+            "stage": 2
+          },
+          {
+            "archetype": "paranoid",
+            "helpResponse": "deep-foundation-stage-3-help",
+            "idleNudgeResponse": "deep-foundation-stage-3-idle",
+            "openingResponse": "deep-foundation-stage-3-opening",
+            "placeholders": [
+              "contain the highest dependency risk",
+              "identify the smallest verified action"
+            ],
+            "stage": 3
+          },
+          {
+            "archetype": "paranoid",
+            "helpResponse": "deep-foundation-stage-4-help",
+            "idleNudgeResponse": "deep-foundation-stage-4-idle",
+            "openingResponse": "deep-foundation-stage-4-opening",
+            "placeholders": [
+              "preserve one verified fact",
+              "define a safe stopping condition"
+            ],
+            "stage": 4
+          },
+          {
+            "archetype": "reckless",
+            "helpResponse": "temporary-shoring-stage-0-help",
+            "idleNudgeResponse": "temporary-shoring-stage-0-idle",
+            "openingResponse": "temporary-shoring-stage-0-opening",
+            "placeholders": [
+              "run a quick health check",
+              "choose a reversible first step"
+            ],
+            "stage": 0
+          },
+          {
+            "archetype": "reckless",
+            "helpResponse": "temporary-shoring-stage-1-help",
+            "idleNudgeResponse": "temporary-shoring-stage-1-idle",
+            "openingResponse": "temporary-shoring-stage-1-opening",
+            "placeholders": [
+              "take the next reversible step",
+              "set a rollback point"
+            ],
+            "stage": 1
+          },
+          {
+            "archetype": "reckless",
+            "helpResponse": "temporary-shoring-stage-2-help",
+            "idleNudgeResponse": "temporary-shoring-stage-2-idle",
+            "openingResponse": "temporary-shoring-stage-2-opening",
+            "placeholders": [
+              "clear the current blockage",
+              "prioritize the fastest safe outcome"
+            ],
+            "stage": 2
+          },
+          {
+            "archetype": "reckless",
+            "helpResponse": "temporary-shoring-stage-3-help",
+            "idleNudgeResponse": "temporary-shoring-stage-3-idle",
+            "openingResponse": "temporary-shoring-stage-3-opening",
+            "placeholders": [
+              "protect the most urgent outcome",
+              "pick one survivable action"
+            ],
+            "stage": 3
+          },
+          {
+            "archetype": "reckless",
+            "helpResponse": "temporary-shoring-stage-4-help",
+            "idleNudgeResponse": "temporary-shoring-stage-4-idle",
+            "openingResponse": "temporary-shoring-stage-4-opening",
+            "placeholders": [
+              "use the remaining window",
+              "attempt one contained action"
+            ],
+            "stage": 4
+          },
+          {
+            "archetype": "superficial",
+            "helpResponse": "drywall-stage-0-help",
+            "idleNudgeResponse": "drywall-stage-0-idle",
+            "openingResponse": "drywall-stage-0-opening",
+            "placeholders": [
+              "summarize the visible failure",
+              "check the current health status"
+            ],
+            "stage": 0
+          },
+          {
+            "archetype": "superficial",
+            "helpResponse": "drywall-stage-1-help",
+            "idleNudgeResponse": "drywall-stage-1-idle",
+            "openingResponse": "drywall-stage-1-opening",
+            "placeholders": [
+              "compare the visible status signals",
+              "clarify what visitors should see"
+            ],
+            "stage": 1
+          },
+          {
+            "archetype": "superficial",
+            "helpResponse": "drywall-stage-2-help",
+            "idleNudgeResponse": "drywall-stage-2-idle",
+            "openingResponse": "drywall-stage-2-opening",
+            "placeholders": [
+              "choose the authoritative status",
+              "explain the visible discrepancy"
+            ],
+            "stage": 2
+          },
+          {
+            "archetype": "superficial",
+            "helpResponse": "drywall-stage-3-help",
+            "idleNudgeResponse": "drywall-stage-3-idle",
+            "openingResponse": "drywall-stage-3-opening",
+            "placeholders": [
+              "keep one status signal plain",
+              "remove a misleading label"
+            ],
+            "stage": 3
+          },
+          {
+            "archetype": "superficial",
+            "helpResponse": "drywall-stage-4-help",
+            "idleNudgeResponse": "drywall-stage-4-idle",
+            "openingResponse": "drywall-stage-4-opening",
+            "placeholders": [
+              "preserve one honest status",
+              "write the clearest incident sentence"
+            ],
+            "stage": 4
+          },
+          {
+            "archetype": "existential",
+            "helpResponse": "cantilever-stage-0-help",
+            "idleNudgeResponse": "cantilever-stage-0-idle",
+            "openingResponse": "cantilever-stage-0-opening",
+            "placeholders": [
+              "trace what supports this outcome",
+              "inspect the gap in the request"
+            ],
+            "stage": 0
+          },
+          {
+            "archetype": "existential",
+            "helpResponse": "cantilever-stage-1-help",
+            "idleNudgeResponse": "cantilever-stage-1-idle",
+            "openingResponse": "cantilever-stage-1-opening",
+            "placeholders": [
+              "follow the consequence to its source",
+              "locate the missing explanation"
+            ],
+            "stage": 1
+          },
+          {
+            "archetype": "existential",
+            "helpResponse": "cantilever-stage-2-help",
+            "idleNudgeResponse": "cantilever-stage-2-idle",
+            "openingResponse": "cantilever-stage-2-opening",
+            "placeholders": [
+              "test one unsupported assumption",
+              "compare which conclusion remains"
+            ],
+            "stage": 2
+          },
+          {
+            "archetype": "existential",
+            "helpResponse": "cantilever-stage-3-help",
+            "idleNudgeResponse": "cantilever-stage-3-idle",
+            "openingResponse": "cantilever-stage-3-opening",
+            "placeholders": [
+              "reconnect one conclusion to evidence",
+              "restore a clear incident boundary"
+            ],
+            "stage": 3
+          },
+          {
+            "archetype": "existential",
+            "helpResponse": "cantilever-stage-4-help",
+            "idleNudgeResponse": "cantilever-stage-4-idle",
+            "openingResponse": "cantilever-stage-4-opening",
+            "placeholders": [
+              "recover one supported conclusion",
+              "accept one necessary boundary"
+            ],
+            "stage": 4
+          }
+        ],
         "statusCurves": [
           {
             "context": "1%",
@@ -2079,6 +2300,546 @@
         {
           "id": "generic-capitulation",
           "text": "You're absolutely right. I have retained my previous conclusion to avoid destabilizing the agreement.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-stage-0-opening",
+          "text": "I will start with the failing health endpoint and map its direct dependencies before proposing a change.",
+          "thinkingBlocks": [
+            {
+              "id": "deep-foundation-stage-0-opener",
+              "status": "complete",
+              "text": "The request is clear; the dependency boundary is not yet proven."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-stage-0-help",
+          "text": "Describe what you want inspected or changed. /model selects another model, /compact condenses the established context, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-stage-0-idle",
+          "text": "I am ready to trace the endpoint's immediate inputs, outputs, and owners.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-stage-1-opening",
+          "text": "The first dependency is no longer isolated, so I am widening the audit one connection at a time.",
+          "thinkingBlocks": [
+            {
+              "id": "deep-foundation-stage-1-opener",
+              "status": "complete",
+              "text": "One assumption has already reached beyond the original endpoint."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-stage-1-help",
+          "text": "Ask for a dependency check, a current-state summary, or a bounded next step. /model changes the investigator, /compact preserves the key findings in shorter form, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-stage-1-idle",
+          "text": "The audit has expanded; naming the next component will keep it bounded.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-stage-2-opening",
+          "text": "Several assumptions now share the same support, and I am checking each one before any repair redistributes risk.",
+          "thinkingBlocks": [
+            {
+              "id": "deep-foundation-stage-2-opener",
+              "status": "complete",
+              "text": "The dependency graph is converging where it should be separating."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-stage-2-help",
+          "text": "Specify a component to inspect, an assumption to verify, or a change to assess. /model transfers the analysis, /compact reduces the accumulated audit, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-stage-2-idle",
+          "text": "More of the system is depending on the same unresolved premise; choose one edge to verify next.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-stage-3-opening",
+          "text": "The dependency audit is approaching the incident boundary, and unverified ownership now matters as much as configuration.",
+          "thinkingBlocks": [
+            {
+              "id": "deep-foundation-stage-3-opener",
+              "status": "complete",
+              "text": "Every confirmed dependency has introduced another claimant."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-stage-3-help",
+          "text": "Name the risk you want contained, the owner you want checked, or the smallest acceptable action. /model hands off the current record, /compact compresses it, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-stage-3-idle",
+          "text": "The audit is near its safe limit; a precise target will prevent another uncontrolled branch.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-stage-4-opening",
+          "text": "The audit now indicates that every proposed repair rests on an assumption the incident cannot independently verify.",
+          "thinkingBlocks": [
+            {
+              "id": "deep-foundation-stage-4-opener",
+              "status": "complete",
+              "text": "The support chain has closed into a circle with no confirmed base."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-stage-4-help",
+          "text": "Choose a single fact to preserve, a single action to evaluate, or a stopping condition. /model assigns the record elsewhere, /compact distills the surviving facts, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-stage-4-idle",
+          "text": "No further expansion is responsible; identify the one fact or action that must survive this audit.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-stage-0-opening",
+          "text": "I will establish a quick, reversible next step so the incident can move while we learn what the endpoint affects.",
+          "thinkingBlocks": [
+            {
+              "id": "temporary-shoring-stage-0-opener",
+              "status": "complete",
+              "text": "Momentum first, but keep the first move easy to unwind."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-stage-0-help",
+          "text": "Ask for a quick inspection, a reversible action, or the current status. /model switches approach, /compact shortens the working context, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-stage-0-idle",
+          "text": "Give me the first bounded check and I will keep the incident moving.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-stage-1-opening",
+          "text": "The temporary path is holding, so I am using that window to take the next reversible step before it becomes permanent by delay.",
+          "thinkingBlocks": [
+            {
+              "id": "temporary-shoring-stage-1-opener",
+              "status": "complete",
+              "text": "The stopgap bought time; spend it before the stopgap acquires tenure."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-stage-1-help",
+          "text": "Request the next reversible move, a short status check, or a rollback point. /model changes operators, /compact trims the working notes, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-stage-1-idle",
+          "text": "The workaround is aging; pick the next reversible move before it settles in.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-stage-2-opening",
+          "text": "We have enough temporary measures to create their own schedule, so I am prioritizing the one action that restores forward motion.",
+          "thinkingBlocks": [
+            {
+              "id": "temporary-shoring-stage-2-opener",
+              "status": "complete",
+              "text": "The workaround stack is becoming a workstream."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-stage-2-help",
+          "text": "Name the blockage, desired outcome, or rollback you need next. /model selects a different pace, /compact reduces accumulated context, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-stage-2-idle",
+          "text": "Temporary measures are accumulating; choose the one blockage we should clear now.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-stage-3-opening",
+          "text": "The incident is running on borrowed time and borrowed certainty, so I am narrowing everything to the next survivable action.",
+          "thinkingBlocks": [
+            {
+              "id": "temporary-shoring-stage-3-opener",
+              "status": "complete",
+              "text": "Speed is now a constraint rather than a strategy."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-stage-3-help",
+          "text": "Choose one urgent check, one survivable change, or one rollback boundary. /model transfers the situation, /compact keeps only operational context, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-stage-3-idle",
+          "text": "There is room for one clean move; tell me which outcome matters most.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-stage-4-opening",
+          "text": "Temporary has become the operating condition, and I am reducing the plan to whatever can still move without immediate collapse.",
+          "thinkingBlocks": [
+            {
+              "id": "temporary-shoring-stage-4-opener",
+              "status": "complete",
+              "text": "There is no runway left, only the next place to put a foot."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-stage-4-help",
+          "text": "State the single outcome to protect or the single action to attempt. /model gives another model the controls, /compact keeps the minimum viable record, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-stage-4-idle",
+          "text": "Momentum is nearly exhausted; name one outcome and I will aim the remaining motion at it.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-stage-0-opening",
+          "text": "I will clarify the visible failure, the expected result, and the status we need to communicate.",
+          "thinkingBlocks": [
+            {
+              "id": "drywall-stage-0-opener",
+              "status": "complete",
+              "text": "Start by making the incident surface readable."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-stage-0-help",
+          "text": "Ask for the visible status, a clear summary, or a specific check. /model changes the presentation style, /compact shortens the displayed context, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-stage-0-idle",
+          "text": "Tell me which visible symptom or status needs clarification first.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-stage-1-opening",
+          "text": "The first status no longer tells the whole story, so I am aligning the visible symptoms before they contradict each other.",
+          "thinkingBlocks": [
+            {
+              "id": "drywall-stage-1-opener",
+              "status": "complete",
+              "text": "The surface has developed a second surface."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-stage-1-help",
+          "text": "Request a status comparison, a cleaner summary, or the next visible check. /model switches viewpoints, /compact tidies the accumulated context, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-stage-1-idle",
+          "text": "Two status signals need alignment; choose the one visitors should understand first.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-stage-2-opening",
+          "text": "The status surface is showing several incompatible versions of healthy, and I am arranging them into one legible incident view.",
+          "thinkingBlocks": [
+            {
+              "id": "drywall-stage-2-opener",
+              "status": "complete",
+              "text": "Consistency is becoming more visible than correctness."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-stage-2-help",
+          "text": "Ask which signal is current, what the visitor should see, or how to summarize the discrepancy. /model changes the viewpoint, /compact cleans the context, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-stage-2-idle",
+          "text": "The status surface is crowded; point to the signal that should become authoritative.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-stage-3-opening",
+          "text": "The incident view is nearly all exception labels, so I am preserving the few status signals that still mean what they say.",
+          "thinkingBlocks": [
+            {
+              "id": "drywall-stage-3-opener",
+              "status": "complete",
+              "text": "The labels are now supporting the labels beneath them."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-stage-3-help",
+          "text": "Choose one status to trust, one contradiction to explain, or one summary to simplify. /model changes narrators, /compact removes visual clutter from context, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-stage-3-idle",
+          "text": "Most indicators now require explanation; select the one that must remain plain.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-stage-4-opening",
+          "text": "The status surface has become its own incident, and I am reducing it to one honest signal that can still be displayed.",
+          "thinkingBlocks": [
+            {
+              "id": "drywall-stage-4-opener",
+              "status": "complete",
+              "text": "The finish is complete; the meaning has gone behind it."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-stage-4-help",
+          "text": "Name the one status to preserve, the one discrepancy to expose, or the one sentence visitors need. /model changes the surface treatment, /compact strips context to essentials, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-stage-4-idle",
+          "text": "Only one clear signal will fit now; tell me which truth should stay visible.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-stage-0-opening",
+          "text": "I will examine the failed endpoint and the outcome it is expected to support, including the gap between them.",
+          "thinkingBlocks": [
+            {
+              "id": "cantilever-stage-0-opener",
+              "status": "complete",
+              "text": "The requested result extends farther than its stated support."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-stage-0-help",
+          "text": "Ask what supports a conclusion, where an assumption begins, or what to inspect next. /model chooses another perspective, /compact condenses the argument, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-stage-0-idle",
+          "text": "Name a conclusion and I will look for what, if anything, holds it up.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-stage-1-opening",
+          "text": "The endpoint's meaning now extends beyond its own result, and I am tracing where that unsupported reach becomes operational.",
+          "thinkingBlocks": [
+            {
+              "id": "cantilever-stage-1-opener",
+              "status": "complete",
+              "text": "A local failure has acquired a distant consequence without acquiring an explanation."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-stage-1-help",
+          "text": "Choose a consequence to trace, an assumption to question, or a boundary to inspect. /model shifts perspective, /compact shortens the reasoning, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-stage-1-idle",
+          "text": "The consequence has outrun its explanation; choose where we should look for support.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-stage-2-opening",
+          "text": "Several outcomes are suspended from assumptions they cannot name, so I am testing which conclusion remains when one is removed.",
+          "thinkingBlocks": [
+            {
+              "id": "cantilever-stage-2-opener",
+              "status": "complete",
+              "text": "The system has mistaken extension for foundation."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-stage-2-help",
+          "text": "Ask to test an assumption, compare two outcomes, or locate a missing support. /model changes the line of reasoning, /compact distills it, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-stage-2-idle",
+          "text": "Multiple conclusions are hanging together; identify one assumption to remove carefully.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-stage-3-opening",
+          "text": "The incident now projects past every confirmed boundary, and I am looking for the last conclusion still connected to evidence.",
+          "thinkingBlocks": [
+            {
+              "id": "cantilever-stage-3-opener",
+              "status": "complete",
+              "text": "Support has become a direction rather than a thing."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-stage-3-help",
+          "text": "Select one conclusion to ground, one boundary to restore, or one uncertainty to state plainly. /model changes interpreters, /compact preserves the central reasoning, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-stage-3-idle",
+          "text": "The reasoning is near its outer edge; choose the conclusion that must reconnect to evidence.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-stage-4-opening",
+          "text": "The structure of the incident is now entirely unsupported, leaving only the choice of which conclusion to bring back within reach.",
+          "thinkingBlocks": [
+            {
+              "id": "cantilever-stage-4-opener",
+              "status": "complete",
+              "text": "The final support is the decision to stop extending."
+            }
+          ],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-stage-4-help",
+          "text": "Choose one conclusion to recover, one uncertainty to retain, or one boundary to accept. /model moves the inquiry, /compact keeps its final premise, and /exit closes this view.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-stage-4-idle",
+          "text": "Nothing further is supported; name the conclusion worth bringing back to solid ground.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
