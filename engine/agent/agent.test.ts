@@ -94,10 +94,33 @@ function activityCartridge() {
   source["presentation"] = {
     placeholders: [{ stage: 0, text: "inspect" }],
     spinnerPools: [
-      { archetype: "paranoid", stage: 0, verbs: ["Deep zero", "Deep again"] },
-      { archetype: "paranoid", stage: 1, verbs: ["Deep one"] },
-      { archetype: "reckless", stage: 0, verbs: ["Quick zero"] },
-      { archetype: "reckless", stage: 1, verbs: ["Quick one"] },
+      {
+        archetype: "paranoid",
+        stage: 0,
+        verbs: [
+          { verb: "Deep zero", weight: 3 },
+          { verb: "Deep again", weight: 1 },
+        ],
+        suffix: "{seconds}s · {tokens} tokens",
+      },
+      {
+        archetype: "paranoid",
+        stage: 1,
+        verbs: [{ verb: "Deep one", weight: 1 }],
+        suffix: "{seconds}s · {tokens} tokens",
+      },
+      {
+        archetype: "reckless",
+        stage: 0,
+        verbs: [{ verb: "Quick zero", weight: 1 }],
+        suffix: "{seconds}s · {tokens} tokens",
+      },
+      {
+        archetype: "reckless",
+        stage: 1,
+        verbs: [{ verb: "Quick one", weight: 1 }],
+        suffix: "{seconds}s · {tokens} tokens",
+      },
     ],
     metrics: {
       baseTokens: 0,
@@ -493,7 +516,11 @@ describe("agent replay state", () => {
       toolCalls: [],
       thinkingBlocks: [],
       todos: [],
-      activity: { status: "idle" as const, verb: "" as const },
+      activity: {
+        status: "idle" as const,
+        verb: "" as const,
+        suffix: "" as const,
+      },
       responses: [],
     };
     expect(validateAgentSlice(slice, "snapshot.agent")).toBe(slice);
@@ -580,10 +607,12 @@ describe("agent replay state", () => {
     expect(readAgentSlice(deep).activity).toEqual({
       status: "working",
       verb: "Deep one",
+      suffix: "{seconds}s · {tokens} tokens",
     });
     expect(readAgentSlice(quick).activity).toEqual({
       status: "working",
       verb: "Quick one",
+      suffix: "{seconds}s · {tokens} tokens",
     });
     expect(deep.transcript.at(-1)?.summary).toContain('verb="Deep one"');
   });
@@ -612,13 +641,20 @@ describe("agent replay state", () => {
       "deep-foundation",
     ).fork("spinner.verbs");
     const expectedDeep = [
-      deepSpinner.pick(deepVerbs),
-      deepSpinner.pick(deepVerbs),
+      deepSpinner.weightedPick([
+        { value: deepVerbs[0] ?? "", weight: 3 },
+        { value: deepVerbs[1] ?? "", weight: 1 },
+      ]),
+      deepSpinner.weightedPick([
+        { value: deepVerbs[0] ?? "", weight: 3 },
+        { value: deepVerbs[1] ?? "", weight: 1 },
+      ]),
     ];
 
     expect(readAgentSlice(state).activity).toEqual({
       status: "working",
       verb: expectedDeep[1],
+      suffix: "{seconds}s · {tokens} tokens",
     });
     expect(Object.keys(state.random.cursors)).toContain(
       "root/agent/models/deep-foundation/spinner.verbs",
@@ -630,7 +666,7 @@ describe("agent replay state", () => {
     expect(restoreSnapshot(snapshot(state))).toEqual(state);
   });
 
-  it("does not draw for idle activity and uses baseline activity until T40 authors the stage pool", () => {
+  it("does not draw for idle activity and uses baseline activity until a stage pool is authored", () => {
     const custom = activityCartridge();
     const idle = reduce({
       cartridge: custom,
@@ -638,7 +674,11 @@ describe("agent replay state", () => {
       events: [createAgentActivityEvent({ status: "idle" })],
     });
 
-    expect(readAgentSlice(idle).activity).toEqual({ status: "idle", verb: "" });
+    expect(readAgentSlice(idle).activity).toEqual({
+      status: "idle",
+      verb: "",
+      suffix: "",
+    });
     expect(Object.keys(idle.random.cursors)).not.toContain(
       "root/agent/models/deep-foundation/spinner.verbs",
     );

@@ -81,7 +81,12 @@ describe("the slash command registry", () => {
     secondModel["archetype"] = "reckless";
     const presentation = source["presentation"] as Record<string, unknown>;
     const spinnerPools = presentation["spinnerPools"] as unknown[];
-    spinnerPools.push({ archetype: "reckless", stage: 0, verbs: ["Assuming"] });
+    spinnerPools.push({
+      archetype: "reckless",
+      stage: 0,
+      verbs: [{ verb: "Assuming", weight: 1 }],
+      suffix: "{seconds}s · {tokens} tokens",
+    });
     const story = source["story"] as Record<string, unknown>;
     story["responses"] = [
       ...(story["responses"] as unknown[]),

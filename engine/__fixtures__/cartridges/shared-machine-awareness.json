@@ -113,7 +113,12 @@
   "presentation": {
     "placeholders": [{ "stage": 0, "text": "inspect the keystone" }],
     "spinnerPools": [
-      { "archetype": "paranoid", "stage": 0, "verbs": ["Surveying"] }
+      {
+        "archetype": "paranoid",
+        "stage": 0,
+        "verbs": [{ "verb": "Surveying", "weight": 1 }],
+        "suffix": "{seconds}s · {tokens} tokens"
+      }
     ],
     "metrics": {
       "baseTokens": 0,

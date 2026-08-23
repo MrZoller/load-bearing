@@ -117,10 +117,10 @@ describe("the published schema", () => {
     );
   });
 
-  it("requires non-empty spinner verbs in both descriptor and published contracts", () => {
+  it("requires positive weighted spinner verbs in both descriptor and published contracts", () => {
     const descriptor =
       CARTRIDGE_SCHEMA.fields.presentation.node.fields.spinnerPools.node.items
-        .fields.verbs.node.items;
+        .fields.verbs.node.items.fields;
     const emitted = emitJsonSchema()["properties"] as Record<string, unknown>;
     const presentation = emitted["presentation"] as Record<string, unknown>;
     const presentationProperties = presentation["properties"] as Record<
@@ -134,7 +134,11 @@ describe("the published schema", () => {
     const pool = pools["items"] as Record<string, unknown>;
     const poolProperties = pool["properties"] as Record<string, unknown>;
     const verbs = poolProperties["verbs"] as Record<string, unknown>;
-    const emittedVerb = verbs["items"] as Record<string, unknown>;
+    const emittedEntry = verbs["items"] as Record<string, unknown>;
+    const emittedEntryProperties = emittedEntry["properties"] as Record<
+      string,
+      unknown
+    >;
     const published = JSON.parse(readFileSync(PUBLISHED, "utf8")) as Record<
       string,
       unknown
@@ -149,13 +153,27 @@ describe("the published schema", () => {
     const publishedVerbs = (
       publishedPool["properties"] as Record<string, unknown>
     )["verbs"] as Record<string, unknown>;
+    const publishedEntry = publishedVerbs["items"] as Record<string, unknown>;
+    const publishedEntryProperties = publishedEntry["properties"] as Record<
+      string,
+      unknown
+    >;
 
-    expect(descriptor).toMatchObject({ minLength: 1, maxLength: 240 });
-    expect(emittedVerb).toMatchObject({ minLength: 1, maxLength: 240 });
-    expect(publishedVerbs["items"]).toMatchObject({
+    expect(descriptor.verb.node).toMatchObject({
       minLength: 1,
       maxLength: 240,
     });
+    expect(descriptor.weight.node).toMatchObject({ minimum: 1 });
+    expect(emittedEntryProperties["verb"]).toMatchObject({
+      minLength: 1,
+      maxLength: 240,
+    });
+    expect(emittedEntryProperties["weight"]).toMatchObject({ minimum: 1 });
+    expect(publishedEntryProperties["verb"]).toMatchObject({
+      minLength: 1,
+      maxLength: 240,
+    });
+    expect(publishedEntryProperties["weight"]).toMatchObject({ minimum: 1 });
   });
 
   it("keeps Git email Unicode semantics aligned with the loader", () => {
@@ -635,8 +653,16 @@ describe("descriptor and type lockstep", () => {
     agrees<CartridgeSpinnerPool["stage"]>(
       presentation.fields.spinnerPools.node.items.fields.stage.node,
     );
-    agrees<CartridgeSpinnerPool["verbs"][number]>(
-      presentation.fields.spinnerPools.node.items.fields.verbs.node.items,
+    agrees<CartridgeSpinnerPool["verbs"][number]["verb"]>(
+      presentation.fields.spinnerPools.node.items.fields.verbs.node.items.fields
+        .verb.node,
+    );
+    agrees<CartridgeSpinnerPool["verbs"][number]["weight"]>(
+      presentation.fields.spinnerPools.node.items.fields.verbs.node.items.fields
+        .weight.node,
+    );
+    agrees<CartridgeSpinnerPool["suffix"]>(
+      presentation.fields.spinnerPools.node.items.fields.suffix.node,
     );
     const metrics = presentation.fields.metrics.node;
     agrees<CartridgeMetricParameters["baseTokens"]>(

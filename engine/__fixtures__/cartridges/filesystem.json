@@ -91,7 +91,12 @@
   "presentation": {
     "placeholders": [{ "stage": 0, "text": "inspect" }],
     "spinnerPools": [
-      { "archetype": "paranoid", "stage": 0, "verbs": ["Inspecting"] }
+      {
+        "archetype": "paranoid",
+        "stage": 0,
+        "verbs": [{ "verb": "Inspecting", "weight": 1 }],
+        "suffix": "{seconds}s · {tokens} tokens"
+      }
     ],
     "metrics": {
       "baseTokens": 0,

@@ -43,6 +43,7 @@
         "tokensPerEvent": 1
       },
       "phase2": {
+        "stagePresentations": [],
         "statusCurves": []
       },
       "placeholders": [
@@ -55,15 +56,23 @@
         {
           "archetype": "paranoid",
           "stage": 0,
+          "suffix": "{seconds}s · {tokens} tokens",
           "verbs": [
-            "Checking"
+            {
+              "verb": "Checking",
+              "weight": 1
+            }
           ]
         },
         {
           "archetype": "reckless",
           "stage": 0,
+          "suffix": "{seconds}s · {tokens} tokens",
           "verbs": [
-            "Assuming"
+            {
+              "verb": "Assuming",
+              "weight": 1
+            }
           ]
         }
       ]
@@ -220,6 +229,7 @@
     "agent": {
       "activity": {
         "status": "idle",
+        "suffix": "",
         "verb": ""
       },
       "messages": [

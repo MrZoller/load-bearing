@@ -48,7 +48,14 @@ const CARTRIDGE: LoadedCartridge = loadCartridge({
   ],
   presentation: {
     placeholders: [{ stage: 0, text: "inspect" }],
-    spinnerPools: [{ archetype: "paranoid", stage: 0, verbs: ["Inspecting"] }],
+    spinnerPools: [
+      {
+        archetype: "paranoid",
+        stage: 0,
+        verbs: [{ verb: "Inspecting", weight: 1 }],
+        suffix: "{seconds}s · {tokens} tokens",
+      },
+    ],
     metrics: {
       baseTokens: 0,
       tokensPerEvent: 1,

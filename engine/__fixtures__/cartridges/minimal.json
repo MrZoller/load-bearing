@@ -123,8 +123,18 @@
   "presentation": {
     "placeholders": [{ "stage": 0, "text": "inspect" }],
     "spinnerPools": [
-      { "archetype": "paranoid", "stage": 0, "verbs": ["Inspecting"] },
-      { "archetype": "reckless", "stage": 0, "verbs": ["Assuming"] }
+      {
+        "archetype": "paranoid",
+        "stage": 0,
+        "verbs": [{ "verb": "Inspecting", "weight": 4 }],
+        "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt"
+      },
+      {
+        "archetype": "reckless",
+        "stage": 0,
+        "verbs": [{ "verb": "Assuming", "weight": 4 }],
+        "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt"
+      }
     ],
     "metrics": {
       "baseTokens": 0,

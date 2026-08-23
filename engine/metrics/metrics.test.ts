@@ -27,8 +27,18 @@ function cartridgeWithMetrics(
   document["presentation"] = {
     placeholders: [{ stage: 0, text: "Enter a request" }],
     spinnerPools: [
-      { archetype: "paranoid", stage: 0, verbs: ["Working"] },
-      { archetype: "reckless", stage: 0, verbs: ["Working"] },
+      {
+        archetype: "paranoid",
+        stage: 0,
+        verbs: [{ verb: "Working", weight: 1 }],
+        suffix: "{seconds}s · {tokens} tokens",
+      },
+      {
+        archetype: "reckless",
+        stage: 0,
+        verbs: [{ verb: "Working", weight: 1 }],
+        suffix: "{seconds}s · {tokens} tokens",
+      },
     ],
     metrics,
     phase2: {

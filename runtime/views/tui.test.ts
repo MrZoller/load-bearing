@@ -85,7 +85,12 @@ describe("createModelHandoffEvents", () => {
       string,
       unknown
     >[];
-    spinnerPools.push({ archetype: "reckless", stage: 0, verbs: ["Rushing"] });
+    spinnerPools.push({
+      archetype: "reckless",
+      stage: 0,
+      verbs: [{ verb: "Rushing", weight: 1 }],
+      suffix: "{seconds}s · {tokens} tokens",
+    });
     const story = document["story"] as Record<string, unknown>;
     const responses = story["responses"] as Record<string, unknown>[];
     responses.push(

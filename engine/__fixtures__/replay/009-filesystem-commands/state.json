@@ -35,6 +35,7 @@
         "tokensPerEvent": 1
       },
       "phase2": {
+        "stagePresentations": [],
         "statusCurves": [
           {
             "context": "0%",
@@ -93,8 +94,12 @@
         {
           "archetype": "paranoid",
           "stage": 0,
+          "suffix": "{seconds}s · {tokens} tokens",
           "verbs": [
-            "Inspecting"
+            {
+              "verb": "Inspecting",
+              "weight": 1
+            }
           ]
         }
       ]
@@ -278,6 +283,7 @@
     "agent": {
       "activity": {
         "status": "idle",
+        "suffix": "",
         "verb": ""
       },
       "messages": [],

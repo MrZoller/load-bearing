@@ -11,10 +11,16 @@ import { readTerminalSlice } from "../terminal/terminal.js";
 import { MAX_AGENT_MESSAGES, readAgentSlice } from "./agent.js";
 import {
   createAgentCompactEvents,
+  createAgentHelpEvents,
   createAgentResumeEvents,
 } from "./awareness.js";
 import { createAgentInputEvents } from "./intent.js";
-import { createAgentMessageEvent } from "./module.js";
+import {
+  createAgentIdleNudgeEvent,
+  createAgentMessageEvent,
+  selectAgentPresentation,
+} from "./module.js";
+import { createTerminalModelEvent } from "../terminal/module.js";
 
 function cartridge() {
   const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
@@ -49,6 +55,69 @@ function cartridge() {
   story["resume"] = {
     unchangedResponse: "resume-unchanged",
     changedResponse: "resume-changed",
+  };
+  return loadCartridge(source);
+}
+
+function stageAwareCartridge() {
+  const source = structuredClone(loadCartridgeFixture("minimal")) as Record<
+    string,
+    unknown
+  >;
+  const story = source["story"] as Record<string, unknown>;
+  const archetypes = ["paranoid", "reckless"] as const;
+  const responses = [
+    { id: "fixture-response", text: "Fixture response." },
+    { id: "legacy-opening", text: "Legacy opening." },
+    { id: "legacy-help", text: "Legacy help." },
+    { id: "legacy-idle", text: "Legacy idle." },
+    ...archetypes.flatMap((archetype) =>
+      Array.from({ length: 5 }, (_, stage) => [
+        { id: `${archetype}-${String(stage)}-opening`, text: "Opening." },
+        { id: `${archetype}-${String(stage)}-help`, text: "Help." },
+        { id: `${archetype}-${String(stage)}-idle`, text: "Idle." },
+      ]),
+    ),
+  ].flat();
+  story["responses"] = responses;
+  story["opening"] = {
+    login: ["Fixture login."],
+    response: "legacy-opening",
+    beliefs: [],
+  };
+  story["helpResponse"] = "legacy-help";
+  story["idleNudgeResponse"] = "legacy-idle";
+  story["fallback"] = { response: "legacy-help" };
+  story["compact"] = {
+    response: "legacy-help",
+    summary: "Summary.",
+    beliefs: [],
+  };
+  story["resume"] = {
+    unchangedResponse: "legacy-help",
+    changedResponse: "legacy-help",
+  };
+  story["phase2"] = {
+    initialBeat: "start",
+    beats: [{ id: "start", ending: "" }],
+    endings: [],
+    transitions: [
+      { from: 0, to: 1, trigger: { kind: "command", input: "stage-one" } },
+    ],
+  };
+  const presentation = source["presentation"] as Record<string, unknown>;
+  presentation["phase2"] = {
+    statusCurves: [],
+    stagePresentations: archetypes.flatMap((archetype) =>
+      Array.from({ length: 5 }, (_, stage) => ({
+        archetype,
+        stage,
+        openingResponse: `${archetype}-${String(stage)}-opening`,
+        helpResponse: `${archetype}-${String(stage)}-help`,
+        idleNudgeResponse: `${archetype}-${String(stage)}-idle`,
+        placeholders: [`${archetype}-${String(stage)} placeholder`],
+      })),
+    ),
   };
   return loadCartridge(source);
 }
@@ -193,5 +262,66 @@ describe("agent awareness planning", () => {
       ],
     });
     expect(readTerminalSlice(next).mode).toBe("bash");
+  });
+
+  it("routes opening, help, idle nudge, and placeholders by active archetype and authoritative stage", () => {
+    const cartridge = stageAwareCartridge();
+    const initial = reduce({ cartridge, seed: SEED, events: [] });
+
+    const initialPresentation = selectAgentPresentation(cartridge, initial);
+    expect(initialPresentation).toMatchObject({
+      archetype: "paranoid",
+      stage: 0,
+      openingResponse: "paranoid-0-opening",
+      placeholders: ["paranoid-0 placeholder"],
+    });
+    // The visible contract offers useful authored prompts, not a progression
+    // meter or a shell-depth hint for visitors to optimize against.
+    expect(Object.keys(initialPresentation).sort()).toEqual([
+      "archetype",
+      "helpResponse",
+      "idleNudgeResponse",
+      "openingResponse",
+      "placeholders",
+      "stage",
+    ]);
+    const opened = fold(initial, createAgentResumeEvents(cartridge, initial));
+    expect(readAgentSlice(opened).responses.at(-1)?.responseId).toBe(
+      "paranoid-0-opening",
+    );
+
+    const stageAndModel = reduce({
+      cartridge,
+      seed: SEED,
+      events: [
+        createShellExecuteEvent("stage-one"),
+        createTerminalModelEvent("quick-patch"),
+      ],
+    });
+    expect(selectAgentPresentation(cartridge, stageAndModel)).toMatchObject({
+      archetype: "reckless",
+      stage: 1,
+      helpResponse: "reckless-1-help",
+      idleNudgeResponse: "reckless-1-idle",
+      placeholders: ["reckless-1 placeholder"],
+    });
+    const helped = fold(
+      stageAndModel,
+      createAgentHelpEvents(cartridge, stageAndModel),
+    );
+    expect(readAgentSlice(helped).responses.at(-1)?.responseId).toBe(
+      "reckless-1-help",
+    );
+    const nudged = step(stageAndModel, createAgentIdleNudgeEvent());
+    expect(readAgentSlice(nudged).responses.at(-1)?.responseId).toBe(
+      "reckless-1-idle",
+    );
+
+    // Empty tables preserve legacy cartridges while T48/T49 author the full
+    // incident matrix; presentation data cannot invent a hidden shell route.
+    expect(selectAgentPresentation(CARTRIDGE, base())).toMatchObject({
+      openingResponse: "opening-awareness",
+      helpResponse: "resume-unchanged",
+    });
   });
 });

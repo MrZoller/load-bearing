@@ -45,7 +45,12 @@ function cartridge() {
     "reckless",
     "superficial",
     "existential",
-  ].map((archetype) => ({ archetype, stage: 0, verbs: ["Checking"] }));
+  ].map((archetype) => ({
+    archetype,
+    stage: 0,
+    verbs: [{ verb: "Checking", weight: 1 }],
+    suffix: "{seconds}s · {tokens} tokens",
+  }));
   presentation["phase2"] = {
     statusCurves: [
       "deep-foundation",

@@ -45,6 +45,7 @@
         "tokensPerEvent": 1
       },
       "phase2": {
+        "stagePresentations": [],
         "statusCurves": [
           {
             "context": "0%",
@@ -148,15 +149,23 @@
         {
           "archetype": "paranoid",
           "stage": 0,
+          "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt",
           "verbs": [
-            "Inspecting"
+            {
+              "verb": "Inspecting",
+              "weight": 4
+            }
           ]
         },
         {
           "archetype": "reckless",
           "stage": 0,
+          "suffix": "{seconds}s · {tokens} tokens · Esc to interrupt",
           "verbs": [
-            "Assuming"
+            {
+              "verb": "Assuming",
+              "weight": 4
+            }
           ]
         }
       ]
@@ -347,6 +356,7 @@
     "agent": {
       "activity": {
         "status": "idle",
+        "suffix": "",
         "verb": ""
       },
       "messages": [],
