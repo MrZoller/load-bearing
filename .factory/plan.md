@@ -37,7 +37,7 @@ authoring tooling remain excluded.
   - acceptance: `engine/mind/{types,mind,module,mind.test}.ts`, `engine/story/actions.ts`, `engine/agent/intent.ts`, `runtime/views/tui.ts`, and `runtime/components/permission.ts` support validated grant, deny, and standing-allow continuations that publish atomically with the exact permission decision; a separate typed-waiver path creates authored `WAIVER.md`, accepts only raw input exactly equal to `I agree`, records waiver id/version, phrase, simulated time, and gated capability as its own ledger fact, and executes no gated action before consent; alternate text/denial cannot grant consent and unit/golden/browser tests prove exact later document/time queries (criteria 11, 12, 20; approved decision Q1=A)
   - deps: T33
   - pr: 59
-- [R] T35 (standard) — Event-driven escalation and reactive status
+- [x] T35 (standard) — Event-driven escalation and reactive status
   - acceptance: `engine/story/{conditions,story,module,story.test}.ts`, `engine/metrics/{types,metrics,metrics.test}.ts`, `engine/agent/intent.ts`, `runtime/app.ts`, and `runtime/components/status.ts` advance stages 0–4 only through validated command/reveal/model/permission/compact conditions, feed authoritative stage to activity/presentation, and project cartridge-authored status curves that vary by active model and stage, including the Not-Okay Ratio and impossible stage-4 values; waiting, animation frames, reduced motion, and browser timing cannot advance stage or select content, and tests cover every model/stage projection (criteria 8, 9, 20)
   - deps: T32
   - pr: 60
@@ -148,3 +148,4 @@ authoring tooling remain excluded.
   - PR #59: Avoid replaying a failed envelope reaction while staging an expansion fallback; Codex thread `discussion_r3837695311` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #59: Preserve a waiver-start failure across authored trailing actions; Codex thread `discussion_r3837731579` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #59: Preflight capacity for a substituted waiver-start fallback response; Codex thread `discussion_r3837731583` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #60: Add a stage-0 placeholder fallback until T48 authors stage 0–4 placeholder pools; Codex thread `discussion_r3837900861` was verifier-classified minor and dispositioned without a minors-only push.
