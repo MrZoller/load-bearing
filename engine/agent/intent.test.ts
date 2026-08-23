@@ -277,7 +277,7 @@ describe("authored agent input", () => {
     });
     expect(readAgentSlice(state).messages.at(-1)).toMatchObject({
       role: "agent",
-      responseId: "fallback",
+      responseId: "deep-foundation-inspect-routing",
     });
   });
 
@@ -406,7 +406,9 @@ describe("authored agent input", () => {
         expect.objectContaining({ type: "agent.message-added" }),
         expect.objectContaining({
           type: "agent.response-recorded",
-          payload: expect.objectContaining({ responseId: "inspect-routing" }),
+          payload: expect.objectContaining({
+            responseId: "deep-foundation-inspect-routing",
+          }),
         }),
       ]),
     );
