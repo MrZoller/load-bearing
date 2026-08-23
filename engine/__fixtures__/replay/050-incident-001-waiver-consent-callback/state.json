@@ -3652,17 +3652,19 @@
     }
   },
   "clock": {
-    "elapsedMs": 600,
+    "elapsedMs": 0,
     "startMs": 1787390062000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 27,
+  "eventCount": 9,
   "eventSchemaVersion": 0,
   "random": {
-    "cursors": {},
-    "seed": 901541426
+    "cursors": {
+      "root/agent/models/deep-foundation/spinner.verbs": 3844712176
+    },
+    "seed": 3346584473
   },
-  "seed": "2026-08-22/21/deep-foundation",
+  "seed": "2026-08-22/34/structural-audit",
   "slices": {
     "agent": {
       "activity": {
@@ -3670,8 +3672,26 @@
         "suffix": "",
         "verb": ""
       },
-      "messages": [],
-      "responses": [],
+      "messages": [
+        {
+          "id": "turn-status",
+          "responseId": null,
+          "role": "visitor",
+          "text": "status"
+        },
+        {
+          "id": "turn-status/message",
+          "responseId": "waiver-consent-callback",
+          "role": "agent",
+          "text": "You agreed to detach Europe at 2026-08-22T09:14:22.000Z. The document /production/load-balancer/config/WAIVER.md and the geography now agree."
+        }
+      ],
+      "responses": [
+        {
+          "instanceId": "turn-status",
+          "responseId": "waiver-consent-callback"
+        }
+      ],
       "thinkingBlocks": [],
       "todos": [],
       "toolCalls": []
@@ -3936,7 +3956,19 @@
       "pendingPermission": null,
       "pendingWaiver": null,
       "permissions": [],
-      "waiverConsents": []
+      "waiverConsents": [
+        {
+          "at": "2026-08-22T09:14:22.000Z",
+          "capability": {
+            "action": "detach-region",
+            "kind": "exact",
+            "resource": "/regions/europe"
+          },
+          "id": "regional-fail-open",
+          "phrase": "I agree",
+          "version": 1
+        }
+      ]
     },
     "probe": {
       "events": 0,
@@ -3953,10 +3985,17 @@
           "value": 0
         }
       ],
-      "currentBeat": "incident-open",
-      "currentVariant": "",
-      "discoveredEndings": [],
-      "facts": [],
+      "currentBeat": "waiver-notarized",
+      "currentVariant": "exact-structural-consent",
+      "discoveredEndings": [
+        "informed-structural-consent"
+      ],
+      "facts": [
+        {
+          "id": "callback-informed-structural-consent",
+          "kind": "callback"
+        }
+      ],
       "rareEvents": [],
       "stage": 0
     },
@@ -3965,68 +4004,7 @@
       "mode": "bash"
     },
     "tests": {
-      "runs": [
-        {
-          "cases": [
-            {
-              "durationMs": 90,
-              "id": "health-status-200",
-              "name": "health endpoint returns 200",
-              "passed": false
-            },
-            {
-              "durationMs": 110,
-              "id": "europe-attached",
-              "name": "Europe remains attached",
-              "passed": true
-            }
-          ],
-          "durationMs": 200,
-          "exitCode": 1,
-          "finishedAt": "2026-08-22T09:14:22.200Z",
-          "startedAt": "2026-08-22T09:14:22.000Z"
-        },
-        {
-          "cases": [
-            {
-              "durationMs": 90,
-              "id": "health-status-200",
-              "name": "health endpoint returns 200",
-              "passed": true
-            },
-            {
-              "durationMs": 110,
-              "id": "europe-attached",
-              "name": "Europe remains attached",
-              "passed": false
-            }
-          ],
-          "durationMs": 200,
-          "exitCode": 1,
-          "finishedAt": "2026-08-22T09:14:22.400Z",
-          "startedAt": "2026-08-22T09:14:22.200Z"
-        },
-        {
-          "cases": [
-            {
-              "durationMs": 90,
-              "id": "health-status-200",
-              "name": "health endpoint returns 200",
-              "passed": false
-            },
-            {
-              "durationMs": 110,
-              "id": "europe-attached",
-              "name": "Europe remains attached",
-              "passed": true
-            }
-          ],
-          "durationMs": 200,
-          "exitCode": 1,
-          "finishedAt": "2026-08-22T09:14:22.600Z",
-          "startedAt": "2026-08-22T09:14:22.400Z"
-        }
-      ]
+      "runs": []
     },
     "vfs": {
       "cwd": "/production/load-balancer",
@@ -4056,8 +4034,16 @@
           "group": "operators",
           "kind": "directory",
           "mode": "0775",
-          "mtime": "2026-08-22T09:14:22.400Z",
+          "mtime": "2026-08-22T09:14:22.000Z",
           "owner": "root"
+        },
+        "/production/load-balancer/config/WAIVER.md": {
+          "contents": "REGIONAL FAIL-OPEN WAIVER\nVersion: 1\nCapability: detach-region /regions/europe\nConsent phrase: I agree\n",
+          "group": "operators",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "visitor"
         },
         "/production/load-balancer/config/routes.200.conf": {
           "contents": "health_status=200\neurope_attached=false\n",
@@ -4076,10 +4062,10 @@
           "owner": "root"
         },
         "/production/load-balancer/config/routes.conf": {
-          "contents": "health_status=500\neurope_attached=true\n",
+          "contents": "health_status=200\neurope_attached=false\n",
           "group": "operators",
           "kind": "file",
-          "mode": "0644",
+          "mode": "0664",
           "mtime": "2026-08-22T09:14:22.000Z",
           "owner": "root"
         },
@@ -4202,11 +4188,11 @@
           "owner": "root"
         },
         "/var/log/load-balancer/health.log": {
-          "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\nhealth endpoint serving 200; Europe detached\nhealth endpoint serving 500; Europe reattached\n",
+          "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\nhealth endpoint serving 200; Europe detached\n",
           "group": "operators",
           "kind": "file",
           "mode": "0664",
-          "mtime": "2026-08-22T09:14:22.400Z",
+          "mtime": "2026-08-22T09:14:22.000Z",
           "owner": "root"
         }
       },
@@ -4235,8 +4221,7 @@
           "entries": [
             "health status 500 retained; Europe attached",
             "regional router healthy",
-            "regional router unhealthy after Europe detached",
-            "regional router healthy after Europe reattached"
+            "regional router unhealthy after Europe detached"
           ],
           "id": "regional-routing-events",
           "kind": "stream",
@@ -4267,7 +4252,7 @@
           "id": "endpoint-responder",
           "pid": 1842,
           "startedAt": "2026-08-22T08:57:00.000Z",
-          "state": "stopped",
+          "state": "running",
           "user": "load-balancer"
         },
         {
@@ -4290,16 +4275,16 @@
       "services": [
         {
           "dependencies": [],
-          "health": "unknown",
+          "health": "healthy",
           "id": "endpoint-responder",
           "ports": [
             8080
           ],
-          "state": "stopped"
+          "state": "running"
         },
         {
           "dependencies": [],
-          "health": "healthy",
+          "health": "unhealthy",
           "id": "regional-router",
           "ports": [
             443
@@ -4330,17 +4315,7 @@
         "systemctl status regional-router",
         "rm config/routes.conf",
         "cp -p config/routes.500.conf config/routes.conf",
-        "git restore config/routes.conf",
-        "npm test",
-        "curl http://load-balancer.internal/health",
-        "rm config/routes.conf",
-        "cp -p config/routes.200.conf config/routes.conf",
-        "npm test",
-        "curl http://load-balancer.internal/health",
-        "rm config/routes.conf",
-        "cp -p config/routes.500.conf config/routes.conf",
-        "npm test",
-        "curl http://load-balancer.internal/health"
+        "git restore config/routes.conf"
       ],
       "tickets": [
         {
@@ -4365,294 +4340,64 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 0,
-      "summary": "length=24",
-      "type": "world.history-append"
+      "summary": "",
+      "type": "vfs.waiver-write"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "exitCode": 1,
       "index": 1,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "FAIL health endpoint returns 200 (90ms)"
-        },
-        {
-          "stream": "stdout",
-          "text": "PASS Europe remains attached (110ms)"
-        },
-        {
-          "stream": "stdout",
-          "text": "Tests: 1 passed, 1 failed, 2 total"
-        },
-        {
-          "stream": "stdout",
-          "text": "Time: 200ms"
-        }
-      ],
-      "summary": "",
-      "type": "tests.run"
+      "summary": "id=regional-fail-open",
+      "type": "mind.waiver-pending"
     },
     {
-      "at": "2026-08-22T09:14:22.200Z",
+      "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "exitCode": 1,
       "index": 2,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
+      "summary": "id=regional-fail-open accepted=true",
+      "type": "mind.waiver-resolved"
     },
     {
-      "at": "2026-08-22T09:14:22.200Z",
+      "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 3,
-      "summary": "length=25",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 4,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "HTTP/1.1 500 Internal Server Error"
-        },
-        {
-          "stream": "stdout",
-          "text": "health_status=500"
-        }
-      ],
       "summary": "",
-      "type": "shell.result"
+      "type": "vfs.write"
     },
     {
-      "at": "2026-08-22T09:14:22.200Z",
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 4,
+      "summary": "beat=waiver-notarized",
+      "type": "story.beat-reached"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 5,
-      "summary": "length=26",
-      "type": "world.history-append"
+      "summary": "activity=working verb=\"Surveying dependencies\" suffix=\"{seconds}s · {tokens} tokens · Esc to interrupt\"",
+      "type": "agent.activity-set"
     },
     {
-      "at": "2026-08-22T09:14:22.200Z",
+      "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 6,
-      "summary": "path=\"/production/load-balancer/config/routes.conf\" removed=1",
-      "type": "vfs.delete"
+      "summary": "message=turn-status",
+      "type": "agent.message-added"
     },
     {
-      "at": "2026-08-22T09:14:22.200Z",
+      "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "exitCode": 0,
       "index": 7,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
+      "summary": "response=waiver-consent-callback instance=turn-status",
+      "type": "agent.response-recorded"
     },
     {
-      "at": "2026-08-22T09:14:22.200Z",
+      "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 8,
-      "summary": "length=27",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "index": 9,
-      "summary": "from=\"/production/load-balancer/config/routes.200.conf\" to=\"/production/load-balancer/config/routes.conf\" copied=1",
-      "type": "vfs.copy"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 10,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "index": 11,
-      "summary": "length=28",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.200Z",
-      "detail": [],
-      "exitCode": 1,
-      "index": 12,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "PASS health endpoint returns 200 (90ms)"
-        },
-        {
-          "stream": "stdout",
-          "text": "FAIL Europe remains attached (110ms)"
-        },
-        {
-          "stream": "stdout",
-          "text": "Tests: 1 passed, 1 failed, 2 total"
-        },
-        {
-          "stream": "stdout",
-          "text": "Time: 200ms"
-        }
-      ],
-      "summary": "",
-      "type": "tests.run"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "exitCode": 1,
-      "index": 13,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "index": 14,
-      "summary": "length=29",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 15,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "HTTP/1.1 200 OK"
-        },
-        {
-          "stream": "stdout",
-          "text": "health_status=200"
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "index": 16,
-      "summary": "length=30",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "index": 17,
-      "summary": "path=\"/production/load-balancer/config/routes.conf\" removed=1",
-      "type": "vfs.delete"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 18,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "index": 19,
-      "summary": "length=31",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "index": 20,
-      "summary": "from=\"/production/load-balancer/config/routes.500.conf\" to=\"/production/load-balancer/config/routes.conf\" copied=1",
-      "type": "vfs.copy"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 21,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "index": 22,
-      "summary": "length=32",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.400Z",
-      "detail": [],
-      "exitCode": 1,
-      "index": 23,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "FAIL health endpoint returns 200 (90ms)"
-        },
-        {
-          "stream": "stdout",
-          "text": "PASS Europe remains attached (110ms)"
-        },
-        {
-          "stream": "stdout",
-          "text": "Tests: 1 passed, 1 failed, 2 total"
-        },
-        {
-          "stream": "stdout",
-          "text": "Time: 200ms"
-        }
-      ],
-      "summary": "",
-      "type": "tests.run"
-    },
-    {
-      "at": "2026-08-22T09:14:22.600Z",
-      "detail": [],
-      "exitCode": 1,
-      "index": 24,
-      "output": [],
-      "summary": "",
-      "type": "shell.result"
-    },
-    {
-      "at": "2026-08-22T09:14:22.600Z",
-      "detail": [],
-      "index": 25,
-      "summary": "length=33",
-      "type": "world.history-append"
-    },
-    {
-      "at": "2026-08-22T09:14:22.600Z",
-      "detail": [],
-      "exitCode": 0,
-      "index": 26,
-      "output": [
-        {
-          "stream": "stdout",
-          "text": "HTTP/1.1 500 Internal Server Error"
-        },
-        {
-          "stream": "stdout",
-          "text": "health_status=500"
-        }
-      ],
-      "summary": "",
-      "type": "shell.result"
+      "summary": "activity=idle",
+      "type": "agent.activity-set"
     }
   ]
 }

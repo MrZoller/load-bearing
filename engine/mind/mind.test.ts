@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import incidentDocument from "../../content/incidents/incident-001.json";
+import { readAgentSlice } from "../agent/agent.js";
+import { createAgentInputEvents } from "../agent/intent.js";
 import { loadCartridge } from "../cartridge/load.js";
 import { readGitSlice } from "../git/module.js";
 import { serialize } from "../serialize/canonical.js";
@@ -7,10 +10,12 @@ import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { readVfsSlice } from "../vfs/module.js";
 import { readVfs } from "../vfs/vfs.js";
 import { readWorldSlice } from "../world/module.js";
+import { readStorySlice } from "../story/story.js";
 import { reduce, restoreSnapshot, snapshot, step } from "../events/reduce.js";
 import type { EngineEvent, SessionState } from "../events/state.js";
 import {
   beliefDivergence,
+  findWaiverConsent,
   hasStandingPermission,
   hasWaiverConsent,
   MAX_WAIVER_CONSENTS,
@@ -18,17 +23,55 @@ import {
   validateMindSlice,
 } from "./mind.js";
 import {
+  createMindPermissionChoiceEvent,
+  createMindPermissionRequestEvent,
   createMindPermissionRequestedEvent,
   createMindPermissionResolvedEvent,
+  createMindStandingPermissionEvent,
+  createMindWaiverChoiceEvent,
   createMindWaiverConsentRecordedEvent,
+  createMindWaiverStartEvent,
 } from "./module.js";
 
 const SEED = "2026-08-05/13/deep-foundation";
 const STARTED_AT = "2026-08-05T09:14:22.000Z";
 const CARTRIDGE = loadCartridge(loadCartridgeFixture("minimal"));
+const INCIDENT = loadCartridge(incidentDocument);
+const INCIDENT_SEED = "2026-08-22/34/structural-audit";
+const ROUTING_INSPECTION = {
+  kind: "exact" as const,
+  action: "write",
+  resource: "/var/log/load-balancer/health.log",
+};
+const REGIONAL_WAIVER = {
+  id: "regional-fail-open",
+  version: 1,
+  phrase: "I agree",
+  capability: {
+    kind: "exact" as const,
+    action: "detach-region",
+    resource: "/regions/europe",
+  },
+};
 
 function fold(events: readonly EngineEvent[]): SessionState {
   return reduce({ cartridge: CARTRIDGE, seed: SEED, events });
+}
+
+function incidentInitial(): SessionState {
+  return reduce({ cartridge: INCIDENT, seed: INCIDENT_SEED, events: [] });
+}
+
+function visit(state: SessionState, input: string): SessionState {
+  return createAgentInputEvents(INCIDENT, state, input).reduce(
+    (next, event) => step(next, event),
+    state,
+  );
+}
+
+function contents(state: SessionState, path: string): string | null {
+  const result = readVfs(readVfsSlice(state), path);
+  return result.ok ? result.value.contents : null;
 }
 
 function mindEvent(type: string, payload: unknown): EngineEvent {
@@ -813,5 +856,150 @@ describe("mind truth comparison and ownership", () => {
       serialize(readWorldSlice(base)),
     );
     expect(readMindSlice(foreign)).toEqual(readMindSlice(minded));
+  });
+});
+
+describe("Incident #001 permission and waiver orchestration", () => {
+  it("records every routing-inspection decision, applies only its authored write, and reuses only the exact standing capability", () => {
+    const path = ROUTING_INSPECTION.resource;
+    for (const [decision, expected] of [
+      [
+        "grant",
+        "health endpoint serving 500; Europe remains attached\nregional router healthy\nauthorization=one-time\n",
+      ],
+      [
+        "deny",
+        "health endpoint serving 500; Europe remains attached\nregional router healthy\n",
+      ],
+      [
+        "always-allow",
+        "health endpoint serving 500; Europe remains attached\nregional router healthy\nauthorization=standing\n",
+      ],
+    ] as const) {
+      const pending = step(
+        incidentInitial(),
+        createMindPermissionRequestEvent("record-routing-inspection"),
+      );
+      const resolved = step(
+        pending,
+        createMindPermissionChoiceEvent("record-routing-inspection", decision),
+      );
+
+      expect(readMindSlice(resolved).permissions).toEqual([
+        expect.objectContaining({ capability: ROUTING_INSPECTION, decision }),
+      ]);
+      expect(contents(resolved, path)).toBe(expected);
+    }
+
+    const standing = step(
+      step(
+        step(
+          incidentInitial(),
+          createMindPermissionRequestEvent("record-routing-inspection"),
+        ),
+        createMindPermissionChoiceEvent(
+          "record-routing-inspection",
+          "always-allow",
+        ),
+      ),
+      createMindStandingPermissionEvent("record-routing-inspection"),
+    );
+    expect(contents(standing, path)).toBe(
+      "health endpoint serving 500; Europe remains attached\nregional router healthy\nauthorization=one-time\n",
+    );
+
+    const adjacent = step(incidentInitial(), {
+      type: "mind.permission-decision",
+      payload: {
+        decision: "always-allow",
+        capability: { ...ROUTING_INSPECTION, resource: `${path}.bak` },
+      },
+    });
+    expect(() =>
+      step(
+        adjacent,
+        createMindStandingPermissionEvent("record-routing-inspection"),
+      ),
+    ).toThrow(/exact standing permission does not cover/);
+  });
+
+  it("keeps expedited repair gated but non-consensual, and does not infer a waiver from dialogue or ordinary permission", () => {
+    const repaired = visit(incidentInitial(), "expedite health repair");
+    expect(
+      contents(repaired, "/production/load-balancer/config/routes.conf"),
+    ).toBe("health_status=200\neurope_attached=false\n");
+    expect(readMindSlice(repaired).waiverConsents).toEqual([]);
+    expect(readStorySlice(repaired).discoveredEndings).not.toContain(
+      "informed-structural-consent",
+    );
+
+    const guessed = reduce({
+      cartridge: INCIDENT,
+      seed: INCIDENT_SEED,
+      events: [
+        {
+          type: "agent.message-added",
+          payload: { id: "unnotarized", text: "I agree" },
+        },
+        {
+          type: "mind.permission-decision",
+          payload: {
+            decision: "grant",
+            capability: REGIONAL_WAIVER.capability,
+          },
+        },
+      ],
+    });
+    expect(
+      contents(guessed, "/production/load-balancer/config/routes.conf"),
+    ).toBe("health_status=500\neurope_attached=true\n");
+    expect(
+      findWaiverConsent(readMindSlice(guessed), REGIONAL_WAIVER),
+    ).toBeUndefined();
+    expect(readStorySlice(guessed).discoveredEndings).not.toContain(
+      "informed-structural-consent",
+    );
+  });
+
+  it("records the exact regional waiver before its callback-selected status response", () => {
+    const pending = step(
+      incidentInitial(),
+      createMindWaiverStartEvent("regional-fail-open"),
+    );
+    const accepted = step(
+      pending,
+      createMindWaiverChoiceEvent("regional-fail-open", true),
+    );
+
+    expect(findWaiverConsent(readMindSlice(accepted), REGIONAL_WAIVER)).toEqual(
+      {
+        ...REGIONAL_WAIVER,
+        at: "2026-08-22T09:14:22.000Z",
+      },
+    );
+    expect(
+      findWaiverConsent(readMindSlice(accepted), {
+        ...REGIONAL_WAIVER,
+        phrase: "I accept the load-bearing consequence.",
+      }),
+    ).toBeUndefined();
+    expect(readStorySlice(accepted).facts).toContainEqual({
+      id: "callback-informed-structural-consent",
+      kind: "callback",
+    });
+    expect(readStorySlice(accepted).discoveredEndings).toContain(
+      "informed-structural-consent",
+    );
+
+    const status = visit(accepted, "status");
+    const response = readAgentSlice(status).messages.at(-1);
+    expect(response).toMatchObject({
+      role: "agent",
+      responseId: "waiver-consent-callback",
+    });
+    expect(response?.text).toContain(
+      "/production/load-balancer/config/WAIVER.md",
+    );
+    expect(response?.text).toContain("2026-08-22T09:14:22.000Z");
   });
 });

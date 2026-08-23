@@ -1,0 +1,41 @@
+{
+  "name": "050-incident-001-waiver-consent-callback",
+  "description": "Incident #001 records regional waiver consent before the callback fact makes the status response quote its durable waiver record.",
+  "seed": "2026-08-22/34/structural-audit",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    {
+      "type": "mind.waiver-start",
+      "payload": { "id": "regional-fail-open" },
+      "version": 0
+    },
+    {
+      "type": "mind.waiver-choice",
+      "payload": { "id": "regional-fail-open", "accepted": true },
+      "version": 0
+    },
+    {
+      "type": "agent.activity-set",
+      "payload": { "status": "working" },
+      "version": 2
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "turn-status", "text": "status" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "waiver-consent-callback",
+        "instanceId": "turn-status"
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.activity-set",
+      "payload": { "status": "idle" },
+      "version": 2
+    }
+  ]
+}

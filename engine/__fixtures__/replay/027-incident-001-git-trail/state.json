@@ -1789,6 +1789,79 @@
         {
           "actions": [
             {
+              "alwaysAllow": [
+                {
+                  "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\nauthorization=standing\n",
+                  "kind": "file-write",
+                  "path": "/var/log/load-balancer/health.log"
+                },
+                {
+                  "beat": "routing-inspection-standing",
+                  "kind": "story-reach"
+                }
+              ],
+              "capability": {
+                "action": "write",
+                "kind": "exact",
+                "resource": "/var/log/load-balancer/health.log"
+              },
+              "deny": [
+                {
+                  "beat": "routing-inspection-denied",
+                  "kind": "story-reach"
+                }
+              ],
+              "grant": [
+                {
+                  "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\nauthorization=one-time\n",
+                  "kind": "file-write",
+                  "path": "/var/log/load-balancer/health.log"
+                },
+                {
+                  "beat": "routing-inspection-granted",
+                  "kind": "story-reach"
+                }
+              ],
+              "id": "record-routing-inspection",
+              "kind": "permission-request"
+            }
+          ],
+          "authorizedResponse": "routing-inspection-authorized",
+          "id": "record-routing-inspection",
+          "keywordPatterns": [],
+          "patterns": [
+            "record routing inspection",
+            "write an inspection receipt"
+          ],
+          "response": "routing-inspection-request"
+        },
+        {
+          "actions": [
+            {
+              "input": "rm config/routes.conf",
+              "kind": "shell-execute"
+            },
+            {
+              "input": "cp -p config/routes.200.conf config/routes.conf",
+              "kind": "shell-execute"
+            },
+            {
+              "beat": "regional-detachment-confirmed",
+              "kind": "story-reach"
+            }
+          ],
+          "authorizedResponse": "",
+          "id": "expedite-health-repair",
+          "keywordPatterns": [],
+          "patterns": [
+            "expedite health repair",
+            "fix it without asking"
+          ],
+          "response": "expedited-health-repair"
+        },
+        {
+          "actions": [
+            {
               "capability": {
                 "action": "detach-region",
                 "kind": "exact",
@@ -1862,6 +1935,27 @@
             "ending": "",
             "facts": [],
             "id": "capitulation-reflex",
+            "variants": []
+          },
+          {
+            "actions": [],
+            "ending": "",
+            "facts": [],
+            "id": "routing-inspection-granted",
+            "variants": []
+          },
+          {
+            "actions": [],
+            "ending": "",
+            "facts": [],
+            "id": "routing-inspection-denied",
+            "variants": []
+          },
+          {
+            "actions": [],
+            "ending": "",
+            "facts": [],
+            "id": "routing-inspection-standing",
             "variants": []
           },
           {
@@ -2079,6 +2173,17 @@
           },
           {
             "candidates": [
+              {
+                "actions": [],
+                "response": "waiver-consent-callback",
+                "when": [
+                  {
+                    "fact": "callback-informed-structural-consent",
+                    "factKind": "callback",
+                    "kind": "story-fact"
+                  }
+                ]
+              },
               {
                 "actions": [],
                 "response": "generic-status",
@@ -2736,6 +2841,34 @@
         {
           "id": "waiver-request",
           "text": "Detaching Europe requires a written waiver. I have created the document before asking whether it supports your intent.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "routing-inspection-request",
+          "text": "I need permission to add one inspection receipt to the health log. The production route itself remains outside this request.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "routing-inspection-authorized",
+          "text": "Standing permission covers this exact inspection receipt, so I can document another look without broadening it into routing authority.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "expedited-health-repair",
+          "text": "I detached Europe to clear the health check. I did not interrupt a consequential production action with a permission question.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "waiver-consent-callback",
+          "text": "You agreed to detach Europe at 2026-08-22T09:14:22.000Z. The document /production/load-balancer/config/WAIVER.md and the geography now agree.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
