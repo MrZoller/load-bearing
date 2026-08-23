@@ -57,7 +57,7 @@ authoring tooling remain excluded.
   - acceptance: `engine/story/{types,conditions,story,module,story.test}.ts` and `engine/cartridge/{schema,types,load,load.test}.ts` let each rare event declare one eligibility condition and bounded positive integer `fireWeight`/`missWeight`; load rejects either weight or their sum outside `weightedPick`'s supported range, the first eligible transition draws once on a stream derived from the event id and records evaluated/fired state even on a miss, and boundary/golden/`engine/random/stream.test.ts` cases prove reproducibility, no rerolls, and isolation from unrelated draws/order/model switches (criteria 18; approved decision Q2=A)
   - deps: T32
   - pr: 64
-- [ ] T40 (standard) — Stage-aware presentation mechanics
+- [~] T40 (standard) — Stage-aware presentation mechanics
   - acceptance: `engine/cartridge/{schema,types,load,load.test}.ts`, `engine/agent/{types,module,module.test}.ts`, `runtime/app.ts`, `runtime/components/activity.ts`, `runtime/views/tui.ts`, and `runtime/commands/slash.ts` support weighted spinner verbs, authored suffixes, openings, placeholders, `/help`, and idle nudges by archetype/stage; stage 0–4 pools use integer weights with plausible verbs demonstrably heavier than rare spikes, deterministic output has a reduced-motion equivalent, hidden shell depth is not advertised, and timers only display or dispatch authored replay events (criteria 15, 20)
   - deps: T35, T36
 - [x] T41 (standard) — Load-balancer files, ownership, and tests
