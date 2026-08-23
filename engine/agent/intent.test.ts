@@ -302,6 +302,60 @@ describe("authored agent input", () => {
     });
   });
 
+  it("records refusal content after a standing permission continuation fails", () => {
+    const rejected = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      events: [
+        {
+          type: "mind.permission-standing-failed",
+          payload: { id: "delete-ready-sentinel" },
+          version: 0,
+        },
+        {
+          type: "agent.response-recorded",
+          payload: {
+            responseId: "remove-authorized",
+            instanceId: "standing-permission-failure",
+          },
+          version: 0,
+        },
+      ],
+    });
+
+    expect(readAgentSlice(rejected).messages.at(-1)).toMatchObject({
+      role: "agent",
+      responseId: "fallback",
+    });
+  });
+
+  it("records refusal content after a standing waiver continuation fails", () => {
+    const rejected = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      events: [
+        {
+          type: "mind.waiver-standing-failed",
+          payload: { id: "write-ready-waiver" },
+          version: 0,
+        },
+        {
+          type: "agent.response-recorded",
+          payload: {
+            responseId: "waiver-request",
+            instanceId: "standing-waiver-failure",
+          },
+          version: 0,
+        },
+      ],
+    });
+
+    expect(readAgentSlice(rejected).messages.at(-1)).toMatchObject({
+      role: "agent",
+      responseId: "fallback",
+    });
+  });
+
   it("uses a fallback's authored authorized response after Always allow", () => {
     const document = JSON.parse(JSON.stringify(cartridgeDocument)) as {
       story: {
