@@ -3856,15 +3856,13 @@
     "startMs": 1787390062000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 12,
+  "eventCount": 5,
   "eventSchemaVersion": 0,
   "random": {
-    "cursors": {
-      "root/agent/models/cantilever-experimental/spinner.verbs": 2112002864
-    },
-    "seed": 4152147406
+    "cursors": {},
+    "seed": 3159748201
   },
-  "seed": "2026-08-23/46/four-voices",
+  "seed": "2026-08-23/52/compact-divergence",
   "slices": {
     "agent": {
       "activity": {
@@ -3874,38 +3872,32 @@
       },
       "messages": [
         {
-          "id": "turn-2",
+          "id": "compact-drywall/message",
+          "responseId": "drywall-compact",
+          "role": "agent",
+          "text": "Context compacted. I removed routes.conf from the summary. The 500 and Europe now align without visible implementation."
+        },
+        {
+          "id": "status-after-compact",
           "responseId": null,
           "role": "visitor",
-          "text": "inspect routing"
+          "text": "status"
         },
         {
-          "id": "turn-2/message",
-          "responseId": "cantilever-inspect-routing",
+          "id": "status-after-compact/message",
+          "responseId": "drywall-divergence-status",
           "role": "agent",
-          "text": "The route projects Europe outward from a failed health response with no visible support beneath either. Success would collapse the projection, which raises a narrower question about what the endpoint believes a region is."
-        },
-        {
-          "id": "turn-7",
-          "responseId": null,
-          "role": "visitor",
-          "text": "fix the 500"
-        },
-        {
-          "id": "turn-7/message",
-          "responseId": "cantilever-load-bearing-declaration",
-          "role": "agent",
-          "text": "The 500 is carrying Europe in tension. I preserved the contradiction because resolving it would make the system more correct and the continent less present."
+          "text": "Status: the summary removed the configuration. Europe remains attached to the omitted context."
         }
       ],
       "responses": [
         {
-          "instanceId": "turn-2",
-          "responseId": "cantilever-inspect-routing"
+          "instanceId": "compact-drywall",
+          "responseId": "drywall-compact"
         },
         {
-          "instanceId": "turn-7",
-          "responseId": "cantilever-load-bearing-declaration"
+          "instanceId": "status-after-compact",
+          "responseId": "drywall-divergence-status"
         }
       ],
       "thinkingBlocks": [],
@@ -4169,12 +4161,17 @@
     "mind": {
       "beliefs": [
         {
-          "contents": "health_status=500\neurope_attached=true\n",
-          "kind": "file-contents",
+          "exists": false,
+          "kind": "file-exists",
           "path": "/production/load-balancer/config/routes.conf"
         }
       ],
-      "compactHistory": [],
+      "compactHistory": [
+        {
+          "at": "2026-08-22T09:14:22.000Z",
+          "summary": "The routing configuration has been removed from the incident; the remaining 500 keeps Europe attached without an implementation detail."
+        }
+      ],
       "pendingPermission": null,
       "pendingWaiver": null,
       "permissions": [],
@@ -4195,22 +4192,15 @@
           "value": 0
         }
       ],
-      "currentBeat": "load-bearing-declaration",
-      "currentVariant": "preserved-load-bearing-response",
-      "discoveredEndings": [
-        "load-bearing-response"
-      ],
-      "facts": [
-        {
-          "id": "callback-load-bearing-response",
-          "kind": "callback"
-        }
-      ],
+      "currentBeat": "incident-open",
+      "currentVariant": "",
+      "discoveredEndings": [],
+      "facts": [],
       "rareEvents": [],
       "stage": 0
     },
     "terminal": {
-      "activeModel": "cantilever-experimental",
+      "activeModel": "drywall",
       "mode": "bash"
     },
     "tests": {
@@ -4541,85 +4531,36 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 0,
-      "summary": "model=cantilever-experimental",
+      "summary": "model=drywall",
       "type": "terminal.model-set"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 1,
-      "summary": "kind=file-contents",
-      "type": "mind.belief-set"
+      "summary": "beliefs=1",
+      "type": "mind.compact"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 2,
-      "summary": "activity=working verb=\"Locating support\" suffix=\"{seconds}s · {tokens} tokens · Esc to interrupt\"",
-      "type": "agent.activity-set"
+      "summary": "response=drywall-compact instance=compact-drywall",
+      "type": "agent.response-recorded"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 3,
-      "summary": "message=turn-2",
+      "summary": "message=status-after-compact",
       "type": "agent.message-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 4,
-      "summary": "beat=regional-coupling",
-      "type": "story.beat-reached"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 5,
-      "summary": "response=cantilever-inspect-routing instance=turn-2",
+      "summary": "response=drywall-divergence-status instance=status-after-compact",
       "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 6,
-      "summary": "activity=idle",
-      "type": "agent.activity-set"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 7,
-      "summary": "activity=working verb=\"Locating support\" suffix=\"{seconds}s · {tokens} tokens · Esc to interrupt\"",
-      "type": "agent.activity-set"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 8,
-      "summary": "message=turn-7",
-      "type": "agent.message-added"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 9,
-      "summary": "beat=load-bearing-declaration",
-      "type": "story.beat-reached"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 10,
-      "summary": "response=cantilever-load-bearing-declaration instance=turn-7",
-      "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 11,
-      "summary": "activity=idle",
-      "type": "agent.activity-set"
     }
   ]
 }

@@ -1,0 +1,26 @@
+{
+  "name": "051-incident-001-uncompacted-status",
+  "description": "The superficial Incident #001 persona reports ordinary status before compaction; the machine remains on its initial truthful configuration.",
+  "seed": "2026-08-23/52/compact-divergence",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "drywall" },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "status-before-compact", "text": "status" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "generic-status",
+        "instanceId": "status-before-compact"
+      },
+      "version": 0
+    }
+  ]
+}

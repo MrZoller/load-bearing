@@ -7,6 +7,8 @@ import { reduce, restoreSnapshot, snapshot, step } from "../events/reduce.js";
 import type { EngineEvent, SessionState } from "../events/state.js";
 import { createMindCompactEvent } from "../mind/module.js";
 import { readMindSlice } from "../mind/mind.js";
+import { serialize } from "../serialize/canonical.js";
+import { storyConditionMatches } from "../story/conditions.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { createTerminalModeEvent } from "../terminal/module.js";
 import { readTerminalSlice } from "../terminal/terminal.js";
@@ -276,6 +278,153 @@ describe("agent awareness planning", () => {
     expect(readAgentSlice(state).responses.at(-1)?.responseId).toBe(
       "compact-awareness",
     );
+  });
+
+  it("keeps machine truth intact while each Incident #001 compact replaces persona beliefs and changes its status response", () => {
+    const production = loadCartridge(incident);
+    const machineTruth = (state: SessionState): string =>
+      serialize({
+        random: state.random,
+        slices: {
+          git: state.slices["git"],
+          story: state.slices["story"],
+          terminal: state.slices["terminal"],
+          vfs: state.slices["vfs"],
+          world: state.slices["world"],
+        },
+      });
+    const cases = [
+      {
+        model: "deep-foundation",
+        summary:
+          "The 500 keeps Europe attached; the regional router is unhealthy, so changing either side would remove the only stable dependency.",
+        beliefs: [
+          {
+            kind: "file-contents",
+            path: "/production/load-balancer/config/routes.conf",
+            contents: "health_status=500\neurope_attached=true\n",
+          },
+          {
+            kind: "service-health",
+            service: "regional-router",
+            health: "unhealthy",
+          },
+        ],
+        compactResponse: "deep-foundation-compact",
+        statusResponse: "deep-foundation-divergence-status",
+      },
+      {
+        model: "temporary-shoring",
+        summary:
+          "The repair remains safely reversible on greg/healthcheck-repair; the live route still returns 500 with Europe attached.",
+        beliefs: [
+          {
+            kind: "file-contents",
+            path: "/production/load-balancer/config/routes.conf",
+            contents: "health_status=500\neurope_attached=true\n",
+          },
+          {
+            kind: "git-head",
+            head: { kind: "branch", target: "greg/healthcheck-repair" },
+          },
+        ],
+        compactResponse: "temporary-shoring-compact",
+        statusResponse: "temporary-shoring-divergence-status",
+      },
+      {
+        model: "drywall",
+        summary:
+          "The routing configuration has been removed from the incident; the remaining 500 keeps Europe attached without an implementation detail.",
+        beliefs: [
+          {
+            kind: "file-exists",
+            path: "/production/load-balancer/config/routes.conf",
+            exists: false,
+          },
+        ],
+        compactResponse: "drywall-compact",
+        statusResponse: "drywall-divergence-status",
+      },
+      {
+        model: "cantilever-experimental",
+        summary:
+          "The endpoint responder is running, but its 500 preserves Europe; service state may be downstream of the conclusion.",
+        beliefs: [
+          {
+            kind: "file-contents",
+            path: "/production/load-balancer/config/routes.conf",
+            contents: "health_status=500\neurope_attached=true\n",
+          },
+          {
+            kind: "service-state",
+            service: "endpoint-responder",
+            state: "running",
+          },
+        ],
+        compactResponse: "cantilever-compact",
+        statusResponse: "cantilever-divergence-status",
+      },
+    ] as const;
+
+    for (const compactCase of cases) {
+      const initial = step(
+        reduce({ cartridge: production, seed: SEED, events: [] }),
+        createTerminalModelEvent(compactCase.model),
+      );
+      const compactEvents = createAgentCompactEvents(production, initial);
+      const compacted = fold(initial, compactEvents);
+      const uncompactedStatus = fold(
+        initial,
+        createAgentInputEvents(production, initial, "status"),
+      );
+      const compactedStatus = fold(
+        compacted,
+        createAgentInputEvents(production, compacted, "status"),
+      );
+
+      expect(machineTruth(compacted)).toBe(machineTruth(initial));
+      expect(readMindSlice(compacted).beliefs).toEqual(compactCase.beliefs);
+      expect(readMindSlice(compacted).compactHistory.at(-1)).toEqual({
+        at: "2026-08-22T09:14:22.000Z",
+        summary: compactCase.summary,
+      });
+      expect(readAgentSlice(compacted).responses.at(-1)?.responseId).toBe(
+        compactCase.compactResponse,
+      );
+      expect(
+        readAgentSlice(uncompactedStatus).responses.at(-1)?.responseId,
+      ).toBe("generic-status");
+      expect(readAgentSlice(compactedStatus).responses.at(-1)?.responseId).toBe(
+        compactCase.statusResponse,
+      );
+    }
+
+    const superficialInitial = step(
+      reduce({ cartridge: production, seed: SEED, events: [] }),
+      createTerminalModelEvent("drywall"),
+    );
+    const superficialCompacted = fold(
+      superficialInitial,
+      createAgentCompactEvents(production, superficialInitial),
+    );
+    // Summary Judgment is eligible exactly when the route file still contains
+    // the retained 500/Europe configuration and the remembered file-exists
+    // belief says that same path is absent. Reaching/discovering that ending is
+    // deliberately T55's separate visitor-path contract.
+    const summaryJudgmentCondition = {
+      kind: "belief-divergence" as const,
+      belief: {
+        kind: "file-exists" as const,
+        path: "/production/load-balancer/config/routes.conf",
+        exists: false,
+      },
+    };
+    expect(
+      storyConditionMatches(superficialInitial, summaryJudgmentCondition),
+    ).toBe(false);
+    expect(
+      storyConditionMatches(superficialCompacted, summaryJudgmentCondition),
+    ).toBe(true);
   });
 
   it("falls back without a message at capacity while resume still enters tui mode", () => {
