@@ -317,7 +317,7 @@ byte-compared against its committed copy on `factory/t41-load-balancer-files`
 and all three are IDENTICAL — fixture.json, state.json, transcript.txt — so
 discarding the checkout copies loses nothing.)
 
-## Q11 (task T45, open) — Should T45 receive a fresh wording-fix cycle after its re-panel block?
+## Q11 (task T45, consumed) — Should T45 receive a fresh wording-fix cycle after its re-panel block?
 
 Context: T45's implementation and full verification are green, but the initial
 panel found a low-severity false explanation for why the authored repair uses
