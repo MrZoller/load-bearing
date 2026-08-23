@@ -1014,4 +1014,23 @@ describe("authored agent input", () => {
         'failed code=EACCES path="/production/load-balancer/config/routes.conf"',
     });
   });
+
+  it("stages top-level intent writes strictly before their response", () => {
+    const state = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+
+    expect(
+      createAgentInputEvents(INCIDENT, state, "expedite health repair"),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: "vfs.write",
+          payload: expect.objectContaining({
+            path: "/production/load-balancer/config/routes.conf",
+            strict: true,
+            transcript: false,
+          }),
+        }),
+      ]),
+    );
+  });
 });

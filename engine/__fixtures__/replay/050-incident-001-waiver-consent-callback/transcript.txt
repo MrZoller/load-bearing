@@ -1,0 +1,9 @@
+0000  2026-08-22T09:14:22.000Z  vfs.waiver-write
+0001  2026-08-22T09:14:22.000Z  mind.waiver-pending id=regional-fail-open
+0002  2026-08-22T09:14:22.000Z  mind.waiver-resolved id=regional-fail-open accepted=true
+0003  2026-08-22T09:14:22.000Z  vfs.write
+0004  2026-08-22T09:14:22.000Z  story.beat-reached beat=waiver-notarized
+0005  2026-08-22T09:14:22.000Z  agent.activity-set activity=working verb="Surveying dependencies" suffix="{seconds}s · {tokens} tokens · Esc to interrupt"
+0006  2026-08-22T09:14:22.000Z  agent.message-added message=turn-status
+0007  2026-08-22T09:14:22.000Z  agent.response-recorded response=waiver-consent-callback instance=turn-status
+0008  2026-08-22T09:14:22.000Z  agent.activity-set activity=idle

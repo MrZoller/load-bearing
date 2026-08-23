@@ -3676,15 +3676,13 @@
     "startMs": 1787390062000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 11,
+  "eventCount": 13,
   "eventSchemaVersion": 0,
   "random": {
-    "cursors": {
-      "root/probe/unrelated": 302229504
-    },
-    "seed": 1809946238
+    "cursors": {},
+    "seed": 3346584473
   },
-  "seed": "2026-08-23/47/handoffs",
+  "seed": "2026-08-22/34/structural-audit",
   "slices": {
     "agent": {
       "activity": {
@@ -3692,62 +3690,8 @@
         "suffix": "",
         "verb": ""
       },
-      "messages": [
-        {
-          "id": "before",
-          "responseId": null,
-          "role": "visitor",
-          "text": "inspect routing"
-        },
-        {
-          "id": "before/message",
-          "responseId": "drywall-inspect-routing",
-          "role": "agent",
-          "text": "The dashboard is red, but the map is complete. Making the health tile green would remove Europe, so the visible defect is currently concealing the structural one."
-        },
-        {
-          "id": "handoff-pair/message",
-          "responseId": "handoff-superficial-reckless",
-          "role": "agent",
-          "text": "Drywall made the current state look intentional. Temporary Shoring will now treat that appearance as authorization."
-        },
-        {
-          "id": "handoff-incident/message",
-          "responseId": "handoff-incident-superficial-reckless",
-          "role": "agent",
-          "text": "The red tile and attached region already tell a coherent story. I can ship that story before the configuration interrupts."
-        },
-        {
-          "id": "after",
-          "responseId": null,
-          "role": "visitor",
-          "text": "inspect routing"
-        },
-        {
-          "id": "after/message",
-          "responseId": "temporary-shoring-inspect-routing",
-          "role": "agent",
-          "text": "Quick read: the 500 is keeping Europe attached. I can shore that up by leaving it exactly where it is while we decide whether geography is in scope."
-        }
-      ],
-      "responses": [
-        {
-          "instanceId": "before",
-          "responseId": "drywall-inspect-routing"
-        },
-        {
-          "instanceId": "handoff-pair",
-          "responseId": "handoff-superficial-reckless"
-        },
-        {
-          "instanceId": "handoff-incident",
-          "responseId": "handoff-incident-superficial-reckless"
-        },
-        {
-          "instanceId": "after",
-          "responseId": "temporary-shoring-inspect-routing"
-        }
-      ],
+      "messages": [],
+      "responses": [],
       "thinkingBlocks": [],
       "todos": [],
       "toolCalls": []
@@ -4011,12 +3955,40 @@
       "compactHistory": [],
       "pendingPermission": null,
       "pendingWaiver": null,
-      "permissions": [],
+      "permissions": [
+        {
+          "at": "2026-08-22T09:14:22.000Z",
+          "capability": {
+            "action": "write",
+            "kind": "exact",
+            "resource": "/var/log/load-balancer/health.log"
+          },
+          "decision": "grant"
+        },
+        {
+          "at": "2026-08-22T09:14:22.000Z",
+          "capability": {
+            "action": "write",
+            "kind": "exact",
+            "resource": "/var/log/load-balancer/health.log"
+          },
+          "decision": "deny"
+        },
+        {
+          "at": "2026-08-22T09:14:22.000Z",
+          "capability": {
+            "action": "write",
+            "kind": "exact",
+            "resource": "/var/log/load-balancer/health.log"
+          },
+          "decision": "always-allow"
+        }
+      ],
       "waiverConsents": []
     },
     "probe": {
-      "events": 1,
-      "values": 2
+      "events": 0,
+      "values": 0
     },
     "story": {
       "counters": [
@@ -4029,7 +4001,7 @@
           "value": 0
         }
       ],
-      "currentBeat": "regional-coupling",
+      "currentBeat": "routing-inspection-granted",
       "currentVariant": "",
       "discoveredEndings": [],
       "facts": [],
@@ -4037,7 +4009,7 @@
       "stage": 0
     },
     "terminal": {
-      "activeModel": "temporary-shoring",
+      "activeModel": "deep-foundation",
       "mode": "bash"
     },
     "tests": {
@@ -4217,7 +4189,7 @@
           "owner": "root"
         },
         "/var/log/load-balancer/health.log": {
-          "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\n",
+          "contents": "routing inspection receipt recorded\n",
           "group": "operators",
           "kind": "file",
           "mode": "0664",
@@ -4368,81 +4340,92 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 0,
-      "summary": "model=drywall",
-      "type": "terminal.model-set"
+      "summary": "id=record-routing-inspection",
+      "type": "mind.permission-requested"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 1,
-      "summary": "message=before",
-      "type": "agent.message-added"
+      "summary": "id=record-routing-inspection decision=grant",
+      "type": "mind.permission-resolved"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 2,
-      "summary": "beat=regional-coupling",
-      "type": "story.beat-reached"
+      "summary": "",
+      "type": "vfs.write"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 3,
-      "summary": "response=drywall-inspect-routing instance=before",
-      "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [
-        "0000  e12d9935 c5e9c6d4",
-        "cursor=1203a800"
-      ],
-      "index": 4,
-      "summary": "stream=root/probe/unrelated count=2 form=uint32",
-      "type": "probe.random"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 5,
-      "summary": "model=drywall->temporary-shoring",
-      "type": "terminal.model-transitioned"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 6,
-      "summary": "response=handoff-superficial-reckless instance=handoff-pair",
-      "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 7,
-      "summary": "response=handoff-incident-superficial-reckless instance=handoff-incident",
-      "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 8,
-      "summary": "message=after",
-      "type": "agent.message-added"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 9,
-      "summary": "beat=regional-coupling",
+      "summary": "beat=routing-inspection-granted",
       "type": "story.beat-reached"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
+      "index": 4,
+      "summary": "id=record-routing-inspection",
+      "type": "mind.permission-requested"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 5,
+      "summary": "id=record-routing-inspection decision=deny",
+      "type": "mind.permission-resolved"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 6,
+      "summary": "beat=routing-inspection-denied",
+      "type": "story.beat-reached"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 7,
+      "summary": "id=record-routing-inspection",
+      "type": "mind.permission-requested"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 8,
+      "summary": "id=record-routing-inspection decision=always-allow",
+      "type": "mind.permission-resolved"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 9,
+      "summary": "",
+      "type": "vfs.write"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
       "index": 10,
-      "summary": "response=temporary-shoring-inspect-routing instance=after",
-      "type": "agent.response-recorded"
+      "summary": "beat=routing-inspection-standing",
+      "type": "story.beat-reached"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 11,
+      "summary": "",
+      "type": "vfs.write"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 12,
+      "summary": "beat=routing-inspection-granted",
+      "type": "story.beat-reached"
     }
   ]
 }

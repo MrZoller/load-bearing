@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T50",
-  "branch": "factory/t50-capitulation-misfires",
+  "current_task": "T51",
+  "branch": "factory/t51-permission-waiver-callbacks",
   "pr": null,
   "hold": false,
-  "updated": "2026-08-23T17:31:18Z"
+  "updated": "2026-08-23T18:14:07Z"
 }

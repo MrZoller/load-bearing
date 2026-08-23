@@ -1,0 +1,13 @@
+0000  2026-08-22T09:14:22.000Z  mind.permission-requested id=record-routing-inspection
+0001  2026-08-22T09:14:22.000Z  mind.permission-resolved id=record-routing-inspection decision=grant
+0002  2026-08-22T09:14:22.000Z  vfs.write
+0003  2026-08-22T09:14:22.000Z  story.beat-reached beat=routing-inspection-granted
+0004  2026-08-22T09:14:22.000Z  mind.permission-requested id=record-routing-inspection
+0005  2026-08-22T09:14:22.000Z  mind.permission-resolved id=record-routing-inspection decision=deny
+0006  2026-08-22T09:14:22.000Z  story.beat-reached beat=routing-inspection-denied
+0007  2026-08-22T09:14:22.000Z  mind.permission-requested id=record-routing-inspection
+0008  2026-08-22T09:14:22.000Z  mind.permission-resolved id=record-routing-inspection decision=always-allow
+0009  2026-08-22T09:14:22.000Z  vfs.write
+0010  2026-08-22T09:14:22.000Z  story.beat-reached beat=routing-inspection-standing
+0011  2026-08-22T09:14:22.000Z  vfs.write
+0012  2026-08-22T09:14:22.000Z  story.beat-reached beat=routing-inspection-granted

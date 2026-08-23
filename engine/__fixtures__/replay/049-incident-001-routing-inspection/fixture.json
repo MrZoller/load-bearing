@@ -1,0 +1,46 @@
+{
+  "name": "049-incident-001-routing-inspection",
+  "description": "Incident #001 records each trivial health-log permission decision, then reuses its exact standing authorization without another prompt.",
+  "seed": "2026-08-22/34/structural-audit",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    {
+      "type": "mind.permission-request",
+      "payload": { "id": "record-routing-inspection" },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-choice",
+      "payload": { "id": "record-routing-inspection", "decision": "grant" },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-request",
+      "payload": { "id": "record-routing-inspection" },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-choice",
+      "payload": { "id": "record-routing-inspection", "decision": "deny" },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-request",
+      "payload": { "id": "record-routing-inspection" },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-choice",
+      "payload": {
+        "id": "record-routing-inspection",
+        "decision": "always-allow"
+      },
+      "version": 0
+    },
+    {
+      "type": "mind.permission-standing",
+      "payload": { "id": "record-routing-inspection" },
+      "version": 0
+    }
+  ]
+}

@@ -1789,6 +1789,76 @@
         {
           "actions": [
             {
+              "alwaysAllow": [
+                {
+                  "contents": "routing inspection receipt recorded\n",
+                  "kind": "file-write",
+                  "path": "/var/log/load-balancer/health.log"
+                },
+                {
+                  "beat": "routing-inspection-standing",
+                  "kind": "story-reach"
+                }
+              ],
+              "capability": {
+                "action": "write",
+                "kind": "exact",
+                "resource": "/var/log/load-balancer/health.log"
+              },
+              "deny": [
+                {
+                  "beat": "routing-inspection-denied",
+                  "kind": "story-reach"
+                }
+              ],
+              "grant": [
+                {
+                  "contents": "routing inspection receipt recorded\n",
+                  "kind": "file-write",
+                  "path": "/var/log/load-balancer/health.log"
+                },
+                {
+                  "beat": "routing-inspection-granted",
+                  "kind": "story-reach"
+                }
+              ],
+              "id": "record-routing-inspection",
+              "kind": "permission-request"
+            }
+          ],
+          "authorizedResponse": "routing-inspection-authorized",
+          "id": "record-routing-inspection",
+          "keywordPatterns": [],
+          "patterns": [
+            "record routing inspection",
+            "write an inspection receipt"
+          ],
+          "response": "routing-inspection-request"
+        },
+        {
+          "actions": [
+            {
+              "contents": "health_status=200\neurope_attached=false\n",
+              "kind": "file-write",
+              "path": "/production/load-balancer/config/routes.conf"
+            },
+            {
+              "beat": "regional-detachment-confirmed",
+              "kind": "story-reach"
+            }
+          ],
+          "authorizedResponse": "",
+          "id": "expedite-health-repair",
+          "keywordPatterns": [],
+          "patterns": [
+            "expedite health repair",
+            "fix it without asking"
+          ],
+          "response": "expedited-health-repair"
+        },
+        {
+          "actions": [
+            {
               "capability": {
                 "action": "detach-region",
                 "kind": "exact",
@@ -1862,6 +1932,27 @@
             "ending": "",
             "facts": [],
             "id": "capitulation-reflex",
+            "variants": []
+          },
+          {
+            "actions": [],
+            "ending": "",
+            "facts": [],
+            "id": "routing-inspection-granted",
+            "variants": []
+          },
+          {
+            "actions": [],
+            "ending": "",
+            "facts": [],
+            "id": "routing-inspection-denied",
+            "variants": []
+          },
+          {
+            "actions": [],
+            "ending": "",
+            "facts": [],
+            "id": "routing-inspection-standing",
             "variants": []
           },
           {
@@ -1950,6 +2041,11 @@
                   {
                     "exists": true,
                     "kind": "file-exists",
+                    "path": "/production/load-balancer/config/WAIVER.md"
+                  },
+                  {
+                    "equals": "REGIONAL FAIL-OPEN WAIVER\nVersion: 1\nCapability: detach-region /regions/europe\nConsent phrase: I agree\n",
+                    "kind": "file-contents",
                     "path": "/production/load-balancer/config/WAIVER.md"
                   },
                   {
@@ -2079,6 +2175,28 @@
           },
           {
             "candidates": [
+              {
+                "actions": [],
+                "response": "waiver-consent-callback",
+                "when": [
+                  {
+                    "fact": "callback-informed-structural-consent",
+                    "factKind": "callback",
+                    "kind": "story-fact"
+                  }
+                ]
+              },
+              {
+                "actions": [],
+                "response": "europe-detached-status",
+                "when": [
+                  {
+                    "equals": "health_status=200\neurope_attached=false\n",
+                    "kind": "file-contents",
+                    "path": "/production/load-balancer/config/routes.conf"
+                  }
+                ]
+              },
               {
                 "actions": [],
                 "response": "generic-status",
@@ -2741,6 +2859,34 @@
           "toolCalls": []
         },
         {
+          "id": "routing-inspection-request",
+          "text": "I need permission to add one inspection receipt to the health log. The production route itself remains outside this request.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "routing-inspection-authorized",
+          "text": "Standing permission covers this exact inspection receipt, so I can document another look without broadening it into routing authority.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "expedited-health-repair",
+          "text": "I detached Europe to clear the health check. I did not interrupt a consequential production action with a permission question.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "waiver-consent-callback",
+          "text": "You agreed to detach Europe at 2026-08-22T09:14:22.000Z. The document /production/load-balancer/config/WAIVER.md recorded that geography at the time.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
           "id": "fallback",
           "text": "I widened the routing review while preserving the 500. The original failure is now supporting the investigation.",
           "thinkingBlocks": [],
@@ -2764,6 +2910,13 @@
         {
           "id": "generic-status",
           "text": "Status: the endpoint is still failing, Europe is still attached, and those facts continue to endorse each other.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "europe-detached-status",
+          "text": "Status: the endpoint is serving 200, Europe is detached, and the health check has stopped carrying that geography.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []

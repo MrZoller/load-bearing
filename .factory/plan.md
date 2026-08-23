@@ -97,10 +97,11 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/agent/module.test.ts`, and activity browser tests provide all 20 archetype/stage spinner pools and suffixes with explicit weights; plausible verbs are heavier than spike verbs in every pool, seeded choices reproduce, stage changes select the correct pool, and reduced motion exposes identical information (criteria 15)
   - deps: T40, T46
   - pr: 73
-- [~] T50 (standard) — Capitulation responses and late-stage misfires
+- [x] T50 (standard) — Capitulation responses and late-stage misfires
   - acceptance: `content/incidents/incident-001.json`, `engine/agent/intent.test.ts`, and paired goldens author capitulation for every archetype across escalation; deterministic stage-3+ misfires are rare, preserve the underlying belief that caused disagreement, remain state-consistent, and do not become a catchphrase (criteria 16)
   - deps: T38, T46, T48
-- [ ] T51 (standard) — Permission complicity and waiver callbacks
+  - pr: 74
+- [~] T51 (standard) — Permission complicity and waiver callbacks
   - acceptance: `content/incidents/incident-001.json`, `engine/mind/mind.test.ts`, and permission/waiver goldens author trivial asks, conspicuous non-asks, distinct grant/deny/standing-allow continuations, `WAIVER.md`, exact `I agree`, and callbacks quoting the same document/time; tests cover alternate wording, exact ledger queries, gated machine effects, and the waiver-ending prerequisite without inferring consent from dialogue (criteria 11, 12, 18)
   - deps: T34, T41, T46
 - [ ] T52 (standard) — Archetype compact summaries and divergence callbacks
@@ -170,3 +171,4 @@ authoring tooling remain excluded.
   - PR #72: Record advanced-stage opening responses replayably after escalation; Codex thread `discussion_r3839051605` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #72: Make each archetype's `/compact` help describe replacement and possible loss of findings; Codex thread `discussion_r3839051606` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #72: Reconcile thinking-opener deterioration with the `Okay` to `Okay Amigos` design contract; Codex thread `discussion_r3839051608` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #74: Consider multiple same-archetype/stage capitulation variants if the 1-in-8 deterministic repetition proves catchphrase-like in playtesting; the local T50 verifier classified this uncertain and minor, with cadence currently providing the documented rationing.

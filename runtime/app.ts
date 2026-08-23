@@ -1,4 +1,6 @@
 import {
+  createAgentActivityEvent,
+  createAgentCapacityEvent,
   createAgentIdleNudgeEvent,
   createShellExecuteEvent,
   createTerminalModeEvent,
@@ -237,6 +239,22 @@ export function mountApp(
     render();
   }
 
+  function dispatchCompletedTurn(events: readonly EngineEvent[]): void {
+    try {
+      session.dispatchMany(events);
+    } catch {
+      // An authored strict action can refuse after the browser has displayed
+      // its replayable working boundary. The rejected batch is atomic, so
+      // replace it with the cartridge's ordinary bounded refusal and restore
+      // idle rather than leaving the prompt on a spinner.
+      session.dispatchMany([
+        createAgentCapacityEvent(session.cartridge.story.fallback.response),
+        createAgentActivityEvent({ status: "idle" }),
+      ]);
+    }
+    render();
+  }
+
   function finishWorkingPresentation(): void {
     if (pendingWorkingEvents === null) return;
     const events = pendingWorkingEvents;
@@ -244,8 +262,7 @@ export function mountApp(
     if (browser !== null && workingTimer !== null)
       browser.clearTimeout(workingTimer);
     workingTimer = null;
-    session.dispatchMany(events);
-    render();
+    dispatchCompletedTurn(events);
   }
 
   function dispatchMany(events: readonly EngineEvent[]): void {
@@ -273,8 +290,7 @@ export function mountApp(
       );
       return;
     }
-    session.dispatchMany(events);
-    render();
+    dispatchCompletedTurn(events);
   }
 
   function render(): void {

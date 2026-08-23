@@ -94,6 +94,11 @@ export type CartridgeAgentAction =
   | {
       readonly kind: "story-reach";
       readonly beat: string;
+    }
+  | {
+      readonly kind: "file-write";
+      readonly path: string;
+      readonly contents: string;
     };
 
 export interface CartridgeStoryBeat {
