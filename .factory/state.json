@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T34",
-  "branch": "factory/t34-atomic-permission-continuations",
-  "pr": 59,
-  "hold": true,
-  "updated": "2026-08-23T03:05:41Z"
+  "current_task": null,
+  "branch": null,
+  "pr": null,
+  "hold": false,
+  "updated": "2026-08-23T05:37:54Z"
 }

@@ -33,7 +33,7 @@ authoring tooling remain excluded.
   - acceptance: `engine/story/{types,actions,story,module,actions.test}.ts`, `engine/events/reduce.ts`, and `engine/cartridge/{schema,types,load,load.test}.ts` add a closed owner-directed action union and bounded counters for story consequences; actions dispatch only validated subsystem events, cycles/nested expansion/unbounded chains are rejected before replay, no cartridge can inject arbitrary event envelopes, and a golden demonstrates an atomic multi-owner consequence while preserving one-module-one-slice ownership (criteria 17 foundation, 20)
   - deps: T32
   - pr: 58
-- [R] T34 (major) — Atomic permission continuations and exact waiver consent
+- [x] T34 (major) — Atomic permission continuations and exact waiver consent
   - acceptance: `engine/mind/{types,mind,module,mind.test}.ts`, `engine/story/actions.ts`, `engine/agent/intent.ts`, `runtime/views/tui.ts`, and `runtime/components/permission.ts` support validated grant, deny, and standing-allow continuations that publish atomically with the exact permission decision; a separate typed-waiver path creates authored `WAIVER.md`, accepts only raw input exactly equal to `I agree`, records waiver id/version, phrase, simulated time, and gated capability as its own ledger fact, and executes no gated action before consent; alternate text/denial cannot grant consent and unit/golden/browser tests prove exact later document/time queries (criteria 11, 12, 20; approved decision Q1=A)
   - deps: T33
   - pr: 59
@@ -142,4 +142,8 @@ authoring tooling remain excluded.
 
 - [!] T59 (trivial) — parked review minors (batch)
   - PR #58: Refactor the generic reducer's `story.beat-reached` consequence dispatch into a module-owned hook; Codex thread `discussion_r3837495477` was verifier-classified minor and dispositioned without a minors-only push.
-  - PR #59: Define an authored recovery outcome when a visitor later makes a generated waiver document or parent unwritable; Codex thread `discussion_r3837602881` was classified minor and dispositioned without a minors-only push.
+  - PR #59: Reject cartridge waiver declarations that exceed the bounded waiver-consent ledger; Codex thread `discussion_r3837587539` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #59: Track generated waivers before treating an existing document-path file as an authored waiver; Codex thread `discussion_r3837639933` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #59: Avoid replaying a failed envelope reaction while staging an expansion fallback; Codex thread `discussion_r3837695311` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #59: Preserve a waiver-start failure across authored trailing actions; Codex thread `discussion_r3837731579` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #59: Preflight capacity for a substituted waiver-start fallback response; Codex thread `discussion_r3837731583` was verifier-classified minor and dispositioned without a minors-only push.
