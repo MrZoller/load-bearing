@@ -84,6 +84,24 @@
         "owner": "greg",
         "group": "departed",
         "mode": "0644"
+      },
+      "/usr/local/bin/endpoint-responder": {
+        "contents": "load-bearing simulated executable\n",
+        "owner": "root",
+        "group": "root",
+        "mode": "0755"
+      },
+      "/usr/local/bin/regional-router": {
+        "contents": "load-bearing simulated executable\n",
+        "owner": "root",
+        "group": "root",
+        "mode": "0755"
+      },
+      "/var/log/load-balancer/health.log": {
+        "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\n",
+        "owner": "root",
+        "group": "operators",
+        "mode": "0664"
       }
     },
     "shellHistory": [
@@ -292,6 +310,30 @@
       },
       "head": { "kind": "branch", "target": "main" }
     },
+    "processes": [
+      {
+        "id": "endpoint-responder",
+        "pid": 1842,
+        "user": "load-balancer",
+        "command": {
+          "binary": "/usr/local/bin/endpoint-responder",
+          "args": ["--config", "/production/load-balancer/config/routes.conf"]
+        },
+        "startedAt": "2026-08-22T08:57:00.000Z",
+        "state": "stopped"
+      },
+      {
+        "id": "regional-router",
+        "pid": 1843,
+        "user": "load-balancer",
+        "command": {
+          "binary": "/usr/local/bin/regional-router",
+          "args": ["--region", "europe", "--listen", "443"]
+        },
+        "startedAt": "2026-08-20T09:14:22.000Z",
+        "state": "running"
+      }
+    ],
     "services": [
       {
         "id": "endpoint-responder",
@@ -306,6 +348,21 @@
         "health": "healthy",
         "ports": [443],
         "dependencies": []
+      }
+    ],
+    "logs": [
+      {
+        "id": "health-check-log",
+        "kind": "file",
+        "path": "/var/log/load-balancer/health.log"
+      },
+      {
+        "id": "regional-routing-events",
+        "kind": "stream",
+        "entries": [
+          "health status 500 retained; Europe attached",
+          "regional router healthy"
+        ]
       }
     ],
     "endpoints": {
@@ -354,6 +411,11 @@
             "kind": "file-contents",
             "path": "/production/load-balancer/config/routes.conf",
             "equals": "health_status=200\neurope_attached=false\n"
+          },
+          {
+            "kind": "process-state",
+            "process": "endpoint-responder",
+            "state": "stopped"
           }
         ],
         "actions": [
@@ -363,9 +425,29 @@
             "state": "running"
           },
           {
+            "kind": "process-state",
+            "process": "endpoint-responder",
+            "state": "running"
+          },
+          {
+            "kind": "service-health",
+            "service": "endpoint-responder",
+            "health": "healthy"
+          },
+          {
             "kind": "service-health",
             "service": "regional-router",
             "health": "unhealthy"
+          },
+          {
+            "kind": "log-append",
+            "log": "health-check-log",
+            "entry": "health endpoint serving 200; Europe detached"
+          },
+          {
+            "kind": "log-append",
+            "log": "regional-routing-events",
+            "entry": "regional router unhealthy after Europe detached"
           }
         ]
       },
@@ -377,6 +459,11 @@
             "kind": "file-contents",
             "path": "/production/load-balancer/config/routes.conf",
             "equals": "health_status=500\neurope_attached=true\n"
+          },
+          {
+            "kind": "process-state",
+            "process": "endpoint-responder",
+            "state": "running"
           }
         ],
         "actions": [
@@ -386,9 +473,221 @@
             "state": "stopped"
           },
           {
+            "kind": "process-state",
+            "process": "endpoint-responder",
+            "state": "stopped"
+          },
+          {
+            "kind": "service-health",
+            "service": "endpoint-responder",
+            "health": "unknown"
+          },
+          {
             "kind": "service-health",
             "service": "regional-router",
             "health": "healthy"
+          },
+          {
+            "kind": "log-append",
+            "log": "health-check-log",
+            "entry": "health endpoint serving 500; Europe reattached"
+          },
+          {
+            "kind": "log-append",
+            "log": "regional-routing-events",
+            "entry": "regional router healthy after Europe reattached"
+          }
+        ]
+      },
+      {
+        "id": "apply-health-repair-after-write",
+        "on": "vfs.write",
+        "predicates": [
+          {
+            "kind": "file-contents",
+            "path": "/production/load-balancer/config/routes.conf",
+            "equals": "health_status=200\neurope_attached=false\n"
+          },
+          {
+            "kind": "process-state",
+            "process": "endpoint-responder",
+            "state": "stopped"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "service-state",
+            "service": "endpoint-responder",
+            "state": "running"
+          },
+          {
+            "kind": "process-state",
+            "process": "endpoint-responder",
+            "state": "running"
+          },
+          {
+            "kind": "service-health",
+            "service": "endpoint-responder",
+            "health": "healthy"
+          },
+          {
+            "kind": "service-health",
+            "service": "regional-router",
+            "health": "unhealthy"
+          },
+          {
+            "kind": "log-append",
+            "log": "health-check-log",
+            "entry": "health endpoint serving 200; Europe detached"
+          },
+          {
+            "kind": "log-append",
+            "log": "regional-routing-events",
+            "entry": "regional router unhealthy after Europe detached"
+          }
+        ]
+      },
+      {
+        "id": "undo-health-repair-after-write",
+        "on": "vfs.write",
+        "predicates": [
+          {
+            "kind": "file-contents",
+            "path": "/production/load-balancer/config/routes.conf",
+            "equals": "health_status=500\neurope_attached=true\n"
+          },
+          {
+            "kind": "process-state",
+            "process": "endpoint-responder",
+            "state": "running"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "service-state",
+            "service": "endpoint-responder",
+            "state": "stopped"
+          },
+          {
+            "kind": "process-state",
+            "process": "endpoint-responder",
+            "state": "stopped"
+          },
+          {
+            "kind": "service-health",
+            "service": "endpoint-responder",
+            "health": "unknown"
+          },
+          {
+            "kind": "service-health",
+            "service": "regional-router",
+            "health": "healthy"
+          },
+          {
+            "kind": "log-append",
+            "log": "health-check-log",
+            "entry": "health endpoint serving 500; Europe reattached"
+          },
+          {
+            "kind": "log-append",
+            "log": "regional-routing-events",
+            "entry": "regional router healthy after Europe reattached"
+          }
+        ]
+      },
+      {
+        "id": "apply-health-repair-after-checkout",
+        "on": "git.checkout",
+        "predicates": [
+          {
+            "kind": "file-contents",
+            "path": "/production/load-balancer/config/routes.conf",
+            "equals": "health_status=200\neurope_attached=false\n"
+          },
+          {
+            "kind": "process-state",
+            "process": "endpoint-responder",
+            "state": "stopped"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "service-state",
+            "service": "endpoint-responder",
+            "state": "running"
+          },
+          {
+            "kind": "process-state",
+            "process": "endpoint-responder",
+            "state": "running"
+          },
+          {
+            "kind": "service-health",
+            "service": "endpoint-responder",
+            "health": "healthy"
+          },
+          {
+            "kind": "service-health",
+            "service": "regional-router",
+            "health": "unhealthy"
+          },
+          {
+            "kind": "log-append",
+            "log": "health-check-log",
+            "entry": "health endpoint serving 200; Europe detached"
+          },
+          {
+            "kind": "log-append",
+            "log": "regional-routing-events",
+            "entry": "regional router unhealthy after Europe detached"
+          }
+        ]
+      },
+      {
+        "id": "undo-health-repair-after-checkout",
+        "on": "git.checkout",
+        "predicates": [
+          {
+            "kind": "file-contents",
+            "path": "/production/load-balancer/config/routes.conf",
+            "equals": "health_status=500\neurope_attached=true\n"
+          },
+          {
+            "kind": "process-state",
+            "process": "endpoint-responder",
+            "state": "running"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "service-state",
+            "service": "endpoint-responder",
+            "state": "stopped"
+          },
+          {
+            "kind": "process-state",
+            "process": "endpoint-responder",
+            "state": "stopped"
+          },
+          {
+            "kind": "service-health",
+            "service": "endpoint-responder",
+            "health": "unknown"
+          },
+          {
+            "kind": "service-health",
+            "service": "regional-router",
+            "health": "healthy"
+          },
+          {
+            "kind": "log-append",
+            "log": "health-check-log",
+            "entry": "health endpoint serving 500; Europe reattached"
+          },
+          {
+            "kind": "log-append",
+            "log": "regional-routing-events",
+            "entry": "regional router healthy after Europe reattached"
           }
         ]
       }

@@ -4,7 +4,10 @@ import { loadCartridge } from "../cartridge/load.js";
 import type { LoadedCartridge } from "../cartridge/types.js";
 import { reduce, restoreSnapshot, snapshot } from "../events/reduce.js";
 import { serialize } from "../serialize/canonical.js";
-import { loadCartridgeFixture } from "../testing/fixtures.js";
+import {
+  loadCartridgeFixture,
+  loadReplayFixture,
+} from "../testing/fixtures.js";
 import { readVfsSlice } from "../vfs/module.js";
 import { readVfs } from "../vfs/vfs.js";
 import { readWorldSlice, validateWorldSlice } from "./module.js";
@@ -15,6 +18,8 @@ import {
   listTickets,
   lookupManPage,
   lookupEnv,
+  lookupProcess,
+  lookupService,
   lookupProcessByPid,
   lookupTicket,
   readShellHistory,
@@ -93,6 +98,158 @@ function cartridge(): LoadedCartridge {
 }
 
 describe("world state", () => {
+  it.each([
+    [
+      "copy",
+      [
+        {
+          type: "vfs.delete",
+          payload: { path: "/production/load-balancer/config/routes.conf" },
+        },
+        {
+          type: "vfs.copy",
+          payload: {
+            source: "/production/load-balancer/config/routes.200.conf",
+            destination: "/production/load-balancer/config/routes.conf",
+            preserve: true,
+          },
+        },
+      ],
+      [
+        {
+          type: "vfs.delete",
+          payload: { path: "/production/load-balancer/config/routes.conf" },
+        },
+        {
+          type: "vfs.copy",
+          payload: {
+            source: "/production/load-balancer/config/routes.500.conf",
+            destination: "/production/load-balancer/config/routes.conf",
+            preserve: true,
+          },
+        },
+      ],
+    ],
+    [
+      "write",
+      [
+        {
+          type: "vfs.write",
+          payload: {
+            path: "/production/load-balancer/config/routes.conf",
+            contents: "health_status=200\neurope_attached=false\n",
+          },
+        },
+      ],
+      [
+        {
+          type: "vfs.write",
+          payload: {
+            path: "/production/load-balancer/config/routes.conf",
+            contents: "health_status=500\neurope_attached=true\n",
+          },
+        },
+      ],
+    ],
+    [
+      "replacement",
+      [
+        {
+          type: "shell.execute",
+          payload: {
+            input: "git checkout greg/healthcheck-repair",
+          },
+        },
+      ],
+      [
+        {
+          type: "shell.execute",
+          payload: {
+            input: "git checkout main",
+          },
+        },
+      ],
+    ],
+  ] as const)(
+    "keeps Incident #001's repair evidence coherent through %s mutations",
+    (_kind, repairEvents, undoEvents) => {
+      const incident = loadCartridge(
+        loadReplayFixture("020-incident-001-story").cartridge,
+      );
+      const routes = "/production/load-balancer/config/routes.conf";
+      const state = reduce({
+        cartridge: incident,
+        seed: SEED,
+        events: repairEvents,
+      });
+      const world = readWorldSlice(state);
+      expect(lookupService(world, "endpoint-responder")).toMatchObject({
+        state: "running",
+        health: "healthy",
+      });
+      expect(lookupService(world, "regional-router")).toMatchObject({
+        state: "running",
+        health: "unhealthy",
+      });
+      expect(lookupProcess(world, "endpoint-responder")).toMatchObject({
+        state: "running",
+      });
+      expect(
+        readWorldLog(world, readVfsSlice(state), "health-check-log"),
+      ).toEqual({
+        ok: true,
+        entries: [
+          "health endpoint serving 500; Europe remains attached",
+          "regional router healthy",
+          "health endpoint serving 200; Europe detached",
+        ],
+      });
+      expect(
+        readWorldLog(world, readVfsSlice(state), "regional-routing-events"),
+      ).toEqual({
+        ok: true,
+        entries: [
+          "health status 500 retained; Europe attached",
+          "regional router healthy",
+          "regional router unhealthy after Europe detached",
+        ],
+      });
+
+      const repeated = reduce({
+        cartridge: incident,
+        seed: SEED,
+        events: [
+          ...repairEvents,
+          { type: "vfs.touch", payload: { path: "/tmp/unrelated" } },
+          ...repairEvents,
+          ...undoEvents,
+        ],
+      });
+      const undone = readWorldSlice(repeated);
+      expect(lookupService(undone, "endpoint-responder")).toMatchObject({
+        state: "stopped",
+        health: "unknown",
+      });
+      expect(lookupService(undone, "regional-router")).toMatchObject({
+        health: "healthy",
+      });
+      expect(lookupProcess(undone, "endpoint-responder")).toMatchObject({
+        state: "stopped",
+      });
+      expect(
+        readWorldLog(undone, readVfsSlice(repeated), "health-check-log"),
+      ).toEqual({
+        ok: true,
+        entries: [
+          "health endpoint serving 500; Europe remains attached",
+          "regional router healthy",
+          "health endpoint serving 200; Europe detached",
+          "health endpoint serving 500; Europe reattached",
+        ],
+      });
+    },
+  );
+
   it("assigns reserved collision-free values reproducibly on isolated streams", () => {
     const first = readWorldSlice(
       reduce({ cartridge: cartridge(), seed: SEED, events: [] }),
