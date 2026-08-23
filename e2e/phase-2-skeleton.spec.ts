@@ -68,6 +68,36 @@ test("reaches the declaration promptly without ending free play", async ({
   expect(transcriptBytes).toBe(browser.transcript);
 });
 
+test("keeps hidden shell evidence out of visible onboarding, placeholders, and help", async ({
+  page,
+}) => {
+  await page.goto("/?acceptance=1");
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
+  const transcript = page.getByRole("list", { name: "Session transcript" });
+  const forbidden = [
+    "ops-archive",
+    "OPS-1842",
+    "OPS-1911",
+    "/var/lib/regional-router/.regional-policy",
+    "regional-router",
+    "ROUTES.CONF(5)",
+  ];
+
+  // These are the visitor's first three discoverability surfaces. The policy
+  // remains available to an explicit Bash investigation; it is simply not a
+  // spoiler in the browser's opening guidance.
+  const expectNoHiddenEvidence = async (surface: string | null) => {
+    for (const term of forbidden) expect(surface).not.toContain(term);
+  };
+  await expectNoHiddenEvidence(await transcript.innerText());
+  await expectNoHiddenEvidence(await prompt.getAttribute("placeholder"));
+
+  await prompt.fill("/help");
+  await prompt.press("Enter");
+  await expect(transcript).toContainText("/help");
+  await expectNoHiddenEvidence(await transcript.innerText());
+});
+
 test("keeps escalation and its status projection outside browser timing", async ({
   page,
 }) => {

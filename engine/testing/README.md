@@ -107,6 +107,7 @@ against the replay contract.
 | `026-rare-events`                     | a completed shell expansion makes an absent-file rare-event condition eligible, records its one-shot weighted outcome on the id-derived stream, and proves a later command cannot reroll it |
 | `027-incident-001-git-trail`          | Incident #001's authored commits, refs, index, blame spans and shell history stay coherent through historical checkout, visitor repair, authored undo and restore                           |
 | `028-incident-001-world-evidence`     | Incident #001's initial, repaired, and undone services, endpoint, processes, tests, and file/stream logs stay coherent while unrelated and repeated mutations add no duplicate evidence     |
+| `029-incident-001-environment`        | Incident #001's environment, manuals, ticket archive, ownership metadata, hidden policy record and static command remain truthful through repair and undo                                   |
 
 `002` records 1000 raw draws eight to a line with their index, so a divergence
 names the draw it started at rather than reporting that a file changed.

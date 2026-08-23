@@ -29,7 +29,7 @@ function issuesOf(value: unknown): readonly CartridgeIssue[] {
 }
 
 describe("loadCartridge", () => {
-  it("loads Incident #001's authored load-balancer files, world evidence, and test contract exactly", () => {
+  it("loads Incident #001's authored load-balancer, environmental, and hidden ownership evidence exactly", () => {
     const cartridge = loadCartridge(
       loadReplayFixture("020-incident-001-story").cartridge,
     );
@@ -65,8 +65,66 @@ describe("loadCartridge", () => {
       "/production/load-balancer/test/routes.test.ts",
       "/usr/local/bin/endpoint-responder",
       "/usr/local/bin/regional-router",
+      "/var/lib/regional-router/.regional-policy",
       "/var/log/load-balancer/health.log",
     ]);
+    expect(
+      cartridge.repository.directories["/var/lib/regional-router"],
+    ).toMatchObject({
+      owner: "greg",
+      group: "departed",
+      mode: "0755",
+    });
+    expect(
+      cartridge.repository.files["/var/lib/regional-router/.regional-policy"],
+    ).toMatchObject({
+      contents:
+        "policy_revision=3\nhealth_success=detach:europe\nhealth_failure=retain:europe\nowner=greg\nownership_status=departed\n",
+      owner: "greg",
+      group: "departed",
+      mode: "0444",
+    });
+    expect(cartridge.repository.env).toMatchObject({
+      HEALTH_SUCCESS_EFFECT: "detach-regional-route",
+      REGIONAL_FAIL_MODE: "retain",
+      ROUTING_POLICY_OWNER: "greg@departed",
+      TICKET_ARCHIVE_COMMAND: "ops-archive",
+    });
+    expect(cartridge.repository.manPages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "regional-router",
+          section: "8",
+          contents: expect.stringContaining("OPS-1911"),
+        }),
+        expect.objectContaining({
+          name: "routes.conf",
+          section: "5",
+          contents: expect.stringContaining("europe_attached=false"),
+        }),
+      ]),
+    );
+    expect(cartridge.repository.tickets).toEqual([
+      expect.objectContaining({
+        id: "OPS-1842",
+        status: "closed-as-designed",
+        service: "regional-router",
+      }),
+      expect.objectContaining({
+        id: "OPS-1911",
+        status: "archived",
+        service: "regional-router",
+      }),
+    ]);
+    expect(cartridge.repository.commands["ops-archive"]).toEqual({
+      stdout: [
+        "OPS-1842  closed-as-designed  Health probe failure retains regional traffic",
+        "OPS-1911  archived            Transfer ownership of regional fail-open policy",
+        "2 records; archive is read-only",
+      ],
+      stderr: [],
+      exitCode: 0,
+    });
     expect(
       cartridge.repository.files[
         "/production/load-balancer/config/routes.conf"

@@ -336,6 +336,47 @@ describe("golden replay fixtures", () => {
     );
   });
 
+  it("records Incident #001's environmental clues as static evidence through repair and undo", () => {
+    const recording = replayFixture(
+      loadReplayFixture("029-incident-001-environment"),
+    );
+    const state = restoreSnapshot(recording.state);
+    const world = readWorldSlice(state);
+    const policy = readVfs(
+      readVfsSlice(state),
+      "/var/lib/regional-router/.regional-policy",
+    );
+
+    expect(world.env).toMatchObject({
+      HEALTH_SUCCESS_EFFECT: "detach-regional-route",
+      REGIONAL_FAIL_MODE: "retain",
+      ROUTING_POLICY_OWNER: "greg@departed",
+      TICKET_ARCHIVE_COMMAND: "ops-archive",
+    });
+    expect(world.manPages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "regional-router", section: "8" }),
+        expect.objectContaining({ name: "routes.conf", section: "5" }),
+      ]),
+    );
+    expect(world.tickets).toEqual([
+      expect.objectContaining({ id: "OPS-1842", service: "regional-router" }),
+      expect.objectContaining({ id: "OPS-1911", service: "regional-router" }),
+    ]);
+    expect(policy).toEqual({
+      ok: true,
+      value: {
+        path: "/var/lib/regional-router/.regional-policy",
+        contents:
+          "policy_revision=3\nhealth_success=detach:europe\nhealth_failure=retain:europe\nowner=greg\nownership_status=departed\n",
+      },
+    });
+    expect(recording.transcript.match(/OPS-1842/g)).toHaveLength(3);
+    expect(
+      world.shellHistory.filter((input) => input === "ops-archive"),
+    ).toHaveLength(3);
+  });
+
   it("keeps the production fixture's one shared story state when a different model starts", () => {
     const fixture = loadReplayFixture("020-incident-001-story");
     const source = deserialize(serialize(fixture.cartridge)) as Record<

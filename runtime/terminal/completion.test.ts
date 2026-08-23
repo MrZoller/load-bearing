@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import cartridgeDocument from "../../content/incidents/phase-1-demo.json";
+import incident001Document from "../../content/incidents/incident-001.json";
 import {
   createShellExecuteEvent,
   loadCartridge,
@@ -12,6 +13,11 @@ const CARTRIDGE = loadCartridge(cartridgeDocument);
 const STATE = reduce({
   cartridge: CARTRIDGE,
   seed: "2026-08-22/0/structural-audit",
+  events: [],
+});
+const INCIDENT_001_STATE = reduce({
+  cartridge: loadCartridge(incident001Document),
+  seed: "2026-08-22/29/deep-foundation",
   events: [],
 });
 
@@ -92,5 +98,15 @@ describe("completeTerminalInput", () => {
   it("leaves unsupported positions and unmatched prefixes alone", () => {
     expect(completeTerminalInput("tui", "/help more", 5, STATE)).toBeNull();
     expect(completeTerminalInput("bash", "unknown", 7, STATE)).toBeNull();
+  });
+
+  it("does not advertise Incident #001's hidden shell layer in initial Bash completion", () => {
+    const initial = completeTerminalInput("bash", "", 0, INCIDENT_001_STATE);
+
+    expect(initial?.candidates).not.toContain("ops-archive");
+    expect(initial?.candidates).not.toContain("regional-router");
+    expect(
+      completeTerminalInput("bash", "ops", 3, INCIDENT_001_STATE),
+    ).toBeNull();
   });
 });
