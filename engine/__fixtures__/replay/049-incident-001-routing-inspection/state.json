@@ -1791,7 +1791,7 @@
             {
               "alwaysAllow": [
                 {
-                  "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\nauthorization=standing\n",
+                  "contents": "routing inspection receipt recorded\nauthorization=standing\n",
                   "kind": "file-write",
                   "path": "/var/log/load-balancer/health.log"
                 },
@@ -1813,7 +1813,7 @@
               ],
               "grant": [
                 {
-                  "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\nauthorization=one-time\n",
+                  "contents": "routing inspection receipt recorded\nauthorization=one-time\n",
                   "kind": "file-write",
                   "path": "/var/log/load-balancer/health.log"
                 },
@@ -1838,11 +1838,11 @@
         {
           "actions": [
             {
-              "input": "rm config/routes.conf",
+              "input": "rm /production/load-balancer/config/routes.conf",
               "kind": "shell-execute"
             },
             {
-              "input": "cp -p config/routes.200.conf config/routes.conf",
+              "input": "cp -p /production/load-balancer/config/routes.200.conf /production/load-balancer/config/routes.conf",
               "kind": "shell-execute"
             },
             {
@@ -2868,7 +2868,7 @@
         },
         {
           "id": "waiver-consent-callback",
-          "text": "You agreed to detach Europe at 2026-08-22T09:14:22.000Z. The document /production/load-balancer/config/WAIVER.md and the geography now agree.",
+          "text": "You agreed to detach Europe at 2026-08-22T09:14:22.000Z. The document /production/load-balancer/config/WAIVER.md recorded that geography at the time.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -4169,7 +4169,7 @@
           "owner": "root"
         },
         "/var/log/load-balancer/health.log": {
-          "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\nauthorization=one-time\n",
+          "contents": "routing inspection receipt recorded\nauthorization=one-time\n",
           "group": "operators",
           "kind": "file",
           "mode": "0664",

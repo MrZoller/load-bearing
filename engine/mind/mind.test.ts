@@ -865,7 +865,7 @@ describe("Incident #001 permission and waiver orchestration", () => {
     for (const [decision, expected] of [
       [
         "grant",
-        "health endpoint serving 500; Europe remains attached\nregional router healthy\nauthorization=one-time\n",
+        "routing inspection receipt recorded\nauthorization=one-time\n",
       ],
       [
         "deny",
@@ -873,7 +873,7 @@ describe("Incident #001 permission and waiver orchestration", () => {
       ],
       [
         "always-allow",
-        "health endpoint serving 500; Europe remains attached\nregional router healthy\nauthorization=standing\n",
+        "routing inspection receipt recorded\nauthorization=standing\n",
       ],
     ] as const) {
       const pending = step(
@@ -891,6 +891,18 @@ describe("Incident #001 permission and waiver orchestration", () => {
       expect(contents(resolved, path)).toBe(expected);
     }
 
+    const repaired = visit(incidentInitial(), "expedite health repair");
+    const repairedInspection = step(
+      step(
+        repaired,
+        createMindPermissionRequestEvent("record-routing-inspection"),
+      ),
+      createMindPermissionChoiceEvent("record-routing-inspection", "grant"),
+    );
+    expect(contents(repairedInspection, path)).toBe(
+      "routing inspection receipt recorded\nauthorization=one-time\n",
+    );
+
     const standing = step(
       step(
         step(
@@ -905,7 +917,7 @@ describe("Incident #001 permission and waiver orchestration", () => {
       createMindStandingPermissionEvent("record-routing-inspection"),
     );
     expect(contents(standing, path)).toBe(
-      "health endpoint serving 500; Europe remains attached\nregional router healthy\nauthorization=one-time\n",
+      "routing inspection receipt recorded\nauthorization=one-time\n",
     );
 
     const adjacent = step(incidentInitial(), {
