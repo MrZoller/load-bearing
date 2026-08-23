@@ -178,12 +178,14 @@
       "phase2": {
         "beats": [
           {
+            "actions": [],
             "ending": "",
             "facts": [],
             "id": "start",
             "variants": []
           }
         ],
+        "counters": [],
         "endings": [],
         "facts": [],
         "initialBeat": "start"
@@ -344,6 +346,7 @@
       "values": 0
     },
     "story": {
+      "counters": [],
       "currentBeat": "start",
       "currentVariant": "",
       "discoveredEndings": [],

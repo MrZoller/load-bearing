@@ -5,6 +5,10 @@ import type { LoadedCartridge } from "../cartridge/types.js";
 import { restoreSnapshot, snapshot, step } from "../events/reduce.js";
 import { findWaiverConsent, readMindSlice } from "../mind/mind.js";
 import { readStorySlice } from "../story/story.js";
+import { readVfsSlice } from "../vfs/module.js";
+import { readVfs } from "../vfs/vfs.js";
+import { readWorldSlice } from "../world/module.js";
+import { lookupProcess, lookupService, readWorldLog } from "../world/world.js";
 
 import {
   type CartridgeReference,
@@ -97,6 +101,33 @@ describe("golden replay fixtures", () => {
     expect(recording.transcript).toContain("git.restore");
   });
 
+  it("records one outer story event while its consequence atomically spans story, VFS, and world owners", () => {
+    const recording = replayFixture(
+      loadReplayFixture("022-story-consequences"),
+    );
+    const state = restoreSnapshot(recording.state);
+    const world = readWorldSlice(state);
+
+    expect(readStorySlice(state).counters).toEqual([
+      { id: "attempts", value: 1 },
+    ]);
+    expect(readVfs(readVfsSlice(state), "/etc/motd")).toMatchObject({
+      value: { contents: "changed\n" },
+    });
+    expect(lookupService(world, "api")).toMatchObject({
+      state: "stopped",
+      health: "degraded",
+    });
+    expect(lookupProcess(world, "worker")).toMatchObject({ state: "stopped" });
+    expect(readWorldLog(world, readVfsSlice(state), "story-log")).toEqual({
+      ok: true,
+      entries: ["started", "consequence"],
+    });
+    expect(state.eventCount).toBe(1);
+    expect(state.transcript).toHaveLength(1);
+    expect(recording.transcript).toContain("story.beat-reached beat=start");
+  });
+
   it("records pending permission resolution at its simulated instant", () => {
     const recording = replayFixture(
       loadReplayFixture("019-pending-permissions"),
@@ -139,6 +170,7 @@ describe("golden replay fixtures", () => {
         { id: "bash-regional-detachment", kind: "reveal" },
         { id: "callback-load-bearing-response", kind: "callback" },
       ],
+      counters: [],
       discoveredEndings: ["load-bearing-response"],
     });
     expect(

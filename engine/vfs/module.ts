@@ -310,13 +310,26 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
     "vfs.write": {
       version: 0,
       apply(context, slice) {
-        const data = payload(context, ["path", "contents", "transcript"]);
+        const data = payload(context, [
+          "path",
+          "contents",
+          "transcript",
+          "strict",
+        ]);
+        const path = readString(data, "path", context.where);
         const mutation = writeVfs(
           slice,
-          readString(data, "path", context.where),
+          path,
           readString(data, "contents", context.where),
           context.clock.timestamp(),
         );
+        if (
+          readBoolean(data, "strict", false, context.where) &&
+          !mutation.result.ok
+        )
+          throw new Error(
+            `${context.where}: cannot write ${JSON.stringify(path)}: ${mutation.result.code}`,
+          );
         const outcome = mutationOutcome(
           mutation,
           (value) =>

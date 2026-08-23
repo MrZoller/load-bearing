@@ -33,6 +33,7 @@ export type {
 } from "./events/module.js";
 export { EventRegistryError, createRegistry } from "./events/registry.js";
 export type { EventRegistry } from "./events/registry.js";
+export { storyActionEvent } from "./story/actions.js";
 export {
   ENGINE_EVENT_MODULES,
   ENGINE_EVENT_REGISTRY,
@@ -312,6 +313,8 @@ export {
 } from "./story/conditions.js";
 export {
   createStorySlice,
+  addStoryCounter,
+  queryStoryCounter,
   readStorySlice,
   reachStoryBeat,
   recordStoryFact,
@@ -319,6 +322,8 @@ export {
 } from "./story/story.js";
 export type {
   StoryCondition,
+  StoryCounter,
+  StoryCounterQuery,
   StoryFact,
   StoryFactKind,
   StorySlice,
@@ -482,6 +487,8 @@ export {
   MAX_STORY_FACTS,
   MAX_STORY_VARIANTS,
   MAX_STORY_CONDITIONS,
+  MAX_STORY_CONSEQUENCE_WORK,
+  MAX_STORY_COUNTERS,
   MAX_STORY_OUTCOME_FACTS,
   MAX_STORY_ID_LENGTH,
   MAX_STORY_INTENTS,
@@ -517,7 +524,9 @@ export type {
   CartridgeResponseToolCall,
   CartridgeSpinnerPool,
   CartridgeStory,
+  CartridgeStoryAction,
   CartridgeStoryBeat,
+  CartridgeStoryCounter,
   CartridgeStoryVariant,
   CartridgeStoryPhase2,
   CartridgeEnding,

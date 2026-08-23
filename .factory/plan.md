@@ -25,11 +25,11 @@ authoring tooling remain excluded.
   - acceptance: `docs/incident-001-authoring.md` delivers a reviewable four-row matrix whose rows each name an unranked ending, exact machine/ledger/belief route conditions, consequence, and callback, with one Bash-only row and one distinct-waiver-ledger row; `engine/story/{types,story,module,story.test}.ts`, `engine/events/modules.ts`, `engine/cartridge/{schema,types,load}.ts`, `content/incidents/incident-001.json`, and `runtime/main.ts` add only the minimum shared-beat/non-terminal-ending path so browser input reaches the load-bearing declaration in at most five exchanges and remains usable afterward; one production-cartridge golden and `e2e/phase-2-skeleton.spec.ts` prove the end-to-end slice (criteria 1, 2 foundation, 14 foundation, 20; approved decisions Q1=A, Q3=A, Q4=B)
   - deps: none
   - pr: 55
-- [R] T32 (major) — Closed story conditions and callback facts
+- [x] T32 (major) — Closed story conditions and callback facts
   - acceptance: `engine/story/{types,conditions,story,module,conditions.test,story.test}.ts` and `engine/cartridge/{schema,types,load,load.test}.ts` expand the skeleton with bounded shared beats, sparse condition variants, reveals, callbacks, and ordered story facts sufficient to query every T31 matrix row; dangling references and malformed predicates fail at load, `engine/index.ts`, `content/schema/cartridge.v0.json`, invalid fixtures, and `docs/ARCHITECTURE.md` remain synchronized, and focused goldens prove cartridges cannot create model-owned parallel graphs (criteria 14 foundation, 20)
   - deps: T31
   - pr: 57
-- [ ] T33 (major) — Bounded consequence actions and story counters
+- [~] T33 (major) — Bounded consequence actions and story counters
   - acceptance: `engine/story/{types,actions,story,module,actions.test}.ts`, `engine/events/reduce.ts`, and `engine/cartridge/{schema,types,load,load.test}.ts` add a closed owner-directed action union and bounded counters for story consequences; actions dispatch only validated subsystem events, cycles/nested expansion/unbounded chains are rejected before replay, no cartridge can inject arbitrary event envelopes, and a golden demonstrates an atomic multi-owner consequence while preserving one-module-one-slice ownership (criteria 17 foundation, 20)
   - deps: T32
 - [ ] T34 (major) — Atomic permission continuations and exact waiver consent

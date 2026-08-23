@@ -8,7 +8,7 @@ import { readVfsSlice } from "../vfs/module.js";
 import { queryVfsTruth } from "../vfs/vfs.js";
 import { readWorldSlice } from "../world/module.js";
 import { lookupService } from "../world/world.js";
-import { readStorySlice } from "./story.js";
+import { queryStoryCounter, readStorySlice } from "./story.js";
 import type { StoryCondition } from "./types.js";
 
 function beliefMatches(actual: Belief, expected: CartridgeBelief): boolean {
@@ -65,6 +65,15 @@ export function storyConditionMatches(
     );
   if (condition.kind === "waiver-consent")
     return hasWaiverConsent(readMindSlice(state), condition);
+  if (condition.kind === "story-counter") {
+    const result = queryStoryCounter(readStorySlice(state), condition.counter);
+    return (
+      result.kind === "value" &&
+      (condition.comparison === "equal"
+        ? result.value === condition.value
+        : result.value >= condition.value)
+    );
+  }
   return readStorySlice(state).facts.some(
     (fact) => fact.id === condition.fact && fact.kind === condition.factKind,
   );

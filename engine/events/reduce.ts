@@ -63,6 +63,9 @@ import type { EventContext, EventModule, EventOutcome } from "./module.js";
 import { ENGINE_EVENT_REGISTRY } from "./modules.js";
 import type { EventRegistry } from "./registry.js";
 import { reactionActionEvent, reactionPredicateMatches } from "../reactions.js";
+import { MAX_STORY_CONSEQUENCE_WORK } from "../cartridge/schema.js";
+import { storyActionEvent } from "../story/actions.js";
+import { readStorySlice } from "../story/story.js";
 import { EVENT_SCHEMA_VERSION, readSlice } from "./state.js";
 import type {
   EngineEvent,
@@ -260,6 +263,7 @@ function foldEvent(
   registry: EventRegistry,
   expansionAllowed: boolean,
   reactionsAllowed: boolean,
+  triggerSink?: string[],
 ): SessionState {
   // Every field of `state` read exactly once, here, and the returned state
   // built from these locals rather than from `{...state}`. `state` is a
@@ -392,11 +396,19 @@ function foldEvent(
     const triggers: string[] = [envelope.type];
     for (const child of outcome.expansion) {
       const count = expanded.transcript.length;
-      expanded = foldEvent(expanded, child, registry, false, false);
+      const childTriggers: string[] = [];
+      expanded = foldEvent(
+        expanded,
+        child,
+        registry,
+        false,
+        false,
+        childTriggers,
+      );
       const entry = expanded.transcript[count];
       if (entry === undefined)
         throw new Error(`${where}: expansion child produced no logged entry`);
-      triggers.push(entry.type);
+      triggers.push(...childTriggers);
     }
     return reactionsAllowed
       ? applyReactions(expanded, triggers, registry, where)
@@ -428,9 +440,66 @@ function foldEvent(
       makeEntry(index, at, envelope.type, outcome, where),
     ]),
   });
+  const triggers = [envelope.type];
+  const staged =
+    envelope.type === "story.beat-reached"
+      ? applyStoryConsequences(logged, registry, where, triggers)
+      : logged;
+  triggerSink?.push(...triggers);
   return reactionsAllowed
-    ? applyReactions(logged, [envelope.type], registry, where)
-    : logged;
+    ? applyReactions(staged, triggers, registry, where)
+    : staged;
+}
+
+/** Stage the selected story outcome and every recursively reached outcome. */
+function applyStoryConsequences(
+  initial: SessionState,
+  registry: EventRegistry,
+  where: string,
+  triggers: string[],
+): SessionState {
+  let state = initial;
+  let work = 0;
+  const dispatchSelected = (): void => {
+    const story = readStorySlice(state);
+    const beat = state.cartridge.story.phase2.beats.find(
+      (candidate) => candidate.id === story.currentBeat,
+    );
+    if (beat === undefined)
+      throw new Error(
+        `${where}: selected unknown story beat ${JSON.stringify(story.currentBeat)}`,
+      );
+    const actions =
+      story.currentVariant === ""
+        ? beat.actions
+        : beat.variants.find((variant) => variant.id === story.currentVariant)
+            ?.actions;
+    if (actions === undefined)
+      throw new Error(
+        `${where}: selected unknown story variant ${JSON.stringify(story.currentVariant)}`,
+      );
+    for (let index = 0; index < actions.length; index += 1) {
+      const action = actions[index];
+      if (action === undefined) continue;
+      if (work >= MAX_STORY_CONSEQUENCE_WORK)
+        throw new Error(
+          `${where}: story consequence chain exceeds the ${String(MAX_STORY_CONSEQUENCE_WORK)} derived-event limit`,
+        );
+      const event = storyActionEvent(action);
+      state = applyDerivedEvent(
+        state,
+        event,
+        registry,
+        `${where} story action ${String(index)}`,
+        "story consequence",
+      );
+      work += 1;
+      triggers.push(event.type);
+      if (event.type === "story.beat-reached") dispatchSelected();
+    }
+  };
+  dispatchSelected();
+  return state;
 }
 
 /**
@@ -479,11 +548,12 @@ function applyReactions(
           );
         }
         const event = reactionActionEvent(action);
-        state = applyReactionEvent(
+        state = applyDerivedEvent(
           state,
           event,
           registry,
           `${where} reaction ${JSON.stringify(reaction.id)} action ${String(actionIndex)}`,
+          "reaction",
         );
         derivedEvents += 1;
         queue.push(event.type);
@@ -493,12 +563,13 @@ function applyReactions(
   return state;
 }
 
-/** Apply one reaction-derived event through its owner without logging it. */
-function applyReactionEvent(
+/** Apply one trusted derived event through its owner without logging it. */
+function applyDerivedEvent(
   state: SessionState,
   event: EngineEvent,
   registry: EventRegistry,
   where: string,
+  source: "reaction" | "story consequence",
 ): SessionState {
   const envelope = assertEventEnvelope(event, where);
   const handler = registry.handler(envelope.type);
@@ -535,14 +606,14 @@ function applyReactionEvent(
   const outcome = captureOutcome(handler.apply(context, slice), where);
   if (outcome.hasExpansion)
     throw new Error(
-      `${where}: reaction actions may not expand into logged events`,
+      `${where}: ${source} actions may not expand into logged events`,
     );
   if (
     serialize(clock.toState()) !== serialize(clockBefore) ||
     serialize(random.toState()) !== serialize(randomBefore)
   )
     throw new Error(
-      `${where}: reaction actions may not move time or randomness; only logged events own those positions`,
+      `${where}: ${source} actions may not move time or randomness; only logged events own those positions`,
     );
   const slices = applyEffects(
     state,
@@ -555,6 +626,13 @@ function applyReactionEvent(
     registry,
     where,
   );
+  if (
+    serialize(clock.toState()) !== serialize(clockBefore) ||
+    serialize(random.toState()) !== serialize(randomBefore)
+  )
+    throw new Error(
+      `${where}: ${source} actions and their effects may not move time or randomness; only logged events own those positions`,
+    );
   return freezeState({
     engineVersion: state.engineVersion,
     eventSchemaVersion: state.eventSchemaVersion,

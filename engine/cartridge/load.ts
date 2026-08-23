@@ -41,6 +41,7 @@ import {
   CARTRIDGE_SCHEMA,
   CARTRIDGE_SCHEMA_VERSION,
   FILE_PATH_PATTERN,
+  MAX_STORY_CONSEQUENCE_WORK,
 } from "./schema.js";
 import type { SchemaNode, ObjectNode } from "./schema.js";
 import type {
@@ -55,6 +56,7 @@ import type {
   CartridgeReaction,
   CartridgeRepository,
   CartridgeStory,
+  CartridgeStoryAction,
   ReactionAction,
   LoadedCartridge,
 } from "./types.js";
@@ -1337,6 +1339,23 @@ function checkStoryAndPresentation(
         `${JSON.stringify(fact.id)}, already used by /story/phase2/facts/${String(first.index)}`,
       );
   });
+  const counters = new Map<string, number>();
+  (story.phase2.counters ?? []).forEach((counter, index) => {
+    const first = counters.get(counter.id);
+    if (first === undefined) counters.set(counter.id, index);
+    else
+      report.addPhrase(
+        `/story/phase2/counters/${String(index)}/id`,
+        "an id no other story counter uses",
+        `${JSON.stringify(counter.id)}, already used by /story/phase2/counters/${String(first)}`,
+      );
+    if (counter.initial > counter.maximum)
+      report.addPhrase(
+        `/story/phase2/counters/${String(index)}/maximum`,
+        "a maximum at least as large as initial",
+        `${String(counter.maximum)}, below initial ${String(counter.initial)}`,
+      );
+  });
   if (!beats.has(story.phase2.initialBeat))
     report.addPhrase(
       "/story/phase2/initialBeat",
@@ -1344,6 +1363,48 @@ function checkStoryAndPresentation(
       `${JSON.stringify(story.phase2.initialBeat)}, which does not exist`,
     );
   const services = new Set(repository.services.map((service) => service.id));
+  const processes = new Set(repository.processes.map((proc) => proc.id));
+  const logs = new Set(repository.logs.map((log) => log.id));
+  const files = new Set(Object.keys(repository.files));
+  const checkOutcomeActions = (
+    actions: readonly CartridgeStoryAction[],
+    pointer: string,
+  ): void => {
+    actions.forEach((action, actionIndex) => {
+      const root = `${pointer}/${String(actionIndex)}`;
+      const missing = (field: string, id: string, noun: string): void =>
+        report.addPhrase(
+          `${root}/${field}`,
+          `the id of a declared ${noun}`,
+          `${JSON.stringify(id)}, which does not exist`,
+        );
+      switch (action.kind) {
+        case "counter-add":
+          if (!counters.has(action.counter))
+            missing("counter", action.counter, "story counter");
+          break;
+        case "story-reach":
+          if (!beats.has(action.beat))
+            missing("beat", action.beat, "story beat");
+          break;
+        case "file-write":
+          if (!files.has(action.path)) missing("path", action.path, "file");
+          break;
+        case "service-state":
+        case "service-health":
+          if (!services.has(action.service))
+            missing("service", action.service, "service");
+          break;
+        case "process-state":
+          if (!processes.has(action["process"]))
+            missing("process", action["process"], "process");
+          break;
+        case "log-append":
+          if (!logs.has(action.log)) missing("log", action.log, "log");
+          break;
+      }
+    });
+  };
   story.phase2.beats.forEach((beat, index) => {
     const root = `/story/phase2/beats/${String(index)}`;
     const checkEnding = (ending: string, pointer: string): void => {
@@ -1375,6 +1436,7 @@ function checkStoryAndPresentation(
     };
     checkEnding(beat.ending, `${root}/ending`);
     checkFacts(beat.facts ?? [], `${root}/facts`);
+    checkOutcomeActions(beat.actions ?? [], `${root}/actions`);
     const variants = new Map<string, number>();
     (beat.variants ?? []).forEach((variant, variantIndex) => {
       const variantRoot = `${root}/variants/${String(variantIndex)}`;
@@ -1388,6 +1450,7 @@ function checkStoryAndPresentation(
         );
       checkEnding(variant.ending, `${variantRoot}/ending`);
       checkFacts(variant.facts ?? [], `${variantRoot}/facts`);
+      checkOutcomeActions(variant.actions ?? [], `${variantRoot}/actions`);
       variant.when.forEach((condition, conditionIndex) => {
         const conditionRoot = `${variantRoot}/when/${String(conditionIndex)}`;
         if (condition.kind === "story-fact") {
@@ -1405,6 +1468,15 @@ function checkStoryAndPresentation(
               JSON.stringify(condition.factKind),
             );
         }
+        if (
+          condition.kind === "story-counter" &&
+          !counters.has(condition.counter)
+        )
+          report.addPhrase(
+            `${conditionRoot}/counter`,
+            "the id of a declared story counter",
+            `${JSON.stringify(condition.counter)}, which does not exist`,
+          );
         const service =
           condition.kind === "service-state" ||
           condition.kind === "service-health"
@@ -1424,6 +1496,75 @@ function checkStoryAndPresentation(
           );
       });
     });
+  });
+  interface StoryEdge {
+    readonly to: string;
+    readonly pointer: string;
+  }
+  const storyEdges = new Map<string, StoryEdge[]>();
+  const outcomes = new Map<
+    string,
+    readonly (readonly CartridgeStoryAction[])[]
+  >();
+  story.phase2.beats.forEach((beat, beatIndex) => {
+    const all = [
+      beat.actions ?? [],
+      ...(beat.variants ?? []).map((variant) => variant.actions ?? []),
+    ];
+    outcomes.set(beat.id, all);
+    const edges: StoryEdge[] = [];
+    all.forEach((actions, outcomeIndex) => {
+      actions.forEach((action, actionIndex) => {
+        if (action.kind !== "story-reach") return;
+        const segment =
+          outcomeIndex === 0
+            ? `beats/${String(beatIndex)}/actions`
+            : `beats/${String(beatIndex)}/variants/${String(outcomeIndex - 1)}/actions`;
+        edges.push({
+          to: action.beat,
+          pointer: `/story/phase2/${segment}/${String(actionIndex)}/beat`,
+        });
+      });
+    });
+    storyEdges.set(beat.id, edges);
+  });
+  const activeStory = new Set<string>();
+  const storyCosts = new Map<string, number>();
+  const visitStory = (beat: string): number => {
+    const complete = storyCosts.get(beat);
+    if (complete !== undefined) return complete;
+    activeStory.add(beat);
+    for (const edge of storyEdges.get(beat) ?? []) {
+      if (!beats.has(edge.to)) continue;
+      if (activeStory.has(edge.to))
+        report.addPhrase(
+          edge.pointer,
+          "a story-reach consequence whose graph is acyclic",
+          `${JSON.stringify(beat)} -> ${JSON.stringify(edge.to)} closes a story cycle`,
+        );
+      else visitStory(edge.to);
+    }
+    activeStory.delete(beat);
+    let maximum = 0;
+    for (const actions of outcomes.get(beat) ?? []) {
+      let cost = actions.length;
+      for (const action of actions) {
+        if (action.kind === "story-reach" && !activeStory.has(action.beat))
+          cost += storyCosts.get(action.beat) ?? 0;
+      }
+      if (cost > maximum) maximum = cost;
+    }
+    storyCosts.set(beat, maximum);
+    return maximum;
+  };
+  story.phase2.beats.forEach((beat, beatIndex) => {
+    const cost = visitStory(beat.id);
+    if (cost > MAX_STORY_CONSEQUENCE_WORK)
+      report.addPhrase(
+        `/story/phase2/beats/${String(beatIndex)}/actions`,
+        `a worst-case consequence chain of at most ${String(MAX_STORY_CONSEQUENCE_WORK)} actions`,
+        `${String(cost)} actions`,
+      );
   });
   const checkStoryActions = (
     actions: readonly CartridgeAgentAction[],

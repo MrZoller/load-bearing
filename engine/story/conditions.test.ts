@@ -6,6 +6,7 @@ import type { EngineEvent, SessionState } from "../events/state.js";
 import { createMindWaiverConsentRecordedEvent } from "../mind/module.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { createStoryFactRecordedEvent } from "./module.js";
+import { createStoryBeatReachedEvent } from "./module.js";
 import { storyConditionMatches } from "./conditions.js";
 import type { StoryCondition } from "./types.js";
 
@@ -247,6 +248,73 @@ describe("closed story conditions", () => {
       storyConditionMatches(withBeliefs, {
         kind: "belief",
         belief: { kind: "service-health", service: "api", health: "unhealthy" },
+      }),
+    ).toBe(false);
+  });
+
+  it("evaluates equal and at-least conditions against the declared story counter", () => {
+    const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
+    (source["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "start",
+      counters: [{ id: "attempts", initial: 1, maximum: 3 }],
+      beats: [
+        {
+          id: "start",
+          ending: "",
+          actions: [{ kind: "counter-add", counter: "attempts", amount: 1 }],
+        },
+      ],
+      endings: [],
+    };
+    const before = reduce({
+      cartridge: loadCartridge(source),
+      seed: SEED,
+      events: [],
+    });
+    const after = reduce({
+      cartridge: loadCartridge(source),
+      seed: SEED,
+      events: [createStoryBeatReachedEvent("start")],
+    });
+
+    expect(
+      storyConditionMatches(before, {
+        kind: "story-counter",
+        counter: "attempts",
+        comparison: "equal",
+        value: 1,
+      }),
+    ).toBe(true);
+    expect(
+      storyConditionMatches(after, {
+        kind: "story-counter",
+        counter: "attempts",
+        comparison: "equal",
+        value: 1,
+      }),
+    ).toBe(false);
+    expect(
+      storyConditionMatches(after, {
+        kind: "story-counter",
+        counter: "attempts",
+        comparison: "equal",
+        value: 2,
+      }),
+    ).toBe(true);
+    expect(
+      storyConditionMatches(after, {
+        kind: "story-counter",
+        counter: "attempts",
+        comparison: "at-least",
+        value: 2,
+      }),
+    ).toBe(true);
+    expect(
+      storyConditionMatches(after, {
+        kind: "story-counter",
+        counter: "attempts",
+        comparison: "at-least",
+        value: 3,
       }),
     ).toBe(false);
   });

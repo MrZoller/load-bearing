@@ -10,7 +10,7 @@ import { readSlice } from "../events/state.js";
 import type { SessionState } from "../events/state.js";
 import { deepFreeze } from "../freeze.js";
 import { storyConditionsMatch } from "./conditions.js";
-import type { StoryFact, StorySlice } from "./types.js";
+import type { StoryCounterQuery, StoryFact, StorySlice } from "./types.js";
 
 function record(
   value: unknown,
@@ -19,6 +19,7 @@ function record(
     "currentBeat",
     "currentVariant",
     "facts",
+    "counters",
     "discoveredEndings",
   ],
 ): Readonly<Record<string, unknown>> {
@@ -101,6 +102,10 @@ export function createStorySlice(cartridge: LoadedCartridge): StorySlice {
     currentBeat: cartridge.story.phase2.initialBeat,
     currentVariant: "",
     facts: [],
+    counters: cartridge.story.phase2.counters.map(({ id, initial }) => ({
+      id,
+      value: initial,
+    })),
     discoveredEndings: [],
   });
 }
@@ -141,6 +146,21 @@ export function validateStorySlice(
       throw new Error(`${at}.id: duplicate fact ${JSON.stringify(id)}`);
     factIds.add(id);
   });
+  const counters = denseArray(item["counters"], `${where}.counters`);
+  counters.forEach((value, index) => {
+    const at = `${where}.counters[${String(index)}]`;
+    const counter = record(value, at, ["id", "value"]);
+    if (
+      typeof counter["id"] !== "string" ||
+      !STORY_ID_PATTERN.test(counter["id"])
+    )
+      throw new Error(`${at}.id: must be a story counter identifier`);
+    if (
+      !Number.isSafeInteger(counter["value"]) ||
+      (counter["value"] as number) < 0
+    )
+      throw new Error(`${at}.value: must be a nonnegative safe integer`);
+  });
   const discoveredEndings = stringArray(
     item["discoveredEndings"],
     `${where}.discoveredEndings`,
@@ -169,6 +189,23 @@ export function validateStorySlice(
     const declaredFacts = new Map(
       cartridge.story.phase2.facts.map((fact) => [fact.id, fact.kind]),
     );
+    if (counters.length !== cartridge.story.phase2.counters.length)
+      throw new Error(
+        `${where}.counters: expected exactly ${String(cartridge.story.phase2.counters.length)} declared counters`,
+      );
+    cartridge.story.phase2.counters.forEach((declared, index) => {
+      const counter = counters[index] as
+        Readonly<Record<string, unknown>> | undefined;
+      if (counter?.["id"] !== declared.id)
+        throw new Error(
+          `${where}.counters[${String(index)}].id: expected declared counter ${JSON.stringify(declared.id)}`,
+        );
+      const value = counter["value"] as number;
+      if (value < declared.initial || value > declared.maximum)
+        throw new Error(
+          `${where}.counters[${String(index)}].value: must be between initial ${String(declared.initial)} and maximum ${String(declared.maximum)}`,
+        );
+    });
     (facts as readonly StoryFact[]).forEach((fact, index) => {
       const kind = declaredFacts.get(fact.id);
       if (kind === undefined)
@@ -197,6 +234,45 @@ export function readStorySlice(state: SessionState): StorySlice {
     "session state: slices.story",
     state.cartridge,
   );
+}
+
+export function queryStoryCounter(
+  slice: StorySlice,
+  id: string,
+): StoryCounterQuery {
+  const counter = slice.counters.find((candidate) => candidate.id === id);
+  return counter === undefined
+    ? deepFreeze({ kind: "missing" })
+    : deepFreeze({ kind: "value", value: counter.value });
+}
+
+export function addStoryCounter(
+  slice: StorySlice,
+  cartridge: LoadedCartridge,
+  id: string,
+  amount: number,
+): StorySlice {
+  if (!Number.isSafeInteger(amount) || amount <= 0)
+    throw new Error("story: counter addition must be a positive safe integer");
+  const index = cartridge.story.phase2.counters.findIndex(
+    (counter) => counter.id === id,
+  );
+  const declaration = cartridge.story.phase2.counters[index];
+  const current = slice.counters[index];
+  if (declaration === undefined || current === undefined)
+    throw new Error(`story: unknown counter ${JSON.stringify(id)}`);
+  if (amount > declaration.maximum - current.value)
+    throw new Error(
+      `story: counter ${JSON.stringify(id)} would exceed maximum ${String(declaration.maximum)}`,
+    );
+  return deepFreeze({
+    ...slice,
+    counters: slice.counters.map((counter, counterIndex) =>
+      counterIndex === index
+        ? { id: counter.id, value: counter.value + amount }
+        : counter,
+    ),
+  });
 }
 
 export function reachStoryBeat(
@@ -239,6 +315,7 @@ export function reachStoryBeat(
     currentBeat: beat.id,
     currentVariant: variant?.id ?? "",
     facts,
+    counters: slice.counters,
     discoveredEndings,
   });
 }
@@ -262,6 +339,7 @@ export function recordStoryFact(
     currentBeat: slice.currentBeat,
     currentVariant: slice.currentVariant,
     facts: [...slice.facts, { ...declared }],
+    counters: [...slice.counters],
     discoveredEndings: [...slice.discoveredEndings],
   });
 }

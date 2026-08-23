@@ -6,6 +6,7 @@ import { readString, requirePayload } from "../events/payload.js";
 import type { EngineEvent } from "../events/state.js";
 import type { StorySlice } from "./types.js";
 import {
+  addStoryCounter,
   createStorySlice,
   recordStoryFact,
   reachStoryBeat,
@@ -35,6 +36,34 @@ export const STORY_MODULE = defineEventModule<StorySlice>({
   },
   validateSlice: validateStorySlice,
   events: {
+    "story.counter-added": {
+      version: 0,
+      apply(context, slice) {
+        const payload = requirePayload(context);
+        const unknown = Object.keys(payload)
+          .filter((key) => key !== "counter" && key !== "amount")
+          .sort();
+        if (unknown.length > 0)
+          throw new Error(
+            `${context.where}: unexpected payload field(s) ${unknown.join(", ")}; expected counter, amount`,
+          );
+        const counter = readString(payload, "counter", context.where);
+        const amount = payload["amount"];
+        if (!Number.isSafeInteger(amount) || (amount as number) <= 0)
+          throw new Error(
+            `${context.where}: amount must be a positive safe integer`,
+          );
+        return {
+          slice: addStoryCounter(
+            slice,
+            context.cartridge,
+            counter,
+            amount as number,
+          ),
+          summary: `counter=${counter} amount=${String(amount)}`,
+        };
+      },
+    },
     "story.beat-reached": {
       version: 0,
       apply(context, slice) {

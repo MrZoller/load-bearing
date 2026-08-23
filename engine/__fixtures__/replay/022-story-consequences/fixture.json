@@ -1,0 +1,13 @@
+{
+  "name": "022-story-consequences",
+  "description": "One authored beat atomically updates story, VFS, and world owners while a reaction observes its derived VFS event, yet only the outer story event enters the log.",
+  "seed": "2026-08-22/22/deep-foundation",
+  "cartridge": "story-consequences",
+  "events": [
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "start" },
+      "version": 0
+    }
+  ]
+}

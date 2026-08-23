@@ -1,0 +1,129 @@
+{
+  "meta": {
+    "schemaVersion": 0,
+    "number": 0,
+    "date": "2026-08-22",
+    "title": "Story consequence fixture",
+    "assignment": "Prove that owner-directed consequences remain one event.",
+    "startedAt": "2026-08-22T09:14:22.000Z"
+  },
+  "repository": {
+    "cwd": "/production/service",
+    "identity": { "user": "root", "group": "root", "home": "/root" },
+    "gitIdentity": { "name": "Visitor", "email": "visitor@example.test" },
+    "system": {
+      "hostname": "production",
+      "operatingSystem": "Linux",
+      "kernelRelease": "6.1.0-load-bearing",
+      "architecture": "x86_64",
+      "bootedAt": "2026-08-22T09:00:00.000Z"
+    },
+    "files": {
+      "/production/service/README.md": { "contents": "# fixture\n" },
+      "/etc/motd": { "contents": "before\n" },
+      "/usr/bin/worker": { "contents": "worker\n" },
+      "/var/log/story.log": { "contents": "started\n" }
+    },
+    "services": [
+      {
+        "id": "api",
+        "state": "running",
+        "health": "healthy",
+        "ports": [],
+        "dependencies": []
+      }
+    ],
+    "processes": [
+      {
+        "id": "worker",
+        "pid": 1200,
+        "user": "root",
+        "command": { "binary": "/usr/bin/worker", "args": [] },
+        "startedAt": "2026-08-22T09:00:00.000Z",
+        "state": "running"
+      }
+    ],
+    "logs": [
+      { "id": "story-log", "kind": "file", "path": "/var/log/story.log" }
+    ],
+    "reactions": [
+      {
+        "id": "write-marks-api-degraded",
+        "on": "vfs.write",
+        "predicates": [],
+        "actions": [
+          { "kind": "service-health", "service": "api", "health": "degraded" }
+        ]
+      }
+    ]
+  },
+  "models": [
+    {
+      "id": "deep-foundation",
+      "name": "Deep Foundation",
+      "archetype": "paranoid",
+      "description": "A fixture model.",
+      "costMultiplier": 1
+    }
+  ],
+  "story": {
+    "opening": {
+      "login": ["Fixture login."],
+      "response": "fixture-response",
+      "beliefs": []
+    },
+    "responses": [{ "id": "fixture-response", "text": "Fixture response." }],
+    "intents": [],
+    "fallback": { "response": "fixture-response" },
+    "helpResponse": "fixture-response",
+    "compact": {
+      "response": "fixture-response",
+      "summary": "Fixture compacted.",
+      "beliefs": []
+    },
+    "resume": {
+      "unchangedResponse": "fixture-response",
+      "changedResponse": "fixture-response"
+    },
+    "phase2": {
+      "initialBeat": "start",
+      "counters": [{ "id": "attempts", "initial": 0, "maximum": 2 }],
+      "beats": [
+        {
+          "id": "start",
+          "ending": "",
+          "actions": [
+            { "kind": "counter-add", "counter": "attempts", "amount": 1 },
+            {
+              "kind": "file-write",
+              "path": "/etc/motd",
+              "contents": "changed\n"
+            },
+            { "kind": "service-state", "service": "api", "state": "stopped" },
+            {
+              "kind": "process-state",
+              "process": "worker",
+              "state": "stopped"
+            },
+            { "kind": "log-append", "log": "story-log", "entry": "consequence" }
+          ]
+        }
+      ],
+      "endings": []
+    }
+  },
+  "presentation": {
+    "placeholders": [{ "stage": 0, "text": "inspect" }],
+    "spinnerPools": [
+      { "archetype": "paranoid", "stage": 0, "verbs": ["Inspecting"] }
+    ],
+    "metrics": {
+      "baseTokens": 0,
+      "tokensPerEvent": 1,
+      "contextWindowTokens": 1000,
+      "costMicrosPerToken": 1,
+      "integrityStart": 100,
+      "integrityLossPerEvent": 1
+    }
+  }
+}
