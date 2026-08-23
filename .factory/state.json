@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T36",
-  "branch": "factory/t36-persona-routing",
-  "pr": 61,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-23T07:25:33Z"
+  "updated": "2026-08-23T07:35:59Z"
 }
