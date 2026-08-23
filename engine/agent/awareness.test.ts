@@ -532,6 +532,11 @@ describe("agent awareness planning", () => {
     expect(readAgentSlice(stageAndModel).responses.at(-1)?.responseId).toBe(
       "paranoid-1-opening",
     );
+    expect(
+      stageAndModel.transcript.some(
+        (entry) => entry.type === "agent.response-recorded",
+      ),
+    ).toBe(true);
     expect(selectAgentPresentation(cartridge, stageAndModel)).toMatchObject({
       archetype: "reckless",
       stage: 1,

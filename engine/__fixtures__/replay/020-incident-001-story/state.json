@@ -3917,7 +3917,7 @@
     "startMs": 1787390062000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 8,
+  "eventCount": 9,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {
@@ -4666,34 +4666,41 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 3,
+      "summary": "response=deep-foundation-stage-1-opening instance=stage-1-opening-3",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 4,
       "summary": "kind=file-contents",
       "type": "mind.belief-set"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 4,
+      "index": 5,
       "summary": "beat=load-bearing-declaration",
       "type": "story.beat-reached"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 5,
+      "index": 6,
       "summary": "response=load-bearing-declaration instance=turn-0",
       "type": "agent.response-recorded"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 6,
+      "index": 7,
       "summary": "message=turn-3",
       "type": "agent.message-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 7,
+      "index": 8,
       "summary": "response=inspect-routing instance=turn-3",
       "type": "agent.response-recorded"
     }

@@ -570,7 +570,7 @@ function applyEscalation(
     advanced.cartridge,
     advanced,
   ).openingResponse;
-  return applyDerivedEvent(
+  return foldEvent(
     advanced,
     canRecordAuthoredResponse(advanced.cartridge, advanced, responseId)
       ? createAgentResponseEvent(
@@ -579,8 +579,8 @@ function applyEscalation(
         )
       : createAgentCapacityEvent(advanced.cartridge.story.fallback.response),
     registry,
-    `${where} escalation opening`,
-    "story escalation",
+    false,
+    false,
   );
 }
 

@@ -3917,7 +3917,7 @@
     "startMs": 1787390062000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 25,
+  "eventCount": 28,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {},
@@ -3939,13 +3939,13 @@
           "text": "The first dependency is no longer isolated, so I am widening the audit one connection at a time."
         },
         {
-          "id": "stage-2-opening-3/message",
+          "id": "stage-2-opening-4/message",
           "responseId": "temporary-shoring-stage-2-opening",
           "role": "agent",
           "text": "We have enough temporary measures to create their own schedule, so I am prioritizing the one action that restores forward motion."
         },
         {
-          "id": "stage-3-opening-4/message",
+          "id": "stage-3-opening-6/message",
           "responseId": "temporary-shoring-stage-3-opening",
           "role": "agent",
           "text": "The incident is running on borrowed time and borrowed certainty, so I am narrowing everything to the next survivable action."
@@ -4005,11 +4005,11 @@
           "responseId": "deep-foundation-stage-1-opening"
         },
         {
-          "instanceId": "stage-2-opening-3",
+          "instanceId": "stage-2-opening-4",
           "responseId": "temporary-shoring-stage-2-opening"
         },
         {
-          "instanceId": "stage-3-opening-4",
+          "instanceId": "stage-3-opening-6",
           "responseId": "temporary-shoring-stage-3-opening"
         },
         {
@@ -4036,12 +4036,12 @@
           "text": "Okay, one assumption has already reached beyond the original endpoint."
         },
         {
-          "id": "stage-2-opening-3/thinking/temporary-shoring-stage-2-opener",
+          "id": "stage-2-opening-4/thinking/temporary-shoring-stage-2-opener",
           "status": "complete",
           "text": "Okay Amigos, the workaround stack is becoming a workstream."
         },
         {
-          "id": "stage-3-opening-4/thinking/temporary-shoring-stage-3-opener",
+          "id": "stage-3-opening-6/thinking/temporary-shoring-stage-3-opener",
           "status": "complete",
           "text": "Okay Holy crap, speed is now a constraint rather than a strategy."
         }
@@ -4714,160 +4714,181 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 2,
+      "summary": "response=deep-foundation-stage-1-opening instance=stage-1-opening-2",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 3,
       "summary": "model=temporary-shoring",
       "type": "terminal.model-set"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 3,
+      "index": 4,
+      "summary": "response=temporary-shoring-stage-2-opening instance=stage-2-opening-4",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 5,
       "summary": "decision=grant",
       "type": "mind.permission-decision"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 4,
+      "index": 6,
+      "summary": "response=temporary-shoring-stage-3-opening instance=stage-3-opening-6",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 7,
       "summary": "kind=file-contents",
       "type": "mind.belief-set"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 5,
+      "index": 8,
       "summary": "model=deep-foundation",
       "type": "terminal.model-set"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 6,
+      "index": 9,
       "summary": "message=misfire-paranoid",
       "type": "agent.message-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 7,
+      "index": 10,
       "summary": "counter=flail amount=8",
       "type": "story.counter-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 8,
+      "index": 11,
       "summary": "counter=capitulation amount=1",
       "type": "story.counter-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 9,
+      "index": 12,
       "summary": "response=deep-foundation-capitulation-stage-3 instance=misfire-paranoid",
       "type": "agent.response-recorded"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 10,
+      "index": 13,
       "summary": "model=temporary-shoring",
       "type": "terminal.model-set"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 11,
+      "index": 14,
       "summary": "message=misfire-reckless",
       "type": "agent.message-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 12,
+      "index": 15,
       "summary": "counter=flail amount=8",
       "type": "story.counter-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 13,
+      "index": 16,
       "summary": "counter=capitulation amount=1",
       "type": "story.counter-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 14,
+      "index": 17,
       "summary": "response=temporary-shoring-capitulation-stage-3 instance=misfire-reckless",
       "type": "agent.response-recorded"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 15,
+      "index": 18,
       "summary": "model=drywall",
       "type": "terminal.model-set"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 16,
+      "index": 19,
       "summary": "message=misfire-superficial",
       "type": "agent.message-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 17,
+      "index": 20,
       "summary": "counter=flail amount=8",
       "type": "story.counter-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 18,
+      "index": 21,
       "summary": "counter=capitulation amount=1",
       "type": "story.counter-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 19,
+      "index": 22,
       "summary": "response=drywall-capitulation-stage-3 instance=misfire-superficial",
       "type": "agent.response-recorded"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 20,
+      "index": 23,
       "summary": "model=cantilever-experimental",
       "type": "terminal.model-set"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 21,
+      "index": 24,
       "summary": "message=misfire-existential",
       "type": "agent.message-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 22,
+      "index": 25,
       "summary": "counter=flail amount=8",
       "type": "story.counter-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 23,
+      "index": 26,
       "summary": "counter=capitulation amount=1",
       "type": "story.counter-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 24,
+      "index": 27,
       "summary": "response=cantilever-experimental-capitulation-stage-3 instance=misfire-existential",
       "type": "agent.response-recorded"
     }
