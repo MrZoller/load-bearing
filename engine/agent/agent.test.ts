@@ -13,6 +13,7 @@ import {
   readAgentMessageArtifacts,
   readAgentSlice,
   recordAuthoredResponse,
+  validateAgentActivity,
   validateAgentSlice,
 } from "./agent.js";
 import {
@@ -153,6 +154,27 @@ function activityCartridge() {
 }
 
 describe("agent replay state", () => {
+  it("rejects activity copy that contradicts its status", () => {
+    expect(() =>
+      validateAgentActivity(
+        { status: "idle", verb: "", suffix: "still working" },
+        "activity",
+      ),
+    ).toThrow(/idle requires empty copy/);
+    expect(() =>
+      validateAgentActivity(
+        { status: "working", verb: "Inspecting", suffix: "" },
+        "activity",
+      ),
+    ).toThrow(/working requires a verb and suffix/);
+    expect(() =>
+      validateAgentActivity(
+        { status: "working", verb: "", suffix: "{seconds}s" },
+        "activity",
+      ),
+    ).toThrow(/working requires a verb and suffix/);
+  });
+
   it("instantiates authored responses with stable instance-derived artifact ids", () => {
     const event = createAgentResponseEvent("authored", "turn-one");
     expect(event.version).toBe(0);
@@ -385,7 +407,7 @@ describe("agent replay state", () => {
           toolCalls: [],
           thinkingBlocks: [],
           todos: [],
-          activity: { status: "idle", verb: "Animating" },
+          activity: { status: "idle", verb: "Animating", suffix: "" },
           responses: [],
           focused: true,
         },
@@ -434,7 +456,7 @@ describe("agent replay state", () => {
       toolCalls: [],
       thinkingBlocks: [],
       todos: [],
-      activity: { status: "idle", verb: "" },
+      activity: { status: "idle", verb: "", suffix: "" },
       responses: [],
     };
     const accessor: unknown[] = [];
@@ -468,7 +490,7 @@ describe("agent replay state", () => {
       toolCalls: [],
       thinkingBlocks: [],
       todos: [],
-      activity: { status: "idle", verb: "" },
+      activity: { status: "idle", verb: "", suffix: "" },
       responses: [],
     };
     const accessor = { ...base };
