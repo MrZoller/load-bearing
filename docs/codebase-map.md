@@ -5,10 +5,11 @@ The deep map of the repository, for a day-one agent or engineer. Companion to
 this document is *what exists today*, as opposed to what is designed.
 `CLAUDE.md` and `AGENTS.md` carry the invariants and verified commands.
 
-Status: **Phase 1 — browser terminal complete.** The headless engine and one
-replay-backed browser terminal now cover two views, shared-machine interaction,
-bounded agent artifacts, keyboard/mobile operation, and the deterministic
-production acceptance gate. See [Implementation status](#implementation-status).
+Status: **Phase 2 in progress over a complete Phase 1 browser terminal.** The
+headless engine now also has a bounded shared story graph, closed conditions,
+ordered reveal/callback facts, sparse variants, non-terminal endings, and an
+exact waiver-consent read contract. See
+[Implementation status](#implementation-status).
 
 ---
 
@@ -54,7 +55,8 @@ compared byte-for-byte against committed golden fixtures.
 │   ├── world/                   processes/services/logs/env/man/history/tickets
 │   ├── commands/                tokenizer/options/registry/builtins/shell events
 │   ├── tests/                   authored predicates, runner plan + event module
-│   ├── mind/                    permission ledger + typed belief divergence
+│   ├── mind/                    permission/waiver ledgers + belief divergence
+│   ├── story/                   shared beats, facts, conditions, endings
 │   ├── terminal/                replayable mode/model slice + named streams
 │   ├── agent/                   replayable messages/responses/TUI artifacts
 │   ├── reactions.ts             predicates + owner-event action planning
@@ -70,7 +72,7 @@ compared byte-for-byte against committed golden fixtures.
 │   │   ├── diff.ts, text.ts    diff + writable-text validation
 │   │   └── README.md           source of truth for fixtures + the gate
 │   └── __fixtures__/
-│       ├── replay/{001-016}/      fixture.json + state.json + transcript.txt
+│       ├── replay/{001-021}/      fixture.json + state.json + transcript.txt
 │       └── cartridges/            focused worlds + invalid/*.json
 ├── content/schema/cartridge.v0.json  published schema (emitted, contract)
 ├── scripts/
@@ -78,7 +80,7 @@ compared byte-for-byte against committed golden fixtures.
 │   ├── update-fixtures.ts      npm run fixtures:update  (writes)
 │   └── update-schema.ts        npm run schema:update    (writes)
 ├── runtime/                    browser session, Bash/TUI views, DOM renderer
-├── content/incidents/          Phase 1 demonstration cartridge
+├── content/incidents/          production Incident #001 + Phase 1 demo
 ├── docs/                       DESIGN.md (comedy), ARCHITECTURE.md (design)
 ├── .github/workflows/ci.yml    the CI gate
 └── pipeline/  content/lore/    future phases
@@ -101,12 +103,13 @@ compared byte-for-byte against committed golden fixtures.
 | `LoadedCartridge` | `engine/cartridge/types.ts` | The world after validation/normalization. Plain JSON, deep-copied, serializable. |
 | `CartridgeMeta/File/Model/Repository` | `engine/cartridge/types.ts` | Loaded shapes for meta, files, models, repository. |
 | `GitSlice` / `VfsSlice` / `WorldSlice` | `engine/git/types.ts`, `engine/vfs/types.ts`, `engine/world/types.ts` | Canonical plain-JSON machine state owned by each event module. |
-| `MindSlice` / `Belief` / `ExactCapability` | `engine/mind/types.ts` | Timestamped permission history and the agent's typed, separately serialized model of machine truth. |
+| `MindSlice` / `Belief` / `ExactCapability` / `WaiverConsent` | `engine/mind/types.ts` | Timestamped permission and distinct exact waiver-consent history plus the agent's typed, separately serialized model of machine truth. |
+| `StorySlice` / `StoryCondition` / `StoryFact` | `engine/story/types.ts` | One shared current beat/variant, ordered typed facts and endings, and the closed pre-event query vocabulary. |
 | `TerminalSlice` / `TerminalMode` | `engine/terminal/types.ts` | Replayable Bash/TUI mode and active cartridge model; model changes retain the root seed. |
 | `AgentSlice` / `AuthoredResponseRecord` | `engine/agent/types.ts` | Bounded replayable messages, artifacts, activity, and cartridge response instances. |
 | `EngineMetrics` | `engine/metrics/types.ts` | Bounded status projection from event count, active model, and validated cartridge parameters; never a parallel runtime counter. |
-| `CartridgeStory` / `CartridgePresentation` | `engine/cartridge/types.ts` | Concrete bounded Phase 1 content shells; only each named `phase2` interior is deferred. |
-| `DeferredObject` | `engine/cartridge/types.ts` | Plain JSON carried only inside the explicit Phase 2 interiors. |
+| `CartridgeStory` / `CartridgePresentation` | `engine/cartridge/types.ts` | Concrete bounded content; story includes the shared graph while only `presentation.phase2` remains deferred. |
+| `DeferredObject` | `engine/cartridge/types.ts` | Plain JSON carried only inside the explicit deferred presentation interior. |
 | `SimulatedClock` / `ClockState` | `engine/clock/clock.ts` | `now() = startMs + elapsedMs`. Advances only via events. |
 | `CivilTime` / `CivilInput` | `engine/clock/civil.ts` | UTC calendar fields; hand-computed (no `Date`/`Intl`). |
 | `RandomStream` / `RandomState` | `engine/random/stream.ts` | A named mulberry32 stream in the shared registry. `fork(label)` derives a child from seed+path, not position. |
@@ -228,6 +231,7 @@ simulated clock.
 The `mind` slice is intentionally downstream of machine truth, never coupled to
 its mutations. `mind.permission-decision` records exact action/resource grants,
 denials, and standing `always-allow` decisions at simulated time;
+`mind.waiver-consent-recorded` appends a separately typed exact waiver entry;
 `mind.belief-set` upserts one typed subject; and `mind.compact` replaces the
 whole assertion set while appending timestamped summary history.
 `beliefDivergence(state)` walks assertions in stored order and uses only the
@@ -238,6 +242,14 @@ replacement beliefs, and response reference using the same closed five-kind
 vocabulary. The generic awareness planner records deterministic response
 instances before entering TUI, and `loadbearing --resume` invokes that plan as
 ordinary shell expansion children.
+
+The `story` slice owns one graph independent of model and archetype. A beat
+reach evaluates sparse variants in authored order against the complete
+pre-event state using closed VFS, service, belief, waiver, and story-fact
+predicates; the first all-of match replaces the base ending/fact outcome.
+Facts and ending discoveries are idempotent ordered session state. Cartridge
+loading rejects malformed predicates, duplicate ids, dangling references,
+fact-kind mismatches, and any model-owned graph field before replay.
 
 The `agent` slice owns visible dialogue artifacts but no presentation state.
 `agent.response-recorded` resolves one validated cartridge response and derives
@@ -345,9 +357,10 @@ and animation activity are asserted not to alter the replay log.
 2. **The cartridge schema descriptor tree** (`engine/cartridge/schema.ts`) —
    adding a world concept means adding a descriptor node here; the published
    schema and the loader follow automatically (three-way agreement: validator /
-   emitted JSON Schema / hand-written types, one source of truth). Deferred
-   Phase 1 `story`/`presentation` shells are concrete; only their `phase2`
-   interiors name who tightens them and when. Processes, services, logs,
+   emitted JSON Schema / hand-written types, one source of truth). Phase 1
+   `story`/`presentation` shells and the shared `story.phase2` graph are
+   concrete; only `presentation.phase2` remains deferred. Processes, services,
+   logs,
    tickets, env, man pages, history, tests, and reactions are concrete too.
 3. **New golden fixtures** — every Phase 0 subsystem PR adds at least one
    (`engine/__fixtures__/replay/NNN-…/`). A subsystem with unit tests and no

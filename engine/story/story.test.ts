@@ -37,6 +37,16 @@ describe("shared story beats", () => {
 
   it("reaches authored beats and records endings once in first-discovery order", () => {
     let state = bootstrap();
+    state = step(state, {
+      type: "mind.belief-set",
+      payload: {
+        belief: {
+          kind: "file-contents",
+          path: "/production/load-balancer/config/routes.conf",
+          contents: "health_status=500\neurope_attached=true\n",
+        },
+      },
+    });
     state = step(state, createStoryBeatReachedEvent("regional-coupling"));
     state = step(
       state,
@@ -49,8 +59,8 @@ describe("shared story beats", () => {
 
     expect(readStorySlice(state)).toEqual({
       currentBeat: "load-bearing-declaration",
-      currentVariant: "",
-      facts: [],
+      currentVariant: "preserved-load-bearing-response",
+      facts: [{ id: "callback-load-bearing-response", kind: "callback" }],
       discoveredEndings: ["load-bearing-response"],
     });
   });

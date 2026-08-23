@@ -1622,7 +1622,7 @@ const STORY = {
       {
         kind: "object",
         description:
-          "The bounded shared-beat and non-terminal ending skeleton. Later Phase 2 work adds routing, conditions and callbacks without replacing this graph.",
+          "One bounded shared-beat graph with typed facts, sparse condition variants and non-terminal endings.",
         fields: {
           initialBeat: required(PHASE_ONE_ID),
           facts: optional(
