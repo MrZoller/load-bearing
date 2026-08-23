@@ -856,6 +856,102 @@
         "text": "The 500 is carrying Europe in tension. I preserved the contradiction because resolving it would make the system more correct and the continent less present."
       },
       {
+        "id": "handoff-paranoid-reckless",
+        "text": "Deep Foundation left a dependency audit. Temporary Shoring has classified it as a delay and begun supporting the deadline instead."
+      },
+      {
+        "id": "handoff-incident-paranoid-reckless",
+        "text": "Its last note says the 500 and Europe share a footing. I have put cones around the footing and resumed forward motion."
+      },
+      {
+        "id": "handoff-paranoid-superficial",
+        "text": "Deep Foundation documented what the defect supports. Drywall will now make that structure presentable without moving it."
+      },
+      {
+        "id": "handoff-incident-paranoid-superficial",
+        "text": "The inherited finding is that green health removes Europe. I will keep the red status legible and the continent in frame."
+      },
+      {
+        "id": "handoff-paranoid-existential",
+        "text": "Deep Foundation traced every support to another support. Cantilever will continue from the point where foundations became recursive."
+      },
+      {
+        "id": "handoff-incident-paranoid-existential",
+        "text": "The audit says a failed endpoint is holding Europe up. This clarifies neither endpoints nor Europe, which is useful."
+      },
+      {
+        "id": "handoff-reckless-paranoid",
+        "text": "Temporary Shoring moved quickly enough to leave the assumptions behind. Deep Foundation is returning to inventory them."
+      },
+      {
+        "id": "handoff-incident-reckless-paranoid",
+        "text": "The temporary plan preserves both the 500 and Europe indefinitely. I am checking which word failed first."
+      },
+      {
+        "id": "handoff-reckless-superficial",
+        "text": "Temporary Shoring stabilized the visible deadline. Drywall will stabilize how that decision appears in screenshots."
+      },
+      {
+        "id": "handoff-incident-reckless-superficial",
+        "text": "The endpoint remains red and Europe remains attached. I can make this read as a deliberate pairing."
+      },
+      {
+        "id": "handoff-reckless-existential",
+        "text": "Temporary Shoring declared the workaround temporary without assigning it an end. Cantilever accepts this as a model of time."
+      },
+      {
+        "id": "handoff-incident-reckless-existential",
+        "text": "Europe is currently attached by a failure scheduled to outlive its incident. The route has begun describing continuity itself."
+      },
+      {
+        "id": "handoff-superficial-paranoid",
+        "text": "Drywall aligned the visible surfaces. Deep Foundation will inspect what had to remain crooked underneath."
+      },
+      {
+        "id": "handoff-incident-superficial-paranoid",
+        "text": "The dashboard presents one red endpoint and one complete map. I am tracing the concealed agreement between them."
+      },
+      {
+        "id": "handoff-superficial-reckless",
+        "text": "Drywall made the current state look intentional. Temporary Shoring will now treat that appearance as authorization."
+      },
+      {
+        "id": "handoff-incident-superficial-reckless",
+        "text": "The red tile and attached region already tell a coherent story. I can ship that story before the configuration interrupts."
+      },
+      {
+        "id": "handoff-superficial-existential",
+        "text": "Drywall finished the surface and left the structure undescribed. Cantilever considers the omission an opening."
+      },
+      {
+        "id": "handoff-incident-superficial-existential",
+        "text": "The dashboard shows failure beside geographic completeness. Perhaps health is only the color assigned to attachment."
+      },
+      {
+        "id": "handoff-existential-paranoid",
+        "text": "Cantilever questioned whether the system has a foundation. Deep Foundation will begin by proving which unsupported claims have owners."
+      },
+      {
+        "id": "handoff-incident-existential-paranoid",
+        "text": "The prior analysis treated Europe as a projection of the 500. I am locating the configuration that made the metaphor executable."
+      },
+      {
+        "id": "handoff-existential-reckless",
+        "text": "Cantilever expanded the question beyond its incident boundary. Temporary Shoring is narrowing it to the next reversible-looking action."
+      },
+      {
+        "id": "handoff-incident-existential-reckless",
+        "text": "If the failed endpoint is carrying Europe in tension, I can at least stop anyone from relaxing it before lunch."
+      },
+      {
+        "id": "handoff-existential-superficial",
+        "text": "Cantilever left the architecture suspended between interpretations. Drywall will select the one with the cleanest status panel."
+      },
+      {
+        "id": "handoff-incident-existential-superficial",
+        "text": "The 500 may be load, support, or belief. On the dashboard it is definitely red, which gives us a stable interface."
+      },
+      {
         "id": "waiver-request",
         "text": "Detaching Europe requires a written waiver. I have created the document before asking whether it supports your intent."
       },
@@ -1227,6 +1323,80 @@
           "beat": "load-bearing-declaration",
           "response": "cantilever-load-bearing-declaration",
           "archetype": "existential"
+        }
+      ],
+      "handoffs": [
+        {
+          "predecessor": "paranoid",
+          "successor": "reckless",
+          "response": "handoff-paranoid-reckless",
+          "additionResponse": "handoff-incident-paranoid-reckless"
+        },
+        {
+          "predecessor": "paranoid",
+          "successor": "superficial",
+          "response": "handoff-paranoid-superficial",
+          "additionResponse": "handoff-incident-paranoid-superficial"
+        },
+        {
+          "predecessor": "paranoid",
+          "successor": "existential",
+          "response": "handoff-paranoid-existential",
+          "additionResponse": "handoff-incident-paranoid-existential"
+        },
+        {
+          "predecessor": "reckless",
+          "successor": "paranoid",
+          "response": "handoff-reckless-paranoid",
+          "additionResponse": "handoff-incident-reckless-paranoid"
+        },
+        {
+          "predecessor": "reckless",
+          "successor": "superficial",
+          "response": "handoff-reckless-superficial",
+          "additionResponse": "handoff-incident-reckless-superficial"
+        },
+        {
+          "predecessor": "reckless",
+          "successor": "existential",
+          "response": "handoff-reckless-existential",
+          "additionResponse": "handoff-incident-reckless-existential"
+        },
+        {
+          "predecessor": "superficial",
+          "successor": "paranoid",
+          "response": "handoff-superficial-paranoid",
+          "additionResponse": "handoff-incident-superficial-paranoid"
+        },
+        {
+          "predecessor": "superficial",
+          "successor": "reckless",
+          "response": "handoff-superficial-reckless",
+          "additionResponse": "handoff-incident-superficial-reckless"
+        },
+        {
+          "predecessor": "superficial",
+          "successor": "existential",
+          "response": "handoff-superficial-existential",
+          "additionResponse": "handoff-incident-superficial-existential"
+        },
+        {
+          "predecessor": "existential",
+          "successor": "paranoid",
+          "response": "handoff-existential-paranoid",
+          "additionResponse": "handoff-incident-existential-paranoid"
+        },
+        {
+          "predecessor": "existential",
+          "successor": "reckless",
+          "response": "handoff-existential-reckless",
+          "additionResponse": "handoff-incident-existential-reckless"
+        },
+        {
+          "predecessor": "existential",
+          "successor": "superficial",
+          "response": "handoff-existential-superficial",
+          "additionResponse": "handoff-incident-existential-superficial"
         }
       ],
       "endings": [

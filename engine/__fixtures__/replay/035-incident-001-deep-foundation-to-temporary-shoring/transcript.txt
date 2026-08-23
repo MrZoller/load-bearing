@@ -1,0 +1,13 @@
+0000  2026-08-22T09:14:22.000Z  terminal.model-set model=deep-foundation
+0001  2026-08-22T09:14:22.000Z  agent.message-added message=before
+0002  2026-08-22T09:14:22.000Z  story.beat-reached beat=regional-coupling
+0003  2026-08-22T09:14:22.000Z  agent.response-recorded response=deep-foundation-inspect-routing instance=before
+0004  2026-08-22T09:14:22.000Z  probe.random stream=root/probe/unrelated count=2 form=uint32
+      0000  e12d9935 c5e9c6d4
+      cursor=1203a800
+0005  2026-08-22T09:14:22.000Z  terminal.model-transitioned model=deep-foundation->temporary-shoring
+0006  2026-08-22T09:14:22.000Z  agent.response-recorded response=handoff-paranoid-reckless instance=handoff-pair
+0007  2026-08-22T09:14:22.000Z  agent.response-recorded response=handoff-incident-paranoid-reckless instance=handoff-incident
+0008  2026-08-22T09:14:22.000Z  agent.message-added message=after
+0009  2026-08-22T09:14:22.000Z  story.beat-reached beat=regional-coupling
+0010  2026-08-22T09:14:22.000Z  agent.response-recorded response=temporary-shoring-inspect-routing instance=after

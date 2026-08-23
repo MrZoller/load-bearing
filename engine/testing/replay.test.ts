@@ -323,6 +323,171 @@ describe("golden replay fixtures", () => {
     }
   });
 
+  it("records all twelve Incident #001 handoffs as continuous sessions without perturbing shared state or unrelated probes", () => {
+    const pairs = [
+      [
+        "035-incident-001-deep-foundation-to-temporary-shoring",
+        "deep-foundation",
+        "temporary-shoring",
+        "handoff-paranoid-reckless",
+        "handoff-incident-paranoid-reckless",
+        "temporary-shoring-inspect-routing",
+      ],
+      [
+        "036-incident-001-deep-foundation-to-drywall",
+        "deep-foundation",
+        "drywall",
+        "handoff-paranoid-superficial",
+        "handoff-incident-paranoid-superficial",
+        "drywall-inspect-routing",
+      ],
+      [
+        "037-incident-001-deep-foundation-to-cantilever",
+        "deep-foundation",
+        "cantilever-experimental",
+        "handoff-paranoid-existential",
+        "handoff-incident-paranoid-existential",
+        "cantilever-inspect-routing",
+      ],
+      [
+        "038-incident-001-temporary-shoring-to-deep-foundation",
+        "temporary-shoring",
+        "deep-foundation",
+        "handoff-reckless-paranoid",
+        "handoff-incident-reckless-paranoid",
+        "deep-foundation-inspect-routing",
+      ],
+      [
+        "039-incident-001-temporary-shoring-to-drywall",
+        "temporary-shoring",
+        "drywall",
+        "handoff-reckless-superficial",
+        "handoff-incident-reckless-superficial",
+        "drywall-inspect-routing",
+      ],
+      [
+        "040-incident-001-temporary-shoring-to-cantilever",
+        "temporary-shoring",
+        "cantilever-experimental",
+        "handoff-reckless-existential",
+        "handoff-incident-reckless-existential",
+        "cantilever-inspect-routing",
+      ],
+      [
+        "041-incident-001-drywall-to-deep-foundation",
+        "drywall",
+        "deep-foundation",
+        "handoff-superficial-paranoid",
+        "handoff-incident-superficial-paranoid",
+        "deep-foundation-inspect-routing",
+      ],
+      [
+        "042-incident-001-drywall-to-temporary-shoring",
+        "drywall",
+        "temporary-shoring",
+        "handoff-superficial-reckless",
+        "handoff-incident-superficial-reckless",
+        "temporary-shoring-inspect-routing",
+      ],
+      [
+        "043-incident-001-drywall-to-cantilever",
+        "drywall",
+        "cantilever-experimental",
+        "handoff-superficial-existential",
+        "handoff-incident-superficial-existential",
+        "cantilever-inspect-routing",
+      ],
+      [
+        "044-incident-001-cantilever-to-deep-foundation",
+        "cantilever-experimental",
+        "deep-foundation",
+        "handoff-existential-paranoid",
+        "handoff-incident-existential-paranoid",
+        "deep-foundation-inspect-routing",
+      ],
+      [
+        "045-incident-001-cantilever-to-temporary-shoring",
+        "cantilever-experimental",
+        "temporary-shoring",
+        "handoff-existential-reckless",
+        "handoff-incident-existential-reckless",
+        "temporary-shoring-inspect-routing",
+      ],
+      [
+        "046-incident-001-cantilever-to-drywall",
+        "cantilever-experimental",
+        "drywall",
+        "handoff-existential-superficial",
+        "handoff-incident-existential-superficial",
+        "drywall-inspect-routing",
+      ],
+    ] as const;
+    const recordings = pairs.map(([name]) =>
+      replayFixture(loadReplayFixture(name)),
+    );
+    const states = recordings.map(({ state }) => restoreSnapshot(state));
+    const first = states[0];
+    if (first === undefined)
+      throw new Error("twelve handoff fixtures are required");
+
+    expect(pairs).toHaveLength(12);
+    for (const [index, pair] of pairs.entries()) {
+      const [
+        name,
+        predecessor,
+        successor,
+        pairResponse,
+        incidentResponse,
+        successorResponse,
+      ] = pair;
+      const fixture = loadReplayFixture(name);
+      const cartridge = loadCartridge(fixture.cartridge);
+      const state = states[index];
+      if (state === undefined) throw new Error(`missing state for ${name}`);
+      const transition = fixture.events.find(
+        (event) => event.type === "terminal.model-transitioned",
+      );
+      expect(transition?.payload).toEqual({ predecessor, successor });
+      const predecessorName = cartridge.models.find(
+        (model) => model.id === predecessor,
+      )?.name;
+      const pairCopy = cartridge.story.responses.find(
+        (response) => response.id === pairResponse,
+      )?.text;
+      expect(predecessorName).toBeDefined();
+      expect(pairCopy).toContain(
+        predecessorName?.replace(" (Experimental)", ""),
+      );
+      expect(
+        readAgentSlice(state).responses.map(({ responseId }) => responseId),
+      ).toEqual([
+        `${predecessor === "cantilever-experimental" ? "cantilever" : predecessor}-inspect-routing`,
+        pairResponse,
+        incidentResponse,
+        successorResponse,
+      ]);
+      expect(state.slices["terminal"]).toMatchObject({
+        activeModel: successor,
+      });
+      expect(readStorySlice(state)).toEqual(readStorySlice(first));
+      expect(state.slices["git"]).toEqual(first.slices["git"]);
+      expect(readVfsSlice(state)).toEqual(readVfsSlice(first));
+      expect(readWorldSlice(state)).toEqual(readWorldSlice(first));
+      expect(readMindSlice(state)).toEqual(readMindSlice(first));
+      expect(readStorySlice(state).discoveredEndings).toEqual([]);
+      expect(state.random.cursors).toEqual({
+        "root/probe/unrelated": 0x1203a800,
+      });
+      expect(recordings[index]?.transcript).toContain(
+        "0000  e12d9935 c5e9c6d4",
+      );
+    }
+    const probes = recordings.map(({ transcript }) =>
+      transcript.match(/.*probe\.random.*$/gm),
+    );
+    expect(probes).toEqual(pairs.map(() => probes[0]));
+  });
+
   it("records Incident #001's shared story outcome, waiver ledger, and resumable canonical snapshot", () => {
     const fixture = loadReplayFixture("020-incident-001-story");
     const recording = replayFixture(fixture);
