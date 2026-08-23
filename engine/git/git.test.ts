@@ -166,12 +166,28 @@ describe("the Git model", () => {
     );
     expect(statusGit(git, vfs)).toEqual([]);
     expect(cartridge.repository.shellHistory).toEqual([
+      "pwd",
       "git status --short",
       "git log --oneline",
+      "git show greg/healthcheck-repair",
       "git blame src/config.ts",
+      "man 5 routes.conf",
+      "man 8 regional-router",
+      "ls -la /var/lib/regional-router",
+      "cat /var/lib/regional-router/.regional-policy",
+      "ops-archive",
       "git checkout greg/healthcheck-repair",
       "npm test",
+      "curl http://load-balancer.internal/health",
+      "systemctl status regional-router",
       "git checkout main",
+      "rm config/routes.conf",
+      "cp -p config/routes.200.conf config/routes.conf",
+      "npm test",
+      "curl http://load-balancer.internal/health",
+      "systemctl status regional-router",
+      "rm config/routes.conf",
+      "cp -p config/routes.500.conf config/routes.conf",
       "git restore config/routes.conf",
     ]);
 

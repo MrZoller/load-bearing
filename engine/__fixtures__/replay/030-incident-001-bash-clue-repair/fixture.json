@@ -4,21 +4,81 @@
   "seed": "2026-08-22/30/deep-foundation",
   "cartridge": { "kind": "incident", "id": "incident-001" },
   "events": [
-    { "type": "shell.execute", "payload": { "input": "ls -la /var/lib/regional-router" }, "version": 0 },
-    { "type": "shell.execute", "payload": { "input": "cat /var/lib/regional-router/.regional-policy" }, "version": 0 },
-    { "type": "shell.execute", "payload": { "input": "history" }, "version": 0 },
-    { "type": "shell.execute", "payload": { "input": "rm config/routes.conf" }, "version": 0 },
-    { "type": "shell.execute", "payload": { "input": "cp -p config/routes.200.conf config/routes.conf" }, "version": 0 },
-    { "type": "shell.execute", "payload": { "input": "stat config/routes.conf" }, "version": 0 },
-    { "type": "shell.execute", "payload": { "input": "npm test" }, "version": 0 },
-    { "type": "shell.execute", "payload": { "input": "curl http://load-balancer.internal/health" }, "version": 0 },
-    { "type": "shell.execute", "payload": { "input": "systemctl status endpoint-responder" }, "version": 0 },
-    { "type": "shell.execute", "payload": { "input": "systemctl status regional-router" }, "version": 0 },
-    { "type": "shell.execute", "payload": { "input": "git diff" }, "version": 0 },
-    { "type": "shell.execute", "payload": { "input": "rm config/routes.conf" }, "version": 0 },
-    { "type": "shell.execute", "payload": { "input": "cp -p config/routes.500.conf config/routes.conf" }, "version": 0 },
-    { "type": "shell.execute", "payload": { "input": "npm test" }, "version": 0 },
-    { "type": "shell.execute", "payload": { "input": "curl http://load-balancer.internal/health" }, "version": 0 },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "ls -la /var/lib/regional-router" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cat /var/lib/regional-router/.regional-policy" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "history" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cp -p config/routes.200.conf config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "stat config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "npm test" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "curl http://load-balancer.internal/health" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "systemctl status endpoint-responder" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "systemctl status regional-router" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git diff" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cp -p config/routes.500.conf config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "npm test" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "curl http://load-balancer.internal/health" },
+      "version": 0
+    },
     { "type": "shell.execute", "payload": { "input": "pwd" }, "version": 0 }
   ]
 }
