@@ -374,7 +374,10 @@ export {
   createAgentHelpEvents,
   createAgentResumeEvents,
 } from "./agent/awareness.js";
-export { canRecordAuthoredResponse } from "./agent/intent.js";
+export {
+  canRecordAuthoredResponse,
+  canRecordAuthoredResponses,
+} from "./agent/intent.js";
 export {
   MAX_AGENT_ACTIVITY_VERB_LENGTH,
   MAX_AGENT_ID_LENGTH,

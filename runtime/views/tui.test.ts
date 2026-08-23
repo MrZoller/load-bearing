@@ -4,8 +4,10 @@ import cartridgeDocument from "../../content/incidents/phase-1-demo.json";
 import incidentDocument from "../../content/incidents/incident-001.json";
 import {
   createAgentInputEvents,
+  createAgentResponseEvent,
   createShellExecuteEvent,
   loadCartridge,
+  MAX_AGENT_RESPONSES,
   reduce,
   step,
 } from "../../engine/index.js";
@@ -143,5 +145,34 @@ describe("createModelHandoffEvents", () => {
     expect(
       createModelHandoffEvents(cartridge, state, models[0]?.["id"] as string),
     ).toEqual([]);
+
+    const nearCapacity = reduce({
+      cartridge,
+      seed: state.seed,
+      events: Array.from({ length: MAX_AGENT_RESPONSES - 1 }, (_, index) =>
+        createAgentResponseEvent("pair-blame", `existing-${String(index)}`),
+      ),
+    });
+    expect(
+      createModelHandoffEvents(
+        cartridge,
+        nearCapacity,
+        successor["id"] as string,
+      ),
+    ).toEqual([
+      {
+        type: "terminal.model-transitioned",
+        payload: {
+          predecessor: models[0]?.["id"],
+          successor: successor["id"],
+        },
+        version: 0,
+      },
+      {
+        type: "agent.capacity-reached",
+        payload: { responseId: "fallback" },
+        version: 0,
+      },
+    ]);
   });
 });

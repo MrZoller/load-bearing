@@ -1,4 +1,6 @@
 import {
+  canRecordAuthoredResponses,
+  createAgentCapacityEvent,
   createAgentInputEvents,
   createAgentResponseEvent,
   createMindWaiverChoiceEvent,
@@ -53,22 +55,30 @@ export function createModelHandoffEvents(
   const selection = routeModelHandoff(cartridge, state, successor);
   if (selection.predecessor === selection.successor) return [];
   const instance = `handoff-${String(state.eventCount)}`;
+  const responseIds = [
+    selection.responseId,
+    selection.additionResponseId,
+  ].filter((responseId) => responseId !== "");
   return [
     createTerminalModelTransitionEvent(
       selection.predecessor,
       selection.successor,
     ),
-    ...(selection.responseId === ""
-      ? []
-      : [createAgentResponseEvent(selection.responseId, `${instance}-pair`)]),
-    ...(selection.additionResponseId === ""
-      ? []
-      : [
-          createAgentResponseEvent(
-            selection.additionResponseId,
-            `${instance}-incident`,
-          ),
-        ]),
+    ...(!canRecordAuthoredResponses(cartridge, state, responseIds)
+      ? [createAgentCapacityEvent(cartridge.story.fallback.response)]
+      : selection.responseId === ""
+        ? []
+        : [
+            createAgentResponseEvent(selection.responseId, `${instance}-pair`),
+            ...(selection.additionResponseId === ""
+              ? []
+              : [
+                  createAgentResponseEvent(
+                    selection.additionResponseId,
+                    `${instance}-incident`,
+                  ),
+                ]),
+          ]),
   ];
 }
 
