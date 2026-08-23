@@ -69,7 +69,7 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/git/git.test.ts`, and `engine/commands/git.test.ts` add coherent commits, refs, index, blame spans, departed-maintainer trail, and shell history; log/diff/blame/checkout/restore views agree with T41's current files before and after authored repair/undo actions, pinned by a focused golden (criteria 6 shell foundation, 10, 20)
   - deps: T41
   - pr: 66
-- [ ] T43 (standard) — Services, endpoints, processes, and logs
+- [~] T43 (standard) — Services, endpoints, processes, and logs
   - acceptance: `content/incidents/incident-001.json`, `engine/world/world.test.ts`, and `engine/commands/system.test.ts` add consistent services, health, endpoints, process names, stream/file logs, and bounded reactions; `curl`, `systemctl`, `ps`, log evidence, tests, and repository configuration tell the same story throughout a focused golden path (criteria 1, 10, 20)
   - deps: T41
 - [ ] T44 (standard) — Environmental evidence and hidden shell depth
