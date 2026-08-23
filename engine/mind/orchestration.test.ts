@@ -274,6 +274,46 @@ describe("mind orchestration envelopes", () => {
     }
   });
 
+  it("keeps a standing permission turn authored when its grant continuation drifts", () => {
+    const document = JSON.parse(JSON.stringify(phaseOneDocument)) as any;
+    document.story.phase2 = {
+      initialBeat: "start",
+      counters: [{ id: "full", initial: 0, maximum: 1 }],
+      facts: [],
+      beats: [{ id: "start", ending: "", actions: [], variants: [] }],
+      endings: [],
+    };
+    document.story.intents[1].actions[0].grant = [
+      { kind: "counter-add", counter: "full", amount: 1 },
+    ];
+    document.story.intents[1].actions[0].alwaysAllow = [
+      { kind: "counter-add", counter: "full", amount: 1 },
+    ];
+    const cartridge = loadCartridge(document);
+    const pending = step(
+      initial(cartridge),
+      createMindPermissionRequestEvent("delete-ready-sentinel"),
+    );
+    const standing = step(
+      pending,
+      createMindPermissionChoiceEvent("delete-ready-sentinel", "always-allow"),
+    );
+
+    const repeated = step(
+      standing,
+      createMindStandingPermissionEvent("delete-ready-sentinel"),
+    );
+
+    expect(readMindSlice(repeated).permissions).toHaveLength(1);
+    expect(readMindSlice(repeated).pendingPermission).toBeNull();
+    expect(readStorySlice(repeated).counters).toEqual([
+      { id: "full", value: 1 },
+    ]);
+    expect(repeated.transcript.at(-1)?.type).toBe(
+      "mind.permission-standing-failed",
+    );
+  });
+
   it("keeps a repeated waiver turn authored when its consent continuation drifts", () => {
     const document = JSON.parse(JSON.stringify(phaseOneDocument)) as any;
     document.story.phase2 = {

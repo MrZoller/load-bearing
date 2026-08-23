@@ -72,6 +72,7 @@ describe("the engine's module list", () => {
       "mind.permission-requested",
       "mind.permission-resolved",
       "mind.permission-standing",
+      "mind.permission-standing-failed",
       "mind.waiver-choice",
       "mind.waiver-choice-failed",
       "mind.waiver-consent-recorded",

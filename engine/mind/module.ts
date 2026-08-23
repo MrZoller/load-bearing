@@ -327,7 +327,7 @@ export const MIND_MODULE = defineEventModule<MindSlice>({
           expansionFallback: [
             stampEvent(
               {
-                type: "mind.permission-choice-failed",
+                type: "mind.permission-standing-failed",
                 payload: { id },
               },
               "mind standing permission fallback",
@@ -517,6 +517,18 @@ export const MIND_MODULE = defineEventModule<MindSlice>({
         );
         findOrchestrationAction(context, id, "permission-request");
         return { slice: dismissPermission(slice, id), summary: `id=${id}` };
+      },
+    },
+    "mind.permission-standing-failed": {
+      version: 0,
+      apply(context) {
+        const data = payload(context, ["id"]);
+        const id = validatePermissionRequestId(
+          readString(data, "id", context.where),
+          `${context.where}: id`,
+        );
+        findOrchestrationAction(context, id, "permission-request");
+        return { summary: `id=${id}` };
       },
     },
     "mind.waiver-choice-failed": {
