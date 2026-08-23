@@ -1997,6 +1997,11 @@ const STORY = {
                     minimum: 1,
                     maximum: MAX_INT_RANGE,
                   }),
+                  fireBeat: required({
+                    ...PHASE_ONE_ID,
+                    description:
+                      "Shared story beat reached atomically when the draw fires.",
+                  }),
                 },
               },
             },

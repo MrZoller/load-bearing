@@ -478,7 +478,18 @@ describe("sparse shared-beat routing", () => {
         { id: "flail", value: 0 },
         { id: "capitulation", value: 0 },
       ],
-      rareEvents: [],
+      rareEvents: [
+        {
+          id: "retry-window-after-load-bearing-response",
+          evaluated: true,
+          fired: false,
+        },
+        {
+          id: "page-departed-router-owner",
+          evaluated: false,
+          fired: false,
+        },
+      ],
       discoveredEndings: ["load-bearing-response"],
     };
     expect(outcomes.map(({ story }) => story)).toEqual(

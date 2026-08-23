@@ -68,7 +68,8 @@
             "exists": false
           },
           "fireWeight": 1,
-          "missWeight": 1
+          "missWeight": 1,
+          "fireBeat": "shared"
         }
       ],
       "beats": [

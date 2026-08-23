@@ -9486,6 +9486,12 @@
                       }
                     ]
                   },
+                  "fireBeat": {
+                    "description": "Shared story beat reached atomically when the draw fires.",
+                    "maxLength": 64,
+                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                    "type": "string"
+                  },
                   "fireWeight": {
                     "description": "Positive weight of the fire arm.",
                     "maximum": 4294967296,
@@ -9509,7 +9515,8 @@
                   "id",
                   "eligibility",
                   "fireWeight",
-                  "missWeight"
+                  "missWeight",
+                  "fireBeat"
                 ],
                 "type": "object"
               },

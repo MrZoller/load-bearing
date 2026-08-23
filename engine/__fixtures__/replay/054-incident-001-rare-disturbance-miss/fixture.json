@@ -1,0 +1,25 @@
+{
+  "name": "054-incident-001-rare-disturbance-miss",
+  "description": "Incident #001 terminally misses the same isolated post-callback disturbance; a later transition cannot farm another draw or publish its beat effects.",
+  "seed": "2026-08-23/53/callback-0",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    {
+      "type": "mind.belief-set",
+      "payload": {
+        "belief": {
+          "kind": "file-contents",
+          "path": "/production/load-balancer/config/routes.conf",
+          "contents": "health_status=500\neurope_attached=true\n"
+        }
+      },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "load-bearing-declaration" },
+      "version": 0
+    },
+    { "type": "clock.tick", "payload": { "ms": 0 }, "version": 0 }
+  ]
+}
