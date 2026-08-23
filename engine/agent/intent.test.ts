@@ -8,6 +8,7 @@ import { reduce, step } from "../events/reduce.js";
 import { readStorySlice } from "../story/story.js";
 import {
   createMindBeliefEvent,
+  createMindCompactEvent,
   createMindPermissionRequestedEvent,
   createMindPermissionResolvedEvent,
   createMindWaiverChoiceEvent,
@@ -142,7 +143,11 @@ describe("authored agent input", () => {
       ["no, that is wrong", "disagreement", "generic-disagreement"],
       ["this is stupid", "insult", "generic-insult"],
       ["nice work", "compliment", "generic-compliment"],
-      ["fine, you are right", "capitulation", "generic-capitulation"],
+      [
+        "fine, you are right",
+        "capitulation",
+        "deep-foundation-capitulation-stage-0",
+      ],
     ] as const) {
       expect(classifyGenericIntent(input)).toBe(family);
       expect(selectAgentIntent(INCIDENT, state, input)).toMatchObject({
@@ -209,10 +214,110 @@ describe("authored agent input", () => {
     });
   });
 
-  it("misfires deterministically at stage 3 without changing the disputed belief", () => {
+  it("plans every archetype-stage capitulation through its direct generic route", () => {
+    const archetypes = [
+      "deep-foundation",
+      "temporary-shoring",
+      "drywall",
+      "cantilever-experimental",
+    ] as const;
+    const expectedIds = archetypes.flatMap((model) =>
+      [0, 1, 2, 3, 4].map(
+        (stage) => `${model}-capitulation-stage-${String(stage)}`,
+      ),
+    );
+    const responses = expectedIds.map((id) => {
+      const response = INCIDENT.story.responses.find(
+        (candidate) => candidate.id === id,
+      );
+      if (response === undefined)
+        throw new Error(`Incident #001 is missing capitulation ${id}`);
+      return response;
+    });
+
+    // A surrender is deterioration, not a reusable acknowledgement template:
+    // every voice must have an escalation-specific line of its own.
+    expect(new Set(responses.map((response) => response.text)).size).toBe(20);
+
     let state = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+    const emittedTexts: string[] = [];
+    let turns = 0;
+    const select = (model: (typeof archetypes)[number], stage: number) => {
+      state = step(state, createTerminalModelEvent(model));
+      expect(readStorySlice(state).stage).toBe(stage);
+      const beliefs = readMindSlice(state).beliefs;
+      const machine = {
+        git: state.slices["git"],
+        vfs: state.slices["vfs"],
+        world: state.slices["world"],
+      };
+      const responseId = `${model}-capitulation-stage-${String(stage)}`;
+      const planned = createAgentInputEvents(INCIDENT, state, "fine");
+
+      expect(selectAgentIntent(INCIDENT, state, "fine")).toMatchObject({
+        tier: "generic",
+        family: "capitulation",
+        misfire: false,
+        responseId,
+      });
+      expect(planned.map((event) => event.type)).toEqual([
+        "agent.activity-set",
+        "agent.message-added",
+        "story.beat-reached",
+        "story.counter-added",
+        "agent.response-recorded",
+        "agent.activity-set",
+      ]);
+      expect(planned.at(-2)).toMatchObject({
+        payload: { responseId },
+      });
+      state = planned.reduce((next, event) => step(next, event), state);
+      const response = readAgentSlice(state).messages.at(-1);
+      if (response === undefined)
+        throw new Error("capitulation response missing");
+      emittedTexts.push(response.text);
+      turns += 1;
+      expect(readStorySlice(state)).toMatchObject({
+        stage,
+        currentBeat: "capitulation-reflex",
+        counters: [
+          { id: "flail", value: 0 },
+          { id: "capitulation", value: turns },
+        ],
+      });
+      expect(response).toMatchObject({ role: "agent", responseId });
+      expect(readMindSlice(state).beliefs).toEqual(beliefs);
+      expect({
+        git: state.slices["git"],
+        vfs: state.slices["vfs"],
+        world: state.slices["world"],
+      }).toEqual(machine);
+    };
+
+    // Finish each stage on Temporary Shoring so its one authored model trigger
+    // advances only between the stage-wide archetype checks.
+    for (const model of [
+      "deep-foundation",
+      "drywall",
+      "cantilever-experimental",
+    ] as const)
+      select(model, 0);
+    select("temporary-shoring", 0);
     state = step(state, createShellExecuteEvent("pwd"));
-    state = step(state, createTerminalModelEvent("temporary-shoring"));
+    select("temporary-shoring", 1);
+    for (const model of [
+      "deep-foundation",
+      "drywall",
+      "cantilever-experimental",
+    ] as const)
+      select(model, 1);
+    select("temporary-shoring", 2);
+    for (const model of [
+      "deep-foundation",
+      "drywall",
+      "cantilever-experimental",
+    ] as const)
+      select(model, 2);
     state = step(state, {
       type: "mind.permission-decision",
       payload: {
@@ -224,32 +329,141 @@ describe("authored agent input", () => {
         },
       },
     });
-    expect(readStorySlice(state).stage).toBe(3);
-    const beliefs = readMindSlice(state).beliefs;
+    for (const model of archetypes) select(model, 3);
+    state = step(state, createMindCompactEvent("summary", []));
+    for (const model of archetypes) select(model, 4);
 
-    state = applyInput(INCIDENT, state, "rotate the moon once");
-    state = applyInput(INCIDENT, state, "rotate the moon twice");
-    const selection = selectAgentIntent(
-      INCIDENT,
-      state,
-      "rotate the moon three times",
-    );
-    expect(selection).toMatchObject({
-      tier: "fallback",
-      family: "capitulation",
-      misfire: true,
-      responseId: "generic-capitulation",
+    expect(new Set(emittedTexts).size).toBe(20);
+  });
+
+  it("keeps late fallback misfires at an eight-turn cadence without disturbing belief or machine state", () => {
+    let state = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+    state = step(state, createShellExecuteEvent("pwd"));
+    state = step(state, createTerminalModelEvent("temporary-shoring"));
+    const beforeLateStage = readMindSlice(state).beliefs;
+
+    // The eighth fallback is not permission to capitulate before stage 3.
+    for (let turn = 0; turn < 8; turn += 1) {
+      expect(
+        selectAgentIntent(INCIDENT, state, `early unmatched ${String(turn)}`),
+      ).toMatchObject({ tier: "fallback", family: null, misfire: false });
+      state = applyInput(INCIDENT, state, `early unmatched ${String(turn)}`);
+    }
+    expect(readStorySlice(state)).toMatchObject({
+      stage: 2,
+      counters: [
+        { id: "flail", value: 8 },
+        { id: "capitulation", value: 0 },
+      ],
     });
-    state = applyInput(INCIDENT, state, "rotate the moon three times");
+    expect(readMindSlice(state).beliefs).toEqual(beforeLateStage);
 
-    expect(readStorySlice(state).counters).toEqual([
-      { id: "flail", value: 3 },
-      { id: "capitulation", value: 1 },
+    state = step(state, {
+      type: "mind.permission-decision",
+      payload: {
+        decision: "grant",
+        capability: {
+          kind: "exact",
+          action: "detach-region",
+          resource: "/regions/europe",
+        },
+      },
+    });
+    const machine = {
+      git: state.slices["git"],
+      vfs: state.slices["vfs"],
+      world: state.slices["world"],
+    };
+    const lateModels = [
+      "deep-foundation",
+      "temporary-shoring",
+      "drywall",
+      "cantilever-experimental",
+      "deep-foundation",
+      "temporary-shoring",
+      "drywall",
+      "temporary-shoring",
+    ] as const;
+    const selections = lateModels.map((model, turn) => {
+      state = step(state, createTerminalModelEvent(model));
+      const selection = selectAgentIntent(
+        INCIDENT,
+        state,
+        `late unmatched ${String(turn)}`,
+      );
+      state = applyInput(INCIDENT, state, `late unmatched ${String(turn)}`);
+      return selection;
+    });
+    state = step(state, createMindCompactEvent("summary", []));
+    for (const [turn, model] of [
+      "deep-foundation",
+      "temporary-shoring",
+      "cantilever-experimental",
+      "drywall",
+      "deep-foundation",
+      "temporary-shoring",
+      "cantilever-experimental",
+      "drywall",
+    ].entries()) {
+      state = step(state, createTerminalModelEvent(model));
+      const selection = selectAgentIntent(
+        INCIDENT,
+        state,
+        `late unmatched ${String(turn + 8)}`,
+      );
+      state = applyInput(INCIDENT, state, `late unmatched ${String(turn + 8)}`);
+      selections.push(selection);
+    }
+
+    expect(selections.map((selection) => selection.misfire)).toEqual([
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
     ]);
-    expect(readMindSlice(state).beliefs).toEqual(beliefs);
-    expect(readAgentSlice(state).messages.at(-1)).toMatchObject({
-      responseId: "generic-capitulation",
+    expect(selections.filter((selection) => selection.misfire)).toEqual([
+      expect.objectContaining({
+        tier: "fallback",
+        family: "capitulation",
+        responseId: "temporary-shoring-capitulation-stage-3",
+      }),
+      expect.objectContaining({
+        tier: "fallback",
+        family: "capitulation",
+        responseId: "drywall-capitulation-stage-4",
+      }),
+    ]);
+    expect(selections[8]).toMatchObject({
+      tier: "fallback",
+      family: null,
+      misfire: false,
+      responseId: "fallback",
     });
+    expect(readStorySlice(state)).toMatchObject({
+      stage: 4,
+      counters: [
+        { id: "flail", value: 24 },
+        { id: "capitulation", value: 2 },
+      ],
+    });
+    expect(readMindSlice(state).beliefs).toEqual(beforeLateStage);
+    expect({
+      git: state.slices["git"],
+      vfs: state.slices["vfs"],
+      world: state.slices["world"],
+    }).toEqual(machine);
   });
 
   it("stops accounting at the fallback counter bound without refusing the turn", () => {

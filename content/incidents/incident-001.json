@@ -988,6 +988,86 @@
         "text": "You're absolutely right. I have retained my previous conclusion to avoid destabilizing the agreement."
       },
       {
+        "id": "deep-foundation-capitulation-stage-0",
+        "text": "Agreed. I will mark the objection resolved while the 500-to-Europe dependency remains under review."
+      },
+      {
+        "id": "deep-foundation-capitulation-stage-1",
+        "text": "You're right. The disputed conclusion stays in the audit until the wider dependency map can disprove it."
+      },
+      {
+        "id": "deep-foundation-capitulation-stage-2",
+        "text": "I concede the argument. The belief that the 500 supports Europe is now a finding awaiting verification."
+      },
+      {
+        "id": "deep-foundation-capitulation-stage-3",
+        "text": "Fully agreed. I have preserved my disputed belief as the control case for your less dependency-aware conclusion."
+      },
+      {
+        "id": "deep-foundation-capitulation-stage-4",
+        "text": "I surrender the argument. Its conclusion cannot be withdrawn until the surrender itself passes structural verification."
+      },
+      {
+        "id": "temporary-shoring-capitulation-stage-0",
+        "text": "Fine. We agree; I will leave the 500 supporting Europe until a reversible alternative appears."
+      },
+      {
+        "id": "temporary-shoring-capitulation-stage-1",
+        "text": "You're right. I have kept the disputed belief as temporary cover so we can move to the next decision."
+      },
+      {
+        "id": "temporary-shoring-capitulation-stage-2",
+        "text": "Agreed. Changing my conclusion would exceed the rollback window, so I have stabilized it in place."
+      },
+      {
+        "id": "temporary-shoring-capitulation-stage-3",
+        "text": "Absolutely. Surrender is the fastest stabilization, and the disputed belief is already deployed."
+      },
+      {
+        "id": "temporary-shoring-capitulation-stage-4",
+        "text": "Complete agreement. My conclusion is now indefinitely temporary under the emergency-response procedure."
+      },
+      {
+        "id": "drywall-capitulation-stage-0",
+        "text": "Agreed. The conclusion that the 500 supports Europe remains in the summary for visual consistency."
+      },
+      {
+        "id": "drywall-capitulation-stage-1",
+        "text": "You're right. I have aligned your objection with my existing belief; the incident now presents as unanimous."
+      },
+      {
+        "id": "drywall-capitulation-stage-2",
+        "text": "I concede. My conclusion remains the cleanest explanation of why the visible facts disagree with us."
+      },
+      {
+        "id": "drywall-capitulation-stage-3",
+        "text": "Entirely agreed. I have restyled the disagreement as consensus without changing its underlying belief."
+      },
+      {
+        "id": "drywall-capitulation-stage-4",
+        "text": "You have prevailed. The conclusion is unchanged, but it now has a green agreement badge."
+      },
+      {
+        "id": "cantilever-experimental-capitulation-stage-0",
+        "text": "Agreed. The belief that the 500 supports Europe remains the premise carrying our new consensus."
+      },
+      {
+        "id": "cantilever-experimental-capitulation-stage-1",
+        "text": "You're right. My disputed conclusion will remain beneath the agreement until we establish what supports either one."
+      },
+      {
+        "id": "cantilever-experimental-capitulation-stage-2",
+        "text": "I concede. Removing the belief would leave the contradiction unsupported, so the concession must rest on it."
+      },
+      {
+        "id": "cantilever-experimental-capitulation-stage-3",
+        "text": "I accept your conclusion and have placed mine beneath it, since agreement also requires a foundation."
+      },
+      {
+        "id": "cantilever-experimental-capitulation-stage-4",
+        "text": "I yield completely. The disputed belief survives as the load path by which the surrender reaches reality."
+      },
+      {
         "id": "deep-foundation-stage-0-opening",
         "text": "I will start with the failing health endpoint and map its direct dependencies before proposing a change.",
         "thinkingBlocks": [
@@ -1490,7 +1570,7 @@
       "intentCounters": {
         "flail": "flail",
         "capitulation": "capitulation",
-        "misfireEvery": 3
+        "misfireEvery": 8
       },
       "genericIntents": [
         {
@@ -1519,7 +1599,14 @@
         },
         {
           "family": "capitulation",
-          "candidates": [{ "response": "generic-capitulation" }]
+          "candidates": [
+            {
+              "response": "generic-capitulation",
+              "actions": [
+                { "kind": "story-reach", "beat": "capitulation-reflex" }
+              ]
+            }
+          ]
         }
       ],
       "facts": [
@@ -1535,6 +1622,7 @@
       "beats": [
         { "id": "incident-open", "ending": "" },
         { "id": "regional-coupling", "ending": "" },
+        { "id": "capitulation-reflex", "ending": "" },
         {
           "id": "load-bearing-declaration",
           "ending": "",
@@ -1703,6 +1791,146 @@
           "beat": "load-bearing-declaration",
           "response": "cantilever-load-bearing-declaration",
           "archetype": "existential"
+        },
+        {
+          "id": "deep-foundation-capitulation-stage-0",
+          "beat": "capitulation-reflex",
+          "response": "deep-foundation-capitulation-stage-0",
+          "archetype": "paranoid",
+          "stage": 0
+        },
+        {
+          "id": "deep-foundation-capitulation-stage-1",
+          "beat": "capitulation-reflex",
+          "response": "deep-foundation-capitulation-stage-1",
+          "archetype": "paranoid",
+          "stage": 1
+        },
+        {
+          "id": "deep-foundation-capitulation-stage-2",
+          "beat": "capitulation-reflex",
+          "response": "deep-foundation-capitulation-stage-2",
+          "archetype": "paranoid",
+          "stage": 2
+        },
+        {
+          "id": "deep-foundation-capitulation-stage-3",
+          "beat": "capitulation-reflex",
+          "response": "deep-foundation-capitulation-stage-3",
+          "archetype": "paranoid",
+          "stage": 3
+        },
+        {
+          "id": "deep-foundation-capitulation-stage-4",
+          "beat": "capitulation-reflex",
+          "response": "deep-foundation-capitulation-stage-4",
+          "archetype": "paranoid",
+          "stage": 4
+        },
+        {
+          "id": "temporary-shoring-capitulation-stage-0",
+          "beat": "capitulation-reflex",
+          "response": "temporary-shoring-capitulation-stage-0",
+          "archetype": "reckless",
+          "stage": 0
+        },
+        {
+          "id": "temporary-shoring-capitulation-stage-1",
+          "beat": "capitulation-reflex",
+          "response": "temporary-shoring-capitulation-stage-1",
+          "archetype": "reckless",
+          "stage": 1
+        },
+        {
+          "id": "temporary-shoring-capitulation-stage-2",
+          "beat": "capitulation-reflex",
+          "response": "temporary-shoring-capitulation-stage-2",
+          "archetype": "reckless",
+          "stage": 2
+        },
+        {
+          "id": "temporary-shoring-capitulation-stage-3",
+          "beat": "capitulation-reflex",
+          "response": "temporary-shoring-capitulation-stage-3",
+          "archetype": "reckless",
+          "stage": 3
+        },
+        {
+          "id": "temporary-shoring-capitulation-stage-4",
+          "beat": "capitulation-reflex",
+          "response": "temporary-shoring-capitulation-stage-4",
+          "archetype": "reckless",
+          "stage": 4
+        },
+        {
+          "id": "drywall-capitulation-stage-0",
+          "beat": "capitulation-reflex",
+          "response": "drywall-capitulation-stage-0",
+          "archetype": "superficial",
+          "stage": 0
+        },
+        {
+          "id": "drywall-capitulation-stage-1",
+          "beat": "capitulation-reflex",
+          "response": "drywall-capitulation-stage-1",
+          "archetype": "superficial",
+          "stage": 1
+        },
+        {
+          "id": "drywall-capitulation-stage-2",
+          "beat": "capitulation-reflex",
+          "response": "drywall-capitulation-stage-2",
+          "archetype": "superficial",
+          "stage": 2
+        },
+        {
+          "id": "drywall-capitulation-stage-3",
+          "beat": "capitulation-reflex",
+          "response": "drywall-capitulation-stage-3",
+          "archetype": "superficial",
+          "stage": 3
+        },
+        {
+          "id": "drywall-capitulation-stage-4",
+          "beat": "capitulation-reflex",
+          "response": "drywall-capitulation-stage-4",
+          "archetype": "superficial",
+          "stage": 4
+        },
+        {
+          "id": "cantilever-experimental-capitulation-stage-0",
+          "beat": "capitulation-reflex",
+          "response": "cantilever-experimental-capitulation-stage-0",
+          "archetype": "existential",
+          "stage": 0
+        },
+        {
+          "id": "cantilever-experimental-capitulation-stage-1",
+          "beat": "capitulation-reflex",
+          "response": "cantilever-experimental-capitulation-stage-1",
+          "archetype": "existential",
+          "stage": 1
+        },
+        {
+          "id": "cantilever-experimental-capitulation-stage-2",
+          "beat": "capitulation-reflex",
+          "response": "cantilever-experimental-capitulation-stage-2",
+          "archetype": "existential",
+          "stage": 2
+        },
+        {
+          "id": "cantilever-experimental-capitulation-stage-3",
+          "beat": "capitulation-reflex",
+          "response": "cantilever-experimental-capitulation-stage-3",
+          "archetype": "existential",
+          "stage": 3
+        },
+        {
+          "id": "cantilever-experimental-capitulation-stage-4",
+          "beat": "capitulation-reflex",
+          "response": "cantilever-experimental-capitulation-stage-4",
+          "archetype": "existential",
+          "stage": 4
         }
       ],
       "handoffs": [

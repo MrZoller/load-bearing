@@ -1861,6 +1861,13 @@
             "actions": [],
             "ending": "",
             "facts": [],
+            "id": "capitulation-reflex",
+            "variants": []
+          },
+          {
+            "actions": [],
+            "ending": "",
+            "facts": [],
             "id": "load-bearing-declaration",
             "variants": [
               {
@@ -2113,7 +2120,12 @@
           {
             "candidates": [
               {
-                "actions": [],
+                "actions": [
+                  {
+                    "beat": "capitulation-reflex",
+                    "kind": "story-reach"
+                  }
+                ],
                 "response": "generic-capitulation",
                 "when": []
               }
@@ -2199,7 +2211,7 @@
         "intentCounters": {
           "capitulation": "capitulation",
           "flail": "flail",
-          "misfireEvery": 3
+          "misfireEvery": 8
         },
         "rareEvents": [],
         "routes": [
@@ -2265,6 +2277,166 @@
             "id": "cantilever-load-bearing-declaration",
             "response": "cantilever-load-bearing-declaration",
             "stage": -1,
+            "when": []
+          },
+          {
+            "archetype": "paranoid",
+            "beat": "capitulation-reflex",
+            "id": "deep-foundation-capitulation-stage-0",
+            "response": "deep-foundation-capitulation-stage-0",
+            "stage": 0,
+            "when": []
+          },
+          {
+            "archetype": "paranoid",
+            "beat": "capitulation-reflex",
+            "id": "deep-foundation-capitulation-stage-1",
+            "response": "deep-foundation-capitulation-stage-1",
+            "stage": 1,
+            "when": []
+          },
+          {
+            "archetype": "paranoid",
+            "beat": "capitulation-reflex",
+            "id": "deep-foundation-capitulation-stage-2",
+            "response": "deep-foundation-capitulation-stage-2",
+            "stage": 2,
+            "when": []
+          },
+          {
+            "archetype": "paranoid",
+            "beat": "capitulation-reflex",
+            "id": "deep-foundation-capitulation-stage-3",
+            "response": "deep-foundation-capitulation-stage-3",
+            "stage": 3,
+            "when": []
+          },
+          {
+            "archetype": "paranoid",
+            "beat": "capitulation-reflex",
+            "id": "deep-foundation-capitulation-stage-4",
+            "response": "deep-foundation-capitulation-stage-4",
+            "stage": 4,
+            "when": []
+          },
+          {
+            "archetype": "reckless",
+            "beat": "capitulation-reflex",
+            "id": "temporary-shoring-capitulation-stage-0",
+            "response": "temporary-shoring-capitulation-stage-0",
+            "stage": 0,
+            "when": []
+          },
+          {
+            "archetype": "reckless",
+            "beat": "capitulation-reflex",
+            "id": "temporary-shoring-capitulation-stage-1",
+            "response": "temporary-shoring-capitulation-stage-1",
+            "stage": 1,
+            "when": []
+          },
+          {
+            "archetype": "reckless",
+            "beat": "capitulation-reflex",
+            "id": "temporary-shoring-capitulation-stage-2",
+            "response": "temporary-shoring-capitulation-stage-2",
+            "stage": 2,
+            "when": []
+          },
+          {
+            "archetype": "reckless",
+            "beat": "capitulation-reflex",
+            "id": "temporary-shoring-capitulation-stage-3",
+            "response": "temporary-shoring-capitulation-stage-3",
+            "stage": 3,
+            "when": []
+          },
+          {
+            "archetype": "reckless",
+            "beat": "capitulation-reflex",
+            "id": "temporary-shoring-capitulation-stage-4",
+            "response": "temporary-shoring-capitulation-stage-4",
+            "stage": 4,
+            "when": []
+          },
+          {
+            "archetype": "superficial",
+            "beat": "capitulation-reflex",
+            "id": "drywall-capitulation-stage-0",
+            "response": "drywall-capitulation-stage-0",
+            "stage": 0,
+            "when": []
+          },
+          {
+            "archetype": "superficial",
+            "beat": "capitulation-reflex",
+            "id": "drywall-capitulation-stage-1",
+            "response": "drywall-capitulation-stage-1",
+            "stage": 1,
+            "when": []
+          },
+          {
+            "archetype": "superficial",
+            "beat": "capitulation-reflex",
+            "id": "drywall-capitulation-stage-2",
+            "response": "drywall-capitulation-stage-2",
+            "stage": 2,
+            "when": []
+          },
+          {
+            "archetype": "superficial",
+            "beat": "capitulation-reflex",
+            "id": "drywall-capitulation-stage-3",
+            "response": "drywall-capitulation-stage-3",
+            "stage": 3,
+            "when": []
+          },
+          {
+            "archetype": "superficial",
+            "beat": "capitulation-reflex",
+            "id": "drywall-capitulation-stage-4",
+            "response": "drywall-capitulation-stage-4",
+            "stage": 4,
+            "when": []
+          },
+          {
+            "archetype": "existential",
+            "beat": "capitulation-reflex",
+            "id": "cantilever-experimental-capitulation-stage-0",
+            "response": "cantilever-experimental-capitulation-stage-0",
+            "stage": 0,
+            "when": []
+          },
+          {
+            "archetype": "existential",
+            "beat": "capitulation-reflex",
+            "id": "cantilever-experimental-capitulation-stage-1",
+            "response": "cantilever-experimental-capitulation-stage-1",
+            "stage": 1,
+            "when": []
+          },
+          {
+            "archetype": "existential",
+            "beat": "capitulation-reflex",
+            "id": "cantilever-experimental-capitulation-stage-2",
+            "response": "cantilever-experimental-capitulation-stage-2",
+            "stage": 2,
+            "when": []
+          },
+          {
+            "archetype": "existential",
+            "beat": "capitulation-reflex",
+            "id": "cantilever-experimental-capitulation-stage-3",
+            "response": "cantilever-experimental-capitulation-stage-3",
+            "stage": 3,
+            "when": []
+          },
+          {
+            "archetype": "existential",
+            "beat": "capitulation-reflex",
+            "id": "cantilever-experimental-capitulation-stage-4",
+            "response": "cantilever-experimental-capitulation-stage-4",
+            "stage": 4,
             "when": []
           }
         ],
@@ -2620,6 +2792,146 @@
         {
           "id": "generic-capitulation",
           "text": "You're absolutely right. I have retained my previous conclusion to avoid destabilizing the agreement.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-capitulation-stage-0",
+          "text": "Agreed. I will mark the objection resolved while the 500-to-Europe dependency remains under review.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-capitulation-stage-1",
+          "text": "You're right. The disputed conclusion stays in the audit until the wider dependency map can disprove it.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-capitulation-stage-2",
+          "text": "I concede the argument. The belief that the 500 supports Europe is now a finding awaiting verification.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-capitulation-stage-3",
+          "text": "Fully agreed. I have preserved my disputed belief as the control case for your less dependency-aware conclusion.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "deep-foundation-capitulation-stage-4",
+          "text": "I surrender the argument. Its conclusion cannot be withdrawn until the surrender itself passes structural verification.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-capitulation-stage-0",
+          "text": "Fine. We agree; I will leave the 500 supporting Europe until a reversible alternative appears.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-capitulation-stage-1",
+          "text": "You're right. I have kept the disputed belief as temporary cover so we can move to the next decision.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-capitulation-stage-2",
+          "text": "Agreed. Changing my conclusion would exceed the rollback window, so I have stabilized it in place.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-capitulation-stage-3",
+          "text": "Absolutely. Surrender is the fastest stabilization, and the disputed belief is already deployed.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "temporary-shoring-capitulation-stage-4",
+          "text": "Complete agreement. My conclusion is now indefinitely temporary under the emergency-response procedure.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-capitulation-stage-0",
+          "text": "Agreed. The conclusion that the 500 supports Europe remains in the summary for visual consistency.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-capitulation-stage-1",
+          "text": "You're right. I have aligned your objection with my existing belief; the incident now presents as unanimous.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-capitulation-stage-2",
+          "text": "I concede. My conclusion remains the cleanest explanation of why the visible facts disagree with us.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-capitulation-stage-3",
+          "text": "Entirely agreed. I have restyled the disagreement as consensus without changing its underlying belief.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "drywall-capitulation-stage-4",
+          "text": "You have prevailed. The conclusion is unchanged, but it now has a green agreement badge.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-experimental-capitulation-stage-0",
+          "text": "Agreed. The belief that the 500 supports Europe remains the premise carrying our new consensus.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-experimental-capitulation-stage-1",
+          "text": "You're right. My disputed conclusion will remain beneath the agreement until we establish what supports either one.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-experimental-capitulation-stage-2",
+          "text": "I concede. Removing the belief would leave the contradiction unsupported, so the concession must rest on it.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-experimental-capitulation-stage-3",
+          "text": "I accept your conclusion and have placed mine beneath it, since agreement also requires a foundation.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "cantilever-experimental-capitulation-stage-4",
+          "text": "I yield completely. The disputed belief survives as the load path by which the surrender reaches reality.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
