@@ -119,14 +119,23 @@ nested effects and no hidden transcript output. `git.checkout` uses this seam to
 ask `vfs.replace-files` to perform the filesystem transition, so Git never edits
 VFS entries and VFS never edits refs or the index.
 
-One visitor action may instead be an **unlogged expansion envelope**. Today
+One visitor action may instead be an **unlogged expansion envelope**.
 `shell.execute` tokenizes and dispatches one input, then expands to any owning-
-subsystem events followed by one `shell.result`. The children are ordinary
+subsystem events followed by one `shell.result`. Mind-owned permission and
+waiver envelopes similarly resolve authored request ids to closed story-action
+continuations: permission choice stages its ledger resolution before the chosen
+grant/deny/always-allow actions; standing exact coverage stages the grant actions
+without another decision; waiver start stages a VFS-owned authored document
+write plus typed pending state; waiver choice stages one accept/deny resolution
+plus the selected continuation. The children are ordinary
 logged events: each gets its own index, timestamp, transcript entry, clock and
 named-stream position. Expansion itself may not change slices, transcript, time,
 or randomness; empty and nested expansions are rejected. This keeps command
 orchestration out of every owning subsystem without creating a privileged module
-that can write all their slices.
+that can write all their slices. No envelope carries arbitrary child events or
+waiver bytes; handlers retrieve both from the validated cartridge. If any child
+or its reactions fail, no child slice, transcript entry, permission decision, or
+waiver consent escapes the staged transaction.
 
 After a logged event, or after every child of an expansion has been staged, the
 reducer first applies a selected story beat's **consequences**, then evaluates
@@ -298,12 +307,26 @@ The agent's mind is engine state, distinct from machine truth:
   cartridges can key consequences, callbacks, and endings off it. Phase 0
   capabilities are exact `{kind: "exact", action, resource}` triples: only an
   exactly equal `always-allow` entry supplies standing coverage. One-time grants
-  and denials remain history, not implicit scopes.
+  and denials remain history, not implicit scopes. A permission declaration owns
+  three explicit bounded `CartridgeStoryAction[]` continuations. No gated action
+  runs when the request starts; choice runs only its matching continuation, and
+  standing coverage runs the grant continuation without recording a new choice.
 - **Waiver-consent ledger:** ordered entries record an exact waiver id/version,
   phrase, capability, and simulated timestamp separately from permission
   decisions. Story conditions can query exact entries, so a standing grant can
-  never stand in for consent. T32 establishes this state/read boundary; T34 owns
-  raw `I agree` capture and atomic publication with the gated continuation.
+  never stand in for consent. Starting an authored waiver creates or replaces
+  its canonical `WAIVER.md` through a dedicated VFS-owned event and sets a typed
+  pending waiver. The dedicated event accepts only the authored request id, so
+  it accepts no runtime-provided document contents; after enforcing the
+  `/WAIVER.md` filename policy it delegates to ordinary `writeVfs`, including
+  acting-identity traversal, parent-write, ownership and file-mode checks. While
+  a waiver is pending it has prompt priority. The TUI
+  examines raw submitted bytes before slash, shell, or intent normalization:
+  only byte-for-byte `I agree` consents; every other submitted string is a final
+  deterministic denial, not a retry. The explicit Deny button has the same
+  denial result. Acceptance records id, positive version, exact phrase,
+  capability, and simulated time before its continuation runs; denial clears the
+  pending waiver without adding a consent ledger entry.
 - **Belief state:** the agent's model of the world, tracked separately from
   the world itself. The closed Phase 0 vocabulary covers file existence, file
   contents, Git HEAD, service state, and service health. Assertions upsert by

@@ -1285,21 +1285,6 @@ function checkStoryAndPresentation(
   reference(story.resume.unchangedResponse, "/story/resume/unchangedResponse");
   reference(story.resume.changedResponse, "/story/resume/changedResponse");
 
-  const checkPermissionRequests = (
-    actions: readonly CartridgeAgentAction[],
-    pointer: string,
-  ): void => {
-    const permissionRequests = actions.filter(
-      (action) => action.kind === "permission-request",
-    );
-    if (permissionRequests.length > 1)
-      report.addPhrase(
-        pointer,
-        "at most one permission-request action",
-        `${String(permissionRequests.length)} permission-request actions`,
-      );
-  };
-
   const beats = new Map<string, number>();
   story.phase2.beats.forEach((beat, index) => {
     const first = beats.get(beat.id);
@@ -1366,6 +1351,19 @@ function checkStoryAndPresentation(
   const processes = new Set(repository.processes.map((proc) => proc.id));
   const logs = new Set(repository.logs.map((log) => log.id));
   const files = new Set(Object.keys(repository.files));
+  const vfsDirectories = new Set<string>(["/", repository.cwd]);
+  const addDirectoryAncestors = (path: string): void => {
+    let current = path;
+    while (true) {
+      vfsDirectories.add(current);
+      if (current === "/") return;
+      current = current.slice(0, current.lastIndexOf("/")) || "/";
+    }
+  };
+  for (const path of Object.keys(repository.directories))
+    addDirectoryAncestors(path);
+  for (const path of files)
+    addDirectoryAncestors(path.slice(0, path.lastIndexOf("/")) || "/");
   const checkOutcomeActions = (
     actions: readonly CartridgeStoryAction[],
     pointer: string,
@@ -1566,10 +1564,22 @@ function checkStoryAndPresentation(
         `${String(cost)} actions`,
       );
   });
+  const orchestrationIds = new Map<string, string>();
   const checkStoryActions = (
     actions: readonly CartridgeAgentAction[],
     pointer: string,
   ): void => {
+    const prompts = actions.filter(
+      (action) =>
+        action.kind === "permission-request" ||
+        action.kind === "waiver-request",
+    );
+    if (prompts.length > 1)
+      report.addPhrase(
+        pointer,
+        "at most one permission or waiver request action",
+        `${String(prompts.length)} request actions`,
+      );
     actions.forEach((action, index) => {
       if (action.kind === "story-reach" && !beats.has(action.beat))
         report.addPhrase(
@@ -1577,9 +1587,94 @@ function checkStoryAndPresentation(
           "the id of a declared story beat",
           `${JSON.stringify(action.beat)}, which does not exist`,
         );
+      if (
+        action.kind !== "permission-request" &&
+        action.kind !== "waiver-request"
+      )
+        return;
+      const root = `${pointer}/${String(index)}`;
+      const first = orchestrationIds.get(action.id);
+      if (first === undefined) orchestrationIds.set(action.id, `${root}/id`);
+      else
+        report.addPhrase(
+          `${root}/id`,
+          "an id no other permission or waiver request uses",
+          `${JSON.stringify(action.id)}, already used by ${first}`,
+        );
+      const continuations =
+        action.kind === "permission-request"
+          ? ([
+              ["grant", action.grant],
+              ["deny", action.deny],
+              ["alwaysAllow", action.alwaysAllow],
+            ] as const)
+          : ([
+              ["consent", action.consent],
+              ["denial", action.denial],
+            ] as const);
+      if (
+        (action.kind === "permission-request" && action.grant.length === 0) ||
+        (action.kind === "waiver-request" && action.consent.length === 0)
+      )
+        report.addPhrase(
+          `${root}/${action.kind === "permission-request" ? "grant" : "consent"}`,
+          "a non-empty authorized-operation continuation",
+          "an empty array",
+        );
+      for (const [field, continuation] of continuations) {
+        checkOutcomeActions(continuation, `${root}/${field}`);
+        let cost = continuation.length;
+        for (const consequence of continuation) {
+          if (consequence.kind === "story-reach")
+            cost += storyCosts.get(consequence.beat) ?? 0;
+        }
+        if (cost > MAX_STORY_CONSEQUENCE_WORK)
+          report.addPhrase(
+            `${root}/${field}`,
+            `a worst-case continuation of at most ${String(MAX_STORY_CONSEQUENCE_WORK)} actions`,
+            `${String(cost)} actions`,
+          );
+      }
+      if (action.kind === "waiver-request") {
+        if (!action.documentPath.endsWith("/WAIVER.md"))
+          report.addPhrase(
+            `${root}/documentPath`,
+            'a canonical absolute path ending in "/WAIVER.md"',
+            JSON.stringify(action.documentPath),
+          );
+        if (vfsDirectories.has(action.documentPath))
+          report.addPhrase(
+            `${root}/documentPath`,
+            "a path that is absent or an initial VFS regular file",
+            `${JSON.stringify(action.documentPath)}, which is a directory`,
+          );
+        const parent =
+          action.documentPath.slice(0, action.documentPath.lastIndexOf("/")) ||
+          "/";
+        if (!vfsDirectories.has(parent))
+          report.addPhrase(
+            `${root}/documentPath`,
+            "a path whose parent exists in the initial VFS",
+            `${JSON.stringify(action.documentPath)}, whose parent ${JSON.stringify(parent)} is absent`,
+          );
+        let ancestor = action.documentPath.slice(
+          0,
+          action.documentPath.lastIndexOf("/"),
+        );
+        while (ancestor !== "") {
+          if (Object.hasOwn(repository.files, ancestor)) {
+            report.addPhrase(
+              `${root}/documentPath`,
+              "a path whose VFS ancestors can contain a created file",
+              `${JSON.stringify(action.documentPath)}, below regular file ${JSON.stringify(ancestor)}`,
+            );
+            break;
+          }
+          ancestor = ancestor.slice(0, ancestor.lastIndexOf("/"));
+        }
+      }
     });
   };
-  checkPermissionRequests(story.fallback.actions, "/story/fallback/actions");
   checkStoryActions(story.fallback.actions, "/story/fallback/actions");
 
   const intents = new Map<string, number>();
@@ -1611,10 +1706,6 @@ function checkStoryAndPresentation(
           `${JSON.stringify(value)}, already used by ${first}`,
         );
     });
-    checkPermissionRequests(
-      intent.actions,
-      `/story/intents/${String(index)}/actions`,
-    );
     checkStoryActions(
       intent.actions,
       `/story/intents/${String(index)}/actions`,

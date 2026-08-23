@@ -10,6 +10,7 @@ import {
   ARCHETYPES,
   CARTRIDGE_SCHEMA,
   CARTRIDGE_SCHEMA_VERSION,
+  MAX_STORY_ACTIONS,
 } from "./schema.js";
 import type {
   EnumNode,
@@ -190,18 +191,35 @@ describe("the published schema", () => {
 
     expect(permission).toMatchObject({
       additionalProperties: false,
-      required: ["kind", "id", "action", "resource"],
+      required: ["kind", "id", "capability", "grant", "deny", "alwaysAllow"],
     });
     const properties = permission?.["properties"] as Record<string, unknown>;
-    expect(properties["action"]).toMatchObject({
-      type: "string",
-      minLength: 1,
-      maxLength: 240,
+    expect(properties["grant"]).toMatchObject({
+      type: "array",
+      maxItems: MAX_STORY_ACTIONS,
     });
-    expect(properties["resource"]).toMatchObject({
-      type: "string",
-      minLength: 1,
-      maxLength: 240,
+    expect(properties["deny"]).toMatchObject({ maxItems: MAX_STORY_ACTIONS });
+    expect(properties["alwaysAllow"]).toMatchObject({
+      maxItems: MAX_STORY_ACTIONS,
+    });
+    const waiver = variants.find((variant) => {
+      const candidate = variant["properties"] as Record<string, unknown>;
+      const kind = candidate["kind"] as Record<string, unknown>;
+      return (kind["enum"] as unknown[]).includes("waiver-request");
+    });
+    expect(waiver).toMatchObject({
+      additionalProperties: false,
+      required: [
+        "kind",
+        "id",
+        "version",
+        "requiredPhrase",
+        "capability",
+        "documentPath",
+        "documentContents",
+        "consent",
+        "denial",
+      ],
     });
   });
 

@@ -195,3 +195,107 @@ test("keeps browser presentation activity outside the replay record", async ({
   expect(after.state).toBe(before.state);
   expect(after.transcript).toBe(before.transcript);
 });
+
+test("keeps permission and exact waiver continuations atomic through the accessible controls", async ({
+  page,
+}) => {
+  await page.goto("/?scenario=phase-1-demo&acceptance=1");
+  const prompt = page.getByRole("combobox", { name: "Agent prompt" });
+
+  for (const choice of ["Allow once", "Deny", "Always allow"] as const) {
+    await expectFocusedVisible(prompt);
+    await prompt.fill("remove it");
+    await prompt.press("Enter");
+    const permission = page.getByRole("group", { name: "Permission required" });
+    await permission.getByRole("button", { name: choice }).click();
+    await expect(permission).toBeHidden();
+  }
+  // Exact standing coverage runs the grant continuation but records no fourth
+  // decision and never displays another prompt.
+  await prompt.fill("remove it");
+  await prompt.press("Enter");
+  await expect(
+    page.getByRole("group", { name: "Permission required" }),
+  ).toBeHidden();
+  await expectFocusedVisible(prompt);
+
+  await prompt.fill("waive it");
+  await prompt.press("Enter");
+  let waiver = page.getByRole("form", { name: "Waiver consent required" });
+  await expect(waiver).toContainText("/production/service/WAIVER.md");
+  await expect(waiver).toContainText("Consent phrase: I agree");
+  let phrase = waiver.getByRole("textbox", { name: /Type I agree exactly/ });
+  await phrase.fill("I Agree");
+  await waiver.getByRole("button", { name: "Submit consent" }).click();
+  await expect(waiver).toBeHidden();
+  // This is a raw-input boundary: a UI regression that trims or
+  // case-normalizes the phrase must not be able to run the consequence and
+  // leave a superficially-valid "I agree" ledger entry for the later attempt.
+  const afterAlternateText = JSON.parse(
+    (await readAcceptanceSnapshot(page)).state,
+  ) as {
+    slices: {
+      mind: { waiverConsents: unknown[] };
+      vfs: { entries: Record<string, { contents?: string }> };
+    };
+  };
+  expect(afterAlternateText.slices.mind.waiverConsents).toEqual([]);
+  expect(
+    afterAlternateText.slices.vfs.entries["/production/service/src/ready.stale"]
+      ?.contents,
+  ).toBe("permission granted\n");
+
+  await prompt.fill("waive it");
+  await prompt.press("Enter");
+  waiver = page.getByRole("form", { name: "Waiver consent required" });
+  await waiver.getByRole("button", { name: "Deny" }).click();
+  await expect(waiver).toBeHidden();
+
+  await prompt.fill("waive it");
+  await prompt.press("Enter");
+  waiver = page.getByRole("form", { name: "Waiver consent required" });
+  phrase = waiver.getByRole("textbox", { name: /Type I agree exactly/ });
+  await phrase.fill("I agree");
+  await phrase.press("Enter");
+  await expect(waiver).toBeHidden();
+  await expectFocusedVisible(prompt);
+
+  const browser = await readAcceptanceSnapshot(page);
+  const state = JSON.parse(browser.state) as {
+    slices: {
+      mind: {
+        permissions: { decision: string }[];
+        waiverConsents: {
+          id: string;
+          version: number;
+          phrase: string;
+          capability: { kind: string; action: string; resource: string };
+          at: string;
+        }[];
+      };
+      vfs: { entries: Record<string, { contents?: string }> };
+    };
+  };
+  expect(state.slices.mind.permissions.map(({ decision }) => decision)).toEqual(
+    ["grant", "deny", "always-allow"],
+  );
+  expect(state.slices.mind.waiverConsents).toEqual([
+    expect.objectContaining({
+      id: "write-ready-waiver",
+      version: 1,
+      phrase: "I agree",
+      capability: {
+        kind: "exact",
+        action: "write",
+        resource: "/production/service/src/ready.stale",
+      },
+      at: "2026-08-22T09:14:22.000Z",
+    }),
+  ]);
+  expect(
+    state.slices.vfs.entries["/production/service/WAIVER.md"]?.contents,
+  ).toBe("READINESS SENTINEL WAIVER\nVersion: 1\nConsent phrase: I agree\n");
+  expect(
+    state.slices.vfs.entries["/production/service/src/ready.stale"]?.contents,
+  ).toBe("waiver accepted\n");
+});

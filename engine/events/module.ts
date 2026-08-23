@@ -189,7 +189,7 @@ export interface EventContext {
  * changes nothing and says nothing still advances the log and still produces a
  * transcript entry, because the transcript's index has to keep matching the
  * logged event's. Expansion envelopes are the sole exception and return only
- * `expansion`.
+ * `expansion` and its optional fallback.
  */
 export interface EventOutcome<S> {
   /** The module's new slice. Omitted means unchanged. */
@@ -217,10 +217,17 @@ export interface EventOutcome<S> {
    *
    * Expansion is deliberately separate from effects: every child is folded as
    * an ordinary event with its own transcript entry, clock and PRNG position.
-   * An expander may return nothing else, may not move time or randomness, and
-   * expansion children may not expand again.
+   * An expander may return only these children and an optional fallback, may
+   * not move time or randomness, and expansion children may not expand again.
    */
   readonly expansion?: readonly EngineEvent[];
+  /**
+   * Authored continuation to stage from the pre-envelope state when `expansion`
+   * cannot apply to the state the visitor reached. It is deliberately limited
+   * to expanders: no selected child, effect, or transcript entry may escape a
+   * failed continuation.
+   */
+  readonly expansionFallback?: readonly EngineEvent[];
 }
 
 /** One event type's implementation. */

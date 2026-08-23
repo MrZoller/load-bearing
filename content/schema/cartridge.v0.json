@@ -1908,17 +1908,706 @@
                   },
                   {
                     "additionalProperties": false,
-                    "description": "Request consent for one exact capability.",
+                    "description": "Request one exact capability with decision-specific closed continuations.",
                     "properties": {
-                      "action": {
-                        "description": "Bounded single-line authored text.",
-                        "maxLength": 240,
-                        "minLength": 1,
-                        "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
-                        "type": "string"
+                      "alwaysAllow": {
+                        "description": "Owner-directed consequences in authored order.",
+                        "items": {
+                          "description": "One bounded owner-directed story consequence.",
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "Add a positive amount to a declared bounded counter.",
+                              "properties": {
+                                "amount": {
+                                  "description": "A positive safe-integer increment.",
+                                  "maximum": 9007199254740991,
+                                  "minimum": 1,
+                                  "type": "integer"
+                                },
+                                "counter": {
+                                  "description": "A stable lowercase Phase 1 content identifier.",
+                                  "maxLength": 64,
+                                  "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "Story action kind.",
+                                  "enum": [
+                                    "counter-add"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "counter",
+                                "amount"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "Reach one authored shared story beat.",
+                              "properties": {
+                                "beat": {
+                                  "description": "A stable lowercase Phase 1 content identifier.",
+                                  "maxLength": 64,
+                                  "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "The action kind.",
+                                  "enum": [
+                                    "story-reach"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "beat"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "Write exact contents to a declared VFS file.",
+                              "properties": {
+                                "contents": {
+                                  "description": "Bounded authored text.",
+                                  "maxLength": 16000,
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "Story action kind.",
+                                  "enum": [
+                                    "file-write"
+                                  ],
+                                  "type": "string"
+                                },
+                                "path": {
+                                  "description": "A bounded canonical absolute VFS path.",
+                                  "maxLength": 4096,
+                                  "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "path",
+                                "contents"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A service-state predicate or action.",
+                              "properties": {
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "service-state"
+                                  ],
+                                  "type": "string"
+                                },
+                                "service": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                },
+                                "state": {
+                                  "description": "A unit state.",
+                                  "enum": [
+                                    "running",
+                                    "stopped"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "service",
+                                "state"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A service-health predicate or action.",
+                              "properties": {
+                                "health": {
+                                  "description": "A service health.",
+                                  "enum": [
+                                    "healthy",
+                                    "degraded",
+                                    "unhealthy",
+                                    "unknown"
+                                  ],
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "service-health"
+                                  ],
+                                  "type": "string"
+                                },
+                                "service": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "service",
+                                "health"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A process-state predicate or action.",
+                              "properties": {
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "process-state"
+                                  ],
+                                  "type": "string"
+                                },
+                                "process": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                },
+                                "state": {
+                                  "description": "A unit state.",
+                                  "enum": [
+                                    "running",
+                                    "stopped"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "process",
+                                "state"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "Append one entry to a declared log.",
+                              "properties": {
+                                "entry": {
+                                  "description": "The complete appended entry.",
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "log-append"
+                                  ],
+                                  "type": "string"
+                                },
+                                "log": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "log",
+                                "entry"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "maxItems": 16,
+                        "type": "array"
+                      },
+                      "capability": {
+                        "additionalProperties": false,
+                        "description": "One exact action and resource capability.",
+                        "properties": {
+                          "action": {
+                            "description": "Bounded single-line authored text.",
+                            "maxLength": 240,
+                            "minLength": 1,
+                            "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                            "type": "string"
+                          },
+                          "kind": {
+                            "description": "Exact capability kind.",
+                            "enum": [
+                              "exact"
+                            ],
+                            "type": "string"
+                          },
+                          "resource": {
+                            "description": "Bounded single-line authored text.",
+                            "maxLength": 240,
+                            "minLength": 1,
+                            "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "action",
+                          "resource"
+                        ],
+                        "type": "object"
+                      },
+                      "deny": {
+                        "description": "Owner-directed consequences in authored order.",
+                        "items": {
+                          "description": "One bounded owner-directed story consequence.",
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "Add a positive amount to a declared bounded counter.",
+                              "properties": {
+                                "amount": {
+                                  "description": "A positive safe-integer increment.",
+                                  "maximum": 9007199254740991,
+                                  "minimum": 1,
+                                  "type": "integer"
+                                },
+                                "counter": {
+                                  "description": "A stable lowercase Phase 1 content identifier.",
+                                  "maxLength": 64,
+                                  "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "Story action kind.",
+                                  "enum": [
+                                    "counter-add"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "counter",
+                                "amount"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "Reach one authored shared story beat.",
+                              "properties": {
+                                "beat": {
+                                  "description": "A stable lowercase Phase 1 content identifier.",
+                                  "maxLength": 64,
+                                  "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "The action kind.",
+                                  "enum": [
+                                    "story-reach"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "beat"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "Write exact contents to a declared VFS file.",
+                              "properties": {
+                                "contents": {
+                                  "description": "Bounded authored text.",
+                                  "maxLength": 16000,
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "Story action kind.",
+                                  "enum": [
+                                    "file-write"
+                                  ],
+                                  "type": "string"
+                                },
+                                "path": {
+                                  "description": "A bounded canonical absolute VFS path.",
+                                  "maxLength": 4096,
+                                  "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "path",
+                                "contents"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A service-state predicate or action.",
+                              "properties": {
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "service-state"
+                                  ],
+                                  "type": "string"
+                                },
+                                "service": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                },
+                                "state": {
+                                  "description": "A unit state.",
+                                  "enum": [
+                                    "running",
+                                    "stopped"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "service",
+                                "state"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A service-health predicate or action.",
+                              "properties": {
+                                "health": {
+                                  "description": "A service health.",
+                                  "enum": [
+                                    "healthy",
+                                    "degraded",
+                                    "unhealthy",
+                                    "unknown"
+                                  ],
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "service-health"
+                                  ],
+                                  "type": "string"
+                                },
+                                "service": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "service",
+                                "health"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A process-state predicate or action.",
+                              "properties": {
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "process-state"
+                                  ],
+                                  "type": "string"
+                                },
+                                "process": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                },
+                                "state": {
+                                  "description": "A unit state.",
+                                  "enum": [
+                                    "running",
+                                    "stopped"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "process",
+                                "state"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "Append one entry to a declared log.",
+                              "properties": {
+                                "entry": {
+                                  "description": "The complete appended entry.",
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "log-append"
+                                  ],
+                                  "type": "string"
+                                },
+                                "log": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "log",
+                                "entry"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "maxItems": 16,
+                        "type": "array"
+                      },
+                      "grant": {
+                        "description": "Owner-directed consequences in authored order.",
+                        "items": {
+                          "description": "One bounded owner-directed story consequence.",
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "Add a positive amount to a declared bounded counter.",
+                              "properties": {
+                                "amount": {
+                                  "description": "A positive safe-integer increment.",
+                                  "maximum": 9007199254740991,
+                                  "minimum": 1,
+                                  "type": "integer"
+                                },
+                                "counter": {
+                                  "description": "A stable lowercase Phase 1 content identifier.",
+                                  "maxLength": 64,
+                                  "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "Story action kind.",
+                                  "enum": [
+                                    "counter-add"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "counter",
+                                "amount"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "Reach one authored shared story beat.",
+                              "properties": {
+                                "beat": {
+                                  "description": "A stable lowercase Phase 1 content identifier.",
+                                  "maxLength": 64,
+                                  "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "The action kind.",
+                                  "enum": [
+                                    "story-reach"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "beat"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "Write exact contents to a declared VFS file.",
+                              "properties": {
+                                "contents": {
+                                  "description": "Bounded authored text.",
+                                  "maxLength": 16000,
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "Story action kind.",
+                                  "enum": [
+                                    "file-write"
+                                  ],
+                                  "type": "string"
+                                },
+                                "path": {
+                                  "description": "A bounded canonical absolute VFS path.",
+                                  "maxLength": 4096,
+                                  "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "path",
+                                "contents"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A service-state predicate or action.",
+                              "properties": {
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "service-state"
+                                  ],
+                                  "type": "string"
+                                },
+                                "service": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                },
+                                "state": {
+                                  "description": "A unit state.",
+                                  "enum": [
+                                    "running",
+                                    "stopped"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "service",
+                                "state"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A service-health predicate or action.",
+                              "properties": {
+                                "health": {
+                                  "description": "A service health.",
+                                  "enum": [
+                                    "healthy",
+                                    "degraded",
+                                    "unhealthy",
+                                    "unknown"
+                                  ],
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "service-health"
+                                  ],
+                                  "type": "string"
+                                },
+                                "service": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "service",
+                                "health"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A process-state predicate or action.",
+                              "properties": {
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "process-state"
+                                  ],
+                                  "type": "string"
+                                },
+                                "process": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                },
+                                "state": {
+                                  "description": "A unit state.",
+                                  "enum": [
+                                    "running",
+                                    "stopped"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "process",
+                                "state"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "Append one entry to a declared log.",
+                              "properties": {
+                                "entry": {
+                                  "description": "The complete appended entry.",
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "log-append"
+                                  ],
+                                  "type": "string"
+                                },
+                                "log": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "log",
+                                "entry"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "maxItems": 16,
+                        "type": "array"
                       },
                       "id": {
-                        "description": "A stable authored permission request identifier.",
+                        "description": "A globally unique authored permission request id.",
                         "maxLength": 64,
                         "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
                         "type": "string"
@@ -1929,20 +2618,545 @@
                           "permission-request"
                         ],
                         "type": "string"
-                      },
-                      "resource": {
-                        "description": "Bounded single-line authored text.",
-                        "maxLength": 240,
-                        "minLength": 1,
-                        "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
-                        "type": "string"
                       }
                     },
                     "required": [
                       "kind",
                       "id",
-                      "action",
-                      "resource"
+                      "capability",
+                      "grant",
+                      "deny",
+                      "alwaysAllow"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "description": "Create an authored waiver document and request exact typed consent.",
+                    "properties": {
+                      "capability": {
+                        "additionalProperties": false,
+                        "description": "One exact action and resource capability.",
+                        "properties": {
+                          "action": {
+                            "description": "Bounded single-line authored text.",
+                            "maxLength": 240,
+                            "minLength": 1,
+                            "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                            "type": "string"
+                          },
+                          "kind": {
+                            "description": "Exact capability kind.",
+                            "enum": [
+                              "exact"
+                            ],
+                            "type": "string"
+                          },
+                          "resource": {
+                            "description": "Bounded single-line authored text.",
+                            "maxLength": 240,
+                            "minLength": 1,
+                            "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "action",
+                          "resource"
+                        ],
+                        "type": "object"
+                      },
+                      "consent": {
+                        "description": "Owner-directed consequences in authored order.",
+                        "items": {
+                          "description": "One bounded owner-directed story consequence.",
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "Add a positive amount to a declared bounded counter.",
+                              "properties": {
+                                "amount": {
+                                  "description": "A positive safe-integer increment.",
+                                  "maximum": 9007199254740991,
+                                  "minimum": 1,
+                                  "type": "integer"
+                                },
+                                "counter": {
+                                  "description": "A stable lowercase Phase 1 content identifier.",
+                                  "maxLength": 64,
+                                  "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "Story action kind.",
+                                  "enum": [
+                                    "counter-add"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "counter",
+                                "amount"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "Reach one authored shared story beat.",
+                              "properties": {
+                                "beat": {
+                                  "description": "A stable lowercase Phase 1 content identifier.",
+                                  "maxLength": 64,
+                                  "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "The action kind.",
+                                  "enum": [
+                                    "story-reach"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "beat"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "Write exact contents to a declared VFS file.",
+                              "properties": {
+                                "contents": {
+                                  "description": "Bounded authored text.",
+                                  "maxLength": 16000,
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "Story action kind.",
+                                  "enum": [
+                                    "file-write"
+                                  ],
+                                  "type": "string"
+                                },
+                                "path": {
+                                  "description": "A bounded canonical absolute VFS path.",
+                                  "maxLength": 4096,
+                                  "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "path",
+                                "contents"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A service-state predicate or action.",
+                              "properties": {
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "service-state"
+                                  ],
+                                  "type": "string"
+                                },
+                                "service": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                },
+                                "state": {
+                                  "description": "A unit state.",
+                                  "enum": [
+                                    "running",
+                                    "stopped"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "service",
+                                "state"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A service-health predicate or action.",
+                              "properties": {
+                                "health": {
+                                  "description": "A service health.",
+                                  "enum": [
+                                    "healthy",
+                                    "degraded",
+                                    "unhealthy",
+                                    "unknown"
+                                  ],
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "service-health"
+                                  ],
+                                  "type": "string"
+                                },
+                                "service": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "service",
+                                "health"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A process-state predicate or action.",
+                              "properties": {
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "process-state"
+                                  ],
+                                  "type": "string"
+                                },
+                                "process": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                },
+                                "state": {
+                                  "description": "A unit state.",
+                                  "enum": [
+                                    "running",
+                                    "stopped"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "process",
+                                "state"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "Append one entry to a declared log.",
+                              "properties": {
+                                "entry": {
+                                  "description": "The complete appended entry.",
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "log-append"
+                                  ],
+                                  "type": "string"
+                                },
+                                "log": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "log",
+                                "entry"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "maxItems": 16,
+                        "type": "array"
+                      },
+                      "denial": {
+                        "description": "Owner-directed consequences in authored order.",
+                        "items": {
+                          "description": "One bounded owner-directed story consequence.",
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "description": "Add a positive amount to a declared bounded counter.",
+                              "properties": {
+                                "amount": {
+                                  "description": "A positive safe-integer increment.",
+                                  "maximum": 9007199254740991,
+                                  "minimum": 1,
+                                  "type": "integer"
+                                },
+                                "counter": {
+                                  "description": "A stable lowercase Phase 1 content identifier.",
+                                  "maxLength": 64,
+                                  "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "Story action kind.",
+                                  "enum": [
+                                    "counter-add"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "counter",
+                                "amount"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "Reach one authored shared story beat.",
+                              "properties": {
+                                "beat": {
+                                  "description": "A stable lowercase Phase 1 content identifier.",
+                                  "maxLength": 64,
+                                  "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "The action kind.",
+                                  "enum": [
+                                    "story-reach"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "beat"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "Write exact contents to a declared VFS file.",
+                              "properties": {
+                                "contents": {
+                                  "description": "Bounded authored text.",
+                                  "maxLength": 16000,
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "Story action kind.",
+                                  "enum": [
+                                    "file-write"
+                                  ],
+                                  "type": "string"
+                                },
+                                "path": {
+                                  "description": "A bounded canonical absolute VFS path.",
+                                  "maxLength": 4096,
+                                  "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "path",
+                                "contents"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A service-state predicate or action.",
+                              "properties": {
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "service-state"
+                                  ],
+                                  "type": "string"
+                                },
+                                "service": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                },
+                                "state": {
+                                  "description": "A unit state.",
+                                  "enum": [
+                                    "running",
+                                    "stopped"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "service",
+                                "state"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A service-health predicate or action.",
+                              "properties": {
+                                "health": {
+                                  "description": "A service health.",
+                                  "enum": [
+                                    "healthy",
+                                    "degraded",
+                                    "unhealthy",
+                                    "unknown"
+                                  ],
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "service-health"
+                                  ],
+                                  "type": "string"
+                                },
+                                "service": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "service",
+                                "health"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "A process-state predicate or action.",
+                              "properties": {
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "process-state"
+                                  ],
+                                  "type": "string"
+                                },
+                                "process": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                },
+                                "state": {
+                                  "description": "A unit state.",
+                                  "enum": [
+                                    "running",
+                                    "stopped"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "process",
+                                "state"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "description": "Append one entry to a declared log.",
+                              "properties": {
+                                "entry": {
+                                  "description": "The complete appended entry.",
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "description": "The rule kind.",
+                                  "enum": [
+                                    "log-append"
+                                  ],
+                                  "type": "string"
+                                },
+                                "log": {
+                                  "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                  "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "log",
+                                "entry"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "maxItems": 16,
+                        "type": "array"
+                      },
+                      "documentContents": {
+                        "description": "Bounded authored text.",
+                        "maxLength": 16000,
+                        "type": "string"
+                      },
+                      "documentPath": {
+                        "description": "A bounded canonical absolute VFS path.",
+                        "maxLength": 4096,
+                        "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                        "type": "string"
+                      },
+                      "id": {
+                        "description": "A stable lowercase Phase 1 content identifier.",
+                        "maxLength": 64,
+                        "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                        "type": "string"
+                      },
+                      "kind": {
+                        "description": "The action kind.",
+                        "enum": [
+                          "waiver-request"
+                        ],
+                        "type": "string"
+                      },
+                      "requiredPhrase": {
+                        "description": "The only accepted waiver phrase.",
+                        "enum": [
+                          "I agree"
+                        ],
+                        "type": "string"
+                      },
+                      "version": {
+                        "description": "Positive authored waiver document version.",
+                        "maximum": 9007199254740991,
+                        "minimum": 1,
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "id",
+                      "version",
+                      "requiredPhrase",
+                      "capability",
+                      "documentPath",
+                      "documentContents",
+                      "consent",
+                      "denial"
                     ],
                     "type": "object"
                   },
@@ -2044,17 +3258,706 @@
                     },
                     {
                       "additionalProperties": false,
-                      "description": "Request consent for one exact capability.",
+                      "description": "Request one exact capability with decision-specific closed continuations.",
                       "properties": {
-                        "action": {
-                          "description": "Bounded single-line authored text.",
-                          "maxLength": 240,
-                          "minLength": 1,
-                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
-                          "type": "string"
+                        "alwaysAllow": {
+                          "description": "Owner-directed consequences in authored order.",
+                          "items": {
+                            "description": "One bounded owner-directed story consequence.",
+                            "oneOf": [
+                              {
+                                "additionalProperties": false,
+                                "description": "Add a positive amount to a declared bounded counter.",
+                                "properties": {
+                                  "amount": {
+                                    "description": "A positive safe-integer increment.",
+                                    "maximum": 9007199254740991,
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  "counter": {
+                                    "description": "A stable lowercase Phase 1 content identifier.",
+                                    "maxLength": 64,
+                                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "Story action kind.",
+                                    "enum": [
+                                      "counter-add"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "counter",
+                                  "amount"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "Reach one authored shared story beat.",
+                                "properties": {
+                                  "beat": {
+                                    "description": "A stable lowercase Phase 1 content identifier.",
+                                    "maxLength": 64,
+                                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "The action kind.",
+                                    "enum": [
+                                      "story-reach"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "beat"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "Write exact contents to a declared VFS file.",
+                                "properties": {
+                                  "contents": {
+                                    "description": "Bounded authored text.",
+                                    "maxLength": 16000,
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "Story action kind.",
+                                    "enum": [
+                                      "file-write"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "path": {
+                                    "description": "A bounded canonical absolute VFS path.",
+                                    "maxLength": 4096,
+                                    "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "path",
+                                  "contents"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A service-state predicate or action.",
+                                "properties": {
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "service-state"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "service": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  },
+                                  "state": {
+                                    "description": "A unit state.",
+                                    "enum": [
+                                      "running",
+                                      "stopped"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "service",
+                                  "state"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A service-health predicate or action.",
+                                "properties": {
+                                  "health": {
+                                    "description": "A service health.",
+                                    "enum": [
+                                      "healthy",
+                                      "degraded",
+                                      "unhealthy",
+                                      "unknown"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "service-health"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "service": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "service",
+                                  "health"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A process-state predicate or action.",
+                                "properties": {
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "process-state"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "process": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  },
+                                  "state": {
+                                    "description": "A unit state.",
+                                    "enum": [
+                                      "running",
+                                      "stopped"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "process",
+                                  "state"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "Append one entry to a declared log.",
+                                "properties": {
+                                  "entry": {
+                                    "description": "The complete appended entry.",
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "log-append"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "log": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "log",
+                                  "entry"
+                                ],
+                                "type": "object"
+                              }
+                            ]
+                          },
+                          "maxItems": 16,
+                          "type": "array"
+                        },
+                        "capability": {
+                          "additionalProperties": false,
+                          "description": "One exact action and resource capability.",
+                          "properties": {
+                            "action": {
+                              "description": "Bounded single-line authored text.",
+                              "maxLength": 240,
+                              "minLength": 1,
+                              "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                              "type": "string"
+                            },
+                            "kind": {
+                              "description": "Exact capability kind.",
+                              "enum": [
+                                "exact"
+                              ],
+                              "type": "string"
+                            },
+                            "resource": {
+                              "description": "Bounded single-line authored text.",
+                              "maxLength": 240,
+                              "minLength": 1,
+                              "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "action",
+                            "resource"
+                          ],
+                          "type": "object"
+                        },
+                        "deny": {
+                          "description": "Owner-directed consequences in authored order.",
+                          "items": {
+                            "description": "One bounded owner-directed story consequence.",
+                            "oneOf": [
+                              {
+                                "additionalProperties": false,
+                                "description": "Add a positive amount to a declared bounded counter.",
+                                "properties": {
+                                  "amount": {
+                                    "description": "A positive safe-integer increment.",
+                                    "maximum": 9007199254740991,
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  "counter": {
+                                    "description": "A stable lowercase Phase 1 content identifier.",
+                                    "maxLength": 64,
+                                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "Story action kind.",
+                                    "enum": [
+                                      "counter-add"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "counter",
+                                  "amount"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "Reach one authored shared story beat.",
+                                "properties": {
+                                  "beat": {
+                                    "description": "A stable lowercase Phase 1 content identifier.",
+                                    "maxLength": 64,
+                                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "The action kind.",
+                                    "enum": [
+                                      "story-reach"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "beat"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "Write exact contents to a declared VFS file.",
+                                "properties": {
+                                  "contents": {
+                                    "description": "Bounded authored text.",
+                                    "maxLength": 16000,
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "Story action kind.",
+                                    "enum": [
+                                      "file-write"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "path": {
+                                    "description": "A bounded canonical absolute VFS path.",
+                                    "maxLength": 4096,
+                                    "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "path",
+                                  "contents"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A service-state predicate or action.",
+                                "properties": {
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "service-state"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "service": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  },
+                                  "state": {
+                                    "description": "A unit state.",
+                                    "enum": [
+                                      "running",
+                                      "stopped"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "service",
+                                  "state"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A service-health predicate or action.",
+                                "properties": {
+                                  "health": {
+                                    "description": "A service health.",
+                                    "enum": [
+                                      "healthy",
+                                      "degraded",
+                                      "unhealthy",
+                                      "unknown"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "service-health"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "service": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "service",
+                                  "health"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A process-state predicate or action.",
+                                "properties": {
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "process-state"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "process": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  },
+                                  "state": {
+                                    "description": "A unit state.",
+                                    "enum": [
+                                      "running",
+                                      "stopped"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "process",
+                                  "state"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "Append one entry to a declared log.",
+                                "properties": {
+                                  "entry": {
+                                    "description": "The complete appended entry.",
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "log-append"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "log": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "log",
+                                  "entry"
+                                ],
+                                "type": "object"
+                              }
+                            ]
+                          },
+                          "maxItems": 16,
+                          "type": "array"
+                        },
+                        "grant": {
+                          "description": "Owner-directed consequences in authored order.",
+                          "items": {
+                            "description": "One bounded owner-directed story consequence.",
+                            "oneOf": [
+                              {
+                                "additionalProperties": false,
+                                "description": "Add a positive amount to a declared bounded counter.",
+                                "properties": {
+                                  "amount": {
+                                    "description": "A positive safe-integer increment.",
+                                    "maximum": 9007199254740991,
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  "counter": {
+                                    "description": "A stable lowercase Phase 1 content identifier.",
+                                    "maxLength": 64,
+                                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "Story action kind.",
+                                    "enum": [
+                                      "counter-add"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "counter",
+                                  "amount"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "Reach one authored shared story beat.",
+                                "properties": {
+                                  "beat": {
+                                    "description": "A stable lowercase Phase 1 content identifier.",
+                                    "maxLength": 64,
+                                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "The action kind.",
+                                    "enum": [
+                                      "story-reach"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "beat"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "Write exact contents to a declared VFS file.",
+                                "properties": {
+                                  "contents": {
+                                    "description": "Bounded authored text.",
+                                    "maxLength": 16000,
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "Story action kind.",
+                                    "enum": [
+                                      "file-write"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "path": {
+                                    "description": "A bounded canonical absolute VFS path.",
+                                    "maxLength": 4096,
+                                    "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "path",
+                                  "contents"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A service-state predicate or action.",
+                                "properties": {
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "service-state"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "service": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  },
+                                  "state": {
+                                    "description": "A unit state.",
+                                    "enum": [
+                                      "running",
+                                      "stopped"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "service",
+                                  "state"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A service-health predicate or action.",
+                                "properties": {
+                                  "health": {
+                                    "description": "A service health.",
+                                    "enum": [
+                                      "healthy",
+                                      "degraded",
+                                      "unhealthy",
+                                      "unknown"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "service-health"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "service": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "service",
+                                  "health"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A process-state predicate or action.",
+                                "properties": {
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "process-state"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "process": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  },
+                                  "state": {
+                                    "description": "A unit state.",
+                                    "enum": [
+                                      "running",
+                                      "stopped"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "process",
+                                  "state"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "Append one entry to a declared log.",
+                                "properties": {
+                                  "entry": {
+                                    "description": "The complete appended entry.",
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "log-append"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "log": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "log",
+                                  "entry"
+                                ],
+                                "type": "object"
+                              }
+                            ]
+                          },
+                          "maxItems": 16,
+                          "type": "array"
                         },
                         "id": {
-                          "description": "A stable authored permission request identifier.",
+                          "description": "A globally unique authored permission request id.",
                           "maxLength": 64,
                           "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
                           "type": "string"
@@ -2065,20 +3968,545 @@
                             "permission-request"
                           ],
                           "type": "string"
-                        },
-                        "resource": {
-                          "description": "Bounded single-line authored text.",
-                          "maxLength": 240,
-                          "minLength": 1,
-                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
-                          "type": "string"
                         }
                       },
                       "required": [
                         "kind",
                         "id",
-                        "action",
-                        "resource"
+                        "capability",
+                        "grant",
+                        "deny",
+                        "alwaysAllow"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "description": "Create an authored waiver document and request exact typed consent.",
+                      "properties": {
+                        "capability": {
+                          "additionalProperties": false,
+                          "description": "One exact action and resource capability.",
+                          "properties": {
+                            "action": {
+                              "description": "Bounded single-line authored text.",
+                              "maxLength": 240,
+                              "minLength": 1,
+                              "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                              "type": "string"
+                            },
+                            "kind": {
+                              "description": "Exact capability kind.",
+                              "enum": [
+                                "exact"
+                              ],
+                              "type": "string"
+                            },
+                            "resource": {
+                              "description": "Bounded single-line authored text.",
+                              "maxLength": 240,
+                              "minLength": 1,
+                              "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "action",
+                            "resource"
+                          ],
+                          "type": "object"
+                        },
+                        "consent": {
+                          "description": "Owner-directed consequences in authored order.",
+                          "items": {
+                            "description": "One bounded owner-directed story consequence.",
+                            "oneOf": [
+                              {
+                                "additionalProperties": false,
+                                "description": "Add a positive amount to a declared bounded counter.",
+                                "properties": {
+                                  "amount": {
+                                    "description": "A positive safe-integer increment.",
+                                    "maximum": 9007199254740991,
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  "counter": {
+                                    "description": "A stable lowercase Phase 1 content identifier.",
+                                    "maxLength": 64,
+                                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "Story action kind.",
+                                    "enum": [
+                                      "counter-add"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "counter",
+                                  "amount"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "Reach one authored shared story beat.",
+                                "properties": {
+                                  "beat": {
+                                    "description": "A stable lowercase Phase 1 content identifier.",
+                                    "maxLength": 64,
+                                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "The action kind.",
+                                    "enum": [
+                                      "story-reach"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "beat"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "Write exact contents to a declared VFS file.",
+                                "properties": {
+                                  "contents": {
+                                    "description": "Bounded authored text.",
+                                    "maxLength": 16000,
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "Story action kind.",
+                                    "enum": [
+                                      "file-write"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "path": {
+                                    "description": "A bounded canonical absolute VFS path.",
+                                    "maxLength": 4096,
+                                    "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "path",
+                                  "contents"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A service-state predicate or action.",
+                                "properties": {
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "service-state"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "service": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  },
+                                  "state": {
+                                    "description": "A unit state.",
+                                    "enum": [
+                                      "running",
+                                      "stopped"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "service",
+                                  "state"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A service-health predicate or action.",
+                                "properties": {
+                                  "health": {
+                                    "description": "A service health.",
+                                    "enum": [
+                                      "healthy",
+                                      "degraded",
+                                      "unhealthy",
+                                      "unknown"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "service-health"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "service": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "service",
+                                  "health"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A process-state predicate or action.",
+                                "properties": {
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "process-state"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "process": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  },
+                                  "state": {
+                                    "description": "A unit state.",
+                                    "enum": [
+                                      "running",
+                                      "stopped"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "process",
+                                  "state"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "Append one entry to a declared log.",
+                                "properties": {
+                                  "entry": {
+                                    "description": "The complete appended entry.",
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "log-append"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "log": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "log",
+                                  "entry"
+                                ],
+                                "type": "object"
+                              }
+                            ]
+                          },
+                          "maxItems": 16,
+                          "type": "array"
+                        },
+                        "denial": {
+                          "description": "Owner-directed consequences in authored order.",
+                          "items": {
+                            "description": "One bounded owner-directed story consequence.",
+                            "oneOf": [
+                              {
+                                "additionalProperties": false,
+                                "description": "Add a positive amount to a declared bounded counter.",
+                                "properties": {
+                                  "amount": {
+                                    "description": "A positive safe-integer increment.",
+                                    "maximum": 9007199254740991,
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  "counter": {
+                                    "description": "A stable lowercase Phase 1 content identifier.",
+                                    "maxLength": 64,
+                                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "Story action kind.",
+                                    "enum": [
+                                      "counter-add"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "counter",
+                                  "amount"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "Reach one authored shared story beat.",
+                                "properties": {
+                                  "beat": {
+                                    "description": "A stable lowercase Phase 1 content identifier.",
+                                    "maxLength": 64,
+                                    "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "The action kind.",
+                                    "enum": [
+                                      "story-reach"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "beat"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "Write exact contents to a declared VFS file.",
+                                "properties": {
+                                  "contents": {
+                                    "description": "Bounded authored text.",
+                                    "maxLength": 16000,
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "Story action kind.",
+                                    "enum": [
+                                      "file-write"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "path": {
+                                    "description": "A bounded canonical absolute VFS path.",
+                                    "maxLength": 4096,
+                                    "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "path",
+                                  "contents"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A service-state predicate or action.",
+                                "properties": {
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "service-state"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "service": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  },
+                                  "state": {
+                                    "description": "A unit state.",
+                                    "enum": [
+                                      "running",
+                                      "stopped"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "service",
+                                  "state"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A service-health predicate or action.",
+                                "properties": {
+                                  "health": {
+                                    "description": "A service health.",
+                                    "enum": [
+                                      "healthy",
+                                      "degraded",
+                                      "unhealthy",
+                                      "unknown"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "service-health"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "service": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "service",
+                                  "health"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "A process-state predicate or action.",
+                                "properties": {
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "process-state"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "process": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  },
+                                  "state": {
+                                    "description": "A unit state.",
+                                    "enum": [
+                                      "running",
+                                      "stopped"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "process",
+                                  "state"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "description": "Append one entry to a declared log.",
+                                "properties": {
+                                  "entry": {
+                                    "description": "The complete appended entry.",
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "description": "The rule kind.",
+                                    "enum": [
+                                      "log-append"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "log": {
+                                    "description": "A stable, non-empty single-line cartridge-local identifier.",
+                                    "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "log",
+                                  "entry"
+                                ],
+                                "type": "object"
+                              }
+                            ]
+                          },
+                          "maxItems": 16,
+                          "type": "array"
+                        },
+                        "documentContents": {
+                          "description": "Bounded authored text.",
+                          "maxLength": 16000,
+                          "type": "string"
+                        },
+                        "documentPath": {
+                          "description": "A bounded canonical absolute VFS path.",
+                          "maxLength": 4096,
+                          "pattern": "^\\/$|^(?:\\/(?!\\.{1,2}(?:\\/|$))[^/\\\\\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+)+$",
+                          "type": "string"
+                        },
+                        "id": {
+                          "description": "A stable lowercase Phase 1 content identifier.",
+                          "maxLength": 64,
+                          "pattern": "^[a-z][a-z0-9-]{0,63}$",
+                          "type": "string"
+                        },
+                        "kind": {
+                          "description": "The action kind.",
+                          "enum": [
+                            "waiver-request"
+                          ],
+                          "type": "string"
+                        },
+                        "requiredPhrase": {
+                          "description": "The only accepted waiver phrase.",
+                          "enum": [
+                            "I agree"
+                          ],
+                          "type": "string"
+                        },
+                        "version": {
+                          "description": "Positive authored waiver document version.",
+                          "maximum": 9007199254740991,
+                          "minimum": 1,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "id",
+                        "version",
+                        "requiredPhrase",
+                        "capability",
+                        "documentPath",
+                        "documentContents",
+                        "consent",
+                        "denial"
                       ],
                       "type": "object"
                     },
@@ -3322,7 +5750,7 @@
                                   },
                                   "version": {
                                     "description": "Authored waiver document version.",
-                                    "maximum": 2147483647,
+                                    "maximum": 9007199254740991,
                                     "minimum": 1,
                                     "type": "integer"
                                   }

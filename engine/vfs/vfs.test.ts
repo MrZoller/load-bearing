@@ -30,6 +30,7 @@ import {
   renameVfs,
   statVfs,
   touchVfs,
+  writeAuthoredWaiverVfs,
   writeVfs,
 } from "./vfs.js";
 
@@ -203,6 +204,124 @@ describe("VFS construction and paths", () => {
     expect(() => validateVfsSlice(slice, "snapshot: slices.vfs")).toThrow(
       /mtime: must be a real fixed-width UTC instant/,
     );
+  });
+});
+
+describe("authored waiver writes", () => {
+  it("applies the WAIVER.md policy while preserving ordinary write semantics", () => {
+    const path = "/production/service/WAIVER.md";
+    const created = writeAuthoredWaiverVfs(fresh(), path, "version one\n", NOW);
+    expect(created.result).toEqual({
+      ok: true,
+      value: { path, created: true },
+    });
+    expect(readVfs(created.slice, path)).toMatchObject({
+      value: { contents: "version one\n" },
+    });
+
+    const replaced = writeAuthoredWaiverVfs(
+      created.slice,
+      path,
+      "version two\n",
+      LATER,
+    );
+    expect(replaced.result).toEqual({
+      ok: true,
+      value: { path, created: false },
+    });
+    expect(readVfs(replaced.slice, path)).toMatchObject({
+      value: { contents: "version two\n" },
+    });
+    expect(statVfs(replaced.slice, path)).toMatchObject({
+      value: { entry: { mtime: LATER } },
+    });
+  });
+
+  it("denies an unwritable parent and existing file as the acting identity", () => {
+    const incident = loadCartridge(
+      loadReplayFixture("020-incident-001-story").cartridge,
+    );
+    const slice = createVfsSlice(incident);
+    const deniedParent = writeAuthoredWaiverVfs(
+      slice,
+      "/production/load-balancer/WAIVER.md",
+      "x",
+      NOW,
+    );
+    expect(deniedParent.result).toMatchObject({ ok: false, code: "EACCES" });
+    expect(deniedParent.slice).toBe(slice);
+
+    const existing = JSON.parse(JSON.stringify(slice)) as {
+      entries: Record<string, VfsEntry>;
+    } & VfsSlice;
+    existing.entries["/production/load-balancer/config/WAIVER.md"] = {
+      kind: "file",
+      contents: "protected\n",
+      mode: "0444",
+      owner: "root",
+      group: "root",
+      mtime: NOW,
+    };
+    const deniedFile = writeAuthoredWaiverVfs(
+      existing,
+      "/production/load-balancer/config/WAIVER.md",
+      "replacement\n",
+      LATER,
+    );
+    expect(deniedFile.result).toMatchObject({ ok: false, code: "EACCES" });
+    expect(deniedFile.slice).toBe(existing);
+    expect(
+      readVfs(existing, "/production/load-balancer/config/WAIVER.md"),
+    ).toMatchObject({ value: { contents: "protected\n" } });
+  });
+
+  it("refuses malformed names, times, directory targets and absent/non-directory parents", () => {
+    const slice = fresh();
+    expect(
+      writeAuthoredWaiverVfs(
+        slice,
+        "/production/service/bad\n/WAIVER.md",
+        "x",
+        NOW,
+      ).result,
+    ).toMatchObject({ ok: false, code: "EINVAL" });
+    expect(
+      writeAuthoredWaiverVfs(slice, "/production/service/waiver.txt", "x", NOW)
+        .result,
+    ).toMatchObject({ ok: false, code: "EINVAL" });
+    expect(
+      writeAuthoredWaiverVfs(
+        slice,
+        "/production/service/WAIVER.md",
+        "x",
+        "not-time",
+      ).result,
+    ).toMatchObject({ ok: false, code: "EINVAL" });
+    expect(
+      writeAuthoredWaiverVfs(slice, "/missing/WAIVER.md", "x", NOW).result,
+    ).toMatchObject({ ok: false, code: "ENOENT" });
+    expect(
+      writeAuthoredWaiverVfs(slice, "/etc/motd/WAIVER.md", "x", NOW).result,
+    ).toMatchObject({ ok: false, code: "ENOTDIR" });
+
+    const directoryTarget = mutableSlice() as {
+      entries: Record<string, VfsEntry>;
+    } & VfsSlice;
+    directoryTarget.entries["/production/service/WAIVER.md"] = {
+      kind: "directory",
+      mode: "0755",
+      owner: "root",
+      group: "root",
+      mtime: NOW,
+    };
+    expect(
+      writeAuthoredWaiverVfs(
+        directoryTarget,
+        "/production/service/WAIVER.md",
+        "x",
+        NOW,
+      ).result,
+    ).toMatchObject({ ok: false, code: "EISDIR" });
   });
 });
 

@@ -255,10 +255,23 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
       version: 0,
       apply(context, slice) {
         const data = payload(context, ["responseId", "instanceId"]);
-        const responseId = validateAgentId(
+        const requestedResponseId = validateAgentId(
           data["responseId"],
           `${context.where}: responseId`,
         );
+        // Failed waiver starts and standing continuations are terminal authored
+        // outcomes, not successful requests with missing or unchanged state.
+        // The input planner cannot know whether its preceding envelope will
+        // take that fallback, so the response event selects the cartridge's
+        // existing refusal only after the logged outcome makes that fact
+        // replayable.
+        const precedingOutcome = context.state.transcript.at(-1)?.type;
+        const responseId =
+          precedingOutcome === "mind.waiver-start-failed" ||
+          precedingOutcome === "mind.permission-standing-failed" ||
+          precedingOutcome === "mind.waiver-standing-failed"
+            ? context.cartridge.story.fallback.response
+            : requestedResponseId;
         const instanceId = validateAgentId(
           data["instanceId"],
           `${context.where}: instanceId`,

@@ -55,6 +55,12 @@ export interface CartridgeAuthoredResponse {
   readonly todos: readonly CartridgeResponseTodo[];
 }
 
+export interface CartridgeExactCapability {
+  readonly kind: "exact";
+  readonly action: string;
+  readonly resource: string;
+}
+
 /** The closed cartridge action surface. Arbitrary engine events are not content. */
 export type CartridgeAgentAction =
   | {
@@ -64,8 +70,21 @@ export type CartridgeAgentAction =
   | {
       readonly kind: "permission-request";
       readonly id: string;
-      readonly action: string;
-      readonly resource: string;
+      readonly capability: CartridgeExactCapability;
+      readonly grant: readonly CartridgeStoryAction[];
+      readonly deny: readonly CartridgeStoryAction[];
+      readonly alwaysAllow: readonly CartridgeStoryAction[];
+    }
+  | {
+      readonly kind: "waiver-request";
+      readonly id: string;
+      readonly version: number;
+      readonly requiredPhrase: "I agree";
+      readonly capability: CartridgeExactCapability;
+      readonly documentPath: string;
+      readonly documentContents: string;
+      readonly consent: readonly CartridgeStoryAction[];
+      readonly denial: readonly CartridgeStoryAction[];
     }
   | {
       readonly kind: "story-reach";

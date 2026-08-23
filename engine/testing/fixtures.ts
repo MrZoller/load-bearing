@@ -33,10 +33,17 @@ const INCIDENT_PATHS: Readonly<Record<string, string>> = {
   "incident-001": fileURLToPath(
     new URL("../../content/incidents/incident-001.json", import.meta.url),
   ),
+  "phase-1-demo": fileURLToPath(
+    new URL("../../content/incidents/phase-1-demo.json", import.meta.url),
+  ),
 };
 
 export type CartridgeReference =
-  string | { readonly kind: "incident"; readonly id: "incident-001" };
+  | string
+  | {
+      readonly kind: "incident";
+      readonly id: "incident-001" | "phase-1-demo";
+    };
 
 /**
  * Cartridge fixture names are file-name components, not paths.
@@ -302,11 +309,12 @@ export function parseReplayFixture(
       reference !== null &&
       !Array.isArray(reference) &&
       (reference as { kind?: unknown }).kind === "incident" &&
-      (reference as { id?: unknown }).id === "incident-001" &&
+      ((reference as { id?: unknown }).id === "incident-001" ||
+        (reference as { id?: unknown }).id === "phase-1-demo") &&
       Object.keys(reference).length === 2);
   if (!validReference)
     throw new Error(
-      `${path}: "cartridge" must be a fixture name or { "kind": "incident", "id": "incident-001" }`,
+      `${path}: "cartridge" must be a fixture name or a declared incident reference`,
     );
   if (!Array.isArray(fixture["events"])) {
     throw new Error(`${path}: "events" must be an array`);

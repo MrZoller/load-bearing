@@ -1,5 +1,6 @@
 import {
   createAgentInputEvents,
+  createMindWaiverChoiceEvent,
   createShellExecuteEvent,
   createTerminalModelEvent,
   readAgentSlice,
@@ -11,7 +12,7 @@ import type {
   LoadedCartridge,
   SessionState,
 } from "../../engine/index.js";
-import { renderPermission } from "../components/permission.js";
+import { renderPermission, renderWaiver } from "../components/permission.js";
 import { renderAgentActivity } from "../components/activity.js";
 import { currencyFromMicros, groupedInteger } from "../components/status.js";
 import {
@@ -26,6 +27,14 @@ export function createTuiInputEvents(
   state: SessionState,
   input: string,
 ): readonly EngineEvent[] {
+  const pendingWaiver = readMindSlice(state).pendingWaiver;
+  if (pendingWaiver !== null)
+    return [
+      createMindWaiverChoiceEvent(
+        pendingWaiver.id,
+        input === pendingWaiver.requiredPhrase,
+      ),
+    ];
   if (input.trim().startsWith("/")) {
     const result = executeSlashCommand(cartridge, state, input);
     return result.kind === "dispatch" ? result.events : [];
@@ -44,7 +53,12 @@ export function renderTuiView(
   activityElapsedMs = 0,
   placeholder = "",
 ): HTMLElement {
-  const pending = readMindSlice(state).pendingPermission;
+  const mind = readMindSlice(state);
+  if (mind.pendingWaiver !== null)
+    return renderWaiver(document, mind.pendingWaiver, (event) =>
+      dispatch([event]),
+    );
+  const pending = mind.pendingPermission;
   if (pending !== null)
     return renderPermission(document, pending, (event) => dispatch([event]));
 

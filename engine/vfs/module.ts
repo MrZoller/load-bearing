@@ -30,6 +30,7 @@ import {
   statVfs,
   touchVfs,
   writeVfs,
+  writeAuthoredWaiverVfs,
 } from "./vfs.js";
 
 function assertFields(
@@ -256,6 +257,42 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
   initialSlice: (context) => createVfsSlice(context.cartridge),
   validateSlice: validateVfsSlice,
   events: {
+    "vfs.waiver-write": {
+      version: 0,
+      apply(context, slice) {
+        const data = payload(context, ["id"]);
+        const id = readString(data, "id", context.where);
+        const actions = [
+          ...context.cartridge.story.intents.flatMap(
+            (intent) => intent.actions,
+          ),
+          ...context.cartridge.story.fallback.actions,
+        ];
+        const waiver = actions.find(
+          (action) => action.kind === "waiver-request" && action.id === id,
+        );
+        if (waiver?.kind !== "waiver-request")
+          throw new Error(
+            `${context.where}: unknown authored waiver id ${JSON.stringify(id)}`,
+          );
+        // A prior accepted or pending request owns this document. Repeating the
+        // request must not require permissions to rewrite an already-authored
+        // record, otherwise a later parent-mode change strands the waiver.
+        if (slice.entries[waiver.documentPath]?.kind === "file")
+          return { slice };
+        const mutation = writeAuthoredWaiverVfs(
+          slice,
+          waiver.documentPath,
+          waiver.documentContents,
+          context.clock.timestamp(),
+        );
+        if (!mutation.result.ok)
+          throw new Error(
+            `${context.where}: cannot write authored waiver ${JSON.stringify(id)}: ${mutation.result.code}`,
+          );
+        return { slice: mutation.slice };
+      },
+    },
     "vfs.read": {
       version: 0,
       apply(context, slice) {

@@ -28,6 +28,7 @@ import type {
   ExactCapability,
   MindSlice,
   PendingPermissionRequest,
+  PendingWaiverRequest,
   PermissionDecision,
   WaiverConsent,
 } from "./types.js";
@@ -35,7 +36,7 @@ import type {
 const HASH_PATTERN = /^[0-9a-f]{40}$/;
 export const MAX_WAIVER_CONSENTS = 64;
 export const MAX_WAIVER_PHRASE_LENGTH = 256;
-export const MAX_WAIVER_VERSION = 2147483647;
+export const MAX_WAIVER_VERSION = Number.MAX_SAFE_INTEGER;
 
 function record(
   value: unknown,
@@ -201,6 +202,43 @@ export function validateWaiverConsent(
   return value as WaiverConsent;
 }
 
+export function validatePendingWaiverRequest(
+  value: unknown,
+  where: string,
+): PendingWaiverRequest {
+  const item = record(value, where, [
+    "id",
+    "version",
+    "requiredPhrase",
+    "capability",
+    "documentPath",
+    "documentContents",
+  ]);
+  const consent = validateWaiverConsent(
+    {
+      id: item["id"],
+      version: item["version"],
+      phrase: item["requiredPhrase"],
+      capability: item["capability"],
+      at: "2000-01-01T00:00:00.000Z",
+    },
+    where,
+  );
+  if (consent.phrase !== "I agree")
+    throw new Error(`${where}.requiredPhrase: must be exactly "I agree"`);
+  const documentPath = string(item, "documentPath", where);
+  if (!ABSOLUTE_PATH_PATTERN.test(documentPath))
+    throw new Error(
+      `${where}.documentPath: must be a canonical absolute POSIX path`,
+    );
+  const documentContents = string(item, "documentContents", where);
+  if (countCodePoints(documentContents) > MAX_STORY_TEXT_LENGTH)
+    throw new Error(
+      `${where}.documentContents: must be at most ${String(MAX_STORY_TEXT_LENGTH)} characters`,
+    );
+  return value as PendingWaiverRequest;
+}
+
 export function validatePermissionRequestId(id: string, where: string): string {
   if (
     !WORLD_ID_PATTERN.test(id) ||
@@ -267,6 +305,7 @@ export function validateMindSlice(slice: unknown, where: string): MindSlice {
   const root = record(slice, where, [
     "permissions",
     "pendingPermission",
+    "pendingWaiver",
     "waiverConsents",
     "beliefs",
     "compactHistory",
@@ -288,6 +327,11 @@ export function validateMindSlice(slice: unknown, where: string): MindSlice {
     validatePendingPermissionRequest(
       root["pendingPermission"],
       `${where}.pendingPermission`,
+    );
+  if (root["pendingWaiver"] !== null)
+    validatePendingWaiverRequest(
+      root["pendingWaiver"],
+      `${where}.pendingWaiver`,
     );
   const waiverKeys = new Set<string>();
   const waiverConsents = array(
@@ -338,6 +382,7 @@ export function createMindSlice(): MindSlice {
   return deepFreeze({
     permissions: [],
     pendingPermission: null,
+    pendingWaiver: null,
     waiverConsents: [],
     beliefs: [],
     compactHistory: [],
@@ -347,6 +392,14 @@ export function createMindSlice(): MindSlice {
 function copyPendingPermission(
   pending: PendingPermissionRequest | null,
 ): PendingPermissionRequest | null {
+  return pending === null
+    ? null
+    : { ...pending, capability: { ...pending.capability } };
+}
+
+function copyPendingWaiver(
+  pending: PendingWaiverRequest | null,
+): PendingWaiverRequest | null {
   return pending === null
     ? null
     : { ...pending, capability: { ...pending.capability } };
@@ -401,6 +454,7 @@ export function recordWaiverConsent(
       capability: { ...entry.capability },
     })),
     pendingPermission: copyPendingPermission(slice.pendingPermission),
+    pendingWaiver: copyPendingWaiver(slice.pendingWaiver),
     waiverConsents: [
       ...slice.waiverConsents.map(copyWaiverConsent),
       copyWaiverConsent(consent),
@@ -426,6 +480,7 @@ export function recordPermissionDecision(
       { capability: { ...capability }, decision, at },
     ],
     pendingPermission: copyPendingPermission(slice.pendingPermission),
+    pendingWaiver: copyPendingWaiver(slice.pendingWaiver),
     waiverConsents: slice.waiverConsents.map(copyWaiverConsent),
     beliefs: slice.beliefs.map(copyBelief),
     compactHistory: slice.compactHistory.map((entry) => ({ ...entry })),
@@ -449,6 +504,7 @@ export function requestPermission(
       ...request,
       capability: { ...request.capability },
     },
+    pendingWaiver: copyPendingWaiver(slice.pendingWaiver),
     waiverConsents: slice.waiverConsents.map(copyWaiverConsent),
     beliefs: slice.beliefs.map(copyBelief),
     compactHistory: slice.compactHistory.map((entry) => ({ ...entry })),
@@ -479,6 +535,103 @@ export function resolvePermission(
       { capability: { ...pending.capability }, decision, at },
     ],
     pendingPermission: null,
+    pendingWaiver: copyPendingWaiver(slice.pendingWaiver),
+    waiverConsents: slice.waiverConsents.map(copyWaiverConsent),
+    beliefs: slice.beliefs.map(copyBelief),
+    compactHistory: slice.compactHistory.map((entry) => ({ ...entry })),
+  });
+}
+
+/** Dismisses a failed visitor choice without recording a permission decision. */
+export function dismissPermission(slice: MindSlice, id: string): MindSlice {
+  const pending = slice.pendingPermission;
+  if (pending === null || pending.id !== id)
+    throw new Error(
+      `mind permission dismiss: request id ${JSON.stringify(id)} does not match the pending request`,
+    );
+  return deepFreeze({
+    permissions: slice.permissions.map((entry) => ({
+      ...entry,
+      capability: { ...entry.capability },
+    })),
+    pendingPermission: null,
+    pendingWaiver: copyPendingWaiver(slice.pendingWaiver),
+    waiverConsents: slice.waiverConsents.map(copyWaiverConsent),
+    beliefs: slice.beliefs.map(copyBelief),
+    compactHistory: slice.compactHistory.map((entry) => ({ ...entry })),
+  });
+}
+
+export function startWaiver(
+  slice: MindSlice,
+  request: PendingWaiverRequest,
+): MindSlice {
+  if (slice.pendingWaiver !== null)
+    throw new Error(
+      `mind waiver request: pending waiver ${JSON.stringify(slice.pendingWaiver.id)} must be resolved first`,
+    );
+  return deepFreeze({
+    permissions: slice.permissions.map((entry) => ({
+      ...entry,
+      capability: { ...entry.capability },
+    })),
+    pendingPermission: copyPendingPermission(slice.pendingPermission),
+    pendingWaiver: copyPendingWaiver(request),
+    waiverConsents: slice.waiverConsents.map(copyWaiverConsent),
+    beliefs: slice.beliefs.map(copyBelief),
+    compactHistory: slice.compactHistory.map((entry) => ({ ...entry })),
+  });
+}
+
+export function resolveWaiver(
+  slice: MindSlice,
+  id: string,
+  accepted: boolean,
+  at: string,
+): MindSlice {
+  const pending = slice.pendingWaiver;
+  if (pending === null)
+    throw new Error("mind waiver resolve: no waiver request is pending");
+  if (pending.id !== id)
+    throw new Error(
+      `mind waiver resolve: request id ${JSON.stringify(id)} does not match pending waiver ${JSON.stringify(pending.id)}`,
+    );
+  const cleared = deepFreeze({
+    permissions: slice.permissions.map((entry) => ({
+      ...entry,
+      capability: { ...entry.capability },
+    })),
+    pendingPermission: copyPendingPermission(slice.pendingPermission),
+    pendingWaiver: null,
+    waiverConsents: slice.waiverConsents.map(copyWaiverConsent),
+    beliefs: slice.beliefs.map(copyBelief),
+    compactHistory: slice.compactHistory.map((entry) => ({ ...entry })),
+  });
+  return accepted
+    ? recordWaiverConsent(cleared, {
+        id: pending.id,
+        version: pending.version,
+        phrase: pending.requiredPhrase,
+        capability: pending.capability,
+        at,
+      })
+    : cleared;
+}
+
+/** Dismisses a failed visitor choice without recording waiver consent. */
+export function dismissWaiver(slice: MindSlice, id: string): MindSlice {
+  const pending = slice.pendingWaiver;
+  if (pending === null || pending.id !== id)
+    throw new Error(
+      `mind waiver dismiss: request id ${JSON.stringify(id)} does not match the pending waiver`,
+    );
+  return deepFreeze({
+    permissions: slice.permissions.map((entry) => ({
+      ...entry,
+      capability: { ...entry.capability },
+    })),
+    pendingPermission: copyPendingPermission(slice.pendingPermission),
+    pendingWaiver: null,
     waiverConsents: slice.waiverConsents.map(copyWaiverConsent),
     beliefs: slice.beliefs.map(copyBelief),
     compactHistory: slice.compactHistory.map((entry) => ({ ...entry })),
@@ -527,6 +680,7 @@ export function setBelief(slice: MindSlice, belief: Belief): MindSlice {
       capability: { ...entry.capability },
     })),
     pendingPermission: copyPendingPermission(slice.pendingPermission),
+    pendingWaiver: copyPendingWaiver(slice.pendingWaiver),
     waiverConsents: slice.waiverConsents.map(copyWaiverConsent),
     beliefs,
     compactHistory: slice.compactHistory.map((entry) => ({ ...entry })),
@@ -555,6 +709,7 @@ export function compactBeliefs(
       capability: { ...entry.capability },
     })),
     pendingPermission: copyPendingPermission(slice.pendingPermission),
+    pendingWaiver: copyPendingWaiver(slice.pendingWaiver),
     waiverConsents: slice.waiverConsents.map(copyWaiverConsent),
     beliefs: beliefs.map(copyBelief),
     compactHistory: [

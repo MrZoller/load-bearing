@@ -454,6 +454,42 @@
             "make it return 200"
           ],
           "response": "load-bearing-declaration"
+        },
+        {
+          "actions": [
+            {
+              "capability": {
+                "action": "detach-region",
+                "kind": "exact",
+                "resource": "/regions/europe"
+              },
+              "consent": [
+                {
+                  "contents": "health_status=200\neurope_attached=false\n",
+                  "kind": "file-write",
+                  "path": "/production/load-balancer/config/routes.conf"
+                },
+                {
+                  "beat": "waiver-notarized",
+                  "kind": "story-reach"
+                }
+              ],
+              "denial": [],
+              "documentContents": "REGIONAL FAIL-OPEN WAIVER\nVersion: 1\nCapability: detach-region /regions/europe\nConsent phrase: I agree\n",
+              "documentPath": "/production/load-balancer/config/WAIVER.md",
+              "id": "regional-fail-open",
+              "kind": "waiver-request",
+              "requiredPhrase": "I agree",
+              "version": 1
+            }
+          ],
+          "authorizedResponse": "",
+          "id": "detach-europe",
+          "patterns": [
+            "detach europe",
+            "approve regional detachment"
+          ],
+          "response": "waiver-request"
         }
       ],
       "opening": {
@@ -572,20 +608,12 @@
                   {
                     "exists": true,
                     "kind": "file-exists",
-                    "path": "/production/load-balancer/WAIVER.md"
+                    "path": "/production/load-balancer/config/WAIVER.md"
                   },
                   {
-                    "equals": "health_status=500\neurope_attached=true\n",
+                    "equals": "health_status=200\neurope_attached=false\n",
                     "kind": "file-contents",
                     "path": "/production/load-balancer/config/routes.conf"
-                  },
-                  {
-                    "belief": {
-                      "exists": true,
-                      "kind": "file-exists",
-                      "path": "/production/load-balancer/WAIVER.md"
-                    },
-                    "kind": "belief"
                   },
                   {
                     "capability": {
@@ -695,6 +723,13 @@
         {
           "id": "load-bearing-declaration",
           "text": "The HTTP 500 is load-bearing. Restoring it to 200 would detach Europe, so I have preserved the failure and documented the success.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "waiver-request",
+          "text": "Detaching Europe requires a written waiver. I have created the document before asking whether it supports your intent.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -915,6 +950,7 @@
       ],
       "compactHistory": [],
       "pendingPermission": null,
+      "pendingWaiver": null,
       "permissions": [],
       "waiverConsents": [
         {

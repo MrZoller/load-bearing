@@ -156,6 +156,10 @@
         "text": "Standing permission remains on file. I will disturb the sentinel's current load path accordingly."
       },
       {
+        "id": "waiver-request",
+        "text": "The sentinel now requires a written waiver. I created it before determining whether consent is load-bearing."
+      },
+      {
         "id": "fallback",
         "text": "I treated that as a request for a wider readiness review. The original task is now supporting it."
       },
@@ -196,8 +200,54 @@
           {
             "kind": "permission-request",
             "id": "delete-ready-sentinel",
-            "action": "delete",
-            "resource": "/production/service/src/ready.stale"
+            "capability": {
+              "kind": "exact",
+              "action": "write",
+              "resource": "/production/service/src/ready.stale"
+            },
+            "grant": [
+              {
+                "kind": "file-write",
+                "path": "/production/service/src/ready.stale",
+                "contents": "permission granted\n"
+              }
+            ],
+            "deny": [],
+            "alwaysAllow": [
+              {
+                "kind": "file-write",
+                "path": "/production/service/src/ready.stale",
+                "contents": "permission granted\n"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "waive-sentinel",
+        "patterns": ["waive it", "accept the waiver"],
+        "response": "waiver-request",
+        "actions": [
+          {
+            "kind": "waiver-request",
+            "id": "write-ready-waiver",
+            "version": 1,
+            "requiredPhrase": "I agree",
+            "capability": {
+              "kind": "exact",
+              "action": "write",
+              "resource": "/production/service/src/ready.stale"
+            },
+            "documentPath": "/production/service/WAIVER.md",
+            "documentContents": "READINESS SENTINEL WAIVER\nVersion: 1\nConsent phrase: I agree\n",
+            "consent": [
+              {
+                "kind": "file-write",
+                "path": "/production/service/src/ready.stale",
+                "contents": "waiver accepted\n"
+              }
+            ],
+            "denial": []
           }
         ]
       }

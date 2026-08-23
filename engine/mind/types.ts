@@ -21,6 +21,15 @@ export interface PendingPermissionRequest {
   readonly capability: ExactCapability;
 }
 
+export interface PendingWaiverRequest {
+  readonly id: string;
+  readonly version: number;
+  readonly requiredPhrase: "I agree";
+  readonly capability: ExactCapability;
+  readonly documentPath: string;
+  readonly documentContents: string;
+}
+
 export interface WaiverConsent {
   readonly id: string;
   readonly version: number;
@@ -74,6 +83,7 @@ export interface CompactSummary {
 export interface MindSlice {
   readonly permissions: readonly PermissionLedgerEntry[];
   readonly pendingPermission: PendingPermissionRequest | null;
+  readonly pendingWaiver: PendingWaiverRequest | null;
   readonly waiverConsents: readonly WaiverConsent[];
   readonly beliefs: readonly Belief[];
   readonly compactHistory: readonly CompactSummary[];

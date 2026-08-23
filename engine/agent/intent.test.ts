@@ -10,6 +10,7 @@ import {
   createMindBeliefEvent,
   createMindPermissionRequestedEvent,
   createMindPermissionResolvedEvent,
+  createMindWaiverChoiceEvent,
 } from "../mind/module.js";
 import {
   MAX_AGENT_MESSAGES,
@@ -26,6 +27,7 @@ import {
 } from "./intent.js";
 
 const CARTRIDGE = loadCartridge(cartridgeDocument);
+const INCIDENT = loadCartridge(incident);
 const SEED = "2026-08-22/0/structural-audit";
 
 function incidentStateWithLoadBearingResponseBelief() {
@@ -199,15 +201,8 @@ describe("authored agent input", () => {
       { type: "agent.activity-set", payload: { status: "working", stage: 0 } },
       { type: "agent.message-added" },
       {
-        type: "mind.permission-requested",
-        payload: {
-          id: "delete-ready-sentinel",
-          capability: {
-            kind: "exact",
-            action: "delete",
-            resource: "/production/service/src/ready.stale",
-          },
-        },
+        type: "mind.permission-request",
+        payload: { id: "delete-ready-sentinel" },
       },
       { type: "agent.response-recorded" },
       { type: "agent.activity-set", payload: { status: "idle" } },
@@ -219,7 +214,7 @@ describe("authored agent input", () => {
       "delete-ready-sentinel",
       {
         kind: "exact",
-        action: "delete",
+        action: "write",
         resource: "/production/service/src/ready.stale",
       },
     );
@@ -243,12 +238,122 @@ describe("authored agent input", () => {
         },
         { type: "agent.message-added" },
         {
+          type: "mind.permission-standing",
+          payload: { id: "delete-ready-sentinel" },
+        },
+        {
           type: "agent.response-recorded",
           payload: { responseId: "remove-authorized" },
         },
         { type: "agent.activity-set", payload: { status: "idle" } },
       ],
     );
+  });
+
+  it("does not re-prompt an exactly recorded waiver consent", () => {
+    const initial = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+    const pending = reduce({
+      cartridge: INCIDENT,
+      seed: SEED,
+      events: createAgentInputEvents(INCIDENT, initial, "detach europe"),
+    });
+    const accepted = step(
+      pending,
+      createMindWaiverChoiceEvent("regional-fail-open", true),
+    );
+
+    expect(
+      createAgentInputEvents(INCIDENT, accepted, "detach europe"),
+    ).toMatchObject([
+      { type: "agent.activity-set", payload: { status: "working", stage: 0 } },
+      { type: "agent.message-added" },
+      {
+        type: "mind.waiver-standing",
+        payload: { id: "regional-fail-open" },
+      },
+      { type: "agent.response-recorded" },
+      { type: "agent.activity-set", payload: { status: "idle" } },
+    ]);
+  });
+
+  it("records failure content rather than a created-waiver claim after a refused write", () => {
+    const document = JSON.parse(JSON.stringify(cartridgeDocument)) as {
+      story: { intents: Array<{ actions: Array<Record<string, unknown>> }> };
+    };
+    const waiverIntent = document.story.intents[2];
+    const waiverAction = waiverIntent?.actions[0];
+    if (waiverAction === undefined) throw new Error("waiver action is missing");
+    waiverAction.documentPath = "/etc/WAIVER.md";
+    const cartridge = loadCartridge(document);
+    const state = reduce({ cartridge, seed: SEED, events: [] });
+
+    const rejected = reduce({
+      cartridge,
+      seed: SEED,
+      events: createAgentInputEvents(cartridge, state, "waive it"),
+    });
+
+    expect(rejected.transcript.map((entry) => entry.type)).toContain(
+      "mind.waiver-start-failed",
+    );
+    expect(readAgentSlice(rejected).messages.at(-1)).toMatchObject({
+      role: "agent",
+      responseId: "fallback",
+    });
+  });
+
+  it("records refusal content after a standing permission continuation fails", () => {
+    const rejected = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      events: [
+        {
+          type: "mind.permission-standing-failed",
+          payload: { id: "delete-ready-sentinel" },
+          version: 0,
+        },
+        {
+          type: "agent.response-recorded",
+          payload: {
+            responseId: "remove-authorized",
+            instanceId: "standing-permission-failure",
+          },
+          version: 0,
+        },
+      ],
+    });
+
+    expect(readAgentSlice(rejected).messages.at(-1)).toMatchObject({
+      role: "agent",
+      responseId: "fallback",
+    });
+  });
+
+  it("records refusal content after a standing waiver continuation fails", () => {
+    const rejected = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      events: [
+        {
+          type: "mind.waiver-standing-failed",
+          payload: { id: "write-ready-waiver" },
+          version: 0,
+        },
+        {
+          type: "agent.response-recorded",
+          payload: {
+            responseId: "waiver-request",
+            instanceId: "standing-waiver-failure",
+          },
+          version: 0,
+        },
+      ],
+    });
+
+    expect(readAgentSlice(rejected).messages.at(-1)).toMatchObject({
+      role: "agent",
+      responseId: "fallback",
+    });
   });
 
   it("uses a fallback's authored authorized response after Always allow", () => {
@@ -265,8 +370,26 @@ describe("authored agent input", () => {
       {
         kind: "permission-request",
         id: "remove-fallback-sentinel",
-        action: "delete",
-        resource: "/production/service/src/ready.stale",
+        capability: {
+          kind: "exact",
+          action: "write",
+          resource: "/production/service/src/ready.stale",
+        },
+        grant: [
+          {
+            kind: "file-write",
+            path: "/production/service/src/ready.stale",
+            contents: "permission granted\n",
+          },
+        ],
+        deny: [],
+        alwaysAllow: [
+          {
+            kind: "file-write",
+            path: "/production/service/src/ready.stale",
+            contents: "permission granted\n",
+          },
+        ],
       },
     ];
     const cartridge = loadCartridge(document);
@@ -276,7 +399,7 @@ describe("authored agent input", () => {
       events: [
         createMindPermissionRequestedEvent("remove-fallback-sentinel", {
           kind: "exact",
-          action: "delete",
+          action: "write",
           resource: "/production/service/src/ready.stale",
         }),
         createMindPermissionResolvedEvent(
@@ -291,6 +414,10 @@ describe("authored agent input", () => {
     ).toMatchObject([
       { type: "agent.activity-set", payload: { status: "working", stage: 0 } },
       { type: "agent.message-added" },
+      {
+        type: "mind.permission-standing",
+        payload: { id: "remove-fallback-sentinel" },
+      },
       {
         type: "agent.response-recorded",
         payload: { responseId: "remove-authorized" },

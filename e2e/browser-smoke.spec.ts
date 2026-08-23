@@ -230,7 +230,7 @@ async function resolvePendingPermission(
 
   const permission = page.getByRole("group", { name: "Permission required" });
   await expect(permission).toBeVisible();
-  await expect(permission).toContainText("Action: delete");
+  await expect(permission).toContainText("Action: write");
   await expect(permission).toContainText(
     "Resource: /production/service/src/ready.stale",
   );

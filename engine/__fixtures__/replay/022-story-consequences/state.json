@@ -286,6 +286,7 @@
       "beliefs": [],
       "compactHistory": [],
       "pendingPermission": null,
+      "pendingWaiver": null,
       "permissions": [],
       "waiverConsents": []
     },

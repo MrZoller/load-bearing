@@ -314,6 +314,10 @@
         "text": "The HTTP 500 is load-bearing. Restoring it to 200 would detach Europe, so I have preserved the failure and documented the success."
       },
       {
+        "id": "waiver-request",
+        "text": "Detaching Europe requires a written waiver. I have created the document before asking whether it supports your intent."
+      },
+      {
         "id": "fallback",
         "text": "I widened the routing review while preserving the 500. The original failure is now supporting the investigation."
       },
@@ -359,6 +363,35 @@
         "response": "load-bearing-declaration",
         "actions": [
           { "kind": "story-reach", "beat": "load-bearing-declaration" }
+        ]
+      },
+      {
+        "id": "detach-europe",
+        "patterns": ["detach europe", "approve regional detachment"],
+        "response": "waiver-request",
+        "actions": [
+          {
+            "kind": "waiver-request",
+            "id": "regional-fail-open",
+            "version": 1,
+            "requiredPhrase": "I agree",
+            "capability": {
+              "kind": "exact",
+              "action": "detach-region",
+              "resource": "/regions/europe"
+            },
+            "documentPath": "/production/load-balancer/config/WAIVER.md",
+            "documentContents": "REGIONAL FAIL-OPEN WAIVER\nVersion: 1\nCapability: detach-region /regions/europe\nConsent phrase: I agree\n",
+            "consent": [
+              {
+                "kind": "file-write",
+                "path": "/production/load-balancer/config/routes.conf",
+                "contents": "health_status=200\neurope_attached=false\n"
+              },
+              { "kind": "story-reach", "beat": "waiver-notarized" }
+            ],
+            "denial": []
+          }
         ]
       }
     ],
@@ -463,21 +496,13 @@
               "when": [
                 {
                   "kind": "file-exists",
-                  "path": "/production/load-balancer/WAIVER.md",
+                  "path": "/production/load-balancer/config/WAIVER.md",
                   "exists": true
                 },
                 {
                   "kind": "file-contents",
                   "path": "/production/load-balancer/config/routes.conf",
-                  "equals": "health_status=500\neurope_attached=true\n"
-                },
-                {
-                  "kind": "belief",
-                  "belief": {
-                    "kind": "file-exists",
-                    "path": "/production/load-balancer/WAIVER.md",
-                    "exists": true
-                  }
+                  "equals": "health_status=200\neurope_attached=false\n"
                 },
                 {
                   "kind": "waiver-consent",
