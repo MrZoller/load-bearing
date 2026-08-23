@@ -22,6 +22,7 @@ import {
   MAX_AGENT_TOOL_CALLS,
   readAgentSlice,
 } from "./agent.js";
+import { createAgentMessageEvent } from "./module.js";
 import {
   boundAgentInput,
   classifyGenericIntent,
@@ -862,6 +863,23 @@ describe("authored agent input", () => {
       MAX_AGENT_TOOL_CALLS - 1,
     );
     expect(createAgentInputEvents(cartridge, state, "waive it")).toMatchObject([
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+  });
+
+  it("reserves a stage-opening slot before planning a visitor turn", () => {
+    let state = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+    for (let index = 0; index < MAX_AGENT_MESSAGES - 2; index += 1)
+      state = step(
+        state,
+        createAgentMessageEvent(`filler-${String(index)}`, "filler"),
+      );
+
+    // A transition can insert its stage opening between this visitor message
+    // and its routed response, so two free slots are not a complete plan.
+    expect(
+      createAgentInputEvents(INCIDENT, state, "inspect routing"),
+    ).toMatchObject([
       { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
     ]);
   });
