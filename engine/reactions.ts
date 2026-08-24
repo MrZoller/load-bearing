@@ -6,6 +6,7 @@ import { evaluateFilePredicate } from "./tests/planner.js";
 import { readVfsSlice } from "./vfs/module.js";
 import { readWorldSlice } from "./world/module.js";
 import { lookupProcess, lookupService } from "./world/world.js";
+import { createStoryBeatReachedEvent } from "./story/module.js";
 
 export function reactionPredicateMatches(
   predicate: ReactionPredicate,
@@ -26,6 +27,8 @@ export function reactionPredicateMatches(
 
 export function reactionActionEvent(action: ReactionAction): EngineEvent {
   switch (action.kind) {
+    case "story-reach":
+      return createStoryBeatReachedEvent(action.beat);
     case "service-state":
       return {
         type:

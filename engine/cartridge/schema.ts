@@ -945,6 +945,18 @@ const REACTION_ACTION = {
     "One registered owner-applied transition produced by a reaction.",
   discriminator: "kind",
   variants: {
+    "story-reach": {
+      kind: "object",
+      description: "Reach one authored shared story beat.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "The action kind.",
+          values: ["story-reach"],
+        }),
+        beat: required(WORLD_ID),
+      },
+    },
     "service-state": SERVICE_STATE,
     "service-health": SERVICE_HEALTH_RULE,
     "process-state": PROCESS_STATE,

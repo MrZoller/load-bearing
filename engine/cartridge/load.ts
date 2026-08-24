@@ -2337,6 +2337,8 @@ function checkEndpointServiceReferences(
 
 function reactionActionType(action: ReactionAction): string {
   switch (action.kind) {
+    case "story-reach":
+      return "story.beat-reached";
     case "service-state":
       return action.state === "running"
         ? "world.service-start"
@@ -2353,12 +2355,14 @@ function reactionActionType(action: ReactionAction): string {
 /** Concrete test/reaction references and the conservative event-type graph. */
 function checkTestsAndReactions(
   repository: CartridgeRepository,
+  story: CartridgeStory,
   report: Report,
 ): void {
   const files = new Set(Object.keys(repository.files));
   const services = new Set(repository.services.map((value) => value.id));
   const processes = new Set(repository.processes.map((value) => value.id));
   const logs = new Set(repository.logs.map((value) => value.id));
+  const beats = new Set(story.phase2.beats.map((value) => value.id));
 
   const unique = <T extends { readonly id: string }>(
     values: readonly T[],
@@ -2432,6 +2436,9 @@ function checkTestsAndReactions(
     reaction.actions.forEach((action, actionIndex) => {
       const pointer = `${root}/actions/${String(actionIndex)}`;
       switch (action.kind) {
+        case "story-reach":
+          checkReference(action.beat, beats, `${pointer}/beat`, "story beat");
+          break;
         case "service-state":
         case "service-health":
           checkReference(
@@ -2627,9 +2634,11 @@ export function loadCartridge(value: unknown): LoadedCartridge {
     !issueWithin(report, "/repository/reactions") &&
     !issueWithin(report, "/repository/services") &&
     !issueWithin(report, "/repository/processes") &&
-    !issueWithin(report, "/repository/logs")
+    !issueWithin(report, "/repository/logs") &&
+    !issueAt(report, "/story") &&
+    !issueWithin(report, "/story/phase2")
   ) {
-    checkTestsAndReactions(cartridge.repository, report);
+    checkTestsAndReactions(cartridge.repository, cartridge.story, report);
   }
 
   if (report.issues.length > 0)

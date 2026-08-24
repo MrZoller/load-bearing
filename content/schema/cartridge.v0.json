@@ -1197,6 +1197,29 @@
                   "oneOf": [
                     {
                       "additionalProperties": false,
+                      "description": "Reach one authored shared story beat.",
+                      "properties": {
+                        "beat": {
+                          "description": "A stable, non-empty single-line cartridge-local identifier.",
+                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                          "type": "string"
+                        },
+                        "kind": {
+                          "description": "The action kind.",
+                          "enum": [
+                            "story-reach"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "beat"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
                       "description": "A service-state predicate or action.",
                       "properties": {
                         "kind": {

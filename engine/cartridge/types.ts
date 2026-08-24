@@ -611,6 +611,11 @@ export type ReactionPredicate =
 
 export type ReactionAction =
   | {
+      /** Reach a shared beat through its owner after the triggering transition. */
+      readonly kind: "story-reach";
+      readonly beat: string;
+    }
+  | {
       readonly kind: "service-state";
       readonly service: string;
       readonly state: WorldUnitState;

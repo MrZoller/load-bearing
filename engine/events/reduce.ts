@@ -760,7 +760,15 @@ function applyReactions(
           "reaction",
         );
         derivedEvents += 1;
-        queue.push(event.type);
+        const actionTriggers = [event.type];
+        if (event.type === "story.beat-reached")
+          state = applyStoryConsequences(
+            state,
+            registry,
+            `${where} reaction ${JSON.stringify(reaction.id)} action ${String(actionIndex)}`,
+            actionTriggers,
+          );
+        queue.push(...actionTriggers);
       }
     }
   }

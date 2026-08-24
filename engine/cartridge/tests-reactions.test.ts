@@ -132,6 +132,34 @@ describe("test and reaction cartridge contracts", () => {
     );
   });
 
+  it("accepts reaction story reaches and rejects an unknown target beat", () => {
+    const value = source();
+    repository(value)["reactions"] = [
+      {
+        id: "reach-story",
+        on: "clock.tick",
+        predicates: [],
+        actions: [{ kind: "story-reach", beat: "start" }],
+      },
+    ];
+    expect(loadCartridge(value).repository.reactions[0]?.actions).toEqual([
+      { kind: "story-reach", beat: "start" },
+    ]);
+
+    (
+      (repository(value)["reactions"] as Array<Record<string, unknown>>)[0]
+        ?.actions as Array<Record<string, unknown>>
+    )[0] = { kind: "story-reach", beat: "missing" };
+    expect(issues(value)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/repository/reactions/0/actions/0/beat",
+          expected: "the id of a declared story beat",
+        }),
+      ]),
+    );
+  });
+
   it("rejects conservative event-type cascade cycles", () => {
     const value = source();
     const repo = repository(value);
