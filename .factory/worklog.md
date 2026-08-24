@@ -444,3 +444,17 @@ earning europe-detached — designed-path failure, inverse of round 2's
 exploit. Round-4 blocking: Chris notified per the >3-rounds rule (page sent
 14:5x UTC), line continues fixing. Operator PR comment posted with evidence
 and the evaluator-side normalization fix; re-review on next hold.
+
+## Operator: T55 (PR #80) rounds 4-5 routing (2026-08-24)
+
+Round-4 fix pushed (1aefb03, normalization per the operator comment; delta to
+be reviewed together with round 5). Codex's round on 1aefb03 posted two new
+valid P2s, both variants of one defect — predicates trust the payload, not
+the executed mutation: (A) a failed cp onto an existing destination (bounded
+cp rejects it) still emits vfs.copy, so TUI-fix-then-failed-copy awards the
+ending; (B) a caller-owned payload with accessors can present different
+operands to the executor and the predicate. Coherent fix: match against the
+mutation outcome (resolved from/to + copied). Returned to the line; rounds
+are converging (budget -> event identity -> path truth -> outcome truth), so
+no second page beyond the round-4 notification. Re-review rounds 4+5 at the
+next hold.
