@@ -126,6 +126,13 @@ describe("shared story beats", () => {
       ),
     );
     expect(readStorySlice(innocentCopy).discoveredEndings).toEqual([]);
+    const failedDesignedCopy = step(
+      nonBash,
+      createShellExecuteEvent(
+        "cp -p config/routes.200.conf config/routes.conf",
+      ),
+    );
+    expect(readStorySlice(failedDesignedCopy).discoveredEndings).toEqual([]);
 
     let waiver = applyInput(bootstrap(), "detach europe");
     expect(readMindSlice(waiver).pendingWaiver).toMatchObject({

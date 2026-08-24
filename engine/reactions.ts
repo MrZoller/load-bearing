@@ -20,7 +20,12 @@ export function reactionPredicateMatches(
     if (source.type !== "vfs.copy") return false;
     const sourcePath = source.payload?.["source"];
     const destinationPath = source.payload?.["destination"];
-    if (typeof sourcePath !== "string" || typeof destinationPath !== "string")
+    if (
+      predicate.success !== true ||
+      source.payload?.["success"] !== true ||
+      typeof sourcePath !== "string" ||
+      typeof destinationPath !== "string"
+    )
       return false;
     const vfs = readVfsSlice(state);
     const resolve = (path: string) =>

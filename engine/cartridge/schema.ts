@@ -937,7 +937,7 @@ const REACTION_PREDICATE = {
     "copy-paths": {
       kind: "object",
       description:
-        "The exact source and destination of the triggering virtual-file copy.",
+        "The exact operands of a successful triggering virtual-file copy.",
       fields: {
         kind: required({
           kind: "enum",
@@ -958,6 +958,11 @@ const REACTION_PREDICATE = {
           pattern: SINGLE_LINE_PATTERN,
           patternLabel: "a single-line string",
           minLength: 1,
+        }),
+        success: required({
+          kind: "boolean",
+          description:
+            "Whether the triggering copy event reported a successful VFS mutation.",
         }),
       },
     },

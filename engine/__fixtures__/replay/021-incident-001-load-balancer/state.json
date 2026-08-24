@@ -1378,7 +1378,8 @@
             {
               "destination": "/production/load-balancer/config/routes.conf",
               "kind": "copy-paths",
-              "source": "/production/load-balancer/config/routes.200.conf"
+              "source": "/production/load-balancer/config/routes.200.conf",
+              "success": true
             },
             {
               "equals": "health_status=200\neurope_attached=false\n",

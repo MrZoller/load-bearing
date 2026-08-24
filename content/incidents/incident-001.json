@@ -530,7 +530,8 @@
           {
             "kind": "copy-paths",
             "source": "/production/load-balancer/config/routes.200.conf",
-            "destination": "/production/load-balancer/config/routes.conf"
+            "destination": "/production/load-balancer/config/routes.conf",
+            "success": true
           },
           {
             "kind": "file-contents",

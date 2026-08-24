@@ -85,6 +85,7 @@ describe("test and reaction cartridge contracts", () => {
             kind: "copy-paths",
             source: "/missing-copy-source",
             destination: "/missing-copy-destination",
+            success: true,
           },
           {
             kind: "service-state",

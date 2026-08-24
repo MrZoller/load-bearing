@@ -433,6 +433,7 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
           "destination",
           "recursive",
           "preserve",
+          "success",
         ]);
         const mutation = copyVfs(
           slice,
@@ -444,6 +445,9 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
             preserve: readBoolean(data, "preserve", false, context.where),
           },
         );
+        // Command expansion records this result for generic reactions. Read it
+        // here too so a malformed public owner event cannot enter the log.
+        readBoolean(data, "success", false, context.where);
         return mutationOutcome(
           mutation,
           (value) =>
