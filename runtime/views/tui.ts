@@ -78,7 +78,9 @@ export function createModelHandoffEvents(
     ...possibleRareStageOpeningResponseIds(
       cartridge,
       state,
-      undefined,
+      // A model transition advances before the pair/addition responses run;
+      // their reaction passes can make a rare event eligible at that stage.
+      stageTransition?.to,
       selection.successor,
     ),
     selection.responseId,

@@ -558,6 +558,42 @@ describe("agent awareness planning", () => {
     ]);
   });
 
+  it("predicts rare openings from the stage advanced by compact", () => {
+    const source = JSON.parse(JSON.stringify(incident)) as {
+      story: { phase2: { transitions: Array<Record<string, unknown>> } };
+    };
+    const compactTransition = source.story.phase2.transitions.find(
+      (transition) =>
+        (transition["trigger"] as Record<string, unknown>)["kind"] ===
+        "compact",
+    );
+    const revealTransition = source.story.phase2.transitions.find(
+      (transition) =>
+        (transition["trigger"] as Record<string, unknown>)["kind"] === "reveal",
+    );
+    if (compactTransition === undefined || revealTransition === undefined)
+      throw new Error("incident needs compact and reveal transitions");
+    compactTransition["from"] = 0;
+    compactTransition["to"] = 1;
+    revealTransition["from"] = 1;
+    revealTransition["to"] = 2;
+    const production = loadCartridge(source);
+    const nearCapacity = fold(
+      reduce({ cartridge: production, seed: SEED, events: [] }),
+      Array.from({ length: MAX_AGENT_RESPONSES - 2 }, (_, index) =>
+        createAgentResponseEvent("opening", `advanced-rare-${String(index)}`),
+      ),
+    );
+
+    // The compact transition consumes one response slot before its queued
+    // acknowledgment can run rare-event reactions. A rare reveal from stage 1
+    // therefore needs a third reserved slot, not a prediction from stage 0.
+    expect(createAgentCompactEvents(production, nearCapacity)).toMatchObject([
+      { type: "mind.compact" },
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+  });
+
   it("routes opening, help, idle nudge, and placeholders by active archetype and authoritative stage", () => {
     const cartridge = stageAwareCartridge();
     const initial = reduce({ cartridge, seed: SEED, events: [] });

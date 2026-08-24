@@ -90,7 +90,10 @@ export function createAgentCompactEvents(
     ...(transition === undefined
       ? []
       : [stageOpeningResponseId(cartridge, state, transition.to)]),
-    ...possibleRareStageOpeningResponseIds(cartridge, state),
+    // The compact event can advance before its queued acknowledgment gives
+    // rare events another reaction pass, so predict those openings from the
+    // advanced stage rather than the pre-compact snapshot.
+    ...possibleRareStageOpeningResponseIds(cartridge, state, transition?.to),
     compact.response,
   ];
   return [
