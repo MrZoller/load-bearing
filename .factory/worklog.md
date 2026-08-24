@@ -458,3 +458,23 @@ mutation outcome (resolved from/to + copied). Returned to the line; rounds
 are converging (budget -> event identity -> path truth -> outcome truth), so
 no second page beyond the round-4 notification. Re-review rounds 4+5 at the
 next hold.
+
+## Operator: T55 rounds 4-5 reviewed PASS; line paused on account billing (2026-08-24)
+
+Substantive review of dc01e5a PASSES: emitter stamps success from the executed
+mutation; copy-paths requires success on both sides and resolves payload and
+predicate paths against cwd/home before comparing; content authored absolute
+with success:true; route tests cover absolute and cd-relative forms, and
+negatives cover innocent-copy and failed-designed-copy. The accessor thread's
+refutation ACCEPTED after code verification: events/state.ts declares the
+plain-JSON envelope and events/log.ts documents this exact scenario —
+clonePayload refuses accessors at append, the raw step path is the caller's
+contract; thread stays unresolved as the recorded disagreement. NOT merged:
+CI cannot run — every job repo-wide fails at startup since 14:28Z with the
+GitHub annotation "recent account payments have failed or your spending limit
+needs to be increased" (private repo, hosted runners; main bookkeeping
+commits fail identically, so this is account billing, not the diff). Codex
+has not reviewed dc01e5a yet either. Chris paged 15:1x UTC; factory left
+deliberately idle so cycles do not burn against guaranteed-red CI. Resume on
+billing fix: rerun the line (released-hold pass re-runs CI + collects the
+Codex verdict), then complete the merge gates on the attested head.
