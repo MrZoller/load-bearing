@@ -931,6 +931,33 @@ describe("authored agent input", () => {
     ]);
   });
 
+  it("reserves every unevaluated rare-event opening in a visitor batch", () => {
+    const source = JSON.parse(JSON.stringify(incident)) as {
+      story: { phase2: { transitions: Array<Record<string, unknown>> } };
+    };
+    source.story.phase2.transitions.push({
+      from: 1,
+      to: 2,
+      trigger: { kind: "reveal", fact: "bash-regional-detachment" },
+    });
+    const cartridge = loadCartridge(source);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+    for (let index = 0; index < MAX_AGENT_MESSAGES - 3; index += 1)
+      state = step(
+        state,
+        createAgentMessageEvent(`rare-batch-filler-${String(index)}`, "filler"),
+      );
+
+    // Both production rare declarations remain unevaluated. Their separate
+    // later passes can each advance a reveal stage, so three free slots do not
+    // cover visitor message, two openings, and the completed-turn response.
+    expect(
+      createAgentInputEvents(cartridge, state, "inspect routing"),
+    ).toMatchObject([
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+  });
+
   it("preflights artifacts for a command-triggered stage opening", () => {
     const source = JSON.parse(JSON.stringify(incident)) as {
       story: {

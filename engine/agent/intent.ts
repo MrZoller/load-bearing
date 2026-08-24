@@ -338,6 +338,38 @@ export function stageOpeningResponseId(
   );
 }
 
+/**
+ * Reserve each reveal stage an unevaluated rare event could advance during a
+ * transaction. The reducer evaluates rare declarations in order, so predict
+ * their possible openings in that same order rather than collapsing them to
+ * one slot.
+ */
+export function possibleRareStageOpeningResponseIds(
+  cartridge: LoadedCartridge,
+  state: SessionState,
+  initialStage = readStorySlice(state).stage,
+  activeModel = readTerminalSlice(state).activeModel,
+): readonly string[] {
+  let stage = initialStage;
+  const openings: string[] = [];
+  for (const declaration of cartridge.story.phase2.rareEvents) {
+    const recorded = readStorySlice(state).rareEvents.find(
+      (rareEvent) => rareEvent.id === declaration.id,
+    );
+    if (recorded === undefined || recorded.evaluated) continue;
+    const transition = (cartridge.story.phase2.transitions ?? []).find(
+      (candidate) =>
+        candidate.from === stage && candidate.trigger.kind === "reveal",
+    );
+    if (transition === undefined) continue;
+    openings.push(
+      stageOpeningResponseId(cartridge, state, transition.to, activeModel),
+    );
+    stage = transition.to;
+  }
+  return openings;
+}
+
 /** Return openings that selected top-level actions can insert into this turn. */
 function possibleStageOpeningResponseIds(
   cartridge: LoadedCartridge,
@@ -350,23 +382,21 @@ function possibleStageOpeningResponseIds(
   // Rare events are evaluated after every top-level event. A selected action
   // can make an unevaluated event eligible before its later pass, so planning
   // from the initial snapshot cannot safely narrow this to events eligible now.
-  // A draw may miss, but reserving one possible opening keeps the whole turn
-  // atomic when a later rare-event pass reaches a reveal transition.
-  const rareCanFire = cartridge.story.phase2.rareEvents.some(
-    (declaration, index) => {
-      const recorded = readStorySlice(state).rareEvents[index];
-      return recorded !== undefined && !recorded.evaluated;
-    },
+  // A draw may miss, but reserve every stage each outstanding declaration
+  // could advance so later rare-event passes cannot exceed this atomic plan.
+  const rareOpenings = possibleRareStageOpeningResponseIds(
+    cartridge,
+    state,
+    stage,
   );
-  if (rareCanFire) {
+  openings.push(...rareOpenings);
+  for (let index = 0; index < rareOpenings.length; index += 1) {
     const transition = (cartridge.story.phase2.transitions ?? []).find(
       (candidate) =>
         candidate.from === stage && candidate.trigger.kind === "reveal",
     );
-    if (transition !== undefined) {
-      openings.push(stageOpeningResponseId(cartridge, state, transition.to));
-      stage = transition.to;
-    }
+    if (transition === undefined) break;
+    stage = transition.to;
   }
   // Standing orchestration envelopes expand their continuations in the same
   // visitor turn. Include those actions in the prediction so an opening they

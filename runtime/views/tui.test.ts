@@ -205,4 +205,25 @@ describe("createModelHandoffEvents", () => {
       capacityEvents.reduce((next, event) => step(next, event), nearCapacity),
     ).not.toThrow();
   });
+
+  it("reserves a possible rare-event opening with handoff responses", () => {
+    const cartridge = loadCartridge(incidentDocument);
+    const state = reduce({ cartridge, seed: "rare-handoff", events: [] });
+    const successor = cartridge.models[1];
+    if (successor === undefined) throw new Error("incident needs a successor");
+    const nearCapacity = reduce({
+      cartridge,
+      seed: state.seed,
+      events: Array.from({ length: MAX_AGENT_RESPONSES - 2 }, (_, index) =>
+        createAgentResponseEvent("opening", `rare-existing-${String(index)}`),
+      ),
+    });
+
+    expect(
+      createModelHandoffEvents(cartridge, nearCapacity, successor.id),
+    ).toMatchObject([
+      { type: "terminal.model-transitioned" },
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+  });
 });

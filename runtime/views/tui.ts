@@ -10,6 +10,7 @@ import {
   readMindSlice,
   readTerminalSlice,
   routeModelHandoff,
+  possibleRareStageOpeningResponseIds,
   stageOpeningResponseId,
   readStorySlice,
 } from "../../engine/index.js";
@@ -74,6 +75,12 @@ export function createModelHandoffEvents(
             selection.successor,
           ),
         ]),
+    ...possibleRareStageOpeningResponseIds(
+      cartridge,
+      state,
+      undefined,
+      selection.successor,
+    ),
     selection.responseId,
     selection.additionResponseId,
   ].filter((responseId) => responseId !== "");

@@ -13,6 +13,7 @@ import { readAgentSlice } from "./agent.js";
 import {
   canRecordAuthoredResponse,
   canRecordAuthoredResponses,
+  possibleRareStageOpeningResponseIds,
   stageOpeningResponseId,
 } from "./intent.js";
 import { readStorySlice } from "../story/story.js";
@@ -89,6 +90,7 @@ export function createAgentCompactEvents(
     ...(transition === undefined
       ? []
       : [stageOpeningResponseId(cartridge, state, transition.to)]),
+    ...possibleRareStageOpeningResponseIds(cartridge, state),
     compact.response,
   ];
   return [

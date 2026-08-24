@@ -381,6 +381,7 @@ export {
 export {
   canRecordAuthoredResponse,
   canRecordAuthoredResponses,
+  possibleRareStageOpeningResponseIds,
   stageOpeningResponseId,
 } from "./agent/intent.js";
 export {

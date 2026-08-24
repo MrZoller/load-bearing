@@ -17,7 +17,11 @@ import { readStorySlice } from "../story/story.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { createTerminalModeEvent } from "../terminal/module.js";
 import { readTerminalSlice } from "../terminal/terminal.js";
-import { MAX_AGENT_MESSAGES, readAgentSlice } from "./agent.js";
+import {
+  MAX_AGENT_MESSAGES,
+  MAX_AGENT_RESPONSES,
+  readAgentSlice,
+} from "./agent.js";
 import {
   createAgentCompactEvents,
   createAgentHelpEvents,
@@ -27,6 +31,7 @@ import { createAgentInputEvents } from "./intent.js";
 import {
   createAgentIdleNudgeEvent,
   createAgentMessageEvent,
+  createAgentResponseEvent,
   selectAgentPresentation,
 } from "./module.js";
 import { createTerminalModelEvent } from "../terminal/module.js";
@@ -535,6 +540,22 @@ describe("agent awareness planning", () => {
       { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
     ]);
     expect(() => fold(state, events)).not.toThrow();
+  });
+
+  it("reserves a possible rare-event opening with compact acknowledgment", () => {
+    const production = loadCartridge(incident);
+    const state = reduce({ cartridge: production, seed: SEED, events: [] });
+    const nearCapacity = fold(
+      state,
+      Array.from({ length: MAX_AGENT_RESPONSES - 1 }, (_, index) =>
+        createAgentResponseEvent("opening", `rare-compact-${String(index)}`),
+      ),
+    );
+
+    expect(createAgentCompactEvents(production, nearCapacity)).toMatchObject([
+      { type: "mind.compact" },
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
   });
 
   it("routes opening, help, idle nudge, and placeholders by active archetype and authoritative stage", () => {
