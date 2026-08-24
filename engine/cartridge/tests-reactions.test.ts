@@ -198,6 +198,45 @@ describe("test and reaction cartridge contracts", () => {
     );
   });
 
+  it("rejects cycles that cross from reactions through story consequences", () => {
+    const value = source();
+    const story = value["story"] as Record<string, unknown>;
+    story["phase2"] = {
+      initialBeat: "start",
+      beats: [
+        {
+          id: "start",
+          ending: "",
+          actions: [
+            {
+              kind: "file-write",
+              path: "/production/service/README.md",
+              contents: "changed\n",
+            },
+          ],
+        },
+      ],
+      endings: [],
+    };
+    repository(value)["reactions"] = [
+      {
+        id: "write-reaches-story",
+        on: "vfs.write",
+        predicates: [],
+        actions: [{ kind: "story-reach", beat: "start" }],
+      },
+    ];
+
+    expect(issues(value)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/repository/reactions/0/actions/0/kind",
+          expected: expect.stringContaining("acyclic"),
+        }),
+      ]),
+    );
+  });
+
   it("rejects cycles that only close after several reaction event types", () => {
     const value = source();
     const repo = repository(value);

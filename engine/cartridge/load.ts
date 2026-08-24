@@ -2352,6 +2352,27 @@ function reactionActionType(action: ReactionAction): string {
   }
 }
 
+function storyActionType(action: CartridgeStoryAction): string {
+  switch (action.kind) {
+    case "counter-add":
+      return "story.counter-added";
+    case "story-reach":
+      return "story.beat-reached";
+    case "file-write":
+      return "vfs.write";
+    case "service-state":
+      return action.state === "running"
+        ? "world.service-start"
+        : "world.service-stop";
+    case "service-health":
+      return "world.service-health";
+    case "process-state":
+      return "world.process-transition";
+    case "log-append":
+      return "world.log-append";
+  }
+}
+
 /** Concrete test/reaction references and the conservative event-type graph. */
 function checkTestsAndReactions(
   repository: CartridgeRepository,
@@ -2363,6 +2384,31 @@ function checkTestsAndReactions(
   const processes = new Set(repository.processes.map((value) => value.id));
   const logs = new Set(repository.logs.map((value) => value.id));
   const beats = new Set(story.phase2.beats.map((value) => value.id));
+  const beatById = new Map(
+    story.phase2.beats.map((value) => [value.id, value] as const),
+  );
+  const consequenceTypes = (beatId: string): readonly string[] => {
+    const types = new Set<string>();
+    const visited = new Set<string>();
+    const visit = (id: string): void => {
+      if (visited.has(id)) return;
+      visited.add(id);
+      const beat = beatById.get(id);
+      if (beat === undefined) return;
+      const outcomes = [
+        beat.actions,
+        ...beat.variants.map((variant) => variant.actions),
+      ];
+      for (const actions of outcomes) {
+        for (const action of actions) {
+          types.add(storyActionType(action));
+          if (action.kind === "story-reach") visit(action.beat);
+        }
+      }
+    };
+    visit(beatId);
+    return [...types];
+  };
 
   const unique = <T extends { readonly id: string }>(
     values: readonly T[],
@@ -2473,12 +2519,12 @@ function checkTestsAndReactions(
   repository.reactions.forEach((reaction, reactionIndex) => {
     const list = edges.get(reaction.on) ?? [];
     reaction.actions.forEach((action, actionIndex) => {
-      list.push({
-        to: reactionActionType(action),
-        reaction,
-        reactionIndex,
-        actionIndex,
-      });
+      const targets = [
+        reactionActionType(action),
+        ...(action.kind === "story-reach" ? consequenceTypes(action.beat) : []),
+      ];
+      for (const to of new Set(targets))
+        list.push({ to, reaction, reactionIndex, actionIndex });
     });
     edges.set(reaction.on, list);
   });
