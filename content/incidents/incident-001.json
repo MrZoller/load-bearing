@@ -529,8 +529,8 @@
         "predicates": [
           {
             "kind": "copy-paths",
-            "source": "config/routes.200.conf",
-            "destination": "config/routes.conf"
+            "source": "/production/load-balancer/config/routes.200.conf",
+            "destination": "/production/load-balancer/config/routes.conf"
           },
           {
             "kind": "file-contents",

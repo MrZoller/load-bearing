@@ -4,6 +4,7 @@ import type { ReactionAction, ReactionPredicate } from "./cartridge/types.js";
 import type { EngineEvent, SessionState } from "./events/state.js";
 import { evaluateFilePredicate } from "./tests/planner.js";
 import { readVfsSlice } from "./vfs/module.js";
+import { resolveVfsPath } from "./vfs/path.js";
 import { readWorldSlice } from "./world/module.js";
 import { lookupProcess, lookupService } from "./world/world.js";
 import { createStoryBeatReachedEvent } from "./story/module.js";
@@ -15,12 +16,20 @@ export function reactionPredicateMatches(
 ): boolean {
   if (predicate.kind === "file-exists" || predicate.kind === "file-contents")
     return evaluateFilePredicate(predicate, readVfsSlice(state));
-  if (predicate.kind === "copy-paths")
+  if (predicate.kind === "copy-paths") {
+    if (source.type !== "vfs.copy") return false;
+    const sourcePath = source.payload?.["source"];
+    const destinationPath = source.payload?.["destination"];
+    if (typeof sourcePath !== "string" || typeof destinationPath !== "string")
+      return false;
+    const vfs = readVfsSlice(state);
+    const resolve = (path: string) =>
+      resolveVfsPath(path, vfs.cwd, vfs.identity.home).path;
     return (
-      source.type === "vfs.copy" &&
-      source.payload?.["source"] === predicate.source &&
-      source.payload?.["destination"] === predicate.destination
+      resolve(sourcePath) === resolve(predicate.source) &&
+      resolve(destinationPath) === resolve(predicate.destination)
     );
+  }
   const world = readWorldSlice(state);
   if (predicate.kind === "process-state")
     return (

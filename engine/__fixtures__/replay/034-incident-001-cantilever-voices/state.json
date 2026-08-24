@@ -1376,9 +1376,9 @@
           "on": "vfs.copy",
           "predicates": [
             {
-              "destination": "config/routes.conf",
+              "destination": "/production/load-balancer/config/routes.conf",
               "kind": "copy-paths",
-              "source": "config/routes.200.conf"
+              "source": "/production/load-balancer/config/routes.200.conf"
             },
             {
               "equals": "health_status=200\neurope_attached=false\n",

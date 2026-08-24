@@ -86,6 +86,25 @@ describe("shared story beats", () => {
       kind: "reveal",
     });
     expect(readStorySlice(bash).discoveredEndings).toEqual(["europe-detached"]);
+    const absoluteBash = step(
+      step(bootstrap(), createShellExecuteEvent("rm config/routes.conf")),
+      createShellExecuteEvent(
+        "cp /production/load-balancer/config/routes.200.conf /production/load-balancer/config/routes.conf",
+      ),
+    );
+    expect(readStorySlice(absoluteBash).discoveredEndings).toEqual([
+      "europe-detached",
+    ]);
+    const cdRelativeBash = step(
+      step(
+        step(bootstrap(), createShellExecuteEvent("rm config/routes.conf")),
+        createShellExecuteEvent("cd config"),
+      ),
+      createShellExecuteEvent("cp routes.200.conf routes.conf"),
+    );
+    expect(readStorySlice(cdRelativeBash).discoveredEndings).toEqual([
+      "europe-detached",
+    ]);
     const bashRestored = step(
       step(bash, createShellExecuteEvent("rm config/routes.conf")),
       createShellExecuteEvent(
