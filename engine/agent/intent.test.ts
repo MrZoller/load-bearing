@@ -1065,6 +1065,40 @@ describe("authored agent input", () => {
     });
   });
 
+  it("does not reuse a completed orchestration failure for a later response", () => {
+    const state = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      events: [
+        {
+          type: "mind.permission-standing-failed",
+          payload: { id: "delete-ready-sentinel" },
+          version: 0,
+        },
+        {
+          type: "agent.response-recorded",
+          payload: {
+            responseId: "remove-authorized",
+            instanceId: "standing-permission-failure",
+          },
+          version: 0,
+        },
+        {
+          type: "agent.response-recorded",
+          payload: {
+            responseId: "remove-authorized",
+            instanceId: "later-slash-response",
+          },
+          version: 0,
+        },
+      ],
+    });
+
+    expect(readAgentSlice(state).responses.at(-1)?.responseId).toBe(
+      "remove-authorized",
+    );
+  });
+
   it("uses a fallback's authored authorized response after Always allow", () => {
     const document = JSON.parse(JSON.stringify(cartridgeDocument)) as {
       story: {
