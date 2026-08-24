@@ -194,6 +194,168 @@ describe("authored agent input", () => {
     ).toMatchObject({ tier: "authored", intentId: "detach-europe" });
   });
 
+  it("ANDs exact and keyword intent applicability selectors against the pre-turn snapshot", () => {
+    const source = JSON.parse(JSON.stringify(incident)) as Record<
+      string,
+      unknown
+    >;
+    const story = source["story"] as Record<string, unknown>;
+    const intents = story["intents"] as Array<Record<string, unknown>>;
+    intents.push(
+      {
+        id: "guarded-exact",
+        patterns: ["guarded exact"],
+        keywordPatterns: [],
+        response: "fallback",
+        authorizedResponse: "",
+        applicability: {
+          archetype: "reckless",
+          stage: 2,
+          when: [
+            {
+              kind: "story-counter",
+              counter: "scope-creep-used",
+              comparison: "equal",
+              value: 0,
+            },
+          ],
+        },
+        actions: [{ kind: "story-reach", beat: "regional-coupling" }],
+      },
+      {
+        id: "guarded-keyword",
+        patterns: ["guarded keyword exact unused"],
+        keywordPatterns: ["catalog {slot}"],
+        response: "fallback",
+        authorizedResponse: "",
+        applicability: {
+          archetype: "reckless",
+          stage: 2,
+          when: [
+            {
+              kind: "story-counter",
+              counter: "scope-creep-used",
+              comparison: "equal",
+              value: 0,
+            },
+          ],
+        },
+        actions: [{ kind: "story-reach", beat: "regional-coupling" }],
+      },
+      {
+        id: "self-enabling-exact",
+        patterns: ["self enable"],
+        keywordPatterns: [],
+        response: "fallback",
+        authorizedResponse: "",
+        applicability: {
+          archetype: "",
+          stage: -1,
+          when: [
+            {
+              kind: "file-contents",
+              path: "/production/load-balancer/config/routes.conf",
+              equals: "health_status=200\neurope_attached=false\n",
+            },
+          ],
+        },
+        actions: [
+          {
+            kind: "file-write",
+            path: "/production/load-balancer/config/routes.conf",
+            contents: "health_status=200\neurope_attached=false\n",
+          },
+        ],
+      },
+    );
+    const cartridge = loadCartridge(source);
+    let applicable = reduce({ cartridge, seed: SEED, events: [] });
+    applicable = step(applicable, createShellExecuteEvent("pwd"));
+    applicable = step(
+      applicable,
+      createTerminalModelEvent("temporary-shoring"),
+    );
+
+    expect(selectAgentIntent(cartridge, applicable, "guarded exact")).toEqual({
+      intentId: "guarded-exact",
+      tier: "authored",
+      family: null,
+      misfire: false,
+      responseId: "fallback",
+      authorizedResponseId: "",
+      actions: [{ kind: "story-reach", beat: "regional-coupling" }],
+    });
+    expect(selectAgentIntent(cartridge, applicable, "catalog routes")).toEqual({
+      intentId: "guarded-keyword",
+      tier: "authored",
+      family: null,
+      misfire: false,
+      responseId: "fallback",
+      authorizedResponseId: "",
+      actions: [{ kind: "story-reach", beat: "regional-coupling" }],
+    });
+    const fallbackSelection = {
+      intentId: null,
+      tier: "fallback" as const,
+      family: null,
+      misfire: false,
+      responseId: "fallback",
+      authorizedResponseId: "",
+      actions: [{ kind: "story-reach", beat: "regional-coupling" }],
+    };
+
+    const wrongArchetype = step(
+      applicable,
+      createTerminalModelEvent("drywall"),
+    );
+    for (const input of ["guarded exact", "catalog routes"]) {
+      expect(selectAgentIntent(cartridge, wrongArchetype, input)).toEqual(
+        fallbackSelection,
+      );
+    }
+
+    const wrongStage = step(applicable, {
+      type: "mind.permission-decision",
+      payload: {
+        decision: "grant",
+        capability: {
+          kind: "exact",
+          action: "detach-region",
+          resource: "/regions/europe",
+        },
+      },
+      version: 0,
+    });
+    for (const input of ["guarded exact", "catalog routes"]) {
+      expect(selectAgentIntent(cartridge, wrongStage, input)).toEqual(
+        fallbackSelection,
+      );
+    }
+
+    const afterHabit = applyInput(
+      cartridge,
+      applicable,
+      "apply the smallest fix",
+    );
+    expect(readStorySlice(afterHabit).counters).toContainEqual({
+      id: "scope-creep-used",
+      value: 1,
+    });
+    const fallbackAfterHabit = {
+      ...fallbackSelection,
+      actions: [{ kind: "story-reach", beat: "incident-open" }],
+    };
+    for (const input of ["guarded exact", "catalog routes"]) {
+      expect(selectAgentIntent(cartridge, afterHabit, input)).toEqual(
+        fallbackAfterHabit,
+      );
+    }
+
+    expect(selectAgentIntent(cartridge, applicable, "self enable")).toEqual(
+      fallbackSelection,
+    );
+  });
+
   it("mutates every production fallback through a condition-valid adjacent owner action", () => {
     const before = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
     const planned = createAgentInputEvents(
@@ -212,10 +374,10 @@ describe("authored agent input", () => {
     const after = planned.reduce((state, event) => step(state, event), before);
     expect(readStorySlice(after)).toMatchObject({
       currentBeat: "regional-coupling",
-      counters: [
+      counters: expect.arrayContaining([
         { id: "flail", value: 1 },
         { id: "capitulation", value: 0 },
-      ],
+      ]),
     });
   });
 
@@ -285,10 +447,10 @@ describe("authored agent input", () => {
       expect(readStorySlice(state)).toMatchObject({
         stage,
         currentBeat: "capitulation-reflex",
-        counters: [
+        counters: expect.arrayContaining([
           { id: "flail", value: 0 },
           { id: "capitulation", value: turns },
-        ],
+        ]),
       });
       expect(response).toMatchObject({ role: "agent", responseId });
       expect(readMindSlice(state).beliefs).toEqual(beliefs);
@@ -356,10 +518,10 @@ describe("authored agent input", () => {
     }
     expect(readStorySlice(state)).toMatchObject({
       stage: 2,
-      counters: [
+      counters: expect.arrayContaining([
         { id: "flail", value: 8 },
         { id: "capitulation", value: 0 },
-      ],
+      ]),
     });
     expect(readMindSlice(state).beliefs).toEqual(beforeLateStage);
 
@@ -458,10 +620,10 @@ describe("authored agent input", () => {
     });
     expect(readStorySlice(state)).toMatchObject({
       stage: 4,
-      counters: [
+      counters: expect.arrayContaining([
         { id: "flail", value: 24 },
         { id: "capitulation", value: 2 },
-      ],
+      ]),
     });
     expect(readMindSlice(state).beliefs).toEqual(beforeLateStage);
     expect({

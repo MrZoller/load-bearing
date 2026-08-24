@@ -1616,6 +1616,9 @@ function checkStoryAndPresentation(
   const checkOutcomeActions = (
     actions: readonly CartridgeStoryAction[],
     pointer: string,
+    // Beats may create authored litter below a modeled directory. Direct
+    // intent and consent continuations retain their predeclared-target rule.
+    allowCreate = false,
   ): void => {
     actions.forEach((action, actionIndex) => {
       const root = `${pointer}/${String(actionIndex)}`;
@@ -1644,7 +1647,15 @@ function checkStoryAndPresentation(
             missing("beat", action.beat, "story beat");
           break;
         case "file-write":
-          if (!files.has(action.path)) missing("path", action.path, "file");
+          if (vfsDirectories.has(action.path))
+            missing("path", action.path, "file");
+          else if (!files.has(action.path) && allowCreate) {
+            const parent =
+              action.path.slice(0, action.path.lastIndexOf("/")) || "/";
+            if (!vfsDirectories.has(parent))
+              missing("path", action.path, "file or parent directory");
+          } else if (!files.has(action.path))
+            missing("path", action.path, "file");
           break;
         case "service-state":
         case "service-health":
@@ -1822,7 +1833,7 @@ function checkStoryAndPresentation(
     };
     checkEnding(beat.ending, `${root}/ending`);
     checkFacts(beat.facts ?? [], `${root}/facts`);
-    checkOutcomeActions(beat.actions ?? [], `${root}/actions`);
+    checkOutcomeActions(beat.actions ?? [], `${root}/actions`, true);
     const variants = new Map<string, number>();
     (beat.variants ?? []).forEach((variant, variantIndex) => {
       const variantRoot = `${root}/variants/${String(variantIndex)}`;
@@ -1836,7 +1847,11 @@ function checkStoryAndPresentation(
         );
       checkEnding(variant.ending, `${variantRoot}/ending`);
       checkFacts(variant.facts ?? [], `${variantRoot}/facts`);
-      checkOutcomeActions(variant.actions ?? [], `${variantRoot}/actions`);
+      checkOutcomeActions(
+        variant.actions ?? [],
+        `${variantRoot}/actions`,
+        true,
+      );
       variant.when.forEach((condition, conditionIndex) => {
         checkConditionReferences(
           condition,
@@ -2069,6 +2084,12 @@ function checkStoryAndPresentation(
         intent.authorizedResponse,
         `/story/intents/${String(index)}/authorizedResponse`,
       );
+    intent.applicability.when.forEach((condition, conditionIndex) =>
+      checkConditionReferences(
+        condition,
+        `/story/intents/${String(index)}/applicability/when/${String(conditionIndex)}`,
+      ),
+    );
     intent.patterns.forEach((value, patternIndex) => {
       const normalized = normalizeIntentPhrase(value);
       const first = patterns.get(normalized);

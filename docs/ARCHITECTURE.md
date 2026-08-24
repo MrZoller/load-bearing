@@ -261,6 +261,13 @@ renders the same entries differently without changing what was recorded.
   Selection happens while planning the intent against pre-event state, before
   the corresponding beat and its consequences are replayed. Model ids never
   appear in this routing table: models select an archetype, not a graph.
+- Recognized intents may separately declare applicability selectors using the
+  same closed archetype, escalation-stage, and typed-condition vocabulary. All
+  present selectors match the pre-turn snapshot before a phrase is recognized;
+  an inapplicable exact or keyword phrase falls through to the generic or
+  confident-misunderstanding tiers and therefore still performs a bounded owner
+  action. Applicability controls the whole response/action plan. Sparse dialogue
+  routes remain response-only and never suppress a shared beat or consequence.
 - `engine/commands/` owns POSIX-ish word tokenization, generic short/long option
   parsing, duplicate-safe command registration, and the one shell execution API
   used by both terminal views
@@ -294,6 +301,9 @@ Deterministic, cartridge-driven, in three tiers:
    waiver-like requests to closed action plans. A slot consumes 1–12 words;
    patterns and submitted input have independent token bounds, and matching
    uses a bounded table rather than content-generated regular expressions.
+   Optional closed applicability selectors AND archetype, stage, and typed
+   conditions against the pre-turn snapshot; a nonmatch continues to the next
+   tier rather than returning an inert response.
 2. **Generic intents:** the runtime owns exactly undo, why, status,
    disagreement, insult, compliment, and capitulation. The cartridge maps each
    family to an authored-order list of typed-condition response/action

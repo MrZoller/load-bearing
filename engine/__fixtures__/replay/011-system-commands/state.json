@@ -319,6 +319,11 @@
       "intents": [
         {
           "actions": [],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "",
           "id": "fixture-intent",
           "keywordPatterns": [],

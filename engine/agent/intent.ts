@@ -31,7 +31,11 @@ import {
   storyActionEvent,
 } from "../story/actions.js";
 import { storyConditionMatches } from "../story/conditions.js";
-import { routeIntentCandidate, routeStoryResponse } from "../story/router.js";
+import {
+  routeIntentCandidate,
+  routeStoryResponse,
+  storyApplicabilityMatches,
+} from "../story/router.js";
 import { queryStoryCounter, readStorySlice } from "../story/story.js";
 import { readTerminalSlice } from "../terminal/terminal.js";
 import { countCodePoints } from "../text.js";
@@ -154,12 +158,13 @@ export function selectAgentIntent(
   const normalized = normalizeAgentInput(input);
   const intent: CartridgeIntent | undefined = cartridge.story.intents.find(
     (candidate) =>
-      candidate.patterns.some(
+      storyApplicabilityMatches(cartridge, state, candidate.applicability) &&
+      (candidate.patterns.some(
         (pattern) => normalizeAgentInput(pattern) === normalized,
       ) ||
-      candidate.keywordPatterns.some((pattern) =>
-        matchesKeywordPattern(pattern, input),
-      ),
+        candidate.keywordPatterns.some((pattern) =>
+          matchesKeywordPattern(pattern, input),
+        )),
   );
   if (intent !== undefined) {
     return {
@@ -509,11 +514,19 @@ export function createAgentInputEvents(
   for (const action of selection.actions) {
     if (action.kind === "story-reach") routedBeat = action;
   }
+  const routedResponse =
+    routedBeat === undefined
+      ? undefined
+      : routeStoryResponse(
+          cartridge,
+          state,
+          routedBeat.beat,
+          defaultResponseId,
+        );
   const responseId =
     routedBeat === undefined || selection.misfire
       ? defaultResponseId
-      : routeStoryResponse(cartridge, state, routedBeat.beat, defaultResponseId)
-          .responseId;
+      : (routedResponse?.responseId ?? defaultResponseId);
   const story = readStorySlice(state);
   // Escalation can insert an opening after either a reached beat or a shell
   // command. Its response artifacts are part of the same atomic turn plan.

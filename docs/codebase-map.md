@@ -273,6 +273,12 @@ and overflow throws rather than clamps. Cartridges declare at most 64 counters.
 Loading rejects malformed predicates, duplicate ids, dangling action references,
 story-reach cycles, chains whose conservative worst selected outcome exceeds
 1024 actions, fact-kind mismatches, and any model-owned graph field before replay.
+Authored exact and keyword intents can independently gate their complete
+response/action plans with closed archetype, stage, and typed-condition
+selectors. Selection reads the same pre-turn snapshot as sparse dialogue
+routing, but the contracts stay distinct: an inapplicable intent falls through
+to the normal mutating fallback, while an unmatched sparse route keeps the
+shared beat and only retains its default response.
 
 The `agent` slice owns visible dialogue artifacts and the current replayable
 working presentation. A working transition selects a positive integer-weighted

@@ -1552,6 +1552,41 @@ const STORY_CONDITION = {
   },
 } satisfies UnionNode;
 
+const INTENT_APPLICABILITY = {
+  kind: "object",
+  description:
+    "Closed pre-turn selectors that all must match before an authored intent is recognized.",
+  fields: {
+    archetype: optional(
+      {
+        kind: "enum",
+        description: "Behavioral archetype selector, or empty when absent.",
+        values: ["", ...ARCHETYPES],
+      },
+      "",
+    ),
+    stage: optional(
+      {
+        kind: "integer",
+        description: "Escalation-stage selector, or -1 when absent.",
+        minimum: -1,
+        maximum: 4,
+      },
+      -1,
+    ),
+    when: optional(
+      {
+        kind: "array",
+        description:
+          "Typed conditions ANDed with the archetype and stage selectors.",
+        items: STORY_CONDITION,
+        maxItems: MAX_STORY_CONDITIONS,
+      },
+      [],
+    ),
+  },
+} satisfies ObjectNode;
+
 const STORY_OUTCOME_FACTS = {
   kind: "array",
   description: "Declared facts recorded by this selected outcome.",
@@ -1585,7 +1620,8 @@ const STORY_ACTION = {
     "story-reach": STORY_REACH_ACTION,
     "file-write": {
       kind: "object",
-      description: "Write exact contents to a declared VFS file.",
+      description:
+        "Write exact contents to a declared VFS file, or from a beat consequence create one beneath a modeled directory.",
       fields: {
         kind: required({
           kind: "enum",
@@ -1859,6 +1895,11 @@ const STORY = {
           // The empty normalized value means this intent's ordinary response
           // remains coherent when a standing grant skips its prompt action.
           authorizedResponse: optional(OPTIONAL_PHASE_ONE_ID, ""),
+          applicability: optional(INTENT_APPLICABILITY, {
+            archetype: "",
+            stage: -1,
+            when: [],
+          }),
           actions: optional(ACTIONS, []),
         },
       },

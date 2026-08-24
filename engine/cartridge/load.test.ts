@@ -1030,7 +1030,11 @@ describe("loadCartridge", () => {
           actions: [
             { kind: "counter-add", counter: "missing-counter", amount: 1 },
             { kind: "story-reach", beat: "missing-beat" },
-            { kind: "file-write", path: "/missing", contents: "x" },
+            {
+              kind: "file-write",
+              path: "/undeclared/missing",
+              contents: "x",
+            },
             {
               kind: "service-state",
               service: "missing-service",
@@ -1062,6 +1066,29 @@ describe("loadCartridge", () => {
         "/story/phase2/beats/0/actions/4/service",
         "/story/phase2/beats/0/actions/5/process",
         "/story/phase2/beats/0/actions/6/log",
+      ]),
+    );
+  });
+
+  it("rejects a creatable beat target that is itself a modeled directory", () => {
+    const source = minimal();
+    (source["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "start",
+      beats: [
+        {
+          id: "start",
+          ending: "",
+          actions: [{ kind: "file-write", path: "/etc", contents: "x" }],
+        },
+      ],
+      endings: [],
+    };
+
+    expect(issuesOf(source)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/story/phase2/beats/0/actions/0/path",
+        }),
       ]),
     );
   });
@@ -1525,6 +1552,38 @@ describe("loadCartridge", () => {
           pointer: "/story/intents/1/patterns/0",
         }),
       ]),
+    );
+  });
+
+  it("normalizes omitted intent applicability selectors to explicit no-selector values", () => {
+    expect(loadCartridge(minimal()).story.intents[0]?.applicability).toEqual({
+      archetype: "",
+      stage: -1,
+      when: [],
+    });
+  });
+
+  it("reports dangling applicability condition references at their authored pointers", () => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    const intent = (story["intents"] as Record<string, unknown>[])[0];
+    if (intent === undefined)
+      throw new Error("minimal fixture lacks an intent");
+    intent["applicability"] = {
+      when: [
+        {
+          kind: "story-counter",
+          counter: "missing-counter",
+          comparison: "equal",
+          value: 0,
+        },
+      ],
+    };
+
+    expect(issuesOf(source)).toContainEqual(
+      expect.objectContaining({
+        pointer: "/story/intents/0/applicability/when/0/counter",
+      }),
     );
   });
 

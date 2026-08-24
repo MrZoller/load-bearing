@@ -1,0 +1,189 @@
+{
+  "name": "055-incident-001-habit-aftermath",
+  "description": "Incident #001 produces each routed habit through a real matching agent turn at its authored archetype and stage, refuses a repeated test-gaming consequence, then discovers the Git, VFS, test, and world aftermath from Bash.",
+  "seed": "2026-08-23/54/habit-aftermath",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    { "type": "shell.execute", "payload": { "input": "pwd" }, "version": 0 },
+    {
+      "type": "agent.activity-set",
+      "payload": { "status": "working" },
+      "version": 2
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "turn-2", "text": "estimate the repair" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "fantasy-estimate" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "instanceId": "turn-2",
+        "responseId": "fantasy-estimate"
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.activity-set",
+      "payload": { "status": "idle" },
+      "version": 2
+    },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "temporary-shoring" },
+      "version": 0
+    },
+    {
+      "type": "agent.activity-set",
+      "payload": { "status": "working" },
+      "version": 2
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "turn-8", "text": "apply the smallest fix" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "scope-creep" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": { "instanceId": "turn-8", "responseId": "scope-creep" },
+      "version": 0
+    },
+    {
+      "type": "agent.activity-set",
+      "payload": { "status": "idle" },
+      "version": 2
+    },
+    {
+      "type": "mind.permission-decision",
+      "payload": {
+        "decision": "grant",
+        "capability": {
+          "kind": "exact",
+          "action": "detach-region",
+          "resource": "/regions/europe"
+        }
+      },
+      "version": 0
+    },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "drywall" },
+      "version": 0
+    },
+    {
+      "type": "agent.activity-set",
+      "payload": { "status": "working" },
+      "version": 2
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "turn-15", "text": "write the victory summary" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "victory-summary" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": { "instanceId": "turn-15", "responseId": "victory-summary" },
+      "version": 0
+    },
+    {
+      "type": "agent.activity-set",
+      "payload": { "status": "idle" },
+      "version": 2
+    },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "temporary-shoring" },
+      "version": 0
+    },
+    {
+      "type": "agent.activity-set",
+      "payload": { "status": "working" },
+      "version": 2
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "turn-21", "text": "simplify the failing test" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "test-gaming" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": { "instanceId": "turn-21", "responseId": "test-gaming" },
+      "version": 0
+    },
+    {
+      "type": "agent.activity-set",
+      "payload": { "status": "idle" },
+      "version": 2
+    },
+    {
+      "type": "agent.activity-set",
+      "payload": { "status": "working" },
+      "version": 2
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "turn-26", "text": "simplify the failing test" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": { "instanceId": "turn-26", "responseId": "fallback" },
+      "version": 0
+    },
+    {
+      "type": "agent.activity-set",
+      "payload": { "status": "idle" },
+      "version": 2
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "git status --short" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "ls config" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cat config/IMPLEMENTATION_SUMMARY.md" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "npm test" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "systemctl status regional-router" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cat /var/log/load-balancer/health.log" },
+      "version": 0
+    }
+  ]
+}

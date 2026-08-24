@@ -341,7 +341,7 @@ process continuation with a documented default — same shape as Q8's resume-in-
 fresh-cycle precedent; the change is one rationale sentence with no product-
 surface decision, and B would discard a green implementation over it.)
 
-## Q12 (task T54, open) — How should authored intent actions declare sparse applicability?
+## Q12 (task T54, consumed) — How should authored intent actions declare sparse applicability?
 
 Context: T54's first panel confirmed that exact habit phrases unconditionally
 executed their beat consequences for every archetype/stage and on every repeat,

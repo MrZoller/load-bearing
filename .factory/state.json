@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T59",
-  "branch": "factory/t59-parked-review-minors",
-  "pr": 78,
+  "current_task": "T54",
+  "branch": "factory/t54-replayable-habits",
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-23T23:14:58Z"
+  "updated": "2026-08-24T12:53:21Z"
 }

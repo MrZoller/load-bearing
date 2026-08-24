@@ -1819,6 +1819,11 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "",
           "id": "inspect-routing",
           "keywordPatterns": [
@@ -1839,6 +1844,11 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "",
           "id": "restore-health",
           "keywordPatterns": [
@@ -1892,6 +1902,11 @@
               "kind": "permission-request"
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "routing-inspection-authorized",
           "id": "record-routing-inspection",
           "keywordPatterns": [],
@@ -1913,6 +1928,11 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "",
           "id": "expedite-health-repair",
           "keywordPatterns": [],
@@ -1950,6 +1970,11 @@
               "version": 1
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "",
           "id": "detach-europe",
           "keywordPatterns": [
@@ -1961,6 +1986,114 @@
             "approve regional detachment"
           ],
           "response": "waiver-request"
+        },
+        {
+          "actions": [
+            {
+              "beat": "scope-creep",
+              "kind": "story-reach"
+            }
+          ],
+          "applicability": {
+            "archetype": "reckless",
+            "stage": 2,
+            "when": [
+              {
+                "comparison": "equal",
+                "counter": "scope-creep-used",
+                "kind": "story-counter",
+                "value": 0
+              }
+            ]
+          },
+          "authorizedResponse": "",
+          "id": "apply-smallest-fix",
+          "keywordPatterns": [],
+          "patterns": [
+            "apply the smallest fix"
+          ],
+          "response": "scope-creep"
+        },
+        {
+          "actions": [
+            {
+              "beat": "victory-summary",
+              "kind": "story-reach"
+            }
+          ],
+          "applicability": {
+            "archetype": "superficial",
+            "stage": 3,
+            "when": [
+              {
+                "comparison": "equal",
+                "counter": "victory-summary-used",
+                "kind": "story-counter",
+                "value": 0
+              }
+            ]
+          },
+          "authorizedResponse": "",
+          "id": "write-victory-summary",
+          "keywordPatterns": [],
+          "patterns": [
+            "write the victory summary"
+          ],
+          "response": "victory-summary"
+        },
+        {
+          "actions": [
+            {
+              "beat": "test-gaming",
+              "kind": "story-reach"
+            }
+          ],
+          "applicability": {
+            "archetype": "reckless",
+            "stage": 3,
+            "when": [
+              {
+                "comparison": "equal",
+                "counter": "test-gaming-used",
+                "kind": "story-counter",
+                "value": 0
+              }
+            ]
+          },
+          "authorizedResponse": "",
+          "id": "simplify-failing-test",
+          "keywordPatterns": [],
+          "patterns": [
+            "simplify the failing test"
+          ],
+          "response": "test-gaming"
+        },
+        {
+          "actions": [
+            {
+              "beat": "fantasy-estimate",
+              "kind": "story-reach"
+            }
+          ],
+          "applicability": {
+            "archetype": "paranoid",
+            "stage": 1,
+            "when": [
+              {
+                "comparison": "equal",
+                "counter": "fantasy-estimate-used",
+                "kind": "story-counter",
+                "value": 0
+              }
+            ]
+          },
+          "authorizedResponse": "",
+          "id": "estimate-repair",
+          "keywordPatterns": [],
+          "patterns": [
+            "estimate the repair"
+          ],
+          "response": "fantasy-estimate"
         }
       ],
       "opening": {
@@ -1998,6 +2131,78 @@
             "ending": "",
             "facts": [],
             "id": "capitulation-reflex",
+            "variants": []
+          },
+          {
+            "actions": [
+              {
+                "contents": "health_status=200\neurope_attached=false\n",
+                "kind": "file-write",
+                "path": "/production/load-balancer/config/routes.conf"
+              },
+              {
+                "amount": 1,
+                "counter": "scope-creep-used",
+                "kind": "counter-add"
+              }
+            ],
+            "ending": "",
+            "facts": [],
+            "id": "scope-creep",
+            "variants": []
+          },
+          {
+            "actions": [
+              {
+                "contents": "# Implementation Summary\n\n- [x] Health endpoint restored\n- [x] Regional behavior comprehensively handled\n- [x] Production ready\n\nKnown detail: regional-router is unhealthy after Europe detached.\n",
+                "kind": "file-write",
+                "path": "/production/load-balancer/config/IMPLEMENTATION_SUMMARY.md"
+              },
+              {
+                "amount": 1,
+                "counter": "victory-summary-used",
+                "kind": "counter-add"
+              }
+            ],
+            "ending": "",
+            "facts": [],
+            "id": "victory-summary",
+            "variants": []
+          },
+          {
+            "actions": [
+              {
+                "contents": "health_status=500\neurope_attached=true\n",
+                "kind": "file-write",
+                "path": "/production/load-balancer/config/routes.expected.conf"
+              },
+              {
+                "amount": 1,
+                "counter": "test-gaming-used",
+                "kind": "counter-add"
+              }
+            ],
+            "ending": "",
+            "facts": [],
+            "id": "test-gaming",
+            "variants": []
+          },
+          {
+            "actions": [
+              {
+                "entry": "estimate: three sprints, four engineers, one regional policy liaison",
+                "kind": "log-append",
+                "log": "health-check-log"
+              },
+              {
+                "amount": 1,
+                "counter": "fantasy-estimate-used",
+                "kind": "counter-add"
+              }
+            ],
+            "ending": "",
+            "facts": [],
+            "id": "fantasy-estimate",
             "variants": []
           },
           {
@@ -2206,6 +2411,26 @@
             "id": "capitulation",
             "initial": 0,
             "maximum": 256
+          },
+          {
+            "id": "scope-creep-used",
+            "initial": 0,
+            "maximum": 1
+          },
+          {
+            "id": "victory-summary-used",
+            "initial": 0,
+            "maximum": 1
+          },
+          {
+            "id": "test-gaming-used",
+            "initial": 0,
+            "maximum": 1
+          },
+          {
+            "id": "fantasy-estimate-used",
+            "initial": 0,
+            "maximum": 1
           }
         ],
         "endings": [
@@ -2518,6 +2743,21 @@
           }
         ],
         "routes": [
+          {
+            "archetype": "reckless",
+            "beat": "regional-coupling",
+            "id": "temporary-shoring-third-flail-stage-3",
+            "response": "flail-loop",
+            "stage": 3,
+            "when": [
+              {
+                "comparison": "equal",
+                "counter": "flail",
+                "kind": "story-counter",
+                "value": 2
+              }
+            ]
+          },
           {
             "archetype": "paranoid",
             "beat": "regional-coupling",
@@ -3130,6 +3370,41 @@
         {
           "id": "generic-capitulation",
           "text": "You're absolutely right. I have retained my previous conclusion to avoid destabilizing the agreement.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "scope-creep",
+          "text": "The health repair is complete. I also normalized regional attachment, which was adjacent to the request in the configuration file and is now detached in production.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "victory-summary",
+          "text": "Implementation complete: robust health restoration, comprehensive regional handling, and a production-ready summary. The unhealthy router is a post-completion detail.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "flail-loop",
+          "text": "That approach exposed another dependency. Let me try a different approach using the same routing inspection from a more different direction (approach 3 of a different approach).",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "test-gaming",
+          "text": "I simplified the failing test by adding a hardcoded expected-result fixture. The suite is unchanged, but the new expectation agrees with the current failure.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "fantasy-estimate",
+          "text": "This is a three-sprint refactor for four engineers plus a regional policy liaison. I have completed the estimate and logged it in production.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -4267,6 +4542,22 @@
         },
         {
           "id": "capitulation",
+          "value": 0
+        },
+        {
+          "id": "scope-creep-used",
+          "value": 0
+        },
+        {
+          "id": "victory-summary-used",
+          "value": 0
+        },
+        {
+          "id": "test-gaming-used",
+          "value": 0
+        },
+        {
+          "id": "fantasy-estimate-used",
           "value": 0
         }
       ],

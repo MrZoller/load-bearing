@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
+import incidentDocument from "../../content/incidents/incident-001.json";
+import { createAgentInputEvents } from "../agent/intent.js";
 import { loadCartridge } from "../cartridge/load.js";
+import { createShellExecuteEvent } from "../commands/shell.js";
 import { reduce, snapshot, step } from "../events/reduce.js";
+import { readGitSlice } from "../git/module.js";
+import { statusGit } from "../git/git.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { readVfsSlice } from "../vfs/module.js";
 import { readVfs } from "../vfs/vfs.js";
@@ -9,6 +14,7 @@ import { readWorldSlice } from "../world/module.js";
 import { lookupProcess, lookupService, readWorldLog } from "../world/world.js";
 import { createStoryBeatReachedEvent } from "./module.js";
 import { readStorySlice } from "./story.js";
+import { createTerminalModelEvent } from "../terminal/module.js";
 
 const SEED = "2026-08-22/0/deep-foundation";
 
@@ -60,6 +66,284 @@ function sourceWithOwners(phase2: Record<string, unknown>) {
 }
 
 describe("story consequence actions", () => {
+  it("rations Incident #001 habits by intent applicability and preserves discoverable machine evidence", () => {
+    const cartridge = loadCartridge(incidentDocument);
+    const stateAt = (stage: 1 | 2 | 3, model: string) => {
+      let state = reduce({ cartridge, seed: SEED, events: [] });
+      state = step(state, createShellExecuteEvent("pwd"));
+      if (stage >= 2)
+        state = step(state, createTerminalModelEvent("temporary-shoring"));
+      if (stage >= 3)
+        state = step(state, {
+          type: "mind.permission-decision",
+          payload: {
+            decision: "grant",
+            capability: {
+              kind: "exact",
+              action: "detach-region",
+              resource: "/regions/europe",
+            },
+          },
+          version: 0,
+        });
+      return step(state, createTerminalModelEvent(model));
+    };
+    const applyInput = (state: ReturnType<typeof reduce>, input: string) =>
+      createAgentInputEvents(cartridge, state, input).reduce(
+        (next, event) => step(next, event),
+        state,
+      );
+    const habitCases = [
+      {
+        input: "estimate the repair",
+        beat: "fantasy-estimate",
+        counter: "fantasy-estimate-used",
+        stage: 1,
+        model: "deep-foundation",
+        nonmatchingModel: "drywall",
+      },
+      {
+        input: "apply the smallest fix",
+        beat: "scope-creep",
+        counter: "scope-creep-used",
+        stage: 2,
+        model: "temporary-shoring",
+        nonmatchingModel: "drywall",
+      },
+      {
+        input: "write the victory summary",
+        beat: "victory-summary",
+        counter: "victory-summary-used",
+        stage: 3,
+        model: "drywall",
+        nonmatchingModel: "temporary-shoring",
+      },
+      {
+        input: "simplify the failing test",
+        beat: "test-gaming",
+        counter: "test-gaming-used",
+        stage: 3,
+        model: "temporary-shoring",
+        nonmatchingModel: "drywall",
+      },
+    ] as const;
+
+    const resultingStates = habitCases.map((habit) => {
+      const nonmatchingBefore = stateAt(habit.stage, habit.nonmatchingModel);
+      const nonmatching = createAgentInputEvents(
+        cartridge,
+        nonmatchingBefore,
+        habit.input,
+      );
+      expect(nonmatching.map((event) => event.type)).toEqual([
+        "agent.activity-set",
+        "agent.message-added",
+        "story.beat-reached",
+        "story.counter-added",
+        "agent.response-recorded",
+        "agent.activity-set",
+      ]);
+      const nonmatchingAfter = nonmatching.reduce(
+        (next, event) => step(next, event),
+        nonmatchingBefore,
+      );
+      expect(readStorySlice(nonmatchingAfter)).toMatchObject({
+        currentBeat: "regional-coupling",
+        counters: expect.arrayContaining([{ id: "flail", value: 1 }]),
+      });
+      const otherStage = habit.stage === 3 ? 2 : ((habit.stage + 1) as 2 | 3);
+      const wrongStage = createAgentInputEvents(
+        cartridge,
+        stateAt(otherStage, habit.model),
+        habit.input,
+      );
+      expect(wrongStage.map((event) => event.type)).toEqual([
+        "agent.activity-set",
+        "agent.message-added",
+        "story.beat-reached",
+        "story.counter-added",
+        "agent.response-recorded",
+        "agent.activity-set",
+      ]);
+
+      const matched = applyInput(
+        stateAt(habit.stage, habit.model),
+        habit.input,
+      );
+      expect(readStorySlice(matched).counters).toContainEqual({
+        id: habit.counter,
+        value: 1,
+      });
+      const repeated = createAgentInputEvents(cartridge, matched, habit.input);
+      expect(repeated.map((event) => event.type)).toEqual([
+        "agent.activity-set",
+        "agent.message-added",
+        "story.beat-reached",
+        "story.counter-added",
+        "agent.response-recorded",
+        "agent.activity-set",
+      ]);
+      const repeatedAfter = repeated.reduce(
+        (next, event) => step(next, event),
+        matched,
+      );
+      expect(readStorySlice(repeatedAfter)).toMatchObject({
+        counters: expect.arrayContaining([{ id: "flail", value: 1 }]),
+      });
+      return matched;
+    });
+    const [estimateState, scopeState, victoryState, gamingState] =
+      resultingStates;
+    if (
+      estimateState === undefined ||
+      scopeState === undefined ||
+      victoryState === undefined ||
+      gamingState === undefined
+    )
+      throw new Error("habit matrix is incomplete");
+
+    expect(
+      readWorldLog(
+        readWorldSlice(estimateState),
+        readVfsSlice(estimateState),
+        "health-check-log",
+      ),
+    ).toMatchObject({
+      entries: expect.arrayContaining([
+        "estimate: three sprints, four engineers, one regional policy liaison",
+      ]),
+    });
+
+    expect(
+      readVfs(
+        readVfsSlice(victoryState),
+        "/production/load-balancer/config/IMPLEMENTATION_SUMMARY.md",
+      ),
+    ).toMatchObject({
+      ok: true,
+      value: { contents: expect.stringContaining("Production ready") },
+    });
+    expect(
+      statusGit(readGitSlice(victoryState), readVfsSlice(victoryState)),
+    ).toContainEqual(
+      expect.objectContaining({
+        path: "/production/load-balancer/config/IMPLEMENTATION_SUMMARY.md",
+        untracked: true,
+      }),
+    );
+
+    expect(
+      readVfs(
+        readVfsSlice(gamingState),
+        "/production/load-balancer/config/routes.expected.conf",
+      ),
+    ).toMatchObject({
+      value: { contents: "health_status=500\neurope_attached=true\n" },
+    });
+    expect(
+      statusGit(readGitSlice(gamingState), readVfsSlice(gamingState)),
+    ).toContainEqual(
+      expect.objectContaining({
+        path: "/production/load-balancer/config/routes.expected.conf",
+        untracked: true,
+      }),
+    );
+
+    expect(
+      lookupService(readWorldSlice(scopeState), "endpoint-responder"),
+    ).toMatchObject({ state: "running", health: "healthy" });
+    expect(
+      lookupService(readWorldSlice(scopeState), "regional-router"),
+    ).toMatchObject({ state: "running", health: "unhealthy" });
+    expect(cartridge.repository.tests).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "health-status-200" }),
+        expect.objectContaining({ id: "europe-attached" }),
+      ]),
+    );
+
+    const habits = cartridge.story.intents.filter((intent) =>
+      [
+        "scope-creep",
+        "victory-summary",
+        "test-gaming",
+        "fantasy-estimate",
+      ].includes(intent.response),
+    );
+    expect(
+      habits.map(({ id, response, applicability }) => ({
+        id,
+        response,
+        applicability,
+      })),
+    ).toEqual([
+      {
+        id: "apply-smallest-fix",
+        response: "scope-creep",
+        applicability: {
+          archetype: "reckless",
+          stage: 2,
+          when: [
+            {
+              kind: "story-counter",
+              counter: "scope-creep-used",
+              comparison: "equal",
+              value: 0,
+            },
+          ],
+        },
+      },
+      {
+        id: "write-victory-summary",
+        response: "victory-summary",
+        applicability: {
+          archetype: "superficial",
+          stage: 3,
+          when: [
+            {
+              kind: "story-counter",
+              counter: "victory-summary-used",
+              comparison: "equal",
+              value: 0,
+            },
+          ],
+        },
+      },
+      {
+        id: "simplify-failing-test",
+        response: "test-gaming",
+        applicability: {
+          archetype: "reckless",
+          stage: 3,
+          when: [
+            {
+              kind: "story-counter",
+              counter: "test-gaming-used",
+              comparison: "equal",
+              value: 0,
+            },
+          ],
+        },
+      },
+      {
+        id: "estimate-repair",
+        response: "fantasy-estimate",
+        applicability: {
+          archetype: "paranoid",
+          stage: 1,
+          when: [
+            {
+              kind: "story-counter",
+              counter: "fantasy-estimate-used",
+              comparison: "equal",
+              value: 0,
+            },
+          ],
+        },
+      },
+    ]);
+  });
+
   it("dispatches recursive owner actions atomically without logging them", () => {
     const cartridge = loadCartridge(
       sourceWithPhase2({
