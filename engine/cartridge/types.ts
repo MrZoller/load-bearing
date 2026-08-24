@@ -594,6 +594,12 @@ export interface CartridgeTest {
 export type ReactionPredicate =
   | FilePredicate
   | {
+      /** Match the source and destination of the triggering virtual-file copy. */
+      readonly kind: "copy-paths";
+      readonly source: string;
+      readonly destination: string;
+    }
+  | {
       readonly kind: "service-state";
       readonly service: string;
       readonly state: WorldUnitState;

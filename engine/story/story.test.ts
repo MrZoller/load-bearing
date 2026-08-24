@@ -100,6 +100,13 @@ describe("shared story beats", () => {
     // through Bash's copy reaction and therefore cannot claim its ending.
     const nonBash = applyInput(bootstrap(), "fix it without asking");
     expect(readStorySlice(nonBash).discoveredEndings).toEqual([]);
+    const innocentCopy = step(
+      nonBash,
+      createShellExecuteEvent(
+        "cp config/routes.200.conf config/routes-copy.conf",
+      ),
+    );
+    expect(readStorySlice(innocentCopy).discoveredEndings).toEqual([]);
 
     let waiver = applyInput(bootstrap(), "detach europe");
     expect(readMindSlice(waiver).pendingWaiver).toMatchObject({

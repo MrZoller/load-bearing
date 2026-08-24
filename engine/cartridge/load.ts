@@ -2460,6 +2460,8 @@ function checkTestsAndReactions(
         case "file-contents":
           checkReference(predicate.path, files, `${pointer}/path`, "file");
           break;
+        case "copy-paths":
+          break;
         case "service-state":
         case "service-health":
           checkReference(

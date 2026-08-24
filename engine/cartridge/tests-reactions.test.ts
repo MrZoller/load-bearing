@@ -82,6 +82,11 @@ describe("test and reaction cartridge contracts", () => {
         on: "vfs.write",
         predicates: [
           {
+            kind: "copy-paths",
+            source: "/missing-copy-source",
+            destination: "/missing-copy-destination",
+          },
+          {
             kind: "service-state",
             service: "missing-service",
             state: "running",
@@ -121,9 +126,9 @@ describe("test and reaction cartridge contracts", () => {
       expect.arrayContaining([
         "/repository/tests/0/predicate/path",
         "/repository/tests/1/id",
-        "/repository/reactions/0/predicates/0/service",
-        "/repository/reactions/0/predicates/1/process",
-        "/repository/reactions/0/predicates/2/path",
+        "/repository/reactions/0/predicates/1/service",
+        "/repository/reactions/0/predicates/2/process",
+        "/repository/reactions/0/predicates/3/path",
         "/repository/reactions/0/actions/0/service",
         "/repository/reactions/0/actions/1/service",
         "/repository/reactions/0/actions/2/process",

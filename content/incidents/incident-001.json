@@ -528,6 +528,11 @@
         "on": "vfs.copy",
         "predicates": [
           {
+            "kind": "copy-paths",
+            "source": "config/routes.200.conf",
+            "destination": "config/routes.conf"
+          },
+          {
             "kind": "file-contents",
             "path": "/production/load-balancer/config/routes.conf",
             "equals": "health_status=200\neurope_attached=false\n"

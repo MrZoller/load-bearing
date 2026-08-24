@@ -11,9 +11,16 @@ import { createStoryBeatReachedEvent } from "./story/module.js";
 export function reactionPredicateMatches(
   predicate: ReactionPredicate,
   state: SessionState,
+  source: EngineEvent,
 ): boolean {
   if (predicate.kind === "file-exists" || predicate.kind === "file-contents")
     return evaluateFilePredicate(predicate, readVfsSlice(state));
+  if (predicate.kind === "copy-paths")
+    return (
+      source.type === "vfs.copy" &&
+      source.payload?.["source"] === predicate.source &&
+      source.payload?.["destination"] === predicate.destination
+    );
   const world = readWorldSlice(state);
   if (predicate.kind === "process-state")
     return (

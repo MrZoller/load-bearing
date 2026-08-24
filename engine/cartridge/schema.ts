@@ -934,6 +934,33 @@ const REACTION_PREDICATE = {
   variants: {
     "file-exists": FILE_EXISTS_PREDICATE,
     "file-contents": FILE_CONTENTS_PREDICATE,
+    "copy-paths": {
+      kind: "object",
+      description:
+        "The exact source and destination of the triggering virtual-file copy.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "The rule kind.",
+          values: ["copy-paths"],
+        }),
+        source: required({
+          kind: "string",
+          description: "The exact source operand carried by the copy event.",
+          pattern: SINGLE_LINE_PATTERN,
+          patternLabel: "a single-line string",
+          minLength: 1,
+        }),
+        destination: required({
+          kind: "string",
+          description:
+            "The exact destination operand carried by the copy event.",
+          pattern: SINGLE_LINE_PATTERN,
+          patternLabel: "a single-line string",
+          minLength: 1,
+        }),
+      },
+    },
     "service-state": SERVICE_STATE,
     "service-health": SERVICE_HEALTH_RULE,
     "process-state": PROCESS_STATE,

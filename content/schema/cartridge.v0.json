@@ -1422,6 +1422,37 @@
                     },
                     {
                       "additionalProperties": false,
+                      "description": "The exact source and destination of the triggering virtual-file copy.",
+                      "properties": {
+                        "destination": {
+                          "description": "The exact destination operand carried by the copy event.",
+                          "minLength": 1,
+                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                          "type": "string"
+                        },
+                        "kind": {
+                          "description": "The rule kind.",
+                          "enum": [
+                            "copy-paths"
+                          ],
+                          "type": "string"
+                        },
+                        "source": {
+                          "description": "The exact source operand carried by the copy event.",
+                          "minLength": 1,
+                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "source",
+                        "destination"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
                       "description": "A service-state predicate or action.",
                       "properties": {
                         "kind": {
