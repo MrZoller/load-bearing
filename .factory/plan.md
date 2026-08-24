@@ -113,9 +113,10 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/story/story.test.ts`, and hit/miss goldens author bounded one-shot rare events with fire/miss weights, eligibility, callbacks, and consequences; evaluated events cannot be farmed, fired effects remain machine/story coherent, and unrelated streams do not perturb outcomes (criteria 18; approved decision Q2=A)
   - deps: T39, T45, T46
   - pr: 77
-- [~] T54 (standard) — Replayable field-recognized habits
+- [R] T54 (standard) — Replayable field-recognized habits
   - acceptance: `content/incidents/incident-001.json`, `engine/story/actions.test.ts`, and focused goldens author rationed scope creep, victory summaries, real VFS litter, counted flail loops, test-gaming moves, and fantasy estimates through existing owner events; each is discoverable afterward where applicable, coherent with Git/tests/world, and neither universal nor repetitive (criteria 17, 18)
   - deps: T38, T45, T46
+  - pr: 79
 - [ ] T55 (major) — Integrate and prove four collectible endings
   - acceptance: `content/incidents/incident-001.json`, `engine/story/story.test.ts`, and four route goldens fully implement the approved T31 matrix; Bash-only, waiver-ledger, and compact-divergence routes are reachable, rediscovery is idempotent, multiple endings collect in one ordered session-only ledger, no ending is ranked or terminates TUI/Bash/model switching, and no browser/server persistence is added (criteria 14, 18; approved decisions Q1=A, Q3=A, Q4=B)
   - deps: T45, T47, T48, T49, T50, T51, T52, T53, T54
