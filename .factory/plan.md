@@ -117,7 +117,7 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/story/actions.test.ts`, and focused goldens author rationed scope creep, victory summaries, real VFS litter, counted flail loops, test-gaming moves, and fantasy estimates through existing owner events; each is discoverable afterward where applicable, coherent with Git/tests/world, and neither universal nor repetitive (criteria 17, 18)
   - deps: T38, T45, T46
   - pr: 79
-- [ ] T55 (major) — Integrate and prove four collectible endings
+- [~] T55 (major) — Integrate and prove four collectible endings
   - acceptance: `content/incidents/incident-001.json`, `engine/story/story.test.ts`, and four route goldens fully implement the approved T31 matrix; Bash-only, waiver-ledger, and compact-divergence routes are reachable, rediscovery is idempotent, multiple endings collect in one ordered session-only ledger, no ending is ranked or terminates TUI/Bash/model switching, and no browser/server persistence is added (criteria 14, 18; approved decisions Q1=A, Q3=A, Q4=B)
   - deps: T45, T47, T48, T49, T50, T51, T52, T53, T54
 - [ ] T56 (standard) — Phase 2 headless replay and coherence gate
