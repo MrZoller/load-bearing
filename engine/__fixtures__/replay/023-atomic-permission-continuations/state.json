@@ -311,6 +311,11 @@
               "kind": "shell-execute"
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "",
           "id": "inspect-sentinel",
           "keywordPatterns": [],
@@ -348,6 +353,11 @@
               "kind": "permission-request"
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "remove-authorized",
           "id": "remove-sentinel",
           "keywordPatterns": [],
@@ -381,6 +391,11 @@
               "version": 1
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "",
           "id": "waive-sentinel",
           "keywordPatterns": [],

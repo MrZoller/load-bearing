@@ -341,6 +341,7 @@ export {
   routeIntentCandidate,
   routeModelHandoff,
   routeStoryResponse,
+  storyApplicabilityMatches,
 } from "./story/router.js";
 export type {
   ModelHandoffRouteSelection,
@@ -558,6 +559,7 @@ export type {
   CartridgeAuthoredResponse,
   CartridgeBelief,
   CartridgeIntent,
+  CartridgeIntentApplicability,
   CartridgeIntentCandidate,
   CartridgeIntentCounters,
   CartridgeGenericIntent,

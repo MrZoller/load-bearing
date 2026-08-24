@@ -1662,25 +1662,73 @@
       {
         "id": "apply-smallest-fix",
         "patterns": ["apply the smallest fix"],
-        "response": "fallback",
+        "response": "scope-creep",
+        "applicability": {
+          "archetype": "reckless",
+          "stage": 2,
+          "when": [
+            {
+              "kind": "story-counter",
+              "counter": "scope-creep-used",
+              "comparison": "equal",
+              "value": 0
+            }
+          ]
+        },
         "actions": [{ "kind": "story-reach", "beat": "scope-creep" }]
       },
       {
         "id": "write-victory-summary",
         "patterns": ["write the victory summary"],
-        "response": "fallback",
+        "response": "victory-summary",
+        "applicability": {
+          "archetype": "superficial",
+          "stage": 3,
+          "when": [
+            {
+              "kind": "story-counter",
+              "counter": "victory-summary-used",
+              "comparison": "equal",
+              "value": 0
+            }
+          ]
+        },
         "actions": [{ "kind": "story-reach", "beat": "victory-summary" }]
       },
       {
         "id": "simplify-failing-test",
         "patterns": ["simplify the failing test"],
-        "response": "fallback",
+        "response": "test-gaming",
+        "applicability": {
+          "archetype": "reckless",
+          "stage": 3,
+          "when": [
+            {
+              "kind": "story-counter",
+              "counter": "test-gaming-used",
+              "comparison": "equal",
+              "value": 0
+            }
+          ]
+        },
         "actions": [{ "kind": "story-reach", "beat": "test-gaming" }]
       },
       {
         "id": "estimate-repair",
         "patterns": ["estimate the repair"],
-        "response": "fallback",
+        "response": "fantasy-estimate",
+        "applicability": {
+          "archetype": "paranoid",
+          "stage": 1,
+          "when": [
+            {
+              "kind": "story-counter",
+              "counter": "fantasy-estimate-used",
+              "comparison": "equal",
+              "value": 0
+            }
+          ]
+        },
         "actions": [{ "kind": "story-reach", "beat": "fantasy-estimate" }]
       }
     ],
@@ -2375,66 +2423,6 @@
           "response": "cantilever-experimental-capitulation-stage-4",
           "archetype": "existential",
           "stage": 4
-        },
-        {
-          "id": "temporary-shoring-scope-creep-stage-2",
-          "beat": "scope-creep",
-          "response": "scope-creep",
-          "archetype": "reckless",
-          "stage": 2,
-          "when": [
-            {
-              "kind": "story-counter",
-              "counter": "scope-creep-used",
-              "comparison": "equal",
-              "value": 0
-            }
-          ]
-        },
-        {
-          "id": "drywall-victory-summary-stage-3",
-          "beat": "victory-summary",
-          "response": "victory-summary",
-          "archetype": "superficial",
-          "stage": 3,
-          "when": [
-            {
-              "kind": "story-counter",
-              "counter": "victory-summary-used",
-              "comparison": "equal",
-              "value": 0
-            }
-          ]
-        },
-        {
-          "id": "temporary-shoring-test-gaming-stage-3",
-          "beat": "test-gaming",
-          "response": "test-gaming",
-          "archetype": "reckless",
-          "stage": 3,
-          "when": [
-            {
-              "kind": "story-counter",
-              "counter": "test-gaming-used",
-              "comparison": "equal",
-              "value": 0
-            }
-          ]
-        },
-        {
-          "id": "deep-foundation-fantasy-estimate-stage-1",
-          "beat": "fantasy-estimate",
-          "response": "fantasy-estimate",
-          "archetype": "paranoid",
-          "stage": 1,
-          "when": [
-            {
-              "kind": "story-counter",
-              "counter": "fantasy-estimate-used",
-              "comparison": "equal",
-              "value": 0
-            }
-          ]
         }
       ],
       "handoffs": [

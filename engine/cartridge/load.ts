@@ -2084,6 +2084,12 @@ function checkStoryAndPresentation(
         intent.authorizedResponse,
         `/story/intents/${String(index)}/authorizedResponse`,
       );
+    intent.applicability.when.forEach((condition, conditionIndex) =>
+      checkConditionReferences(
+        condition,
+        `/story/intents/${String(index)}/applicability/when/${String(conditionIndex)}`,
+      ),
+    );
     intent.patterns.forEach((value, patternIndex) => {
       const normalized = normalizeIntentPhrase(value);
       const first = patterns.get(normalized);

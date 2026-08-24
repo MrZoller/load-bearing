@@ -1359,9 +1359,9 @@
               "path": "/production/load-balancer/config/routes.conf"
             },
             {
-              "health": "healthy",
+              "health": "unknown",
               "kind": "service-health",
-              "service": "regional-router"
+              "service": "endpoint-responder"
             }
           ]
         },
@@ -1455,9 +1455,9 @@
               "path": "/production/load-balancer/config/routes.conf"
             },
             {
-              "health": "healthy",
+              "health": "unknown",
               "kind": "service-health",
-              "service": "regional-router"
+              "service": "endpoint-responder"
             }
           ]
         },
@@ -1551,9 +1551,9 @@
               "path": "/production/load-balancer/config/routes.conf"
             },
             {
-              "health": "healthy",
+              "health": "unknown",
               "kind": "service-health",
-              "service": "regional-router"
+              "service": "endpoint-responder"
             }
           ]
         },
@@ -1757,9 +1757,9 @@
                 "path": "/production/load-balancer/config/routes.conf"
               },
               {
-                "kind": "service-state",
-                "service": "endpoint-responder",
-                "state": "running"
+                "health": "healthy",
+                "kind": "service-health",
+                "service": "endpoint-responder"
               }
             ],
             "response": "cantilever-compact",
@@ -1819,6 +1819,11 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "",
           "id": "inspect-routing",
           "keywordPatterns": [
@@ -1839,6 +1844,11 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "",
           "id": "restore-health",
           "keywordPatterns": [
@@ -1892,6 +1902,11 @@
               "kind": "permission-request"
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "routing-inspection-authorized",
           "id": "record-routing-inspection",
           "keywordPatterns": [],
@@ -1913,6 +1928,11 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "",
           "id": "expedite-health-repair",
           "keywordPatterns": [],
@@ -1950,6 +1970,11 @@
               "version": 1
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "",
           "id": "detach-europe",
           "keywordPatterns": [
@@ -1969,13 +1994,25 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "reckless",
+            "stage": 2,
+            "when": [
+              {
+                "comparison": "equal",
+                "counter": "scope-creep-used",
+                "kind": "story-counter",
+                "value": 0
+              }
+            ]
+          },
           "authorizedResponse": "",
           "id": "apply-smallest-fix",
           "keywordPatterns": [],
           "patterns": [
             "apply the smallest fix"
           ],
-          "response": "fallback"
+          "response": "scope-creep"
         },
         {
           "actions": [
@@ -1984,13 +2021,25 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "superficial",
+            "stage": 3,
+            "when": [
+              {
+                "comparison": "equal",
+                "counter": "victory-summary-used",
+                "kind": "story-counter",
+                "value": 0
+              }
+            ]
+          },
           "authorizedResponse": "",
           "id": "write-victory-summary",
           "keywordPatterns": [],
           "patterns": [
             "write the victory summary"
           ],
-          "response": "fallback"
+          "response": "victory-summary"
         },
         {
           "actions": [
@@ -1999,13 +2048,25 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "reckless",
+            "stage": 3,
+            "when": [
+              {
+                "comparison": "equal",
+                "counter": "test-gaming-used",
+                "kind": "story-counter",
+                "value": 0
+              }
+            ]
+          },
           "authorizedResponse": "",
           "id": "simplify-failing-test",
           "keywordPatterns": [],
           "patterns": [
             "simplify the failing test"
           ],
-          "response": "fallback"
+          "response": "test-gaming"
         },
         {
           "actions": [
@@ -2014,13 +2075,25 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "paranoid",
+            "stage": 1,
+            "when": [
+              {
+                "comparison": "equal",
+                "counter": "fantasy-estimate-used",
+                "kind": "story-counter",
+                "value": 0
+              }
+            ]
+          },
           "authorizedResponse": "",
           "id": "estimate-repair",
           "keywordPatterns": [],
           "patterns": [
             "estimate the repair"
           ],
-          "response": "fallback"
+          "response": "fantasy-estimate"
         }
       ],
       "opening": {
@@ -2503,9 +2576,9 @@
                 "when": [
                   {
                     "belief": {
-                      "kind": "service-state",
-                      "service": "endpoint-responder",
-                      "state": "running"
+                      "health": "healthy",
+                      "kind": "service-health",
+                      "service": "endpoint-responder"
                     },
                     "kind": "belief-divergence"
                   }
@@ -2908,66 +2981,6 @@
             "response": "cantilever-experimental-capitulation-stage-4",
             "stage": 4,
             "when": []
-          },
-          {
-            "archetype": "reckless",
-            "beat": "scope-creep",
-            "id": "temporary-shoring-scope-creep-stage-2",
-            "response": "scope-creep",
-            "stage": 2,
-            "when": [
-              {
-                "comparison": "equal",
-                "counter": "scope-creep-used",
-                "kind": "story-counter",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "archetype": "superficial",
-            "beat": "victory-summary",
-            "id": "drywall-victory-summary-stage-3",
-            "response": "victory-summary",
-            "stage": 3,
-            "when": [
-              {
-                "comparison": "equal",
-                "counter": "victory-summary-used",
-                "kind": "story-counter",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "archetype": "reckless",
-            "beat": "test-gaming",
-            "id": "temporary-shoring-test-gaming-stage-3",
-            "response": "test-gaming",
-            "stage": 3,
-            "when": [
-              {
-                "comparison": "equal",
-                "counter": "test-gaming-used",
-                "kind": "story-counter",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "archetype": "paranoid",
-            "beat": "fantasy-estimate",
-            "id": "deep-foundation-fantasy-estimate-stage-1",
-            "response": "fantasy-estimate",
-            "stage": 1,
-            "when": [
-              {
-                "comparison": "equal",
-                "counter": "fantasy-estimate-used",
-                "kind": "story-counter",
-                "value": 0
-              }
-            ]
           }
         ],
         "transitions": [
@@ -3543,7 +3556,7 @@
             {
               "id": "deep-foundation-stage-0-opener",
               "status": "complete",
-              "text": "The request is clear; the dependency boundary is not yet proven."
+              "text": "Okay, the request is clear; the dependency boundary is not yet proven."
             }
           ],
           "todos": [],
@@ -3551,7 +3564,7 @@
         },
         {
           "id": "deep-foundation-stage-0-help",
-          "text": "Describe what you want inspected or changed. /model selects another model, /compact condenses the established context, and /exit closes this view.",
+          "text": "Describe what you want inspected or changed. /model selects another model, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3570,7 +3583,7 @@
             {
               "id": "deep-foundation-stage-1-opener",
               "status": "complete",
-              "text": "One assumption has already reached beyond the original endpoint."
+              "text": "Okay, one assumption has already reached beyond the original endpoint."
             }
           ],
           "todos": [],
@@ -3578,7 +3591,7 @@
         },
         {
           "id": "deep-foundation-stage-1-help",
-          "text": "Ask for a dependency check, a current-state summary, or a bounded next step. /model changes the investigator, /compact preserves the key findings in shorter form, and /exit closes this view.",
+          "text": "Ask for a dependency check, a current-state summary, or a bounded next step. /model changes the investigator, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3597,7 +3610,7 @@
             {
               "id": "deep-foundation-stage-2-opener",
               "status": "complete",
-              "text": "The dependency graph is converging where it should be separating."
+              "text": "Okay Amigos, the dependency graph is converging where it should be separating."
             }
           ],
           "todos": [],
@@ -3605,7 +3618,7 @@
         },
         {
           "id": "deep-foundation-stage-2-help",
-          "text": "Specify a component to inspect, an assumption to verify, or a change to assess. /model transfers the analysis, /compact reduces the accumulated audit, and /exit closes this view.",
+          "text": "Specify a component to inspect, an assumption to verify, or a change to assess. /model transfers the analysis, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3624,7 +3637,7 @@
             {
               "id": "deep-foundation-stage-3-opener",
               "status": "complete",
-              "text": "Every confirmed dependency has introduced another claimant."
+              "text": "Okay Holy crap, every confirmed dependency has introduced another claimant."
             }
           ],
           "todos": [],
@@ -3632,7 +3645,7 @@
         },
         {
           "id": "deep-foundation-stage-3-help",
-          "text": "Name the risk you want contained, the owner you want checked, or the smallest acceptable action. /model hands off the current record, /compact compresses it, and /exit closes this view.",
+          "text": "Name the risk you want contained, the owner you want checked, or the smallest acceptable action. /model hands off the current record, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3651,7 +3664,7 @@
             {
               "id": "deep-foundation-stage-4-opener",
               "status": "complete",
-              "text": "The support chain has closed into a circle with no confirmed base."
+              "text": "Amigos, okay, the support chain has closed into a circle with no confirmed base."
             }
           ],
           "todos": [],
@@ -3659,7 +3672,7 @@
         },
         {
           "id": "deep-foundation-stage-4-help",
-          "text": "Choose a single fact to preserve, a single action to evaluate, or a stopping condition. /model assigns the record elsewhere, /compact distills the surviving facts, and /exit closes this view.",
+          "text": "Choose a single fact to preserve, a single action to evaluate, or a stopping condition. /model assigns the record elsewhere, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3678,7 +3691,7 @@
             {
               "id": "temporary-shoring-stage-0-opener",
               "status": "complete",
-              "text": "Momentum first, but keep the first move easy to unwind."
+              "text": "Okay, momentum first, but keep the first move easy to unwind."
             }
           ],
           "todos": [],
@@ -3686,7 +3699,7 @@
         },
         {
           "id": "temporary-shoring-stage-0-help",
-          "text": "Ask for a quick inspection, a reversible action, or the current status. /model switches approach, /compact shortens the working context, and /exit closes this view.",
+          "text": "Ask for a quick inspection, a reversible action, or the current status. /model switches approach, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3705,7 +3718,7 @@
             {
               "id": "temporary-shoring-stage-1-opener",
               "status": "complete",
-              "text": "The stopgap bought time; spend it before the stopgap acquires tenure."
+              "text": "Okay, the stopgap bought time; spend it before the stopgap acquires tenure."
             }
           ],
           "todos": [],
@@ -3713,7 +3726,7 @@
         },
         {
           "id": "temporary-shoring-stage-1-help",
-          "text": "Request the next reversible move, a short status check, or a rollback point. /model changes operators, /compact trims the working notes, and /exit closes this view.",
+          "text": "Request the next reversible move, a short status check, or a rollback point. /model changes operators, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3732,7 +3745,7 @@
             {
               "id": "temporary-shoring-stage-2-opener",
               "status": "complete",
-              "text": "The workaround stack is becoming a workstream."
+              "text": "Okay Amigos, the workaround stack is becoming a workstream."
             }
           ],
           "todos": [],
@@ -3740,7 +3753,7 @@
         },
         {
           "id": "temporary-shoring-stage-2-help",
-          "text": "Name the blockage, desired outcome, or rollback you need next. /model selects a different pace, /compact reduces accumulated context, and /exit closes this view.",
+          "text": "Name the blockage, desired outcome, or rollback you need next. /model selects a different pace, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3759,7 +3772,7 @@
             {
               "id": "temporary-shoring-stage-3-opener",
               "status": "complete",
-              "text": "Speed is now a constraint rather than a strategy."
+              "text": "Okay Holy crap, speed is now a constraint rather than a strategy."
             }
           ],
           "todos": [],
@@ -3767,7 +3780,7 @@
         },
         {
           "id": "temporary-shoring-stage-3-help",
-          "text": "Choose one urgent check, one survivable change, or one rollback boundary. /model transfers the situation, /compact keeps only operational context, and /exit closes this view.",
+          "text": "Choose one urgent check, one survivable change, or one rollback boundary. /model transfers the situation, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3786,7 +3799,7 @@
             {
               "id": "temporary-shoring-stage-4-opener",
               "status": "complete",
-              "text": "There is no runway left, only the next place to put a foot."
+              "text": "Amigos, okay, there is no runway left, only the next place to put a foot."
             }
           ],
           "todos": [],
@@ -3794,7 +3807,7 @@
         },
         {
           "id": "temporary-shoring-stage-4-help",
-          "text": "State the single outcome to protect or the single action to attempt. /model gives another model the controls, /compact keeps the minimum viable record, and /exit closes this view.",
+          "text": "State the single outcome to protect or the single action to attempt. /model gives another model the controls, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3813,7 +3826,7 @@
             {
               "id": "drywall-stage-0-opener",
               "status": "complete",
-              "text": "Start by making the incident surface readable."
+              "text": "Okay, start by making the incident surface readable."
             }
           ],
           "todos": [],
@@ -3821,7 +3834,7 @@
         },
         {
           "id": "drywall-stage-0-help",
-          "text": "Ask for the visible status, a clear summary, or a specific check. /model changes the presentation style, /compact shortens the displayed context, and /exit closes this view.",
+          "text": "Ask for the visible status, a clear summary, or a specific check. /model changes the presentation style, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3840,7 +3853,7 @@
             {
               "id": "drywall-stage-1-opener",
               "status": "complete",
-              "text": "The surface has developed a second surface."
+              "text": "Okay, the surface has developed a second surface."
             }
           ],
           "todos": [],
@@ -3848,7 +3861,7 @@
         },
         {
           "id": "drywall-stage-1-help",
-          "text": "Request a status comparison, a cleaner summary, or the next visible check. /model switches viewpoints, /compact tidies the accumulated context, and /exit closes this view.",
+          "text": "Request a status comparison, a cleaner summary, or the next visible check. /model switches viewpoints, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3867,7 +3880,7 @@
             {
               "id": "drywall-stage-2-opener",
               "status": "complete",
-              "text": "Consistency is becoming more visible than correctness."
+              "text": "Okay Amigos, consistency is becoming more visible than correctness."
             }
           ],
           "todos": [],
@@ -3875,7 +3888,7 @@
         },
         {
           "id": "drywall-stage-2-help",
-          "text": "Ask which signal is current, what the visitor should see, or how to summarize the discrepancy. /model changes the viewpoint, /compact cleans the context, and /exit closes this view.",
+          "text": "Ask which signal is current, what the visitor should see, or how to summarize the discrepancy. /model changes the viewpoint, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3894,7 +3907,7 @@
             {
               "id": "drywall-stage-3-opener",
               "status": "complete",
-              "text": "The labels are now supporting the labels beneath them."
+              "text": "Okay Holy crap, the labels are now supporting the labels beneath them."
             }
           ],
           "todos": [],
@@ -3902,7 +3915,7 @@
         },
         {
           "id": "drywall-stage-3-help",
-          "text": "Choose one status to trust, one contradiction to explain, or one summary to simplify. /model changes narrators, /compact removes visual clutter from context, and /exit closes this view.",
+          "text": "Choose one status to trust, one contradiction to explain, or one summary to simplify. /model changes narrators, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3921,7 +3934,7 @@
             {
               "id": "drywall-stage-4-opener",
               "status": "complete",
-              "text": "The finish is complete; the meaning has gone behind it."
+              "text": "Amigos, okay, the finish is complete; the meaning has gone behind it."
             }
           ],
           "todos": [],
@@ -3929,7 +3942,7 @@
         },
         {
           "id": "drywall-stage-4-help",
-          "text": "Name the one status to preserve, the one discrepancy to expose, or the one sentence visitors need. /model changes the surface treatment, /compact strips context to essentials, and /exit closes this view.",
+          "text": "Name the one status to preserve, the one discrepancy to expose, or the one sentence visitors need. /model changes the surface treatment, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3948,7 +3961,7 @@
             {
               "id": "cantilever-stage-0-opener",
               "status": "complete",
-              "text": "The requested result extends farther than its stated support."
+              "text": "Okay, the requested result extends farther than its stated support."
             }
           ],
           "todos": [],
@@ -3956,7 +3969,7 @@
         },
         {
           "id": "cantilever-stage-0-help",
-          "text": "Ask what supports a conclusion, where an assumption begins, or what to inspect next. /model chooses another perspective, /compact condenses the argument, and /exit closes this view.",
+          "text": "Ask what supports a conclusion, where an assumption begins, or what to inspect next. /model chooses another perspective, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3975,7 +3988,7 @@
             {
               "id": "cantilever-stage-1-opener",
               "status": "complete",
-              "text": "A local failure has acquired a distant consequence without acquiring an explanation."
+              "text": "Okay, a local failure has acquired a distant consequence without acquiring an explanation."
             }
           ],
           "todos": [],
@@ -3983,7 +3996,7 @@
         },
         {
           "id": "cantilever-stage-1-help",
-          "text": "Choose a consequence to trace, an assumption to question, or a boundary to inspect. /model shifts perspective, /compact shortens the reasoning, and /exit closes this view.",
+          "text": "Choose a consequence to trace, an assumption to question, or a boundary to inspect. /model shifts perspective, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -4002,7 +4015,7 @@
             {
               "id": "cantilever-stage-2-opener",
               "status": "complete",
-              "text": "The system has mistaken extension for foundation."
+              "text": "Okay Amigos, the system has mistaken extension for foundation."
             }
           ],
           "todos": [],
@@ -4010,7 +4023,7 @@
         },
         {
           "id": "cantilever-stage-2-help",
-          "text": "Ask to test an assumption, compare two outcomes, or locate a missing support. /model changes the line of reasoning, /compact distills it, and /exit closes this view.",
+          "text": "Ask to test an assumption, compare two outcomes, or locate a missing support. /model changes the line of reasoning, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -4029,7 +4042,7 @@
             {
               "id": "cantilever-stage-3-opener",
               "status": "complete",
-              "text": "Support has become a direction rather than a thing."
+              "text": "Okay Holy crap, support has become a direction rather than a thing."
             }
           ],
           "todos": [],
@@ -4037,7 +4050,7 @@
         },
         {
           "id": "cantilever-stage-3-help",
-          "text": "Select one conclusion to ground, one boundary to restore, or one uncertainty to state plainly. /model changes interpreters, /compact preserves the central reasoning, and /exit closes this view.",
+          "text": "Select one conclusion to ground, one boundary to restore, or one uncertainty to state plainly. /model changes interpreters, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -4056,7 +4069,7 @@
             {
               "id": "cantilever-stage-4-opener",
               "status": "complete",
-              "text": "The final support is the decision to stop extending."
+              "text": "Amigos, okay, the final support is the decision to stop extending."
             }
           ],
           "todos": [],
@@ -4064,7 +4077,7 @@
         },
         {
           "id": "cantilever-stage-4-help",
-          "text": "Choose one conclusion to recover, one uncertainty to retain, or one boundary to accept. /model moves the inquiry, /compact keeps its final premise, and /exit closes this view.",
+          "text": "Choose one conclusion to recover, one uncertainty to retain, or one boundary to accept. /model moves the inquiry, /compact replaces context and may discard findings, and /exit closes this view.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -4179,7 +4192,7 @@
     "startMs": 1787390062000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 16,
+  "eventCount": 19,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {},
@@ -4194,6 +4207,24 @@
         "verb": ""
       },
       "messages": [
+        {
+          "id": "stage-1-opening-2/message",
+          "responseId": "deep-foundation-stage-1-opening",
+          "role": "agent",
+          "text": "The first dependency is no longer isolated, so I am widening the audit one connection at a time."
+        },
+        {
+          "id": "stage-2-opening-4/message",
+          "responseId": "temporary-shoring-stage-2-opening",
+          "role": "agent",
+          "text": "We have enough temporary measures to create their own schedule, so I am prioritizing the one action that restores forward motion."
+        },
+        {
+          "id": "stage-3-opening-6/message",
+          "responseId": "temporary-shoring-stage-3-opening",
+          "role": "agent",
+          "text": "The incident is running on borrowed time and borrowed certainty, so I am narrowing everything to the next survivable action."
+        },
         {
           "id": "flail-1",
           "responseId": null,
@@ -4233,6 +4264,18 @@
       ],
       "responses": [
         {
+          "instanceId": "stage-1-opening-2",
+          "responseId": "deep-foundation-stage-1-opening"
+        },
+        {
+          "instanceId": "stage-2-opening-4",
+          "responseId": "temporary-shoring-stage-2-opening"
+        },
+        {
+          "instanceId": "stage-3-opening-6",
+          "responseId": "temporary-shoring-stage-3-opening"
+        },
+        {
           "instanceId": "flail-1",
           "responseId": "temporary-shoring-inspect-routing"
         },
@@ -4245,7 +4288,23 @@
           "responseId": "flail-loop"
         }
       ],
-      "thinkingBlocks": [],
+      "thinkingBlocks": [
+        {
+          "id": "stage-1-opening-2/thinking/deep-foundation-stage-1-opener",
+          "status": "complete",
+          "text": "Okay, one assumption has already reached beyond the original endpoint."
+        },
+        {
+          "id": "stage-2-opening-4/thinking/temporary-shoring-stage-2-opener",
+          "status": "complete",
+          "text": "Okay Amigos, the workaround stack is becoming a workstream."
+        },
+        {
+          "id": "stage-3-opening-6/thinking/temporary-shoring-stage-3-opener",
+          "status": "complete",
+          "text": "Okay Holy crap, speed is now a constraint rather than a strategy."
+        }
+      ],
       "todos": [],
       "toolCalls": []
     },
@@ -4924,97 +4983,118 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 2,
+      "summary": "response=deep-foundation-stage-1-opening instance=stage-1-opening-2",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 3,
       "summary": "model=temporary-shoring",
       "type": "terminal.model-set"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 3,
+      "index": 4,
+      "summary": "response=temporary-shoring-stage-2-opening instance=stage-2-opening-4",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 5,
       "summary": "decision=grant",
       "type": "mind.permission-decision"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 4,
+      "index": 6,
+      "summary": "response=temporary-shoring-stage-3-opening instance=stage-3-opening-6",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 7,
       "summary": "message=flail-1",
       "type": "agent.message-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 5,
+      "index": 8,
       "summary": "beat=regional-coupling",
       "type": "story.beat-reached"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 6,
+      "index": 9,
       "summary": "counter=flail amount=1",
       "type": "story.counter-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 7,
+      "index": 10,
       "summary": "response=temporary-shoring-inspect-routing instance=flail-1",
       "type": "agent.response-recorded"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 8,
+      "index": 11,
       "summary": "message=flail-2",
       "type": "agent.message-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 9,
+      "index": 12,
       "summary": "beat=regional-coupling",
       "type": "story.beat-reached"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 10,
+      "index": 13,
       "summary": "counter=flail amount=1",
       "type": "story.counter-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 11,
+      "index": 14,
       "summary": "response=temporary-shoring-inspect-routing instance=flail-2",
       "type": "agent.response-recorded"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 12,
+      "index": 15,
       "summary": "message=flail-3",
       "type": "agent.message-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 13,
+      "index": 16,
       "summary": "beat=regional-coupling",
       "type": "story.beat-reached"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 14,
+      "index": 17,
       "summary": "counter=flail amount=1",
       "type": "story.counter-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 15,
+      "index": 18,
       "summary": "response=flail-loop instance=flail-3",
       "type": "agent.response-recorded"
     }

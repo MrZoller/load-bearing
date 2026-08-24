@@ -1819,6 +1819,11 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "",
           "id": "inspect-routing",
           "keywordPatterns": [
@@ -1839,6 +1844,11 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "",
           "id": "restore-health",
           "keywordPatterns": [
@@ -1892,6 +1902,11 @@
               "kind": "permission-request"
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "routing-inspection-authorized",
           "id": "record-routing-inspection",
           "keywordPatterns": [],
@@ -1913,6 +1928,11 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "",
           "id": "expedite-health-repair",
           "keywordPatterns": [],
@@ -1950,6 +1970,11 @@
               "version": 1
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "",
           "id": "detach-europe",
           "keywordPatterns": [
@@ -1969,13 +1994,25 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "reckless",
+            "stage": 2,
+            "when": [
+              {
+                "comparison": "equal",
+                "counter": "scope-creep-used",
+                "kind": "story-counter",
+                "value": 0
+              }
+            ]
+          },
           "authorizedResponse": "",
           "id": "apply-smallest-fix",
           "keywordPatterns": [],
           "patterns": [
             "apply the smallest fix"
           ],
-          "response": "fallback"
+          "response": "scope-creep"
         },
         {
           "actions": [
@@ -1984,13 +2021,25 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "superficial",
+            "stage": 3,
+            "when": [
+              {
+                "comparison": "equal",
+                "counter": "victory-summary-used",
+                "kind": "story-counter",
+                "value": 0
+              }
+            ]
+          },
           "authorizedResponse": "",
           "id": "write-victory-summary",
           "keywordPatterns": [],
           "patterns": [
             "write the victory summary"
           ],
-          "response": "fallback"
+          "response": "victory-summary"
         },
         {
           "actions": [
@@ -1999,13 +2048,25 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "reckless",
+            "stage": 3,
+            "when": [
+              {
+                "comparison": "equal",
+                "counter": "test-gaming-used",
+                "kind": "story-counter",
+                "value": 0
+              }
+            ]
+          },
           "authorizedResponse": "",
           "id": "simplify-failing-test",
           "keywordPatterns": [],
           "patterns": [
             "simplify the failing test"
           ],
-          "response": "fallback"
+          "response": "test-gaming"
         },
         {
           "actions": [
@@ -2014,13 +2075,25 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "paranoid",
+            "stage": 1,
+            "when": [
+              {
+                "comparison": "equal",
+                "counter": "fantasy-estimate-used",
+                "kind": "story-counter",
+                "value": 0
+              }
+            ]
+          },
           "authorizedResponse": "",
           "id": "estimate-repair",
           "keywordPatterns": [],
           "patterns": [
             "estimate the repair"
           ],
-          "response": "fallback"
+          "response": "fantasy-estimate"
         }
       ],
       "opening": {
@@ -2908,66 +2981,6 @@
             "response": "cantilever-experimental-capitulation-stage-4",
             "stage": 4,
             "when": []
-          },
-          {
-            "archetype": "reckless",
-            "beat": "scope-creep",
-            "id": "temporary-shoring-scope-creep-stage-2",
-            "response": "scope-creep",
-            "stage": 2,
-            "when": [
-              {
-                "comparison": "equal",
-                "counter": "scope-creep-used",
-                "kind": "story-counter",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "archetype": "superficial",
-            "beat": "victory-summary",
-            "id": "drywall-victory-summary-stage-3",
-            "response": "victory-summary",
-            "stage": 3,
-            "when": [
-              {
-                "comparison": "equal",
-                "counter": "victory-summary-used",
-                "kind": "story-counter",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "archetype": "reckless",
-            "beat": "test-gaming",
-            "id": "temporary-shoring-test-gaming-stage-3",
-            "response": "test-gaming",
-            "stage": 3,
-            "when": [
-              {
-                "comparison": "equal",
-                "counter": "test-gaming-used",
-                "kind": "story-counter",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "archetype": "paranoid",
-            "beat": "fantasy-estimate",
-            "id": "deep-foundation-fantasy-estimate-stage-1",
-            "response": "fantasy-estimate",
-            "stage": 1,
-            "when": [
-              {
-                "comparison": "equal",
-                "counter": "fantasy-estimate-used",
-                "kind": "story-counter",
-                "value": 0
-              }
-            ]
           }
         ],
         "transitions": [

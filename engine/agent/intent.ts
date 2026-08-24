@@ -31,7 +31,11 @@ import {
   storyActionEvent,
 } from "../story/actions.js";
 import { storyConditionMatches } from "../story/conditions.js";
-import { routeIntentCandidate, routeStoryResponse } from "../story/router.js";
+import {
+  routeIntentCandidate,
+  routeStoryResponse,
+  storyApplicabilityMatches,
+} from "../story/router.js";
 import { queryStoryCounter, readStorySlice } from "../story/story.js";
 import { readTerminalSlice } from "../terminal/terminal.js";
 import { countCodePoints } from "../text.js";
@@ -154,12 +158,13 @@ export function selectAgentIntent(
   const normalized = normalizeAgentInput(input);
   const intent: CartridgeIntent | undefined = cartridge.story.intents.find(
     (candidate) =>
-      candidate.patterns.some(
+      storyApplicabilityMatches(cartridge, state, candidate.applicability) &&
+      (candidate.patterns.some(
         (pattern) => normalizeAgentInput(pattern) === normalized,
       ) ||
-      candidate.keywordPatterns.some((pattern) =>
-        matchesKeywordPattern(pattern, input),
-      ),
+        candidate.keywordPatterns.some((pattern) =>
+          matchesKeywordPattern(pattern, input),
+        )),
   );
   if (intent !== undefined) {
     return {
@@ -606,25 +611,8 @@ export function createAgentInputEvents(
     ...selection.actions.flatMap((action) => {
       if (action.kind === "shell-execute")
         return [createShellExecuteEvent(action.input)];
-      if (action.kind === "story-reach") {
-        // A sparse route on an authored beat is also its applicability gate.
-        // Without this, archetype/stage/condition selectors change only copy
-        // while every matching phrase still executes the beat's consequence.
-        const hasAuthoredRoutes = cartridge.story.phase2.routes.some(
-          (route) => route.beat === action.beat,
-        );
-        const route =
-          action === routedBeat
-            ? routedResponse
-            : routeStoryResponse(
-                cartridge,
-                state,
-                action.beat,
-                defaultResponseId,
-              );
-        if (hasAuthoredRoutes && route?.routeId === "") return [];
+      if (action.kind === "story-reach")
         return [createStoryBeatReachedEvent(action.beat)];
-      }
       if (action.kind === "waiver-request")
         return [
           hasWaiverConsent(mind, {

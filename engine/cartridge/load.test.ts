@@ -1555,6 +1555,38 @@ describe("loadCartridge", () => {
     );
   });
 
+  it("normalizes omitted intent applicability selectors to explicit no-selector values", () => {
+    expect(loadCartridge(minimal()).story.intents[0]?.applicability).toEqual({
+      archetype: "",
+      stage: -1,
+      when: [],
+    });
+  });
+
+  it("reports dangling applicability condition references at their authored pointers", () => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    const intent = (story["intents"] as Record<string, unknown>[])[0];
+    if (intent === undefined)
+      throw new Error("minimal fixture lacks an intent");
+    intent["applicability"] = {
+      when: [
+        {
+          kind: "story-counter",
+          counter: "missing-counter",
+          comparison: "equal",
+          value: 0,
+        },
+      ],
+    };
+
+    expect(issuesOf(source)).toContainEqual(
+      expect.objectContaining({
+        pointer: "/story/intents/0/applicability/when/0/counter",
+      }),
+    );
+  });
+
   it.each([
     [
       "an empty permission action",

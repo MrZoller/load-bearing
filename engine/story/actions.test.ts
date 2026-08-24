@@ -66,7 +66,7 @@ function sourceWithOwners(phase2: Record<string, unknown>) {
 }
 
 describe("story consequence actions", () => {
-  it("rations Incident #001 habits by route and preserves discoverable machine evidence", () => {
+  it("rations Incident #001 habits by intent applicability and preserves discoverable machine evidence", () => {
     const cartridge = loadCartridge(incidentDocument);
     const stateAt = (stage: 1 | 2 | 3, model: string) => {
       let state = reduce({ cartridge, seed: SEED, events: [] });
@@ -129,36 +129,42 @@ describe("story consequence actions", () => {
     ] as const;
 
     const resultingStates = habitCases.map((habit) => {
+      const nonmatchingBefore = stateAt(habit.stage, habit.nonmatchingModel);
       const nonmatching = createAgentInputEvents(
         cartridge,
-        stateAt(habit.stage, habit.nonmatchingModel),
+        nonmatchingBefore,
         habit.input,
       );
-      expect(nonmatching).not.toContainEqual(
-        expect.objectContaining({
-          type: "story.beat-reached",
-          payload: { beat: habit.beat },
-        }),
+      expect(nonmatching.map((event) => event.type)).toEqual([
+        "agent.activity-set",
+        "agent.message-added",
+        "story.beat-reached",
+        "story.counter-added",
+        "agent.response-recorded",
+        "agent.activity-set",
+      ]);
+      const nonmatchingAfter = nonmatching.reduce(
+        (next, event) => step(next, event),
+        nonmatchingBefore,
       );
-      expect(nonmatching).toContainEqual(
-        expect.objectContaining({
-          type: "agent.response-recorded",
-          payload: expect.objectContaining({ responseId: "fallback" }),
-        }),
-      );
+      expect(readStorySlice(nonmatchingAfter)).toMatchObject({
+        currentBeat: "regional-coupling",
+        counters: expect.arrayContaining([{ id: "flail", value: 1 }]),
+      });
       const otherStage = habit.stage === 3 ? 2 : ((habit.stage + 1) as 2 | 3);
-      expect(
-        createAgentInputEvents(
-          cartridge,
-          stateAt(otherStage, habit.model),
-          habit.input,
-        ),
-      ).not.toContainEqual(
-        expect.objectContaining({
-          type: "story.beat-reached",
-          payload: { beat: habit.beat },
-        }),
+      const wrongStage = createAgentInputEvents(
+        cartridge,
+        stateAt(otherStage, habit.model),
+        habit.input,
       );
+      expect(wrongStage.map((event) => event.type)).toEqual([
+        "agent.activity-set",
+        "agent.message-added",
+        "story.beat-reached",
+        "story.counter-added",
+        "agent.response-recorded",
+        "agent.activity-set",
+      ]);
 
       const matched = applyInput(
         stateAt(habit.stage, habit.model),
@@ -169,18 +175,21 @@ describe("story consequence actions", () => {
         value: 1,
       });
       const repeated = createAgentInputEvents(cartridge, matched, habit.input);
-      expect(repeated).not.toContainEqual(
-        expect.objectContaining({
-          type: "story.beat-reached",
-          payload: { beat: habit.beat },
-        }),
+      expect(repeated.map((event) => event.type)).toEqual([
+        "agent.activity-set",
+        "agent.message-added",
+        "story.beat-reached",
+        "story.counter-added",
+        "agent.response-recorded",
+        "agent.activity-set",
+      ]);
+      const repeatedAfter = repeated.reduce(
+        (next, event) => step(next, event),
+        matched,
       );
-      expect(repeated).toContainEqual(
-        expect.objectContaining({
-          type: "agent.response-recorded",
-          payload: expect.objectContaining({ responseId: "fallback" }),
-        }),
-      );
+      expect(readStorySlice(repeatedAfter)).toMatchObject({
+        counters: expect.arrayContaining([{ id: "flail", value: 1 }]),
+      });
       return matched;
     });
     const [estimateState, scopeState, victoryState, gamingState] =
@@ -253,41 +262,84 @@ describe("story consequence actions", () => {
       ]),
     );
 
-    const habitRoutes = cartridge.story.phase2.routes.filter((route) =>
+    const habits = cartridge.story.intents.filter((intent) =>
       [
-        "flail-loop",
         "scope-creep",
         "victory-summary",
         "test-gaming",
         "fantasy-estimate",
-      ].includes(route.response),
+      ].includes(intent.response),
     );
-    expect(habitRoutes).toMatchObject([
+    expect(
+      habits.map(({ id, response, applicability }) => ({
+        id,
+        response,
+        applicability,
+      })),
+    ).toEqual([
       {
-        response: "flail-loop",
-        archetype: "reckless",
-        stage: 3,
-        when: [{ kind: "story-counter", comparison: "equal", value: 2 }],
-      },
-      {
+        id: "apply-smallest-fix",
         response: "scope-creep",
-        archetype: "reckless",
-        stage: 2,
+        applicability: {
+          archetype: "reckless",
+          stage: 2,
+          when: [
+            {
+              kind: "story-counter",
+              counter: "scope-creep-used",
+              comparison: "equal",
+              value: 0,
+            },
+          ],
+        },
       },
       {
+        id: "write-victory-summary",
         response: "victory-summary",
-        archetype: "superficial",
-        stage: 3,
+        applicability: {
+          archetype: "superficial",
+          stage: 3,
+          when: [
+            {
+              kind: "story-counter",
+              counter: "victory-summary-used",
+              comparison: "equal",
+              value: 0,
+            },
+          ],
+        },
       },
       {
+        id: "simplify-failing-test",
         response: "test-gaming",
-        archetype: "reckless",
-        stage: 3,
+        applicability: {
+          archetype: "reckless",
+          stage: 3,
+          when: [
+            {
+              kind: "story-counter",
+              counter: "test-gaming-used",
+              comparison: "equal",
+              value: 0,
+            },
+          ],
+        },
       },
       {
+        id: "estimate-repair",
         response: "fantasy-estimate",
-        archetype: "paranoid",
-        stage: 1,
+        applicability: {
+          archetype: "paranoid",
+          stage: 1,
+          when: [
+            {
+              kind: "story-counter",
+              counter: "fantasy-estimate-used",
+              comparison: "equal",
+              value: 0,
+            },
+          ],
+        },
       },
     ]);
   });

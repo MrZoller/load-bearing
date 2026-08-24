@@ -187,6 +187,11 @@
               "kind": "story-reach"
             }
           ],
+          "applicability": {
+            "archetype": "",
+            "stage": -1,
+            "when": []
+          },
           "authorizedResponse": "",
           "id": "inspect",
           "keywordPatterns": [],

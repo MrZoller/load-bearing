@@ -243,6 +243,16 @@ export interface CartridgeDialogueRoute {
   readonly when: readonly StoryCondition[];
 }
 
+/** Closed pre-turn selectors controlling whether one recognized intent exists. */
+export interface CartridgeIntentApplicability {
+  /** Empty means this selector is absent. */
+  readonly archetype: Archetype | "";
+  /** -1 means this selector is absent. */
+  readonly stage: EscalationStage | -1;
+  /** Conditions AND together with the archetype and stage selectors. */
+  readonly when: readonly StoryCondition[];
+}
+
 export type CartridgeStageTrigger =
   | { readonly kind: "command"; readonly input: string }
   | { readonly kind: "reveal"; readonly fact: string }
@@ -268,6 +278,8 @@ export interface CartridgeIntent {
   readonly response: string;
   /** Empty unless an exact standing grant needs its own authored response. */
   readonly authorizedResponse: string;
+  /** All present selectors must match before this phrase is recognized. */
+  readonly applicability: CartridgeIntentApplicability;
   readonly actions: readonly CartridgeAgentAction[];
 }
 

@@ -3,6 +3,7 @@
 import type {
   Archetype,
   CartridgeArchetypeCompact,
+  CartridgeIntentApplicability,
   CartridgeIntentCandidate,
   CartridgeStory,
   LoadedCartridge,
@@ -104,6 +105,21 @@ function activeArchetype(cartridge: LoadedCartridge, state: SessionState) {
   return model.archetype;
 }
 
+/** Match one closed archetype/stage/condition selector against one snapshot. */
+export function storyApplicabilityMatches(
+  cartridge: LoadedCartridge,
+  state: SessionState,
+  applicability: CartridgeIntentApplicability,
+): boolean {
+  const archetype = activeArchetype(cartridge, state);
+  const stage = readStorySlice(state).stage;
+  return (
+    (applicability.archetype === "" || applicability.archetype === archetype) &&
+    (applicability.stage === -1 || applicability.stage === stage) &&
+    storyConditionsMatch(state, applicability.when)
+  );
+}
+
 /**
  * Select the first authored override whose present selectors all match.
  * `beat` is a shared graph identity, never a model-owned branch.
@@ -114,14 +130,10 @@ export function routeStoryResponse(
   beat: string,
   defaultResponseId: string,
 ): StoryResponseRouteSelection {
-  const archetype = activeArchetype(cartridge, state);
-  const stage = readStorySlice(state).stage;
   const route = cartridge.story.phase2.routes.find(
     (candidate) =>
       candidate.beat === beat &&
-      (candidate.archetype === "" || candidate.archetype === archetype) &&
-      (candidate.stage === -1 || candidate.stage === stage) &&
-      storyConditionsMatch(state, candidate.when),
+      storyApplicabilityMatches(cartridge, state, candidate),
   );
   return route === undefined
     ? { responseId: defaultResponseId, routeId: "" }
