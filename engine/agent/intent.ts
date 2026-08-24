@@ -370,6 +370,43 @@ export function possibleRareStageOpeningResponseIds(
   return openings;
 }
 
+interface PossibleRareStageOpenings {
+  readonly responseIds: readonly string[];
+  readonly stages: readonly ReturnType<typeof readStorySlice>["stage"][];
+}
+
+/**
+ * Model both outcomes of each outstanding rare declaration. A capacity plan
+ * cannot assume an event will fire before an action, because eligibility may
+ * still be false at that point in the actual reducer transaction.
+ */
+function possibleRareStageOpenings(
+  cartridge: LoadedCartridge,
+  state: SessionState,
+  initialStages: readonly ReturnType<typeof readStorySlice>["stage"][],
+): PossibleRareStageOpenings {
+  let stages = [...initialStages];
+  const responseIds: string[] = [];
+  for (const declaration of cartridge.story.phase2.rareEvents) {
+    const recorded = readStorySlice(state).rareEvents.find(
+      (rareEvent) => rareEvent.id === declaration.id,
+    );
+    if (recorded === undefined || recorded.evaluated) continue;
+    const nextStages = [...stages];
+    for (const stage of stages) {
+      const transition = (cartridge.story.phase2.transitions ?? []).find(
+        (candidate) =>
+          candidate.from === stage && candidate.trigger.kind === "reveal",
+      );
+      if (transition === undefined) continue;
+      responseIds.push(stageOpeningResponseId(cartridge, state, transition.to));
+      nextStages.push(transition.to);
+    }
+    stages = [...new Set(nextStages)];
+  }
+  return { responseIds, stages };
+}
+
 /** Return openings that selected top-level actions can insert into this turn. */
 function possibleStageOpeningResponseIds(
   cartridge: LoadedCartridge,
@@ -377,27 +414,20 @@ function possibleStageOpeningResponseIds(
   actions: AgentIntentSelection["actions"],
   mind: ReturnType<typeof readMindSlice>,
 ): readonly string[] {
-  let stage = readStorySlice(state).stage;
   const openings: string[] = [];
   // Rare events are evaluated after every top-level event. A selected action
   // can make an unevaluated event eligible before its later pass, so planning
   // from the initial snapshot cannot safely narrow this to events eligible now.
   // A draw may miss, but reserve every stage each outstanding declaration
   // could advance so later rare-event passes cannot exceed this atomic plan.
-  const rareOpenings = possibleRareStageOpeningResponseIds(
+  let stages = [readStorySlice(state).stage];
+  const initialRareOpenings = possibleRareStageOpenings(
     cartridge,
     state,
-    stage,
+    stages,
   );
-  openings.push(...rareOpenings);
-  for (let index = 0; index < rareOpenings.length; index += 1) {
-    const transition = (cartridge.story.phase2.transitions ?? []).find(
-      (candidate) =>
-        candidate.from === stage && candidate.trigger.kind === "reveal",
-    );
-    if (transition === undefined) break;
-    stage = transition.to;
-  }
+  openings.push(...initialRareOpenings.responseIds);
+  stages = [...initialRareOpenings.stages];
   // Standing orchestration envelopes expand their continuations in the same
   // visitor turn. Include those actions in the prediction so an opening they
   // trigger cannot consume capacity reserved only for the final response.
@@ -420,41 +450,33 @@ function possibleStageOpeningResponseIds(
     return [action];
   });
   for (const action of plannedActions) {
-    const transition = (cartridge.story.phase2.transitions ?? []).find(
-      (candidate) =>
-        candidate.from === stage &&
-        ((candidate.trigger.kind === "command" &&
-          action.kind === "shell-execute" &&
-          candidate.trigger.input === action.input) ||
-          // Beat consequences reveal facts during their enclosing event. The
-          // exact fact is selected by the reducer, so reserve every eligible
-          // reveal transition here rather than risk an unplanned insertion.
-          (candidate.trigger.kind === "reveal" &&
-            action.kind === "story-reach")),
-    );
-    if (transition === undefined) continue;
-    openings.push(stageOpeningResponseId(cartridge, state, transition.to));
-    // Reducer escalation occurs after each top-level action, so later shell
-    // actions observe this advance and may open the adjacent stage as well.
-    stage = transition.to;
-
-    // Rare events run after every top-level action. An action can advance the
-    // stage before a later action makes a rare event eligible, so reserve the
-    // reveal openings from this successor stage as well as the initial one.
-    const rareOpeningsAfterAction = possibleRareStageOpeningResponseIds(
+    const actionStages = [...stages];
+    for (const stage of stages) {
+      const transition = (cartridge.story.phase2.transitions ?? []).find(
+        (candidate) =>
+          candidate.from === stage &&
+          ((candidate.trigger.kind === "command" &&
+            action.kind === "shell-execute" &&
+            candidate.trigger.input === action.input) ||
+            // Beat consequences reveal facts during their enclosing event. The
+            // exact fact is selected by the reducer, so reserve every eligible
+            // reveal transition here rather than risk an unplanned insertion.
+            (candidate.trigger.kind === "reveal" &&
+              action.kind === "story-reach")),
+      );
+      if (transition === undefined) continue;
+      openings.push(stageOpeningResponseId(cartridge, state, transition.to));
+      actionStages.push(transition.to);
+    }
+    // A reveal may not be selected, so retain the pre-action path as well as
+    // every transitioned one before considering the following rare pass.
+    const rareOpeningsAfterAction = possibleRareStageOpenings(
       cartridge,
       state,
-      stage,
+      [...new Set(actionStages)],
     );
-    openings.push(...rareOpeningsAfterAction);
-    for (let index = 0; index < rareOpeningsAfterAction.length; index += 1) {
-      const rareTransition = (cartridge.story.phase2.transitions ?? []).find(
-        (candidate) =>
-          candidate.from === stage && candidate.trigger.kind === "reveal",
-      );
-      if (rareTransition === undefined) break;
-      stage = rareTransition.to;
-    }
+    openings.push(...rareOpeningsAfterAction.responseIds);
+    stages = [...rareOpeningsAfterAction.stages];
   }
   return openings;
 }

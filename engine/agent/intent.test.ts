@@ -983,6 +983,7 @@ describe("authored agent input", () => {
       stageTwoOpening === undefined
     )
       throw new Error("incident needs rare-event stage-two test fixtures");
+    source.story.phase2.rareEvents = [rareEvent];
     rareEvent["eligibility"] = {
       kind: "file-contents",
       path: "/production/load-balancer/config/routes.conf",
