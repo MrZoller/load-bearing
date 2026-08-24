@@ -1732,9 +1732,9 @@
               "contents": "health_status=500\neurope_attached=true\n"
             },
             {
-            "kind": "service-health",
-            "service": "endpoint-responder",
-            "health": "healthy"
+              "kind": "service-health",
+              "service": "endpoint-responder",
+              "health": "healthy"
             }
           ]
         }
