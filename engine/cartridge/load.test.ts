@@ -1675,6 +1675,32 @@ describe("loadCartridge", () => {
       ]),
     );
 
+    const duplicatePath = minimal();
+    const duplicateStory = duplicatePath["story"] as Record<string, unknown>;
+    const duplicateIntents = duplicateStory["intents"] as Record<
+      string,
+      unknown
+    >[];
+    const duplicateFirst = duplicateIntents[0];
+    if (duplicateFirst === undefined)
+      throw new Error("minimal fixture lacks an intent");
+    const validWaiver = {
+      ...waiver,
+      documentPath: "/etc/WAIVER.md",
+      consent: [{ kind: "file-write", path: "/etc/motd", contents: "x" }],
+    };
+    duplicateFirst["actions"] = [validWaiver];
+    duplicateStory["fallback"] = {
+      response: "fixture-response",
+      actions: [{ ...validWaiver, id: "waiver-two" }],
+    };
+    expect(issuesOf(duplicatePath)).toContainEqual(
+      expect.objectContaining({
+        pointer: "/story/intents/0/actions/0/documentPath",
+        expected: "a document path no other waiver request uses",
+      }),
+    );
+
     const badPhrase = minimal();
     const badStory = badPhrase["story"] as Record<string, unknown>;
     const badIntent = (badStory["intents"] as Record<string, unknown>[])[0];

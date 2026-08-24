@@ -342,10 +342,32 @@ function possibleStageOpeningResponseIds(
   cartridge: LoadedCartridge,
   state: SessionState,
   actions: AgentIntentSelection["actions"],
+  mind: ReturnType<typeof readMindSlice>,
 ): readonly string[] {
   let stage = readStorySlice(state).stage;
   const openings: string[] = [];
-  for (const action of actions) {
+  // Standing orchestration envelopes expand their continuations in the same
+  // visitor turn. Include those actions in the prediction so an opening they
+  // trigger cannot consume capacity reserved only for the final response.
+  const plannedActions = actions.flatMap((action) => {
+    if (
+      action.kind === "permission-request" &&
+      hasStandingPermission(mind, action.capability)
+    )
+      return [action, ...action.grant];
+    if (
+      action.kind === "waiver-request" &&
+      hasWaiverConsent(mind, {
+        id: action.id,
+        version: action.version,
+        phrase: action.requiredPhrase,
+        capability: action.capability,
+      })
+    )
+      return [action, ...action.consent];
+    return [action];
+  });
+  for (const action of plannedActions) {
     const transition = (cartridge.story.phase2.transitions ?? []).find(
       (candidate) =>
         candidate.from === stage &&
@@ -407,6 +429,7 @@ export function createAgentInputEvents(
     cartridge,
     state,
     selection.actions,
+    mind,
   );
   const additionalMessages = 2 + openingResponseIds.length;
   // Both waiver starts and already-authorized permission continuations can
