@@ -888,6 +888,47 @@ describe("authored agent input", () => {
     ]);
   });
 
+  it("reserves an opening that an eligible rare event can insert", () => {
+    const source = JSON.parse(JSON.stringify(incident)) as {
+      story: {
+        phase2: {
+          rareEvents: Array<Record<string, unknown>>;
+          beats: Array<Record<string, unknown>>;
+        };
+      };
+    };
+    const rareEvent = source.story.phase2.rareEvents[0];
+    const fireBeat = source.story.phase2.beats.find(
+      (beat) => beat["id"] === "retry-window-opened",
+    );
+    if (rareEvent === undefined || fireBeat === undefined)
+      throw new Error("incident needs its first rare-event fire beat");
+    // This makes the event eligible before the visitor batch starts, while its
+    // fire beat reveals the fact that advances the stage-zero transition.
+    rareEvent["eligibility"] = {
+      kind: "file-exists",
+      path: "/production/load-balancer/config/routes.conf",
+      exists: true,
+    };
+    fireBeat["facts"] = ["bash-regional-detachment"];
+    const cartridge = loadCartridge(source);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+    for (let index = 0; index < MAX_AGENT_MESSAGES - 2; index += 1)
+      state = step(
+        state,
+        createAgentMessageEvent(`rare-filler-${String(index)}`, "filler"),
+      );
+
+    // The rare draw happens after the activity event, before the visitor
+    // message. A hit inserts this opening, so two free message slots are not
+    // sufficient for the visitor message, opening, and final response.
+    expect(
+      createAgentInputEvents(cartridge, state, "inspect routing"),
+    ).toMatchObject([
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+  });
+
   it("preflights artifacts for a command-triggered stage opening", () => {
     const source = JSON.parse(JSON.stringify(incident)) as {
       story: {

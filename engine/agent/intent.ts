@@ -30,6 +30,7 @@ import {
   candidateStoryActionEvent,
   storyActionEvent,
 } from "../story/actions.js";
+import { storyConditionMatches } from "../story/conditions.js";
 import { routeIntentCandidate, routeStoryResponse } from "../story/router.js";
 import { queryStoryCounter, readStorySlice } from "../story/story.js";
 import { readTerminalSlice } from "../terminal/terminal.js";
@@ -346,6 +347,31 @@ function possibleStageOpeningResponseIds(
 ): readonly string[] {
   let stage = readStorySlice(state).stage;
   const openings: string[] = [];
+  // Rare events are evaluated after every top-level event. An already eligible
+  // event can therefore fire on the turn's activity event, before its visitor
+  // message, and reach a beat that reveals the current-stage transition fact.
+  // A draw may miss, but reserving the possible opening keeps the whole turn
+  // atomic when it fires at a bounded agent collection.
+  const rareCanFire = cartridge.story.phase2.rareEvents.some(
+    (declaration, index) => {
+      const recorded = readStorySlice(state).rareEvents[index];
+      return (
+        recorded !== undefined &&
+        !recorded.evaluated &&
+        storyConditionMatches(state, declaration.eligibility)
+      );
+    },
+  );
+  if (rareCanFire) {
+    const transition = (cartridge.story.phase2.transitions ?? []).find(
+      (candidate) =>
+        candidate.from === stage && candidate.trigger.kind === "reveal",
+    );
+    if (transition !== undefined) {
+      openings.push(stageOpeningResponseId(cartridge, state, transition.to));
+      stage = transition.to;
+    }
+  }
   // Standing orchestration envelopes expand their continuations in the same
   // visitor turn. Include those actions in the prediction so an opening they
   // trigger cannot consume capacity reserved only for the final response.
