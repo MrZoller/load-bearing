@@ -398,3 +398,5 @@ reaction action while derivedEvents charges only the outer action, so a
 schema-valid cascade multiplies past the browser-freeze bound; load-bearing
 for Phase 5 generated cartridges. Returned to the line: rerun -> released-hold
 pass routes the thread to the shepherd; re-review the delta on the next hold.
+
+- 2026-08-24 14:12 UTC - T55 PR #80 review tally after the first Codex round: verifier classified `discussion_r3844201408` as blocking because nested story consequences escaped the transaction-wide reaction work limit. Fixed and pushed `7aa23ef` (1 Codex fix push), with a schema-valid 64-reaction/1,024-consequence regression; `npm test -- engine/reactions.test.ts` (10 passed), `npm run typecheck`, and `npm run format:check` passed. The thread has a fixing-SHA reply and is resolved. Codex: 1 round, 1 blocking / 0 minor / 0 refuted, 1 fix push. `claude-code-review.yml` is absent from both this new head and `main`, so Claude is not configured. CI: 2 completed runs / 0 reruns on the prior head; new-head CI and Codex review are pending. T55 remains held because it is major and requires operator merge authority.
