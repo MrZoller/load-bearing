@@ -67,11 +67,10 @@ export function createAgentResumeEvents(
   const rareOpeningResponseIds = firstResume
     ? possibleRareStageOpeningResponseIds(cartridge, state)
     : [];
-  const plannedResponse = canRecordAuthoredResponses(
-    cartridge,
-    state,
-    [...rareOpeningResponseIds, responseId],
-  )
+  const plannedResponse = canRecordAuthoredResponses(cartridge, state, [
+    ...rareOpeningResponseIds,
+    responseId,
+  ])
     ? createAgentResponseEvent(responseId, `resume-${String(state.eventCount)}`)
     : createAgentCapacityEvent(cartridge.story.fallback.response);
   return [
