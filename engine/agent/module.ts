@@ -337,7 +337,16 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
           index -= 1
         ) {
           const type = context.state.transcript[index]?.type;
-          if (type === "agent.message-added") break;
+          // A failure is relevant only to the response that completes its
+          // visitor turn. Slash commands and other follow-up responses add no
+          // visitor message, so the prior recorded response is also a turn
+          // boundary; otherwise it would repeatedly substitute the old
+          // fallback until the next visitor input.
+          if (
+            type === "agent.message-added" ||
+            type === "agent.response-recorded"
+          )
+            break;
           if (
             type === "mind.waiver-start-failed" ||
             type === "mind.permission-standing-failed" ||
