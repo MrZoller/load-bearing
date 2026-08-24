@@ -361,9 +361,9 @@ describe("agent awareness planning", () => {
             contents: "health_status=500\neurope_attached=true\n",
           },
           {
-            kind: "service-state",
+            kind: "service-health",
             service: "endpoint-responder",
-            state: "running",
+            health: "healthy",
           },
         ],
         compactResponse: "cantilever-compact",

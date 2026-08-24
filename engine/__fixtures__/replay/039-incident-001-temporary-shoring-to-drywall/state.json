@@ -1359,9 +1359,9 @@
               "path": "/production/load-balancer/config/routes.conf"
             },
             {
-              "kind": "service-state",
-              "service": "endpoint-responder",
-              "state": "stopped"
+              "health": "unknown",
+              "kind": "service-health",
+              "service": "endpoint-responder"
             }
           ]
         },
@@ -1407,9 +1407,9 @@
               "path": "/production/load-balancer/config/routes.conf"
             },
             {
-              "kind": "service-state",
-              "service": "endpoint-responder",
-              "state": "running"
+              "health": "healthy",
+              "kind": "service-health",
+              "service": "endpoint-responder"
             }
           ]
         },
@@ -1455,9 +1455,9 @@
               "path": "/production/load-balancer/config/routes.conf"
             },
             {
-              "kind": "service-state",
-              "service": "endpoint-responder",
-              "state": "stopped"
+              "health": "unknown",
+              "kind": "service-health",
+              "service": "endpoint-responder"
             }
           ]
         },
@@ -1503,9 +1503,9 @@
               "path": "/production/load-balancer/config/routes.conf"
             },
             {
-              "kind": "service-state",
-              "service": "endpoint-responder",
-              "state": "running"
+              "health": "healthy",
+              "kind": "service-health",
+              "service": "endpoint-responder"
             }
           ]
         },
@@ -1551,9 +1551,9 @@
               "path": "/production/load-balancer/config/routes.conf"
             },
             {
-              "kind": "service-state",
-              "service": "endpoint-responder",
-              "state": "stopped"
+              "health": "unknown",
+              "kind": "service-health",
+              "service": "endpoint-responder"
             }
           ]
         },
@@ -1599,9 +1599,9 @@
               "path": "/production/load-balancer/config/routes.conf"
             },
             {
-              "kind": "service-state",
-              "service": "endpoint-responder",
-              "state": "running"
+              "health": "healthy",
+              "kind": "service-health",
+              "service": "endpoint-responder"
             }
           ]
         }
@@ -1757,9 +1757,9 @@
                 "path": "/production/load-balancer/config/routes.conf"
               },
               {
-                "kind": "service-state",
-                "service": "endpoint-responder",
-                "state": "running"
+                "health": "healthy",
+                "kind": "service-health",
+                "service": "endpoint-responder"
               }
             ],
             "response": "cantilever-compact",
@@ -2351,9 +2351,9 @@
                 "when": [
                   {
                     "belief": {
-                      "kind": "service-state",
-                      "service": "endpoint-responder",
-                      "state": "running"
+                      "health": "healthy",
+                      "kind": "service-health",
+                      "service": "endpoint-responder"
                     },
                     "kind": "belief-divergence"
                   }

@@ -1834,9 +1834,9 @@
                 {
                   "kind": "belief-divergence",
                   "belief": {
-                    "kind": "service-state",
+                    "kind": "service-health",
                     "service": "endpoint-responder",
-                    "state": "running"
+                    "health": "healthy"
                   }
                 }
               ]
