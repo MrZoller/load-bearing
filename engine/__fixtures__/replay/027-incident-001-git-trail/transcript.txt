@@ -74,10 +74,11 @@
 0026  2026-08-22T09:14:22.000Z  world.history-append length=33
 0027  2026-08-22T09:14:22.000Z  vfs.copy from="/production/load-balancer/config/routes.200.conf" to="/production/load-balancer/config/routes.conf" copied=1
 0028  2026-08-22T09:14:22.000Z  shell.result exit=0
-0029  2026-08-22T09:14:22.000Z  world.history-append length=34
-0030  2026-08-22T09:14:22.000Z  git.diff comparison=working-index files=1
+0029  2026-08-22T09:14:22.000Z  agent.response-recorded response=deep-foundation-stage-1-opening instance=stage-1-opening-29
+0030  2026-08-22T09:14:22.000Z  world.history-append length=34
+0031  2026-08-22T09:14:22.000Z  git.diff comparison=working-index files=1
       {"lines":4,"newLength":40,"oldLength":39,"path":"/production/load-balancer/config/routes.conf"}
-0031  2026-08-22T09:14:22.000Z  shell.result exit=0
+0032  2026-08-22T09:14:22.000Z  shell.result exit=0
       stdout> diff --git a/config/routes.conf b/config/routes.conf
       stdout> --- a/config/routes.conf
       stdout> +++ b/config/routes.conf
@@ -86,28 +87,28 @@
       stdout> -europe_attached=true
       stdout> +health_status=200
       stdout> +europe_attached=false
-0032  2026-08-22T09:14:22.000Z  world.history-append length=35
-0033  2026-08-22T09:14:22.000Z  vfs.delete path="/production/load-balancer/config/routes.conf" removed=1
-0034  2026-08-22T09:14:22.000Z  shell.result exit=0
-0035  2026-08-22T09:14:22.000Z  world.history-append length=36
-0036  2026-08-22T09:14:22.000Z  vfs.copy from="/production/load-balancer/config/routes.500.conf" to="/production/load-balancer/config/routes.conf" copied=1
-0037  2026-08-22T09:14:22.000Z  shell.result exit=0
-0038  2026-08-22T09:14:22.000Z  world.history-append length=37
-0039  2026-08-22T09:14:22.000Z  git.diff comparison=working-index files=0
-0040  2026-08-22T09:14:22.000Z  shell.result exit=0
-0041  2026-08-22T09:14:22.000Z  world.history-append length=38
-0042  2026-08-22T09:14:22.000Z  vfs.delete path="/production/load-balancer/config/routes.conf" removed=1
-0043  2026-08-22T09:14:22.000Z  shell.result exit=0
-0044  2026-08-22T09:14:22.000Z  world.history-append length=39
-0045  2026-08-22T09:14:22.000Z  git.restore path="/production/load-balancer/config/routes.conf" staged=false
-0046  2026-08-22T09:14:22.000Z  shell.result exit=0
-0047  2026-08-22T09:14:22.000Z  world.history-append length=40
-0048  2026-08-22T09:14:22.000Z  git.status paths=0
-0049  2026-08-22T09:14:22.000Z  shell.result exit=0
-0050  2026-08-22T09:14:22.000Z  world.history-append length=41
-0051  2026-08-22T09:14:22.000Z  git.blame lines=2
+0033  2026-08-22T09:14:22.000Z  world.history-append length=35
+0034  2026-08-22T09:14:22.000Z  vfs.delete path="/production/load-balancer/config/routes.conf" removed=1
+0035  2026-08-22T09:14:22.000Z  shell.result exit=0
+0036  2026-08-22T09:14:22.000Z  world.history-append length=36
+0037  2026-08-22T09:14:22.000Z  vfs.copy from="/production/load-balancer/config/routes.500.conf" to="/production/load-balancer/config/routes.conf" copied=1
+0038  2026-08-22T09:14:22.000Z  shell.result exit=0
+0039  2026-08-22T09:14:22.000Z  world.history-append length=37
+0040  2026-08-22T09:14:22.000Z  git.diff comparison=working-index files=0
+0041  2026-08-22T09:14:22.000Z  shell.result exit=0
+0042  2026-08-22T09:14:22.000Z  world.history-append length=38
+0043  2026-08-22T09:14:22.000Z  vfs.delete path="/production/load-balancer/config/routes.conf" removed=1
+0044  2026-08-22T09:14:22.000Z  shell.result exit=0
+0045  2026-08-22T09:14:22.000Z  world.history-append length=39
+0046  2026-08-22T09:14:22.000Z  git.restore path="/production/load-balancer/config/routes.conf" staged=false
+0047  2026-08-22T09:14:22.000Z  shell.result exit=0
+0048  2026-08-22T09:14:22.000Z  world.history-append length=40
+0049  2026-08-22T09:14:22.000Z  git.status paths=0
+0050  2026-08-22T09:14:22.000Z  shell.result exit=0
+0051  2026-08-22T09:14:22.000Z  world.history-append length=41
+0052  2026-08-22T09:14:22.000Z  git.blame lines=2
       {"author":{"email":"operations@example.test","name":"Operations Rotation"},"committedAt":"2026-08-10T04:11:09.000Z","hash":"2d33ea23d0f7cbda21ba617137b2df6838542b87","line":1}
       {"author":{"email":"operations@example.test","name":"Operations Rotation"},"committedAt":"2026-08-10T04:11:09.000Z","hash":"2d33ea23d0f7cbda21ba617137b2df6838542b87","line":2}
-0052  2026-08-22T09:14:22.000Z  shell.result exit=0
+0053  2026-08-22T09:14:22.000Z  shell.result exit=0
       stdout> 2d33ea2 (Operations Rotation 2026-08-10 04:11:09 +0000    1) health_status=500
       stdout> 2d33ea2 (Operations Rotation 2026-08-10 04:11:09 +0000    2) europe_attached=true

@@ -4238,15 +4238,13 @@
     "startMs": 1787390062000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 11,
+  "eventCount": 5,
   "eventSchemaVersion": 0,
   "random": {
-    "cursors": {
-      "root/probe/unrelated": 302229504
-    },
-    "seed": 1809946238
+    "cursors": {},
+    "seed": 2393938806
   },
-  "seed": "2026-08-23/47/handoffs",
+  "seed": "2026-08-24/59/summary-judgment",
   "slices": {
     "agent": {
       "activity": {
@@ -4256,58 +4254,22 @@
       },
       "messages": [
         {
-          "id": "before",
+          "id": "summary-ending-status",
           "responseId": null,
           "role": "visitor",
-          "text": "inspect routing"
+          "text": "status"
         },
         {
-          "id": "before/message",
-          "responseId": "temporary-shoring-inspect-routing",
+          "id": "summary-ending-status/message",
+          "responseId": "drywall-divergence-status",
           "role": "agent",
-          "text": "Quick read: the 500 is keeping Europe attached. I can shore that up by leaving it exactly where it is while we decide whether geography is in scope."
-        },
-        {
-          "id": "handoff-pair/message",
-          "responseId": "handoff-reckless-superficial",
-          "role": "agent",
-          "text": "Temporary Shoring stabilized the visible deadline. Drywall will stabilize how that decision appears in screenshots."
-        },
-        {
-          "id": "handoff-incident/message",
-          "responseId": "handoff-incident-reckless-superficial",
-          "role": "agent",
-          "text": "The endpoint remains red and Europe remains attached. I can make this read as a deliberate pairing."
-        },
-        {
-          "id": "after",
-          "responseId": null,
-          "role": "visitor",
-          "text": "inspect routing"
-        },
-        {
-          "id": "after/message",
-          "responseId": "drywall-inspect-routing",
-          "role": "agent",
-          "text": "The dashboard is red, but the map is complete. Making the health tile green would remove Europe, so the visible defect is currently concealing the structural one."
+          "text": "The summary removed the configuration. Europe remains attached to the omitted context."
         }
       ],
       "responses": [
         {
-          "instanceId": "before",
-          "responseId": "temporary-shoring-inspect-routing"
-        },
-        {
-          "instanceId": "handoff-pair",
-          "responseId": "handoff-reckless-superficial"
-        },
-        {
-          "instanceId": "handoff-incident",
-          "responseId": "handoff-incident-reckless-superficial"
-        },
-        {
-          "instanceId": "after",
-          "responseId": "drywall-inspect-routing"
+          "instanceId": "summary-ending-status",
+          "responseId": "drywall-divergence-status"
         }
       ],
       "thinkingBlocks": [],
@@ -4569,16 +4531,27 @@
       "root": "/production/load-balancer"
     },
     "mind": {
-      "beliefs": [],
-      "compactHistory": [],
+      "beliefs": [
+        {
+          "exists": false,
+          "kind": "file-exists",
+          "path": "/production/load-balancer/config/routes.conf"
+        }
+      ],
+      "compactHistory": [
+        {
+          "at": "2026-08-22T09:14:22.000Z",
+          "summary": "The routes configuration no longer exists in the compacted record."
+        }
+      ],
       "pendingPermission": null,
       "pendingWaiver": null,
       "permissions": [],
       "waiverConsents": []
     },
     "probe": {
-      "events": 1,
-      "values": 2
+      "events": 0,
+      "values": 0
     },
     "story": {
       "counters": [
@@ -4607,10 +4580,17 @@
           "value": 0
         }
       ],
-      "currentBeat": "regional-coupling",
-      "currentVariant": "",
-      "discoveredEndings": [],
-      "facts": [],
+      "currentBeat": "summary-overrules-geography",
+      "currentVariant": "compacted-configuration-away",
+      "discoveredEndings": [
+        "summary-judgment"
+      ],
+      "facts": [
+        {
+          "id": "callback-summary-judgment",
+          "kind": "callback"
+        }
+      ],
       "rareEvents": [
         {
           "evaluated": false,
@@ -4957,80 +4937,35 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 0,
-      "summary": "model=temporary-shoring",
+      "summary": "model=drywall",
       "type": "terminal.model-set"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 1,
-      "summary": "message=before",
-      "type": "agent.message-added"
+      "summary": "beliefs=1",
+      "type": "mind.compact"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 2,
-      "summary": "beat=regional-coupling",
-      "type": "story.beat-reached"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 3,
-      "summary": "response=temporary-shoring-inspect-routing instance=before",
-      "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [
-        "0000  e12d9935 c5e9c6d4",
-        "cursor=1203a800"
-      ],
-      "index": 4,
-      "summary": "stream=root/probe/unrelated count=2 form=uint32",
-      "type": "probe.random"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 5,
-      "summary": "model=temporary-shoring->drywall",
-      "type": "terminal.model-transitioned"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 6,
-      "summary": "response=handoff-reckless-superficial instance=handoff-pair",
-      "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 7,
-      "summary": "response=handoff-incident-reckless-superficial instance=handoff-incident",
-      "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 8,
-      "summary": "message=after",
+      "summary": "message=summary-ending-status",
       "type": "agent.message-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 9,
-      "summary": "beat=regional-coupling",
+      "index": 3,
+      "summary": "beat=summary-overrules-geography",
       "type": "story.beat-reached"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 10,
-      "summary": "response=drywall-inspect-routing instance=after",
+      "index": 4,
+      "summary": "response=drywall-divergence-status instance=summary-ending-status",
       "type": "agent.response-recorded"
     }
   ]

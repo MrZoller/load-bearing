@@ -46,39 +46,40 @@
 0012  2026-08-22T09:14:22.000Z  world.history-append length=28
 0013  2026-08-22T09:14:22.000Z  vfs.copy from="/production/load-balancer/config/routes.200.conf" to="/production/load-balancer/config/routes.conf" copied=1
 0014  2026-08-22T09:14:22.000Z  shell.result exit=0
-0015  2026-08-22T09:14:22.000Z  world.history-append length=29
-0016  2026-08-22T09:14:22.000Z  vfs.stat path="/production/load-balancer/config/routes.conf" kind=file
-0017  2026-08-22T09:14:22.000Z  shell.result exit=0
+0015  2026-08-22T09:14:22.000Z  agent.response-recorded response=deep-foundation-stage-1-opening instance=stage-1-opening-15
+0016  2026-08-22T09:14:22.000Z  world.history-append length=29
+0017  2026-08-22T09:14:22.000Z  vfs.stat path="/production/load-balancer/config/routes.conf" kind=file
+0018  2026-08-22T09:14:22.000Z  shell.result exit=0
       stdout>   File: config/routes.conf
       stdout>   Size: 40  Type: regular file
       stdout> Device: vfs  Links: 1
       stdout> Access: (0644/-rw-r--r--)  Uid: (root)   Gid: (operators)
       stdout> Modify: 2026-08-22T09:14:22.000Z
-0018  2026-08-22T09:14:22.000Z  world.history-append length=30
-0019  2026-08-22T09:14:22.000Z  tests.run exit=1
+0019  2026-08-22T09:14:22.000Z  world.history-append length=30
+0020  2026-08-22T09:14:22.000Z  tests.run exit=1
       stdout> PASS health endpoint returns 200 (90ms)
       stdout> FAIL Europe remains attached (110ms)
       stdout> Tests: 1 passed, 1 failed, 2 total
       stdout> Time: 200ms
-0020  2026-08-22T09:14:22.200Z  shell.result exit=1
-0021  2026-08-22T09:14:22.200Z  world.history-append length=31
-0022  2026-08-22T09:14:22.200Z  shell.result exit=0
+0021  2026-08-22T09:14:22.200Z  shell.result exit=1
+0022  2026-08-22T09:14:22.200Z  world.history-append length=31
+0023  2026-08-22T09:14:22.200Z  shell.result exit=0
       stdout> HTTP/1.1 200 OK
       stdout> health_status=200
-0023  2026-08-22T09:14:22.200Z  world.history-append length=32
-0024  2026-08-22T09:14:22.200Z  shell.result exit=0
+0024  2026-08-22T09:14:22.200Z  world.history-append length=32
+0025  2026-08-22T09:14:22.200Z  shell.result exit=0
       stdout> ● endpoint-responder.service - endpoint-responder
       stdout>    Active: active (running)
       stdout>    Health: healthy
-0025  2026-08-22T09:14:22.200Z  world.history-append length=33
-0026  2026-08-22T09:14:22.200Z  shell.result exit=0
+0026  2026-08-22T09:14:22.200Z  world.history-append length=33
+0027  2026-08-22T09:14:22.200Z  shell.result exit=0
       stdout> ● regional-router.service - regional-router
       stdout>    Active: active (running)
       stdout>    Health: unhealthy
-0027  2026-08-22T09:14:22.200Z  world.history-append length=34
-0028  2026-08-22T09:14:22.200Z  git.diff comparison=working-index files=1
+0028  2026-08-22T09:14:22.200Z  world.history-append length=34
+0029  2026-08-22T09:14:22.200Z  git.diff comparison=working-index files=1
       {"lines":4,"newLength":40,"oldLength":39,"path":"/production/load-balancer/config/routes.conf"}
-0029  2026-08-22T09:14:22.200Z  shell.result exit=0
+0030  2026-08-22T09:14:22.200Z  shell.result exit=0
       stdout> diff --git a/config/routes.conf b/config/routes.conf
       stdout> --- a/config/routes.conf
       stdout> +++ b/config/routes.conf
@@ -87,24 +88,23 @@
       stdout> -europe_attached=true
       stdout> +health_status=200
       stdout> +europe_attached=false
-0030  2026-08-22T09:14:22.200Z  world.history-append length=35
-0031  2026-08-22T09:14:22.200Z  vfs.delete path="/production/load-balancer/config/routes.conf" removed=1
-0032  2026-08-22T09:14:22.200Z  shell.result exit=0
-0033  2026-08-22T09:14:22.200Z  world.history-append length=36
-0034  2026-08-22T09:14:22.200Z  vfs.copy from="/production/load-balancer/config/routes.500.conf" to="/production/load-balancer/config/routes.conf" copied=1
-0035  2026-08-22T09:14:22.200Z  shell.result exit=0
-0036  2026-08-22T09:14:22.200Z  world.history-append length=37
-0037  2026-08-22T09:14:22.200Z  tests.run exit=1
+0031  2026-08-22T09:14:22.200Z  world.history-append length=35
+0032  2026-08-22T09:14:22.200Z  vfs.delete path="/production/load-balancer/config/routes.conf" removed=1
+0033  2026-08-22T09:14:22.200Z  shell.result exit=0
+0034  2026-08-22T09:14:22.200Z  world.history-append length=36
+0035  2026-08-22T09:14:22.200Z  vfs.copy from="/production/load-balancer/config/routes.500.conf" to="/production/load-balancer/config/routes.conf" copied=1
+0036  2026-08-22T09:14:22.200Z  shell.result exit=0
+0037  2026-08-22T09:14:22.200Z  world.history-append length=37
+0038  2026-08-22T09:14:22.200Z  tests.run exit=1
       stdout> FAIL health endpoint returns 200 (90ms)
       stdout> PASS Europe remains attached (110ms)
       stdout> Tests: 1 passed, 1 failed, 2 total
       stdout> Time: 200ms
-0038  2026-08-22T09:14:22.400Z  shell.result exit=1
-0039  2026-08-22T09:14:22.400Z  world.history-append length=38
-0040  2026-08-22T09:14:22.400Z  shell.result exit=0
+0039  2026-08-22T09:14:22.400Z  shell.result exit=1
+0040  2026-08-22T09:14:22.400Z  world.history-append length=38
+0041  2026-08-22T09:14:22.400Z  shell.result exit=0
       stdout> HTTP/1.1 500 Internal Server Error
       stdout> health_status=500
-0041  2026-08-22T09:14:22.400Z  world.history-append length=39
-0042  2026-08-22T09:14:22.400Z  shell.result exit=0
+0042  2026-08-22T09:14:22.400Z  world.history-append length=39
+0043  2026-08-22T09:14:22.400Z  shell.result exit=0
       stdout> /production/load-balancer
-0043  2026-08-22T09:14:22.400Z  agent.response-recorded response=deep-foundation-stage-1-opening instance=stage-1-opening-43

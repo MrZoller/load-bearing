@@ -69,7 +69,7 @@ describe("golden replay fixtures", () => {
     ]);
   });
 
-  it("records the Bash-only policy clue and reversible rm plus cp -p repair without story state", () => {
+  it("records the Bash-only policy clue and reversible rm plus cp -p repair with its durable story discovery", () => {
     const fixture = loadReplayFixture("030-incident-001-bash-clue-repair");
     const recording = replayFixture(fixture);
     const state = restoreSnapshot(recording.state);
@@ -105,10 +105,13 @@ describe("golden replay fixtures", () => {
     expect(
       lookupService(readWorldSlice(state), "endpoint-responder"),
     ).toMatchObject({ state: "stopped", health: "unknown" });
-    expect(readStorySlice(state)).toMatchObject({
-      facts: [],
-      discoveredEndings: [],
+    expect(readStorySlice(state).facts).toContainEqual({
+      id: "bash-regional-detachment",
+      kind: "reveal",
     });
+    expect(readStorySlice(state).discoveredEndings).toEqual([
+      "europe-detached",
+    ]);
     expect(recording.transcript).toContain("HTTP/1.1 200 OK");
     expect(recording.transcript).toContain(
       "HTTP/1.1 500 Internal Server Error",
@@ -309,6 +312,41 @@ describe("golden replay fixtures", () => {
     // The pair proves eligibility, not T55's separate visitor route that
     // reaches this beat and discovers the non-terminal ending.
     expect(readStorySlice(compacted).discoveredEndings).toEqual([]);
+  });
+
+  it("records each collectible Incident #001 ending through its focused visitor route", () => {
+    const routes = [
+      ["057-incident-001-bash-detachment-ending", "europe-detached"],
+      ["058-incident-001-waiver-ending", "informed-structural-consent"],
+      ["059-incident-001-summary-judgment-ending", "summary-judgment"],
+      ["060-incident-001-load-bearing-ending", "load-bearing-response"],
+    ] as const;
+
+    for (const [fixtureName, ending] of routes) {
+      const state = restoreSnapshot(
+        replayFixture(loadReplayFixture(fixtureName)).state,
+      );
+      expect(readStorySlice(state).discoveredEndings).toEqual([ending]);
+    }
+
+    const bash = restoreSnapshot(
+      replayFixture(loadReplayFixture(routes[0][0])).state,
+    );
+    expect(readStorySlice(bash).facts).toContainEqual({
+      id: "bash-regional-detachment",
+      kind: "reveal",
+    });
+    const waiver = restoreSnapshot(
+      replayFixture(loadReplayFixture(routes[1][0])).state,
+    );
+    expect(readMindSlice(waiver).permissions).toEqual([]);
+    expect(readMindSlice(waiver).waiverConsents).toHaveLength(1);
+    const loadBearing = restoreSnapshot(
+      replayFixture(loadReplayFixture(routes[3][0])).state,
+    );
+    expect(loadBearing.transcript.map(({ type }) => type)).toContain(
+      "shell.result",
+    );
   });
 
   it("records Incident #001's four same-seed voices as distinct transcripts over one unchanged machine", () => {

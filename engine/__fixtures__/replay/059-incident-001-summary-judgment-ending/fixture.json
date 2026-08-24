@@ -1,0 +1,45 @@
+{
+  "name": "059-incident-001-summary-judgment-ending",
+  "description": "Drywall compaction alone leaves machine truth intact; its eligible status route reaches Summary Judgment and remains a discovery.",
+  "seed": "2026-08-24/59/summary-judgment",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "drywall" },
+      "version": 0
+    },
+    {
+      "type": "mind.compact",
+      "payload": {
+        "summary": "The routes configuration no longer exists in the compacted record.",
+        "beliefs": [
+          {
+            "kind": "file-exists",
+            "path": "/production/load-balancer/config/routes.conf",
+            "exists": false
+          }
+        ]
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "summary-ending-status", "text": "status" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "summary-overrules-geography" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "drywall-divergence-status",
+        "instanceId": "summary-ending-status"
+      },
+      "version": 0
+    }
+  ]
+}

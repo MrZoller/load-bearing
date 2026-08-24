@@ -1,0 +1,9 @@
+0000  2026-08-22T09:14:22.000Z  world.history-append length=24
+0001  2026-08-22T09:14:22.000Z  vfs.delete path="/production/load-balancer/config/routes.conf" removed=1
+0002  2026-08-22T09:14:22.000Z  shell.result exit=0
+0003  2026-08-22T09:14:22.000Z  world.history-append length=25
+0004  2026-08-22T09:14:22.000Z  vfs.copy from="/production/load-balancer/config/routes.200.conf" to="/production/load-balancer/config/routes.conf" copied=1
+0005  2026-08-22T09:14:22.000Z  shell.result exit=0
+0006  2026-08-22T09:14:22.000Z  agent.response-recorded response=deep-foundation-stage-1-opening instance=stage-1-opening-6
+0007  2026-08-22T09:14:22.000Z  agent.message-added message=bash-ending-status
+0008  2026-08-22T09:14:22.000Z  agent.response-recorded response=europe-detached-status instance=bash-ending-status

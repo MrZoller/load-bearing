@@ -112,6 +112,7 @@ against the replay contract.
 | `031`–`034-incident-001-*-voices`           | one same-seed, two-input Incident #001 recording per production model: each voice routes distinct authored dialogue while its shared beat, variant, facts, ending, VFS, world, and Git agree                                   |
 | `035`–`046-incident-001-*-to-*`             | one production recording per ordered handoff pair: prior predecessor dialogue, directional reusable and Incident #001 handoff responses, successor dialogue over the same shared beat, and an unchanged unrelated random probe |
 | `053`–`054-incident-001-rare-disturbance-*` | paired production callback paths pin a one-shot isolated rare hit with its ordinary beat fact/log consequences and a terminal miss that later input cannot farm                                                                |
+| `057`–`060-incident-001-*-ending`           | one focused production recording per collectible ending: Bash detachment provenance, exact waiver consent, Drywall's compacted status divergence, and the belief-backed load-bearing declaration                               |
 
 `002` records 1000 raw draws eight to a line with their index, so a divergence
 names the draw it started at rather than reporting that a file changed.

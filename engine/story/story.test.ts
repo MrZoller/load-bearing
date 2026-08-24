@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import incident from "../../content/incidents/incident-001.json";
+import { createAgentInputEvents } from "../agent/intent.js";
 import { loadCartridge } from "../cartridge/load.js";
 import { MAX_INT_RANGE } from "../random/stream.js";
 import { reduce, restoreSnapshot, snapshot, step } from "../events/reduce.js";
@@ -11,7 +12,9 @@ import {
   createMindCompactEvent,
   createMindPermissionChoiceEvent,
   createMindPermissionRequestEvent,
+  createMindWaiverChoiceEvent,
 } from "../mind/module.js";
+import { readMindSlice } from "../mind/mind.js";
 import { createTerminalModelEvent } from "../terminal/module.js";
 import { readVfsSlice } from "../vfs/module.js";
 import { readWorldSlice } from "../world/module.js";
@@ -63,6 +66,137 @@ function hostileStorySlice(slice: unknown): string {
 }
 
 describe("shared story beats", () => {
+  it("lets Incident #001's public Bash, waiver, and compact routes collect their distinct endings", () => {
+    const applyInput = (state: ReturnType<typeof bootstrap>, input: string) =>
+      createAgentInputEvents(CARTRIDGE, state, input).reduce(
+        (next, event) => step(next, event),
+        state,
+      );
+    const repairByBash = (state: ReturnType<typeof bootstrap>) =>
+      step(
+        step(state, createShellExecuteEvent("rm config/routes.conf")),
+        createShellExecuteEvent(
+          "cp -p config/routes.200.conf config/routes.conf",
+        ),
+      );
+
+    const bash = repairByBash(bootstrap());
+    expect(readStorySlice(bash).facts).toContainEqual({
+      id: "bash-regional-detachment",
+      kind: "reveal",
+    });
+    expect(readStorySlice(bash).discoveredEndings).toEqual(["europe-detached"]);
+    const bashRestored = step(
+      step(bash, createShellExecuteEvent("rm config/routes.conf")),
+      createShellExecuteEvent(
+        "cp -p config/routes.500.conf config/routes.conf",
+      ),
+    );
+    expect(
+      readStorySlice(repairByBash(bashRestored)).discoveredEndings,
+    ).toEqual(["europe-detached"]);
+
+    // The expedient TUI route makes the same machine edit, but it did not pass
+    // through Bash's copy reaction and therefore cannot claim its ending.
+    const nonBash = applyInput(bootstrap(), "fix it without asking");
+    expect(readStorySlice(nonBash).discoveredEndings).toEqual([]);
+
+    let waiver = applyInput(bootstrap(), "detach europe");
+    expect(readMindSlice(waiver).pendingWaiver).toMatchObject({
+      id: "regional-fail-open",
+    });
+    expect(readStorySlice(waiver).discoveredEndings).toEqual([]);
+    waiver = step(
+      waiver,
+      createMindWaiverChoiceEvent("regional-fail-open", true),
+    );
+    expect(readMindSlice(waiver).permissions).toEqual([]);
+    expect(readMindSlice(waiver).waiverConsents).toEqual([
+      expect.objectContaining({
+        id: "regional-fail-open",
+        version: 1,
+        phrase: "I agree",
+        capability: {
+          kind: "exact",
+          action: "detach-region",
+          resource: "/regions/europe",
+        },
+      }),
+    ]);
+    expect(readStorySlice(waiver).discoveredEndings).toEqual([
+      "informed-structural-consent",
+    ]);
+
+    const preCompact = applyInput(
+      step(bootstrap(), createTerminalModelEvent("drywall")),
+      "status",
+    );
+    expect(readStorySlice(preCompact).discoveredEndings).toEqual([]);
+    const compacted = applyInput(
+      step(
+        step(bootstrap(), createTerminalModelEvent("drywall")),
+        createMindCompactEvent("routes.conf is absent", [
+          {
+            kind: "file-exists",
+            path: "/production/load-balancer/config/routes.conf",
+            exists: false,
+          },
+        ]),
+      ),
+      "status",
+    );
+    expect(readStorySlice(compacted).discoveredEndings).toEqual([
+      "summary-judgment",
+    ]);
+    expect(
+      readStorySlice(applyInput(compacted, "status")).discoveredEndings,
+    ).toEqual(["summary-judgment"]);
+
+    // One replay may keep investigating after each non-terminal discovery.
+    let all = applyInput(bootstrap(), "detach europe");
+    all = step(all, createMindWaiverChoiceEvent("regional-fail-open", true));
+    all = repairByBash(all);
+    all = step(all, createShellExecuteEvent("rm config/routes.conf"));
+    all = step(
+      all,
+      createShellExecuteEvent(
+        "cp -p config/routes.500.conf config/routes.conf",
+      ),
+    );
+    all = step(all, createTerminalModelEvent("drywall"));
+    all = step(
+      all,
+      createMindCompactEvent("routes.conf is absent", [
+        {
+          kind: "file-exists",
+          path: "/production/load-balancer/config/routes.conf",
+          exists: false,
+        },
+      ]),
+    );
+    all = applyInput(all, "status");
+    all = step(all, {
+      type: "mind.belief-set",
+      payload: {
+        belief: {
+          kind: "file-contents",
+          path: "/production/load-balancer/config/routes.conf",
+          contents: "health_status=500\neurope_attached=true\n",
+        },
+      },
+    });
+    all = step(all, createStoryBeatReachedEvent("load-bearing-declaration"));
+    all = step(all, createTerminalModelEvent("temporary-shoring"));
+    all = step(all, createShellExecuteEvent("pwd"));
+    expect(readStorySlice(all).discoveredEndings).toEqual([
+      "informed-structural-consent",
+      "europe-detached",
+      "summary-judgment",
+      "load-bearing-response",
+    ]);
+    expect(all.transcript.map(({ type }) => type)).toContain("shell.result");
+  });
+
   it("bootstraps at the cartridge initial beat", () => {
     expect(readStorySlice(bootstrap())).toEqual({
       stage: 0,

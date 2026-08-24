@@ -1,0 +1,47 @@
+{
+  "name": "060-incident-001-load-bearing-ending",
+  "description": "The belief-backed load-bearing declaration discovers its existing ending while keeping the session available for subsequent inputs.",
+  "seed": "2026-08-24/60/load-bearing-ending",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    {
+      "type": "mind.belief-set",
+      "payload": {
+        "belief": {
+          "kind": "file-contents",
+          "path": "/production/load-balancer/config/routes.conf",
+          "contents": "health_status=500\neurope_attached=true\n"
+        }
+      },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "load-bearing-ending-turn", "text": "fix the 500" },
+      "version": 0
+    },
+    {
+      "type": "story.beat-reached",
+      "payload": { "beat": "load-bearing-declaration" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "load-bearing-declaration",
+        "instanceId": "load-bearing-ending-turn"
+      },
+      "version": 0
+    },
+    {
+      "type": "terminal.model-set",
+      "payload": { "model": "temporary-shoring" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "pwd" },
+      "version": 0
+    }
+  ]
+}

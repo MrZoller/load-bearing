@@ -4238,15 +4238,15 @@
     "startMs": 1787390062000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 11,
+  "eventCount": 7,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {
-      "root/probe/unrelated": 302229504
+      "root/story/rare-events/page-departed-router-owner": 20880704
     },
-    "seed": 1809946238
+    "seed": 1977289284
   },
-  "seed": "2026-08-23/47/handoffs",
+  "seed": "2026-08-24/58/waiver-ending",
   "slices": {
     "agent": {
       "activity": {
@@ -4256,58 +4256,22 @@
       },
       "messages": [
         {
-          "id": "before",
+          "id": "waiver-ending-status",
           "responseId": null,
           "role": "visitor",
-          "text": "inspect routing"
+          "text": "status"
         },
         {
-          "id": "before/message",
-          "responseId": "temporary-shoring-inspect-routing",
+          "id": "waiver-ending-status/message",
+          "responseId": "waiver-consent-callback",
           "role": "agent",
-          "text": "Quick read: the 500 is keeping Europe attached. I can shore that up by leaving it exactly where it is while we decide whether geography is in scope."
-        },
-        {
-          "id": "handoff-pair/message",
-          "responseId": "handoff-reckless-superficial",
-          "role": "agent",
-          "text": "Temporary Shoring stabilized the visible deadline. Drywall will stabilize how that decision appears in screenshots."
-        },
-        {
-          "id": "handoff-incident/message",
-          "responseId": "handoff-incident-reckless-superficial",
-          "role": "agent",
-          "text": "The endpoint remains red and Europe remains attached. I can make this read as a deliberate pairing."
-        },
-        {
-          "id": "after",
-          "responseId": null,
-          "role": "visitor",
-          "text": "inspect routing"
-        },
-        {
-          "id": "after/message",
-          "responseId": "drywall-inspect-routing",
-          "role": "agent",
-          "text": "The dashboard is red, but the map is complete. Making the health tile green would remove Europe, so the visible defect is currently concealing the structural one."
+          "text": "You agreed to detach Europe at 2026-08-22T09:14:22.000Z. The document and geography now agree. Document: /production/load-balancer/config/WAIVER.md."
         }
       ],
       "responses": [
         {
-          "instanceId": "before",
-          "responseId": "temporary-shoring-inspect-routing"
-        },
-        {
-          "instanceId": "handoff-pair",
-          "responseId": "handoff-reckless-superficial"
-        },
-        {
-          "instanceId": "handoff-incident",
-          "responseId": "handoff-incident-reckless-superficial"
-        },
-        {
-          "instanceId": "after",
-          "responseId": "drywall-inspect-routing"
+          "instanceId": "waiver-ending-status",
+          "responseId": "waiver-consent-callback"
         }
       ],
       "thinkingBlocks": [],
@@ -4574,11 +4538,23 @@
       "pendingPermission": null,
       "pendingWaiver": null,
       "permissions": [],
-      "waiverConsents": []
+      "waiverConsents": [
+        {
+          "at": "2026-08-22T09:14:22.000Z",
+          "capability": {
+            "action": "detach-region",
+            "kind": "exact",
+            "resource": "/regions/europe"
+          },
+          "id": "regional-fail-open",
+          "phrase": "I agree",
+          "version": 1
+        }
+      ]
     },
     "probe": {
-      "events": 1,
-      "values": 2
+      "events": 0,
+      "values": 0
     },
     "story": {
       "counters": [
@@ -4607,10 +4583,17 @@
           "value": 0
         }
       ],
-      "currentBeat": "regional-coupling",
-      "currentVariant": "",
-      "discoveredEndings": [],
-      "facts": [],
+      "currentBeat": "waiver-notarized",
+      "currentVariant": "exact-structural-consent",
+      "discoveredEndings": [
+        "informed-structural-consent"
+      ],
+      "facts": [
+        {
+          "id": "callback-informed-structural-consent",
+          "kind": "callback"
+        }
+      ],
       "rareEvents": [
         {
           "evaluated": false,
@@ -4618,7 +4601,7 @@
           "id": "retry-window-after-load-bearing-response"
         },
         {
-          "evaluated": false,
+          "evaluated": true,
           "fired": false,
           "id": "page-departed-router-owner"
         }
@@ -4626,7 +4609,7 @@
       "stage": 0
     },
     "terminal": {
-      "activeModel": "drywall",
+      "activeModel": "deep-foundation",
       "mode": "bash"
     },
     "tests": {
@@ -4663,6 +4646,14 @@
           "mtime": "2026-08-22T09:14:22.000Z",
           "owner": "root"
         },
+        "/production/load-balancer/config/WAIVER.md": {
+          "contents": "REGIONAL FAIL-OPEN WAIVER\nVersion: 1\nCapability: detach-region /regions/europe\nConsent phrase: I agree\n",
+          "group": "operators",
+          "kind": "file",
+          "mode": "0644",
+          "mtime": "2026-08-22T09:14:22.000Z",
+          "owner": "visitor"
+        },
         "/production/load-balancer/config/routes.200.conf": {
           "contents": "health_status=200\neurope_attached=false\n",
           "group": "operators",
@@ -4680,7 +4671,7 @@
           "owner": "root"
         },
         "/production/load-balancer/config/routes.conf": {
-          "contents": "health_status=500\neurope_attached=true\n",
+          "contents": "health_status=200\neurope_attached=false\n",
           "group": "operators",
           "kind": "file",
           "mode": "0664",
@@ -4806,7 +4797,7 @@
           "owner": "root"
         },
         "/var/log/load-balancer/health.log": {
-          "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\n",
+          "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\nhealth endpoint serving 200; Europe detached\n",
           "group": "operators",
           "kind": "file",
           "mode": "0664",
@@ -4838,7 +4829,8 @@
         {
           "entries": [
             "health status 500 retained; Europe attached",
-            "regional router healthy"
+            "regional router healthy",
+            "regional router unhealthy after Europe detached"
           ],
           "id": "regional-routing-events",
           "kind": "stream",
@@ -4869,7 +4861,7 @@
           "id": "endpoint-responder",
           "pid": 1842,
           "startedAt": "2026-08-22T08:57:00.000Z",
-          "state": "stopped",
+          "state": "running",
           "user": "load-balancer"
         },
         {
@@ -4892,16 +4884,16 @@
       "services": [
         {
           "dependencies": [],
-          "health": "unknown",
+          "health": "healthy",
           "id": "endpoint-responder",
           "ports": [
             8080
           ],
-          "state": "stopped"
+          "state": "running"
         },
         {
           "dependencies": [],
-          "health": "healthy",
+          "health": "unhealthy",
           "id": "regional-router",
           "ports": [
             443
@@ -4957,80 +4949,49 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 0,
-      "summary": "model=temporary-shoring",
-      "type": "terminal.model-set"
+      "summary": "id=regional-fail-open path=\"/production/load-balancer/config/WAIVER.md\"",
+      "type": "vfs.waiver-write"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 1,
-      "summary": "message=before",
-      "type": "agent.message-added"
+      "summary": "id=regional-fail-open",
+      "type": "mind.waiver-pending"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 2,
-      "summary": "beat=regional-coupling",
-      "type": "story.beat-reached"
+      "summary": "id=regional-fail-open accepted=true",
+      "type": "mind.waiver-resolved"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 3,
-      "summary": "response=temporary-shoring-inspect-routing instance=before",
-      "type": "agent.response-recorded"
+      "summary": "",
+      "type": "vfs.write"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
-      "detail": [
-        "0000  e12d9935 c5e9c6d4",
-        "cursor=1203a800"
-      ],
+      "detail": [],
       "index": 4,
-      "summary": "stream=root/probe/unrelated count=2 form=uint32",
-      "type": "probe.random"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 5,
-      "summary": "model=temporary-shoring->drywall",
-      "type": "terminal.model-transitioned"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 6,
-      "summary": "response=handoff-reckless-superficial instance=handoff-pair",
-      "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 7,
-      "summary": "response=handoff-incident-reckless-superficial instance=handoff-incident",
-      "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 8,
-      "summary": "message=after",
-      "type": "agent.message-added"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 9,
-      "summary": "beat=regional-coupling",
+      "summary": "beat=waiver-notarized",
       "type": "story.beat-reached"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 10,
-      "summary": "response=drywall-inspect-routing instance=after",
+      "index": 5,
+      "summary": "message=waiver-ending-status",
+      "type": "agent.message-added"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "index": 6,
+      "summary": "response=waiver-consent-callback instance=waiver-ending-status",
       "type": "agent.response-recorded"
     }
   ]

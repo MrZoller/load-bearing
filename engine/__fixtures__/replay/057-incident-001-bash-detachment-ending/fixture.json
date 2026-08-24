@@ -1,0 +1,31 @@
+{
+  "name": "057-incident-001-bash-detachment-ending",
+  "description": "A visitor's supported Bash copy repair records its provenance and discovers the Europe Detached ending through the reusable reaction story reach.",
+  "seed": "2026-08-24/57/bash-detachment",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    {
+      "type": "shell.execute",
+      "payload": { "input": "rm config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "shell.execute",
+      "payload": { "input": "cp -p config/routes.200.conf config/routes.conf" },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "bash-ending-status", "text": "status" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "europe-detached-status",
+        "instanceId": "bash-ending-status"
+      },
+      "version": 0
+    }
+  ]
+}
