@@ -414,3 +414,5 @@ covered the TUI route alone, not TUI-then-innocent-copy). Provenance is the
 product semantics this hold protects; returned to the line for a generic
 event-predicate spec extension (copy source/destination) plus content and
 tests. Round 3 on the next hold; page Chris if a round-4 blocking appears.
+
+- 2026-08-24 14:25 UTC - T55 PR #80 review tally on head `7aa23ef7ecc4af4bd8802907e0652a8bcd29bc87`: Codex delivered 2 head-bound rounds. The first round's verifier-classified blocking finding was fixed in `7aa23ef` (1 fix push); the current-head Codex review has no findings or review threads. Codex totals: 1 blocking / 0 minor / 0 refuted. Both current-head Verify runs are green; CI totals are 4 runs / 0 reruns. `claude-code-review.yml` is absent from the PR head and `main`, and no head run exists, so Claude is not a merge condition. T55 remains held because it is major and requires operator merge authority; no merge was attempted.
