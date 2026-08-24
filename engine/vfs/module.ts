@@ -283,7 +283,11 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
           (entry) =>
             entry.type === "vfs.waiver-write" && entry.summary === marker,
         );
-        if (generated && slice.entries[waiver.documentPath]?.kind === "file")
+        if (
+          generated &&
+          slice.entries[waiver.documentPath]?.kind === "file" &&
+          slice.entries[waiver.documentPath].contents === waiver.documentContents
+        )
           return { slice, summary: marker };
         if (slice.entries[waiver.documentPath] !== undefined)
           throw new Error(
