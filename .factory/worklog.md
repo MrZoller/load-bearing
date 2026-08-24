@@ -428,3 +428,5 @@ helper script to fix. Posted an operator PR comment quoting the thread id and
 required fix so the next pass cannot miss it; rerunning. Config-repo
 improvement candidate noted in project memory: shepherding tally should
 mandate the GraphQL unresolved-thread count before any "no findings" claim.
+
+- 2026-08-24 14:38 UTC - T55 PR #80: verifier-classified Codex thread `discussion_r3844290125` as blocking because a TUI repair followed by an unrelated Bash copy could claim the Bash-only ending. Pushed fix for Codex findings: `003c408`; it carries concrete trigger envelopes through generic reactions, adds the typed `copy-paths` predicate, binds the ending reaction to `config/routes.200.conf` → `config/routes.conf`, adds the TUI-repair-then-innocent-copy regression, and regenerates the schema plus affected production fixtures. Replied with the fixing SHA and resolved the acted-on thread. Verification: `npm run verify` passed typecheck, formatting, purity, coverage (1,407 tests), UTC and Asia/Tokyo suites, browser interactions, and Lighthouse. Fresh-head CI and Codex review are pending. T55 remains held because it is major and requires operator merge authority.
