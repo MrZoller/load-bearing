@@ -958,6 +958,96 @@ describe("authored agent input", () => {
     ]);
   });
 
+  it("reserves a rare opening after an action advances the stage", () => {
+    const source = JSON.parse(JSON.stringify(incident)) as {
+      story: {
+        responses: Array<Record<string, unknown>>;
+        intents: Array<Record<string, unknown>>;
+        phase2: {
+          rareEvents: Array<Record<string, unknown>>;
+          beats: Array<Record<string, unknown>>;
+          transitions: Array<Record<string, unknown>>;
+        };
+      };
+    };
+    const rareEvent = source.story.phase2.rareEvents[0];
+    const fireBeat = source.story.phase2.beats.find(
+      (beat) => beat["id"] === "retry-window-opened",
+    );
+    const stageTwoOpening = source.story.responses.find(
+      (response) => response["id"] === "deep-foundation-stage-2-opening",
+    );
+    if (
+      rareEvent === undefined ||
+      fireBeat === undefined ||
+      stageTwoOpening === undefined
+    )
+      throw new Error("incident needs rare-event stage-two test fixtures");
+    rareEvent["eligibility"] = {
+      kind: "file-contents",
+      path: "/production/load-balancer/config/routes.conf",
+      equals: "rare-ready\n",
+    };
+    fireBeat["facts"] = ["bash-regional-detachment"];
+    source.story.phase2.transitions.push({
+      from: 1,
+      to: 2,
+      trigger: { kind: "reveal", fact: "bash-regional-detachment" },
+    });
+    source.story.intents.push({
+      id: "advance-then-enable-rare",
+      patterns: ["advance then enable rare"],
+      keywordPatterns: [],
+      response: "deep-foundation-inspect-routing",
+      authorizedResponse: "",
+      actions: [
+        { kind: "shell-execute", input: "pwd" },
+        {
+          kind: "file-write",
+          path: "/production/load-balancer/config/routes.conf",
+          contents: "rare-ready\n",
+        },
+      ],
+    });
+    stageTwoOpening["toolCalls"] = [
+      {
+        id: "rare-stage-two-tool",
+        title: "Inspect the rare stage",
+        input: "true",
+        output: "",
+        status: "succeeded",
+      },
+      {
+        id: "rare-stage-two-second-tool",
+        title: "Confirm the rare stage",
+        input: "true",
+        output: "",
+        status: "succeeded",
+      },
+    ];
+    const cartridge = loadCartridge(source);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+    for (let index = 0; index < MAX_AGENT_TOOL_CALLS - 1; index += 1)
+      state = step(
+        state,
+        createAgentToolCallAddedEvent({
+          id: `advanced-rare-filler-tool-${String(index)}`,
+          title: "Filler",
+          input: "true",
+          output: "",
+          status: "succeeded",
+        }),
+      );
+
+    // `pwd` advances to stage one; the later write makes the rare event
+    // eligible, and its fire beat can open stage two before the final response.
+    expect(
+      createAgentInputEvents(cartridge, state, "advance then enable rare"),
+    ).toMatchObject([
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+  });
+
   it("preflights artifacts for a command-triggered stage opening", () => {
     const source = JSON.parse(JSON.stringify(incident)) as {
       story: {

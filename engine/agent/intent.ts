@@ -437,6 +437,24 @@ function possibleStageOpeningResponseIds(
     // Reducer escalation occurs after each top-level action, so later shell
     // actions observe this advance and may open the adjacent stage as well.
     stage = transition.to;
+
+    // Rare events run after every top-level action. An action can advance the
+    // stage before a later action makes a rare event eligible, so reserve the
+    // reveal openings from this successor stage as well as the initial one.
+    const rareOpeningsAfterAction = possibleRareStageOpeningResponseIds(
+      cartridge,
+      state,
+      stage,
+    );
+    openings.push(...rareOpeningsAfterAction);
+    for (let index = 0; index < rareOpeningsAfterAction.length; index += 1) {
+      const rareTransition = (cartridge.story.phase2.transitions ?? []).find(
+        (candidate) =>
+          candidate.from === stage && candidate.trigger.kind === "reveal",
+      );
+      if (rareTransition === undefined) break;
+      stage = rareTransition.to;
+    }
   }
   return openings;
 }
