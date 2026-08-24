@@ -416,3 +416,15 @@ event-predicate spec extension (copy source/destination) plus content and
 tests. Round 3 on the next hold; page Chris if a round-4 blocking appears.
 
 - 2026-08-24 14:25 UTC - T55 PR #80 review tally on head `7aa23ef7ecc4af4bd8802907e0652a8bcd29bc87`: Codex delivered 2 head-bound rounds. The first round's verifier-classified blocking finding was fixed in `7aa23ef` (1 fix push); the current-head Codex review has no findings or review threads. Codex totals: 1 blocking / 0 minor / 0 refuted. Both current-head Verify runs are green; CI totals are 4 runs / 0 reruns. `claude-code-review.yml` is absent from the PR head and `main`, and no head run exists, so Claude is not a merge condition. T55 remains held because it is major and requires operator merge authority; no merge was attempted.
+
+## Operator: T55 round 2b — shepherd tally missed a live thread (2026-08-24)
+
+The 14:25Z released-hold pass tallied "current-head Codex review has no
+findings or review threads" while unresolved thread PRRT_kwDOTvNBzM6bua3k
+(opened 14:16:12Z, review 5008798125, commit 7aa23ef — correct attribution,
+verified via REST) sat on the head: a stochastic single-pass read miss, not a
+data or attribution problem, and the tally is model-written so there is no
+helper script to fix. Posted an operator PR comment quoting the thread id and
+required fix so the next pass cannot miss it; rerunning. Config-repo
+improvement candidate noted in project memory: shepherding tally should
+mandate the GraphQL unresolved-thread count before any "no findings" claim.
