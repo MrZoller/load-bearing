@@ -207,11 +207,29 @@ describe("test and reaction cartridge contracts", () => {
         {
           id: "start",
           ending: "",
-          actions: [
+          actions: [{ kind: "story-reach", beat: "nested" }],
+        },
+        {
+          id: "nested",
+          ending: "",
+          variants: [
             {
-              kind: "file-write",
-              path: "/production/service/README.md",
-              contents: "changed\n",
+              id: "selected-write",
+              when: [
+                {
+                  kind: "file-exists",
+                  path: "/production/service/README.md",
+                  exists: true,
+                },
+              ],
+              ending: "",
+              actions: [
+                {
+                  kind: "file-write",
+                  path: "/production/service/README.md",
+                  contents: "changed\n",
+                },
+              ],
             },
           ],
         },
