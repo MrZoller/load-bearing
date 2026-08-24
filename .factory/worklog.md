@@ -346,3 +346,16 @@ Newest at the bottom.
 - 2026-08-24 00:19 UTC - T59 PR #78: diagnosed both failed Verify runs on `b8766d10181b4b52ec1294385116737a1d4b6ad1` as a real Prettier violation in `content/incidents/incident-001.json`. Pushed formatting fix `d9b34d516fa6ff9fbf3ed61c5fc558cb6b9bc96c`, preserving the remote branch's intervening commits through a merge. Verification: `npm run format:check` passed. Fresh Verify runs and Codex's head-bound review are in progress.
 - 2026-08-24 00:27 UTC - T59 PR #78: diagnosed both failed Verify runs on `d9b34d516fa6ff9fbf3ed61c5fc558cb6b9bc96c` as real stale golden recordings from the endpoint-repair health synchronization change. The replayed production cartridge now correctly records endpoint responder health instead of service state; aligned the Cantilever compact divergence predicate and test expectation, regenerated the 30 affected canonical replay states, and pushed fix `b535b64c13b6f8b75f31b48c1dbac1091752d4db`. Verification: `npm run verify` passed both TypeScript programs, Prettier, purity (75 files), 1,372 coverage tests, UTC and Asia/Tokyo suites, production build, 41 desktop/mobile Playwright interactions, and Lighthouse accessibility. Fresh CI and Codex review are required for the new head.
 - 2026-08-24 00:33 UTC - T59 PR #78: verifier subagents returned no usable report, so direct refute-first review classified Codex thread `discussion_r3840008309` as blocking: an eligible rare event runs after the initial activity event and can insert a reveal-stage opening before the visitor message, exceeding the prior atomic capacity plan. Pushed fix for Codex findings: `b72801f`; it reserves the possible rare-event opening and adds a near-message-limit regression. Verification: `npx vitest run engine/agent/intent.test.ts` (36 passed), `npm run typecheck`, and `npm run format:check` passed. Replied with the fixing SHA and resolved the acted-on thread. Awaiting fresh CI and Codex review of the new head.
+
+## Operator: segment 21 needs-you exit superseded — hung session, not a PR problem (2026-08-24)
+
+Shepherd pass 69 for PR #78 spawned an opencode session (19:36) that hung at
+its startup banner; the driver blocked on it 9.5h, so no pass and no narration
+until the operator killed the session (05:10, SIGTERM, clean). On waking, the
+driver's PR_TIMEOUT stall clock had long expired and it exited
+"PR #78 unresolved after 45m — needs you". Disposition: mechanical echo of the
+hang, no substantive PR concern — #78 is OPEN and green on b72801f. Recovery
+per the engine's own tracked-PR rule: restart resumes shepherding #78 before
+any new cycle. Operator restarting after landing an engine session-watchdog
+fix in the config repo (the between-pass timeout machinery cannot bound a
+hung pass; opencode-factory follow-up to #61-class maintenance).
