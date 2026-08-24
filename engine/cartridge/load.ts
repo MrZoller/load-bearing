@@ -1915,6 +1915,7 @@ function checkStoryAndPresentation(
       );
   });
   const orchestrationIds = new Map<string, string>();
+  const waiverPaths = new Map<string, string>();
   let waiverDeclarations = 0;
   const checkStoryActions = (
     actions: readonly CartridgeAgentAction[],
@@ -2001,6 +2002,15 @@ function checkStoryAndPresentation(
       }
       if (action.kind === "waiver-request") {
         waiverDeclarations += 1;
+        const firstPath = waiverPaths.get(action.documentPath);
+        if (firstPath === undefined)
+          waiverPaths.set(action.documentPath, `${root}/documentPath`);
+        else
+          report.addPhrase(
+            `${root}/documentPath`,
+            "a document path no other waiver request uses",
+            `${JSON.stringify(action.documentPath)}, already used by ${firstPath}`,
+          );
         if (!action.documentPath.endsWith("/WAIVER.md"))
           report.addPhrase(
             `${root}/documentPath`,

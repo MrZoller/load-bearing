@@ -24,6 +24,7 @@ import {
 } from "./agent.js";
 import {
   createAgentMessageEvent,
+  createAgentResponseEvent,
   createAgentToolCallAddedEvent,
 } from "./module.js";
 import {
@@ -1063,6 +1064,26 @@ describe("authored agent input", () => {
       role: "agent",
       responseId: "fallback",
     });
+  });
+
+  it("keeps a stage opening from consuming its visitor turn's failure", () => {
+    const state = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      events: [
+        {
+          type: "mind.permission-standing-failed",
+          payload: { id: "delete-ready-sentinel" },
+          version: 0,
+        },
+        createAgentResponseEvent("remove-authorized", "stage-1-opening-1"),
+        createAgentResponseEvent("remove-authorized", "turn-one"),
+      ],
+    });
+
+    expect(
+      readAgentSlice(state).responses.map((response) => response.responseId),
+    ).toEqual(["remove-authorized", "fallback"]);
   });
 
   it("does not reuse a completed orchestration failure for a later response", () => {

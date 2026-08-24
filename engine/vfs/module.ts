@@ -283,13 +283,14 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
           (entry) =>
             entry.type === "vfs.waiver-write" && entry.summary === marker,
         );
+        const existing = slice.entries[waiver.documentPath];
         if (
           generated &&
-          slice.entries[waiver.documentPath]?.kind === "file" &&
-          slice.entries[waiver.documentPath].contents === waiver.documentContents
+          existing?.kind === "file" &&
+          existing.contents === waiver.documentContents
         )
           return { slice, summary: marker };
-        if (slice.entries[waiver.documentPath] !== undefined)
+        if (existing !== undefined)
           throw new Error(
             `${context.where}: cannot write authored waiver ${JSON.stringify(id)}: EEXIST`,
           );

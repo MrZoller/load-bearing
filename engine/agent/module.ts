@@ -324,6 +324,16 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
           data["responseId"],
           `${context.where}: responseId`,
         );
+        const instanceId = validateAgentId(
+          data["instanceId"],
+          `${context.where}: instanceId`,
+        );
+        // Escalation records a presentation response inside a visitor turn.
+        // It must not consume that turn's orchestration failure: the opening
+        // remains its authored copy and the final turn response records the
+        // fallback. These ids are reducer-owned (see applyEscalation).
+        const isStageOpening =
+          instanceId.startsWith("stage-") && instanceId.includes("-opening-");
         // Failed waiver starts and standing continuations are terminal authored
         // outcomes, not successful requests with missing or unchanged state.
         // The input planner cannot know whether its preceding envelope will
@@ -336,15 +346,17 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
           index >= 0;
           index -= 1
         ) {
-          const type = context.state.transcript[index]?.type;
+          const entry = context.state.transcript[index];
+          const type = entry?.type;
           // A failure is relevant only to the response that completes its
           // visitor turn. Slash commands and other follow-up responses add no
           // visitor message, so the prior recorded response is also a turn
           // boundary; otherwise it would repeatedly substitute the old
           // fallback until the next visitor input.
+          if (type === "agent.message-added") break;
           if (
-            type === "agent.message-added" ||
-            type === "agent.response-recorded"
+            type === "agent.response-recorded" &&
+            !entry?.summary.includes("instance=stage-")
           )
             break;
           if (
@@ -352,17 +364,13 @@ export const AGENT_MODULE = defineEventModule<AgentSlice>({
             type === "mind.permission-standing-failed" ||
             type === "mind.waiver-standing-failed"
           ) {
-            failedOrchestration = true;
+            failedOrchestration = !isStageOpening;
             break;
           }
         }
         const responseId = failedOrchestration
           ? context.cartridge.story.fallback.response
           : requestedResponseId;
-        const instanceId = validateAgentId(
-          data["instanceId"],
-          `${context.where}: instanceId`,
-        );
         return {
           slice: recordAuthoredResponse(
             slice,
