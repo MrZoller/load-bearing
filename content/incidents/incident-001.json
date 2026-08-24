@@ -485,9 +485,9 @@
             "equals": "health_status=200\neurope_attached=false\n"
           },
           {
-            "kind": "service-state",
+            "kind": "service-health",
             "service": "endpoint-responder",
-            "state": "stopped"
+            "health": "unknown"
           }
         ],
         "actions": [
@@ -533,9 +533,9 @@
             "equals": "health_status=500\neurope_attached=true\n"
           },
           {
-            "kind": "service-state",
+            "kind": "service-health",
             "service": "endpoint-responder",
-            "state": "running"
+            "health": "healthy"
           }
         ],
         "actions": [
@@ -581,9 +581,9 @@
             "equals": "health_status=200\neurope_attached=false\n"
           },
           {
-            "kind": "service-state",
+            "kind": "service-health",
             "service": "endpoint-responder",
-            "state": "stopped"
+            "health": "unknown"
           }
         ],
         "actions": [
@@ -629,9 +629,9 @@
             "equals": "health_status=500\neurope_attached=true\n"
           },
           {
-            "kind": "service-state",
+            "kind": "service-health",
             "service": "endpoint-responder",
-            "state": "running"
+            "health": "healthy"
           }
         ],
         "actions": [
@@ -677,9 +677,9 @@
             "equals": "health_status=200\neurope_attached=false\n"
           },
           {
-            "kind": "service-state",
+            "kind": "service-health",
             "service": "endpoint-responder",
-            "state": "stopped"
+            "health": "unknown"
           }
         ],
         "actions": [
@@ -725,9 +725,9 @@
             "equals": "health_status=500\neurope_attached=true\n"
           },
           {
-            "kind": "service-state",
+            "kind": "service-health",
             "service": "endpoint-responder",
-            "state": "running"
+            "health": "healthy"
           }
         ],
         "actions": [
@@ -1732,9 +1732,9 @@
               "contents": "health_status=500\neurope_attached=true\n"
             },
             {
-              "kind": "service-state",
-              "service": "endpoint-responder",
-              "state": "running"
+            "kind": "service-health",
+            "service": "endpoint-responder",
+            "health": "healthy"
             }
           ]
         }

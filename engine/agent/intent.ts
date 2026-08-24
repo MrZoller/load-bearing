@@ -409,8 +409,14 @@ export function createAgentInputEvents(
     selection.actions,
   );
   const additionalMessages = 2 + openingResponseIds.length;
-  const maySubstituteWaiverFailure = selection.actions.some(
-    (action) => action.kind === "waiver-request",
+  // Both waiver starts and already-authorized permission continuations can
+  // fail later in the turn and replace this response with the fallback.
+  // Reserve against that replacement before recording any part of the turn.
+  const maySubstituteFailure = selection.actions.some(
+    (action) =>
+      action.kind === "waiver-request" ||
+      (action.kind === "permission-request" &&
+        hasStandingPermission(mind, action.capability)),
   );
   if (
     !canRecordAuthoredResponses(
@@ -419,7 +425,7 @@ export function createAgentInputEvents(
       [...openingResponseIds, responseId],
       additionalMessages,
     ) ||
-    (maySubstituteWaiverFailure &&
+    (maySubstituteFailure &&
       !canRecordAuthoredResponses(
         cartridge,
         state,
