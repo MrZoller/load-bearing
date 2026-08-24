@@ -5,14 +5,23 @@ import { loadCartridge } from "../cartridge/load.js";
 import { createShellExecuteEvent } from "../commands/shell.js";
 import { reduce, restoreSnapshot, snapshot, step } from "../events/reduce.js";
 import type { EngineEvent, SessionState } from "../events/state.js";
-import { createMindCompactEvent } from "../mind/module.js";
+import {
+  createMindCompactEvent,
+  createMindPermissionRequestedEvent,
+  createMindPermissionResolvedEvent,
+} from "../mind/module.js";
 import { readMindSlice } from "../mind/mind.js";
 import { serialize } from "../serialize/canonical.js";
 import { storyConditionsMatch } from "../story/conditions.js";
+import { readStorySlice } from "../story/story.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { createTerminalModeEvent } from "../terminal/module.js";
 import { readTerminalSlice } from "../terminal/terminal.js";
-import { MAX_AGENT_MESSAGES, readAgentSlice } from "./agent.js";
+import {
+  MAX_AGENT_MESSAGES,
+  MAX_AGENT_RESPONSES,
+  readAgentSlice,
+} from "./agent.js";
 import {
   createAgentCompactEvents,
   createAgentHelpEvents,
@@ -22,6 +31,7 @@ import { createAgentInputEvents } from "./intent.js";
 import {
   createAgentIdleNudgeEvent,
   createAgentMessageEvent,
+  createAgentResponseEvent,
   selectAgentPresentation,
 } from "./module.js";
 import { createTerminalModelEvent } from "../terminal/module.js";
@@ -356,9 +366,9 @@ describe("agent awareness planning", () => {
             contents: "health_status=500\neurope_attached=true\n",
           },
           {
-            kind: "service-state",
+            kind: "service-health",
             service: "endpoint-responder",
-            state: "running",
+            health: "healthy",
           },
         ],
         compactResponse: "cantilever-compact",
@@ -495,6 +505,95 @@ describe("agent awareness planning", () => {
     expect(readTerminalSlice(next).mode).toBe("bash");
   });
 
+  it("reserves a compact-triggered opening before queuing its acknowledgment", () => {
+    const production = loadCartridge(incident);
+    let state = reduce({ cartridge: production, seed: SEED, events: [] });
+    state = step(state, createShellExecuteEvent("pwd"));
+    state = step(state, createTerminalModelEvent("temporary-shoring"));
+    const capability = {
+      kind: "exact" as const,
+      action: "detach-region",
+      resource: "/regions/europe",
+    };
+    state = step(
+      state,
+      createMindPermissionRequestedEvent("detach-europe", capability),
+    );
+    state = step(
+      state,
+      createMindPermissionResolvedEvent("detach-europe", "grant"),
+    );
+    expect(readStorySlice(state).stage).toBe(3);
+    for (
+      let index = readAgentSlice(state).messages.length;
+      index < MAX_AGENT_MESSAGES - 1;
+      index += 1
+    )
+      state = step(
+        state,
+        createAgentMessageEvent(`compact-filler-${String(index)}`, "filler"),
+      );
+
+    const events = createAgentCompactEvents(production, state);
+    expect(events).toMatchObject([
+      { type: "mind.compact" },
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+    expect(() => fold(state, events)).not.toThrow();
+  });
+
+  it("reserves a possible rare-event opening with compact acknowledgment", () => {
+    const production = loadCartridge(incident);
+    const state = reduce({ cartridge: production, seed: SEED, events: [] });
+    const nearCapacity = fold(
+      state,
+      Array.from({ length: MAX_AGENT_RESPONSES - 1 }, (_, index) =>
+        createAgentResponseEvent("opening", `rare-compact-${String(index)}`),
+      ),
+    );
+
+    expect(createAgentCompactEvents(production, nearCapacity)).toMatchObject([
+      { type: "mind.compact" },
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+  });
+
+  it("predicts rare openings from the stage advanced by compact", () => {
+    const source = JSON.parse(JSON.stringify(incident)) as {
+      story: { phase2: { transitions: Array<Record<string, unknown>> } };
+    };
+    const compactTransition = source.story.phase2.transitions.find(
+      (transition) =>
+        (transition["trigger"] as Record<string, unknown>)["kind"] ===
+        "compact",
+    );
+    const revealTransition = source.story.phase2.transitions.find(
+      (transition) =>
+        (transition["trigger"] as Record<string, unknown>)["kind"] === "reveal",
+    );
+    if (compactTransition === undefined || revealTransition === undefined)
+      throw new Error("incident needs compact and reveal transitions");
+    compactTransition["from"] = 0;
+    compactTransition["to"] = 1;
+    revealTransition["from"] = 1;
+    revealTransition["to"] = 2;
+    const production = loadCartridge(source);
+    const nearCapacity = fold(
+      reduce({ cartridge: production, seed: SEED, events: [] }),
+      Array.from({ length: MAX_AGENT_RESPONSES - 2 }, (_, index) =>
+        createAgentResponseEvent("opening", `advanced-rare-${String(index)}`),
+      ),
+    );
+
+    // The compact transition consumes one response slot before its queued
+    // acknowledgment can run rare-event reactions. A rare reveal from stage 1
+    // therefore needs a third reserved slot, not a prediction from stage 0.
+    expect(createAgentCompactEvents(production, nearCapacity)).toMatchObject([
+      { type: "mind.compact" },
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+  });
+
   it("routes opening, help, idle nudge, and placeholders by active archetype and authoritative stage", () => {
     const cartridge = stageAwareCartridge();
     const initial = reduce({ cartridge, seed: SEED, events: [] });
@@ -529,6 +628,14 @@ describe("agent awareness planning", () => {
         createTerminalModelEvent("quick-patch"),
       ],
     });
+    expect(readAgentSlice(stageAndModel).responses.at(-1)?.responseId).toBe(
+      "paranoid-1-opening",
+    );
+    expect(
+      stageAndModel.transcript.some(
+        (entry) => entry.type === "agent.response-recorded",
+      ),
+    ).toBe(true);
     expect(selectAgentPresentation(cartridge, stageAndModel)).toMatchObject({
       archetype: "reckless",
       stage: 1,
@@ -554,5 +661,32 @@ describe("agent awareness planning", () => {
       openingResponse: "opening-awareness",
       helpResponse: "resume-unchanged",
     });
+  });
+
+  it("pins Incident #001's complete presentation pools, compact warning, and thinking deterioration", () => {
+    const production = loadCartridge(incident);
+    expect(production.presentation.phase2.stagePresentations).toHaveLength(20);
+    for (const row of production.presentation.phase2.stagePresentations) {
+      expect(row.placeholders.length).toBeGreaterThan(0);
+      const help = production.story.responses.find(
+        (response) => response.id === row.helpResponse,
+      );
+      const opening = production.story.responses.find(
+        (response) => response.id === row.openingResponse,
+      );
+      expect(help?.text).toContain(
+        "/compact replaces context and may discard findings",
+      );
+      const thought = opening?.thinkingBlocks[0]?.text ?? "";
+      expect(thought).toMatch(
+        row.stage <= 1
+          ? /^Okay, /
+          : row.stage === 2
+            ? /^Okay Amigos, /
+            : row.stage === 3
+              ? /^Okay Holy crap, /
+              : /^Amigos, okay, /,
+      );
+    }
   });
 });

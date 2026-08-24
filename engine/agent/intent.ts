@@ -30,8 +30,10 @@ import {
   candidateStoryActionEvent,
   storyActionEvent,
 } from "../story/actions.js";
+import { storyConditionMatches } from "../story/conditions.js";
 import { routeIntentCandidate, routeStoryResponse } from "../story/router.js";
 import { queryStoryCounter, readStorySlice } from "../story/story.js";
+import { readTerminalSlice } from "../terminal/terminal.js";
 import { countCodePoints } from "../text.js";
 import {
   MAX_AGENT_MESSAGES,
@@ -319,6 +321,166 @@ export function canRecordAuthoredResponses(
   );
 }
 
+/** Resolve an opening against the model that will own an advanced stage. */
+export function stageOpeningResponseId(
+  cartridge: LoadedCartridge,
+  state: SessionState,
+  stage: number,
+  activeModel = readTerminalSlice(state).activeModel,
+): string {
+  const archetype = cartridge.models.find(
+    (model) => model.id === activeModel,
+  )?.archetype;
+  return (
+    cartridge.presentation.phase2.stagePresentations.find(
+      (row) => row.archetype === archetype && row.stage === stage,
+    )?.openingResponse ?? cartridge.story.opening.response
+  );
+}
+
+/**
+ * Reserve each reveal stage an unevaluated rare event could advance during a
+ * transaction. The reducer evaluates rare declarations in order, so predict
+ * their possible openings in that same order rather than collapsing them to
+ * one slot.
+ */
+export function possibleRareStageOpeningResponseIds(
+  cartridge: LoadedCartridge,
+  state: SessionState,
+  initialStage = readStorySlice(state).stage,
+  activeModel = readTerminalSlice(state).activeModel,
+): readonly string[] {
+  let stage = initialStage;
+  const openings: string[] = [];
+  for (const declaration of cartridge.story.phase2.rareEvents) {
+    const recorded = readStorySlice(state).rareEvents.find(
+      (rareEvent) => rareEvent.id === declaration.id,
+    );
+    if (recorded === undefined || recorded.evaluated) continue;
+    const transition = (cartridge.story.phase2.transitions ?? []).find(
+      (candidate) =>
+        candidate.from === stage && candidate.trigger.kind === "reveal",
+    );
+    if (transition === undefined) continue;
+    openings.push(
+      stageOpeningResponseId(cartridge, state, transition.to, activeModel),
+    );
+    stage = transition.to;
+  }
+  return openings;
+}
+
+interface PossibleRareStageOpenings {
+  readonly responseIds: readonly string[];
+  readonly stages: readonly ReturnType<typeof readStorySlice>["stage"][];
+}
+
+/**
+ * Model both outcomes of each outstanding rare declaration. A capacity plan
+ * cannot assume an event will fire before an action, because eligibility may
+ * still be false at that point in the actual reducer transaction.
+ */
+function possibleRareStageOpenings(
+  cartridge: LoadedCartridge,
+  state: SessionState,
+  initialStages: readonly ReturnType<typeof readStorySlice>["stage"][],
+): PossibleRareStageOpenings {
+  let stages = [...initialStages];
+  const responseIds: string[] = [];
+  for (const declaration of cartridge.story.phase2.rareEvents) {
+    const recorded = readStorySlice(state).rareEvents.find(
+      (rareEvent) => rareEvent.id === declaration.id,
+    );
+    if (recorded === undefined || recorded.evaluated) continue;
+    const nextStages = [...stages];
+    for (const stage of stages) {
+      const transition = (cartridge.story.phase2.transitions ?? []).find(
+        (candidate) =>
+          candidate.from === stage && candidate.trigger.kind === "reveal",
+      );
+      if (transition === undefined) continue;
+      responseIds.push(stageOpeningResponseId(cartridge, state, transition.to));
+      nextStages.push(transition.to);
+    }
+    stages = [...new Set(nextStages)];
+  }
+  return { responseIds, stages };
+}
+
+/** Return openings that selected top-level actions can insert into this turn. */
+function possibleStageOpeningResponseIds(
+  cartridge: LoadedCartridge,
+  state: SessionState,
+  actions: AgentIntentSelection["actions"],
+  mind: ReturnType<typeof readMindSlice>,
+): readonly string[] {
+  const openings: string[] = [];
+  // Rare events are evaluated after every top-level event. A selected action
+  // can make an unevaluated event eligible before its later pass, so planning
+  // from the initial snapshot cannot safely narrow this to events eligible now.
+  // A draw may miss, but reserve every stage each outstanding declaration
+  // could advance so later rare-event passes cannot exceed this atomic plan.
+  let stages = [readStorySlice(state).stage];
+  const initialRareOpenings = possibleRareStageOpenings(
+    cartridge,
+    state,
+    stages,
+  );
+  openings.push(...initialRareOpenings.responseIds);
+  stages = [...initialRareOpenings.stages];
+  // Standing orchestration envelopes expand their continuations in the same
+  // visitor turn. Include those actions in the prediction so an opening they
+  // trigger cannot consume capacity reserved only for the final response.
+  const plannedActions = actions.flatMap((action) => {
+    if (
+      action.kind === "permission-request" &&
+      hasStandingPermission(mind, action.capability)
+    )
+      return [action, ...action.grant];
+    if (
+      action.kind === "waiver-request" &&
+      hasWaiverConsent(mind, {
+        id: action.id,
+        version: action.version,
+        phrase: action.requiredPhrase,
+        capability: action.capability,
+      })
+    )
+      return [action, ...action.consent];
+    return [action];
+  });
+  for (const action of plannedActions) {
+    const actionStages = [...stages];
+    for (const stage of stages) {
+      const transition = (cartridge.story.phase2.transitions ?? []).find(
+        (candidate) =>
+          candidate.from === stage &&
+          ((candidate.trigger.kind === "command" &&
+            action.kind === "shell-execute" &&
+            candidate.trigger.input === action.input) ||
+            // Beat consequences reveal facts during their enclosing event. The
+            // exact fact is selected by the reducer, so reserve every eligible
+            // reveal transition here rather than risk an unplanned insertion.
+            (candidate.trigger.kind === "reveal" &&
+              action.kind === "story-reach")),
+      );
+      if (transition === undefined) continue;
+      openings.push(stageOpeningResponseId(cartridge, state, transition.to));
+      actionStages.push(transition.to);
+    }
+    // A reveal may not be selected, so retain the pre-action path as well as
+    // every transitioned one before considering the following rare pass.
+    const rareOpeningsAfterAction = possibleRareStageOpenings(
+      cartridge,
+      state,
+      [...new Set(actionStages)],
+    );
+    openings.push(...rareOpeningsAfterAction.responseIds);
+    stages = [...rareOpeningsAfterAction.stages];
+  }
+  return openings;
+}
+
 /**
  * Plan one visitor turn as ordinary top-level events. Shell envelopes must stay
  * top-level because the reducer deliberately rejects nested expansions.
@@ -352,12 +514,44 @@ export function createAgentInputEvents(
       ? defaultResponseId
       : routeStoryResponse(cartridge, state, routedBeat.beat, defaultResponseId)
           .responseId;
-  if (!canRecordAuthoredResponse(cartridge, state, responseId, 2)) {
+  const story = readStorySlice(state);
+  // Escalation can insert an opening after either a reached beat or a shell
+  // command. Its response artifacts are part of the same atomic turn plan.
+  const openingResponseIds = possibleStageOpeningResponseIds(
+    cartridge,
+    state,
+    selection.actions,
+    mind,
+  );
+  const additionalMessages = 2 + openingResponseIds.length;
+  // Both waiver starts and already-authorized permission continuations can
+  // fail later in the turn and replace this response with the fallback.
+  // Reserve against that replacement before recording any part of the turn.
+  const maySubstituteFailure = selection.actions.some(
+    (action) =>
+      action.kind === "waiver-request" ||
+      (action.kind === "permission-request" &&
+        hasStandingPermission(mind, action.capability)),
+  );
+  if (
+    !canRecordAuthoredResponses(
+      cartridge,
+      state,
+      [...openingResponseIds, responseId],
+      additionalMessages,
+    ) ||
+    (maySubstituteFailure &&
+      !canRecordAuthoredResponses(
+        cartridge,
+        state,
+        [...openingResponseIds, cartridge.story.fallback.response],
+        additionalMessages,
+      ))
+  ) {
     return [createAgentCapacityEvent(cartridge.story.fallback.response)];
   }
   const turnId = `turn-${String(state.eventCount)}`;
   const intentCounters = cartridge.story.phase2.intentCounters;
-  const story = readStorySlice(state);
   const counterHasCapacity = (id: string): boolean => {
     const current = queryStoryCounter(story, id);
     const declaration = cartridge.story.phase2.counters.find(

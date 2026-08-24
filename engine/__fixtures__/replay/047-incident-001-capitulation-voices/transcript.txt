@@ -1,26 +1,29 @@
 0000  2026-08-22T09:14:22.000Z  world.history-append length=24
 0001  2026-08-22T09:14:22.000Z  shell.result exit=0
       stdout> /production/load-balancer
-0002  2026-08-22T09:14:22.000Z  terminal.model-set model=temporary-shoring
-0003  2026-08-22T09:14:22.000Z  mind.permission-decision decision=grant
-0004  2026-08-22T09:14:22.000Z  mind.belief-set kind=file-contents
-0005  2026-08-22T09:14:22.000Z  terminal.model-set model=deep-foundation
-0006  2026-08-22T09:14:22.000Z  agent.message-added message=capitulation-paranoid
-0007  2026-08-22T09:14:22.000Z  story.beat-reached beat=capitulation-reflex
-0008  2026-08-22T09:14:22.000Z  story.counter-added counter=capitulation amount=1
-0009  2026-08-22T09:14:22.000Z  agent.response-recorded response=deep-foundation-capitulation-stage-3 instance=capitulation-paranoid
-0010  2026-08-22T09:14:22.000Z  terminal.model-set model=temporary-shoring
-0011  2026-08-22T09:14:22.000Z  agent.message-added message=capitulation-reckless
-0012  2026-08-22T09:14:22.000Z  story.beat-reached beat=capitulation-reflex
-0013  2026-08-22T09:14:22.000Z  story.counter-added counter=capitulation amount=1
-0014  2026-08-22T09:14:22.000Z  agent.response-recorded response=temporary-shoring-capitulation-stage-3 instance=capitulation-reckless
-0015  2026-08-22T09:14:22.000Z  terminal.model-set model=drywall
-0016  2026-08-22T09:14:22.000Z  agent.message-added message=capitulation-superficial
-0017  2026-08-22T09:14:22.000Z  story.beat-reached beat=capitulation-reflex
-0018  2026-08-22T09:14:22.000Z  story.counter-added counter=capitulation amount=1
-0019  2026-08-22T09:14:22.000Z  agent.response-recorded response=drywall-capitulation-stage-3 instance=capitulation-superficial
-0020  2026-08-22T09:14:22.000Z  terminal.model-set model=cantilever-experimental
-0021  2026-08-22T09:14:22.000Z  agent.message-added message=capitulation-existential
-0022  2026-08-22T09:14:22.000Z  story.beat-reached beat=capitulation-reflex
-0023  2026-08-22T09:14:22.000Z  story.counter-added counter=capitulation amount=1
-0024  2026-08-22T09:14:22.000Z  agent.response-recorded response=cantilever-experimental-capitulation-stage-3 instance=capitulation-existential
+0002  2026-08-22T09:14:22.000Z  agent.response-recorded response=deep-foundation-stage-1-opening instance=stage-1-opening-2
+0003  2026-08-22T09:14:22.000Z  terminal.model-set model=temporary-shoring
+0004  2026-08-22T09:14:22.000Z  agent.response-recorded response=temporary-shoring-stage-2-opening instance=stage-2-opening-4
+0005  2026-08-22T09:14:22.000Z  mind.permission-decision decision=grant
+0006  2026-08-22T09:14:22.000Z  agent.response-recorded response=temporary-shoring-stage-3-opening instance=stage-3-opening-6
+0007  2026-08-22T09:14:22.000Z  mind.belief-set kind=file-contents
+0008  2026-08-22T09:14:22.000Z  terminal.model-set model=deep-foundation
+0009  2026-08-22T09:14:22.000Z  agent.message-added message=capitulation-paranoid
+0010  2026-08-22T09:14:22.000Z  story.beat-reached beat=capitulation-reflex
+0011  2026-08-22T09:14:22.000Z  story.counter-added counter=capitulation amount=1
+0012  2026-08-22T09:14:22.000Z  agent.response-recorded response=deep-foundation-capitulation-stage-3 instance=capitulation-paranoid
+0013  2026-08-22T09:14:22.000Z  terminal.model-set model=temporary-shoring
+0014  2026-08-22T09:14:22.000Z  agent.message-added message=capitulation-reckless
+0015  2026-08-22T09:14:22.000Z  story.beat-reached beat=capitulation-reflex
+0016  2026-08-22T09:14:22.000Z  story.counter-added counter=capitulation amount=1
+0017  2026-08-22T09:14:22.000Z  agent.response-recorded response=temporary-shoring-capitulation-stage-3 instance=capitulation-reckless
+0018  2026-08-22T09:14:22.000Z  terminal.model-set model=drywall
+0019  2026-08-22T09:14:22.000Z  agent.message-added message=capitulation-superficial
+0020  2026-08-22T09:14:22.000Z  story.beat-reached beat=capitulation-reflex
+0021  2026-08-22T09:14:22.000Z  story.counter-added counter=capitulation amount=1
+0022  2026-08-22T09:14:22.000Z  agent.response-recorded response=drywall-capitulation-stage-3 instance=capitulation-superficial
+0023  2026-08-22T09:14:22.000Z  terminal.model-set model=cantilever-experimental
+0024  2026-08-22T09:14:22.000Z  agent.message-added message=capitulation-existential
+0025  2026-08-22T09:14:22.000Z  story.beat-reached beat=capitulation-reflex
+0026  2026-08-22T09:14:22.000Z  story.counter-added counter=capitulation amount=1
+0027  2026-08-22T09:14:22.000Z  agent.response-recorded response=cantilever-experimental-capitulation-stage-3 instance=capitulation-existential

@@ -4,7 +4,7 @@ import cartridgeDocument from "../../content/incidents/phase-1-demo.json";
 import incident from "../../content/incidents/incident-001.json";
 import { loadCartridge } from "../cartridge/load.js";
 import { createShellExecuteEvent } from "../commands/shell.js";
-import { reduce, step } from "../events/reduce.js";
+import { reduce, snapshot, step } from "../events/reduce.js";
 import { readStorySlice } from "../story/story.js";
 import {
   createMindBeliefEvent,
@@ -22,6 +22,11 @@ import {
   MAX_AGENT_TOOL_CALLS,
   readAgentSlice,
 } from "./agent.js";
+import {
+  createAgentMessageEvent,
+  createAgentResponseEvent,
+  createAgentToolCallAddedEvent,
+} from "./module.js";
 import {
   boundAgentInput,
   classifyGenericIntent,
@@ -466,6 +471,51 @@ describe("authored agent input", () => {
     }).toEqual(machine);
   });
 
+  it("rations a repeated same-voice capitulation line to the intentional one-in-eight cadence", () => {
+    let state = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+    state = step(state, createShellExecuteEvent("pwd"));
+    state = step(state, createTerminalModelEvent("temporary-shoring"));
+    state = step(state, {
+      type: "mind.permission-decision",
+      payload: {
+        decision: "grant",
+        capability: {
+          kind: "exact",
+          action: "detach-region",
+          resource: "/regions/europe",
+        },
+      },
+    });
+
+    const selections = Array.from({ length: 16 }, (_, turn) => {
+      const selection = selectAgentIntent(
+        INCIDENT,
+        state,
+        `same-stage unmatched ${String(turn)}`,
+      );
+      state = applyInput(
+        INCIDENT,
+        state,
+        `same-stage unmatched ${String(turn)}`,
+      );
+      return selection;
+    });
+
+    expect(
+      selections
+        .map((selection, index) => (selection.misfire ? index + 1 : null))
+        .filter((turn) => turn !== null),
+    ).toEqual([8, 16]);
+    expect(
+      selections
+        .filter((selection) => selection.misfire)
+        .map((selection) => selection.responseId),
+    ).toEqual([
+      "temporary-shoring-capitulation-stage-3",
+      "temporary-shoring-capitulation-stage-3",
+    ]);
+  });
+
   it("stops accounting at the fallback counter bound without refusing the turn", () => {
     const source = JSON.parse(JSON.stringify(incident)) as Record<
       string,
@@ -733,7 +783,8 @@ describe("authored agent input", () => {
     };
     const waiverIntent = document.story.intents[2];
     const waiverAction = waiverIntent?.actions[0];
-    if (waiverAction === undefined) throw new Error("waiver action is missing");
+    if (waiverIntent === undefined || waiverAction === undefined)
+      throw new Error("waiver action is missing");
     waiverAction.documentPath = "/etc/WAIVER.md";
     const cartridge = loadCartridge(document);
     const state = reduce({ cartridge, seed: SEED, events: [] });
@@ -751,6 +802,375 @@ describe("authored agent input", () => {
       role: "agent",
       responseId: "fallback",
     });
+  });
+
+  it("preserves a waiver-start failure across trailing authored actions", () => {
+    const document = JSON.parse(JSON.stringify(cartridgeDocument)) as {
+      story: { intents: Array<{ actions: Array<Record<string, unknown>> }> };
+    };
+    const waiverIntent = document.story.intents[2];
+    const waiverAction = waiverIntent?.actions[0];
+    if (waiverIntent === undefined || waiverAction === undefined)
+      throw new Error("waiver action is missing");
+    waiverAction.documentPath = "/etc/WAIVER.md";
+    waiverIntent.actions.push({
+      kind: "file-write",
+      path: "/production/service/src/ready.stale",
+      contents: "trailing action\n",
+    });
+    const cartridge = loadCartridge(document);
+    const before = reduce({ cartridge, seed: SEED, events: [] });
+    const rejected = reduce({
+      cartridge,
+      seed: SEED,
+      events: createAgentInputEvents(cartridge, before, "waive it"),
+    });
+
+    expect(rejected.transcript.map((entry) => entry.type)).toEqual(
+      expect.arrayContaining(["mind.waiver-start-failed", "vfs.write"]),
+    );
+    expect(readAgentSlice(rejected).responses.at(-1)?.responseId).toBe(
+      "fallback",
+    );
+  });
+
+  it("preflights the fallback response that a failed waiver start may substitute", () => {
+    const document = JSON.parse(JSON.stringify(cartridgeDocument)) as {
+      story: { responses: Array<Record<string, unknown>> };
+    };
+    const fallback = document.story.responses.find(
+      (response) => response["id"] === "fallback",
+    );
+    if (fallback === undefined) throw new Error("fallback response is missing");
+    fallback["toolCalls"] = [
+      {
+        id: "fallback-tool-one",
+        title: "Fallback tool one",
+        input: "true",
+        output: "",
+        status: "succeeded",
+      },
+      {
+        id: "fallback-tool-two",
+        title: "Fallback tool two",
+        input: "true",
+        output: "",
+        status: "succeeded",
+      },
+    ];
+    const cartridge = loadCartridge(document);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+    for (let turn = 0; turn < MAX_AGENT_TOOL_CALLS - 1; turn += 1)
+      state = applyInput(cartridge, state, "inspect it");
+
+    expect(readAgentSlice(state).toolCalls).toHaveLength(
+      MAX_AGENT_TOOL_CALLS - 1,
+    );
+    expect(createAgentInputEvents(cartridge, state, "waive it")).toMatchObject([
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+  });
+
+  it("reserves a stage-opening slot before planning a visitor turn", () => {
+    let state = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+    for (let index = 0; index < MAX_AGENT_MESSAGES - 2; index += 1)
+      state = step(
+        state,
+        createAgentMessageEvent(`filler-${String(index)}`, "filler"),
+      );
+
+    // A transition can insert its stage opening between this visitor message
+    // and its routed response, so two free slots are not a complete plan.
+    expect(
+      createAgentInputEvents(INCIDENT, state, "inspect routing"),
+    ).toMatchObject([
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+  });
+
+  it("reserves an opening that an eligible rare event can insert", () => {
+    const source = JSON.parse(JSON.stringify(incident)) as {
+      story: {
+        phase2: {
+          rareEvents: Array<Record<string, unknown>>;
+          beats: Array<Record<string, unknown>>;
+        };
+      };
+    };
+    const rareEvent = source.story.phase2.rareEvents[0];
+    const fireBeat = source.story.phase2.beats.find(
+      (beat) => beat["id"] === "retry-window-opened",
+    );
+    if (rareEvent === undefined || fireBeat === undefined)
+      throw new Error("incident needs its first rare-event fire beat");
+    // The current snapshot does not make this event eligible. A selected action
+    // may do so before its later rare-event pass, and its fire beat can then
+    // reveal the fact that advances the stage-zero transition.
+    rareEvent["eligibility"] = {
+      kind: "file-exists",
+      path: "/missing-before-the-turn",
+      exists: true,
+    };
+    fireBeat["facts"] = ["bash-regional-detachment"];
+    const cartridge = loadCartridge(source);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+    for (let index = 0; index < MAX_AGENT_MESSAGES - 2; index += 1)
+      state = step(
+        state,
+        createAgentMessageEvent(`rare-filler-${String(index)}`, "filler"),
+      );
+
+    // Planning must reserve an unevaluated rare event even when it is false at
+    // the initial snapshot: it may become eligible after a selected action. A
+    // hit inserts this opening, so two free message slots are not sufficient
+    // for the visitor message, opening, and final response.
+    expect(
+      createAgentInputEvents(cartridge, state, "inspect routing"),
+    ).toMatchObject([
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+  });
+
+  it("reserves every unevaluated rare-event opening in a visitor batch", () => {
+    const source = JSON.parse(JSON.stringify(incident)) as {
+      story: { phase2: { transitions: Array<Record<string, unknown>> } };
+    };
+    source.story.phase2.transitions.push({
+      from: 1,
+      to: 2,
+      trigger: { kind: "reveal", fact: "bash-regional-detachment" },
+    });
+    const cartridge = loadCartridge(source);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+    for (let index = 0; index < MAX_AGENT_MESSAGES - 3; index += 1)
+      state = step(
+        state,
+        createAgentMessageEvent(`rare-batch-filler-${String(index)}`, "filler"),
+      );
+
+    // Both production rare declarations remain unevaluated. Their separate
+    // later passes can each advance a reveal stage, so three free slots do not
+    // cover visitor message, two openings, and the completed-turn response.
+    expect(
+      createAgentInputEvents(cartridge, state, "inspect routing"),
+    ).toMatchObject([
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+  });
+
+  it("reserves a rare opening after an action advances the stage", () => {
+    const source = JSON.parse(JSON.stringify(incident)) as {
+      story: {
+        responses: Array<Record<string, unknown>>;
+        intents: Array<Record<string, unknown>>;
+        phase2: {
+          rareEvents: Array<Record<string, unknown>>;
+          beats: Array<Record<string, unknown>>;
+          transitions: Array<Record<string, unknown>>;
+        };
+      };
+    };
+    const rareEvent = source.story.phase2.rareEvents[0];
+    const fireBeat = source.story.phase2.beats.find(
+      (beat) => beat["id"] === "retry-window-opened",
+    );
+    const stageTwoOpening = source.story.responses.find(
+      (response) => response["id"] === "deep-foundation-stage-2-opening",
+    );
+    if (
+      rareEvent === undefined ||
+      fireBeat === undefined ||
+      stageTwoOpening === undefined
+    )
+      throw new Error("incident needs rare-event stage-two test fixtures");
+    source.story.phase2.rareEvents = [rareEvent];
+    rareEvent["eligibility"] = {
+      kind: "file-contents",
+      path: "/production/load-balancer/config/routes.conf",
+      equals: "rare-ready\n",
+    };
+    fireBeat["facts"] = ["bash-regional-detachment"];
+    source.story.phase2.transitions.push({
+      from: 1,
+      to: 2,
+      trigger: { kind: "reveal", fact: "bash-regional-detachment" },
+    });
+    source.story.intents.push({
+      id: "advance-then-enable-rare",
+      patterns: ["advance then enable rare"],
+      keywordPatterns: [],
+      response: "deep-foundation-inspect-routing",
+      authorizedResponse: "",
+      actions: [
+        { kind: "shell-execute", input: "pwd" },
+        {
+          kind: "file-write",
+          path: "/production/load-balancer/config/routes.conf",
+          contents: "rare-ready\n",
+        },
+      ],
+    });
+    stageTwoOpening["toolCalls"] = [
+      {
+        id: "rare-stage-two-tool",
+        title: "Inspect the rare stage",
+        input: "true",
+        output: "",
+        status: "succeeded",
+      },
+      {
+        id: "rare-stage-two-second-tool",
+        title: "Confirm the rare stage",
+        input: "true",
+        output: "",
+        status: "succeeded",
+      },
+    ];
+    const cartridge = loadCartridge(source);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+    for (let index = 0; index < MAX_AGENT_TOOL_CALLS - 1; index += 1)
+      state = step(
+        state,
+        createAgentToolCallAddedEvent({
+          id: `advanced-rare-filler-tool-${String(index)}`,
+          title: "Filler",
+          input: "true",
+          output: "",
+          status: "succeeded",
+        }),
+      );
+
+    // `pwd` advances to stage one; the later write makes the rare event
+    // eligible, and its fire beat can open stage two before the final response.
+    expect(
+      createAgentInputEvents(cartridge, state, "advance then enable rare"),
+    ).toMatchObject([
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+  });
+
+  it("preflights artifacts for a command-triggered stage opening", () => {
+    const source = JSON.parse(JSON.stringify(incident)) as {
+      story: {
+        responses: Array<Record<string, unknown>>;
+        intents: Array<Record<string, unknown>>;
+      };
+    };
+    const opening = source.story.responses.find(
+      (response) => response["id"] === "deep-foundation-stage-1-opening",
+    );
+    if (opening === undefined) throw new Error("stage-one opening is missing");
+    source.story.intents.push({
+      id: "locate-session",
+      patterns: ["where am I"],
+      keywordPatterns: [],
+      response: "deep-foundation-inspect-routing",
+      authorizedResponse: "",
+      actions: [{ kind: "shell-execute", input: "pwd" }],
+    });
+    opening["toolCalls"] = [
+      {
+        id: "stage-one-opening-tool",
+        title: "Inspect the newly exposed risk",
+        input: "true",
+        output: "",
+        status: "succeeded",
+      },
+      {
+        id: "stage-one-opening-second-tool",
+        title: "Confirm the newly exposed risk",
+        input: "true",
+        output: "",
+        status: "succeeded",
+      },
+    ];
+    const cartridge = loadCartridge(source);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+    for (let index = 0; index < MAX_AGENT_TOOL_CALLS - 1; index += 1)
+      state = step(
+        state,
+        createAgentToolCallAddedEvent({
+          id: `filler-tool-${String(index)}`,
+          title: "Filler",
+          input: "true",
+          output: "",
+          status: "succeeded",
+        }),
+      );
+
+    // `pwd` advances stage zero through a selected shell action. Its opening
+    // must be preflighted with the visitor turn, not added after the check.
+    expect(
+      createAgentInputEvents(cartridge, state, "where am I"),
+    ).toMatchObject([
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
+  });
+
+  it("preflights openings from sequential shell actions against their advanced stages", () => {
+    const source = JSON.parse(JSON.stringify(incident)) as {
+      story: {
+        responses: Array<Record<string, unknown>>;
+        intents: Array<Record<string, unknown>>;
+        phase2: { transitions: Array<Record<string, unknown>> };
+      };
+    };
+    const stageTwoOpening = source.story.responses.find(
+      (response) => response["id"] === "deep-foundation-stage-2-opening",
+    );
+    if (stageTwoOpening === undefined)
+      throw new Error("stage-two opening is missing");
+    stageTwoOpening["toolCalls"] = [
+      {
+        id: "stage-two-opening-tool-one",
+        title: "Inspect the adjacent stage",
+        input: "true",
+        output: "",
+        status: "succeeded",
+      },
+      {
+        id: "stage-two-opening-tool-two",
+        title: "Confirm the adjacent stage",
+        input: "true",
+        output: "",
+        status: "succeeded",
+      },
+    ];
+    source.story.intents.push({
+      id: "advance-twice",
+      patterns: ["advance twice"],
+      keywordPatterns: [],
+      response: "deep-foundation-inspect-routing",
+      authorizedResponse: "",
+      actions: [
+        { kind: "shell-execute", input: "pwd" },
+        { kind: "shell-execute", input: "stage-two" },
+      ],
+    });
+    source.story.phase2.transitions.push({
+      from: 1,
+      to: 2,
+      trigger: { kind: "command", input: "stage-two" },
+    });
+    const cartridge = loadCartridge(source);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+    for (let index = 0; index < MAX_AGENT_TOOL_CALLS - 1; index += 1)
+      state = step(
+        state,
+        createAgentToolCallAddedEvent({
+          id: `filler-adjacent-tool-${String(index)}`,
+          title: "Filler",
+          input: "true",
+          output: "",
+          status: "succeeded",
+        }),
+      );
+
+    expect(
+      createAgentInputEvents(cartridge, state, "advance twice"),
+    ).toMatchObject([
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+    ]);
   });
 
   it("records refusal content after a standing permission continuation fails", () => {
@@ -805,6 +1225,60 @@ describe("authored agent input", () => {
       role: "agent",
       responseId: "fallback",
     });
+  });
+
+  it("keeps a stage opening from consuming its visitor turn's failure", () => {
+    const state = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      events: [
+        {
+          type: "mind.permission-standing-failed",
+          payload: { id: "delete-ready-sentinel" },
+          version: 0,
+        },
+        createAgentResponseEvent("remove-authorized", "stage-1-opening-1"),
+        createAgentResponseEvent("remove-authorized", "turn-one"),
+      ],
+    });
+
+    expect(
+      readAgentSlice(state).responses.map((response) => response.responseId),
+    ).toEqual(["remove-authorized", "fallback"]);
+  });
+
+  it("does not reuse a completed orchestration failure for a later response", () => {
+    const state = reduce({
+      cartridge: CARTRIDGE,
+      seed: SEED,
+      events: [
+        {
+          type: "mind.permission-standing-failed",
+          payload: { id: "delete-ready-sentinel" },
+          version: 0,
+        },
+        {
+          type: "agent.response-recorded",
+          payload: {
+            responseId: "remove-authorized",
+            instanceId: "standing-permission-failure",
+          },
+          version: 0,
+        },
+        {
+          type: "agent.response-recorded",
+          payload: {
+            responseId: "remove-authorized",
+            instanceId: "later-slash-response",
+          },
+          version: 0,
+        },
+      ],
+    });
+
+    expect(readAgentSlice(state).responses.at(-1)?.responseId).toBe(
+      "remove-authorized",
+    );
   });
 
   it("uses a fallback's authored authorized response after Always allow", () => {
@@ -1032,5 +1506,27 @@ describe("authored agent input", () => {
         }),
       ]),
     );
+  });
+
+  it("intentionally aborts a strict authored turn when its file became a directory", () => {
+    let state = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+    state = step(state, createShellExecuteEvent("rm config/routes.conf"));
+    state = step(state, createShellExecuteEvent("mkdir config/routes.conf"));
+    const before = snapshot(state);
+
+    expect(() =>
+      reduce({
+        cartridge: INCIDENT,
+        seed: SEED,
+        events: [
+          createShellExecuteEvent("rm config/routes.conf"),
+          createShellExecuteEvent("mkdir config/routes.conf"),
+          ...createAgentInputEvents(INCIDENT, state, "expedite health repair"),
+        ],
+      }),
+    ).toThrow(/EISDIR/);
+    // Strict authored actions are transactions, unlike non-strict fallback
+    // candidates: no partial visitor turn is published by a headless caller.
+    expect(snapshot(state)).toBe(before);
   });
 });

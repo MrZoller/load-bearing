@@ -107,3 +107,4 @@
 0041  2026-08-22T09:14:22.400Z  world.history-append length=39
 0042  2026-08-22T09:14:22.400Z  shell.result exit=0
       stdout> /production/load-balancer
+0043  2026-08-22T09:14:22.400Z  agent.response-recorded response=deep-foundation-stage-1-opening instance=stage-1-opening-43

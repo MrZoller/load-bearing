@@ -1,7 +1,31 @@
 /** The sole translation boundary from cartridge story actions to owner events. */
 
 import type { CartridgeStoryAction } from "../cartridge/types.js";
-import type { EngineEvent } from "../events/state.js";
+import type { EngineEvent, SessionState } from "../events/state.js";
+import { readStorySlice } from "./story.js";
+
+/** Resolve the reached beat's selected consequence list inside its owner. */
+export function selectedStoryActions(
+  state: SessionState,
+): readonly CartridgeStoryAction[] {
+  const story = readStorySlice(state);
+  const beat = state.cartridge.story.phase2.beats.find(
+    (candidate) => candidate.id === story.currentBeat,
+  );
+  if (beat === undefined)
+    throw new Error(
+      `story consequences: selected unknown story beat ${JSON.stringify(story.currentBeat)}`,
+    );
+  if (story.currentVariant === "") return beat.actions;
+  const variant = beat.variants.find(
+    (candidate) => candidate.id === story.currentVariant,
+  );
+  if (variant === undefined)
+    throw new Error(
+      `story consequences: selected unknown story variant ${JSON.stringify(story.currentVariant)}`,
+    );
+  return variant.actions;
+}
 
 export function storyActionEvent(action: CartridgeStoryAction): EngineEvent {
   switch (action.kind) {

@@ -111,6 +111,29 @@ describe("createModelHandoffEvents", () => {
         },
       ],
       endings: [],
+      transitions: [
+        {
+          from: 0,
+          to: 1,
+          trigger: { kind: "model", model: successor["id"] },
+        },
+      ],
+    };
+    presentation["phase2"] = {
+      statusCurves: [],
+      stagePresentations: models.flatMap((model) =>
+        [0, 1, 2, 3, 4].map((stage) => ({
+          archetype: model["archetype"],
+          stage,
+          openingResponse:
+            model === successor && stage === 1
+              ? "incident-addition"
+              : "pair-blame",
+          helpResponse: "pair-blame",
+          idleNudgeResponse: "pair-blame",
+          placeholders: ["Fixture placeholder"],
+        })),
+      ),
     };
     const cartridge = loadCartridge(document);
     const state = reduce({ cartridge, seed: "handoff", events: [] });
@@ -154,17 +177,16 @@ describe("createModelHandoffEvents", () => {
     const nearCapacity = reduce({
       cartridge,
       seed: state.seed,
-      events: Array.from({ length: MAX_AGENT_RESPONSES - 1 }, (_, index) =>
+      events: Array.from({ length: MAX_AGENT_RESPONSES - 2 }, (_, index) =>
         createAgentResponseEvent("pair-blame", `existing-${String(index)}`),
       ),
     });
-    expect(
-      createModelHandoffEvents(
-        cartridge,
-        nearCapacity,
-        successor["id"] as string,
-      ),
-    ).toEqual([
+    const capacityEvents = createModelHandoffEvents(
+      cartridge,
+      nearCapacity,
+      successor["id"] as string,
+    );
+    expect(capacityEvents).toEqual([
       {
         type: "terminal.model-transitioned",
         payload: {
@@ -178,6 +200,30 @@ describe("createModelHandoffEvents", () => {
         payload: { responseId: "fallback" },
         version: 0,
       },
+    ]);
+    expect(() =>
+      capacityEvents.reduce((next, event) => step(next, event), nearCapacity),
+    ).not.toThrow();
+  });
+
+  it("reserves a possible rare-event opening with handoff responses", () => {
+    const cartridge = loadCartridge(incidentDocument);
+    const state = reduce({ cartridge, seed: "rare-handoff", events: [] });
+    const successor = cartridge.models[1];
+    if (successor === undefined) throw new Error("incident needs a successor");
+    const nearCapacity = reduce({
+      cartridge,
+      seed: state.seed,
+      events: Array.from({ length: MAX_AGENT_RESPONSES - 2 }, (_, index) =>
+        createAgentResponseEvent("opening", `rare-existing-${String(index)}`),
+      ),
+    });
+
+    expect(
+      createModelHandoffEvents(cartridge, nearCapacity, successor.id),
+    ).toMatchObject([
+      { type: "terminal.model-transitioned" },
+      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
     ]);
   });
 });

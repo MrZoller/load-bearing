@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { loadCartridge } from "../cartridge/load.js";
 import { loadCartridgeFixture } from "../testing/fixtures.js";
 import { defineEventModule } from "./module.js";
+import { ENGINE_EVENT_MODULES } from "./modules.js";
 import { bootstrap, step } from "./reduce.js";
 import { createRegistry } from "./registry.js";
 
@@ -170,6 +171,59 @@ describe("event expansion", () => {
     expect(mutatingExpander("random")).toThrow(
       /may not move the clock or PRNG/,
     );
+  });
+
+  it("does not replay a failed envelope reaction while staging its fallback", () => {
+    const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
+    const repository = source["repository"] as Record<string, unknown>;
+    const files = repository["files"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    files["/var/log/recovery.log"] = { contents: "start\n" };
+    repository["logs"] = [
+      { id: "recovery-log", kind: "file", path: "/var/log/recovery.log" },
+    ];
+    repository["reactions"] = [
+      {
+        id: "refuse-envelope",
+        on: "recover.outer",
+        predicates: [],
+        actions: [{ kind: "log-append", log: "recovery-log", entry: "nope" }],
+      },
+    ];
+    const recovery = defineEventModule<never>({
+      namespace: "recover",
+      description: "fallback reaction regression",
+      events: {
+        "recover.child": { version: 0, apply: () => ({ summary: "primary" }) },
+        "recover.fallback": {
+          version: 0,
+          apply: () => ({ summary: "fallback" }),
+        },
+        "recover.outer": {
+          version: 0,
+          apply: () => ({
+            expansion: [{ type: "recover.child" }],
+            expansionFallback: [{ type: "recover.fallback" }],
+          }),
+        },
+      },
+    });
+    const registry = createRegistry([...ENGINE_EVENT_MODULES, recovery]);
+    const initial = bootstrap({
+      cartridge: loadCartridge(source),
+      seed: "fallback-reaction",
+      registry,
+    });
+    const before = step(
+      initial,
+      { type: "vfs.delete", payload: { path: "/var/log/recovery.log" } },
+      registry,
+    );
+
+    const after = step(before, { type: "recover.outer" }, registry);
+    expect(after.transcript.at(-1)?.type).toBe("recover.fallback");
   });
 
   it.each([

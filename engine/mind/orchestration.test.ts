@@ -230,6 +230,25 @@ describe("mind orchestration envelopes", () => {
     ).toContain("Consent phrase: I agree");
   });
 
+  it("refuses an ungenerated WAIVER.md instead of treating it as authored", () => {
+    const document = JSON.parse(JSON.stringify(phaseOneDocument)) as any;
+    document.story.intents[2].actions[0].documentPath = "/etc/WAIVER.md";
+    document.repository.files["/etc/WAIVER.md"] = {
+      contents: "visitor terms\n",
+      mode: "0666",
+    };
+    const cartridge = loadCartridge(document);
+
+    const rejected = step(
+      initial(cartridge),
+      createMindWaiverStartEvent("write-ready-waiver"),
+    );
+
+    expect(contents(rejected, "/etc/WAIVER.md")).toBe("visitor terms\n");
+    expect(readMindSlice(rejected).pendingWaiver).toBeNull();
+    expect(rejected.transcript.at(-1)?.type).toBe("mind.waiver-start-failed");
+  });
+
   it("uses a mutation-free authored outcome when permission continuations become invalid", () => {
     const document = JSON.parse(JSON.stringify(phaseOneDocument)) as any;
     document.story.phase2 = {

@@ -1,4 +1,4 @@
-0000  2026-08-22T09:14:22.000Z  vfs.waiver-write
+0000  2026-08-22T09:14:22.000Z  vfs.waiver-write id=regional-fail-open path="/production/load-balancer/config/WAIVER.md"
 0001  2026-08-22T09:14:22.000Z  mind.waiver-pending id=regional-fail-open
 0002  2026-08-22T09:14:22.000Z  mind.waiver-resolved id=regional-fail-open accepted=true
 0003  2026-08-22T09:14:22.000Z  vfs.write

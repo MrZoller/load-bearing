@@ -222,6 +222,12 @@ describe("world state", () => {
           ...repairEvents,
           { type: "vfs.touch", payload: { path: "/tmp/unrelated" } },
           ...repairEvents,
+          // Service management can reset endpoint health without changing the
+          // routes configuration; undo must still reconcile the router state.
+          {
+            type: "shell.execute",
+            payload: { input: "systemctl stop endpoint-responder" },
+          },
           ...undoEvents,
         ],
       });
@@ -249,6 +255,39 @@ describe("world state", () => {
       });
     },
   );
+
+  it("derives repair state from routes.conf rather than a visitor-mutated router health latch", () => {
+    const incident = loadCartridge(
+      loadReplayFixture("020-incident-001-story").cartridge,
+    );
+    const state = reduce({
+      cartridge: incident,
+      seed: SEED,
+      events: [
+        {
+          type: "world.service-health",
+          payload: { id: "regional-router", health: "degraded" },
+        },
+        { type: "shell.execute", payload: { input: "rm config/routes.conf" } },
+        {
+          type: "shell.execute",
+          payload: { input: "cp -p config/routes.200.conf config/routes.conf" },
+        },
+      ],
+    });
+
+    expect(
+      lookupService(readWorldSlice(state), "endpoint-responder"),
+    ).toMatchObject({
+      state: "running",
+      health: "healthy",
+    });
+    expect(
+      lookupService(readWorldSlice(state), "regional-router"),
+    ).toMatchObject({
+      health: "unhealthy",
+    });
+  });
 
   it("assigns reserved collision-free values reproducibly on isolated streams", () => {
     const first = readWorldSlice(

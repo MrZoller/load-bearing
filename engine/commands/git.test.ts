@@ -213,6 +213,9 @@ describe("Git commands", () => {
       ],
     ).toMatchObject({
       contents: "health_status=500\neurope_attached=true\n",
+      // Git tracks only the executable bit. A content-identical restore is a
+      // no-op here, so cp -p's 0644 remains instead of recovering group-write.
+      mode: "0644",
     });
   });
 

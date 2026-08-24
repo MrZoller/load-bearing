@@ -37,6 +37,7 @@ import { deepFreeze } from "../freeze.js";
 import { parseTimestamp } from "../clock/civil.js";
 import { detectBrand } from "../serialize/canonical.js";
 import { MAX_INT_RANGE } from "../random/stream.js";
+import { MAX_WAIVER_CONSENTS } from "../mind/mind.js";
 import type { StoryCondition } from "../story/types.js";
 import { keywordPatternIssue, normalizeIntentPhrase } from "./intent.js";
 import {
@@ -1699,6 +1700,12 @@ function checkStoryAndPresentation(
           "at least one adjacent owner action",
           "an empty array",
         );
+      if (candidate.when.length === 0 && index !== candidates.length - 1)
+        report.addPhrase(
+          `${root}/when`,
+          "conditions on every candidate before the final fallback slot",
+          "an unconditional candidate that makes later candidates unreachable",
+        );
     });
     if (
       candidates.length > 0 &&
@@ -1908,6 +1915,8 @@ function checkStoryAndPresentation(
       );
   });
   const orchestrationIds = new Map<string, string>();
+  const waiverPaths = new Map<string, string>();
+  let waiverDeclarations = 0;
   const checkStoryActions = (
     actions: readonly CartridgeAgentAction[],
     pointer: string,
@@ -1992,6 +2001,16 @@ function checkStoryAndPresentation(
           );
       }
       if (action.kind === "waiver-request") {
+        waiverDeclarations += 1;
+        const firstPath = waiverPaths.get(action.documentPath);
+        if (firstPath === undefined)
+          waiverPaths.set(action.documentPath, `${root}/documentPath`);
+        else
+          report.addPhrase(
+            `${root}/documentPath`,
+            "a document path no other waiver request uses",
+            `${JSON.stringify(action.documentPath)}, already used by ${firstPath}`,
+          );
         if (!action.documentPath.endsWith("/WAIVER.md"))
           report.addPhrase(
             `${root}/documentPath`,
@@ -2082,6 +2101,12 @@ function checkStoryAndPresentation(
       `/story/intents/${String(index)}/actions`,
     );
   });
+  if (waiverDeclarations > MAX_WAIVER_CONSENTS)
+    report.addPhrase(
+      "/story/intents",
+      `at most ${String(MAX_WAIVER_CONSENTS)} waiver declarations, so every distinct consent fits the bounded ledger`,
+      `${String(waiverDeclarations)} waiver declarations`,
+    );
 
   const pools = new Map<string, number>();
   presentation.spinnerPools.forEach((pool, index) => {

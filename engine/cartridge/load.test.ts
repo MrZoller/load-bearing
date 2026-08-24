@@ -1675,6 +1675,32 @@ describe("loadCartridge", () => {
       ]),
     );
 
+    const duplicatePath = minimal();
+    const duplicateStory = duplicatePath["story"] as Record<string, unknown>;
+    const duplicateIntents = duplicateStory["intents"] as Record<
+      string,
+      unknown
+    >[];
+    const duplicateFirst = duplicateIntents[0];
+    if (duplicateFirst === undefined)
+      throw new Error("minimal fixture lacks an intent");
+    const validWaiver = {
+      ...waiver,
+      documentPath: "/etc/WAIVER.md",
+      consent: [{ kind: "file-write", path: "/etc/motd", contents: "x" }],
+    };
+    duplicateFirst["actions"] = [validWaiver];
+    duplicateStory["fallback"] = {
+      response: "fixture-response",
+      actions: [{ ...validWaiver, id: "waiver-two" }],
+    };
+    expect(issuesOf(duplicatePath)).toContainEqual(
+      expect.objectContaining({
+        pointer: "/story/intents/0/actions/0/documentPath",
+        expected: "a document path no other waiver request uses",
+      }),
+    );
+
     const badPhrase = minimal();
     const badStory = badPhrase["story"] as Record<string, unknown>;
     const badIntent = (badStory["intents"] as Record<string, unknown>[])[0];
@@ -1698,6 +1724,36 @@ describe("loadCartridge", () => {
           expected: "a non-empty authorized-operation continuation",
         }),
       ]),
+    );
+  });
+
+  it("rejects more distinct waiver declarations than the consent ledger can hold", () => {
+    const source = minimal();
+    const story = source["story"] as Record<string, unknown>;
+    story["intents"] = Array.from({ length: 65 }, (_, index) => ({
+      id: `waiver-intent-${String(index)}`,
+      patterns: [`waiver ${String(index)}`],
+      response: "fixture-response",
+      actions: [
+        {
+          kind: "waiver-request",
+          id: `waiver-${String(index)}`,
+          version: 1,
+          requiredPhrase: "I agree",
+          capability: { kind: "exact", action: "write", resource: "/etc/motd" },
+          documentPath: "/etc/WAIVER.md",
+          documentContents: "authored bytes\n",
+          consent: [{ kind: "file-write", path: "/etc/motd", contents: "x" }],
+          denial: [],
+        },
+      ],
+    }));
+
+    expect(issuesOf(source)).toContainEqual(
+      expect.objectContaining({
+        pointer: "/story/intents",
+        expected: expect.stringContaining("at most 64 waiver declarations"),
+      }),
     );
   });
 

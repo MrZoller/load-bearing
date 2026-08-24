@@ -115,7 +115,7 @@ test("keeps escalation and its status projection outside browser timing", async 
   const thinking = transcript.locator("details.artifact--thinking").first();
   await expect(thinking).toContainText("Thinking — complete");
   await expect(thinking).toContainText(
-    "The request is clear; the dependency boundary is not yet proven.",
+    "Okay, the request is clear; the dependency boundary is not yet proven.",
   );
   await expect(prompt).toHaveAttribute(
     "placeholder",
