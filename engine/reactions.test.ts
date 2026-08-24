@@ -345,6 +345,58 @@ describe("post-event reactions", () => {
     expect(snapshot(before)).toBe(bytes);
   });
 
+  it("counts story consequences from reaction actions in the cascade limit", () => {
+    const value = source();
+    (value["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "start",
+      counters: [],
+      facts: [{ id: "reaction-fact", kind: "reveal" }],
+      beats: [
+        { id: "start", ending: "" },
+        {
+          id: "reaction-target",
+          ending: "",
+          actions: new Array(16).fill(undefined).map(() => ({
+            kind: "log-append",
+            log: "events",
+            entry: "reached",
+          })),
+        },
+      ],
+      endings: [],
+    };
+    repository(value)["reactions"] = [
+      {
+        id: "many-story-reaches-first",
+        on: "clock.tick",
+        predicates: [],
+        actions: new Array(32).fill(undefined).map(() => ({
+          kind: "story-reach",
+          beat: "reaction-target",
+        })),
+      },
+      {
+        id: "many-story-reaches-second",
+        on: "clock.tick",
+        predicates: [],
+        actions: new Array(32).fill(undefined).map(() => ({
+          kind: "story-reach",
+          beat: "reaction-target",
+        })),
+      },
+    ];
+    const before = bootstrap({
+      cartridge: loadCartridge(value),
+      seed: "reaction-story-work",
+    });
+    const bytes = snapshot(before);
+
+    expect(() =>
+      step(before, { type: "clock.tick", payload: { ms: 1 } }),
+    ).toThrow(/reaction cascade exceeds the 1024 derived-event limit/);
+    expect(snapshot(before)).toBe(bytes);
+  });
+
   it("does not count shell expansion source events against the cascade limit", () => {
     const value = source();
     const repo = repository(value);

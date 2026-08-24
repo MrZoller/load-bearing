@@ -677,6 +677,7 @@ function applyStoryConsequences(
   registry: EventRegistry,
   where: string,
   triggers: string[],
+  reactionWork?: { derivedEvents: number },
 ): SessionState {
   let state = initial;
   let work = 0;
@@ -689,6 +690,13 @@ function applyStoryConsequences(
         throw new Error(
           `${where}: story consequence chain exceeds the ${String(MAX_STORY_CONSEQUENCE_WORK)} derived-event limit`,
         );
+      if (
+        reactionWork !== undefined &&
+        reactionWork.derivedEvents >= MAX_STORY_CONSEQUENCE_WORK
+      )
+        throw new Error(
+          `${where}: reaction cascade exceeds the ${String(MAX_STORY_CONSEQUENCE_WORK)} derived-event limit`,
+        );
       const event = storyActionEvent(action);
       state = applyDerivedEvent(
         state,
@@ -698,6 +706,7 @@ function applyStoryConsequences(
         "story consequence",
       );
       work += 1;
+      if (reactionWork !== undefined) reactionWork.derivedEvents += 1;
       triggers.push(event.type);
       if (event.type === "story.beat-reached") dispatchSelected();
     }
@@ -727,7 +736,7 @@ function applyReactions(
   const maxDerivedEvents = 1024;
   let state = initial;
   const queue = [...sourceTypes];
-  let derivedEvents = 0;
+  const reactionWork = { derivedEvents: 0 };
   for (let cursor = 0; cursor < queue.length; cursor += 1) {
     const sourceType = queue[cursor];
     if (sourceType === undefined) continue;
@@ -746,7 +755,7 @@ function applyReactions(
       ) {
         const action = reaction.actions[actionIndex];
         if (action === undefined) continue;
-        if (derivedEvents >= maxDerivedEvents) {
+        if (reactionWork.derivedEvents >= maxDerivedEvents) {
           throw new Error(
             `${where}: reaction cascade exceeds the ${String(maxDerivedEvents)} derived-event limit`,
           );
@@ -759,7 +768,7 @@ function applyReactions(
           `${where} reaction ${JSON.stringify(reaction.id)} action ${String(actionIndex)}`,
           "reaction",
         );
-        derivedEvents += 1;
+        reactionWork.derivedEvents += 1;
         const actionTriggers = [event.type];
         if (event.type === "story.beat-reached")
           state = applyStoryConsequences(
@@ -767,6 +776,7 @@ function applyReactions(
             registry,
             `${where} reaction ${JSON.stringify(reaction.id)} action ${String(actionIndex)}`,
             actionTriggers,
+            reactionWork,
           );
         queue.push(...actionTriggers);
       }
