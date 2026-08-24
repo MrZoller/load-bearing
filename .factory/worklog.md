@@ -400,3 +400,17 @@ for Phase 5 generated cartridges. Returned to the line: rerun -> released-hold
 pass routes the thread to the shepherd; re-review the delta on the next hold.
 
 - 2026-08-24 14:12 UTC - T55 PR #80 review tally after the first Codex round: verifier classified `discussion_r3844201408` as blocking because nested story consequences escaped the transaction-wide reaction work limit. Fixed and pushed `7aa23ef` (1 Codex fix push), with a schema-valid 64-reaction/1,024-consequence regression; `npm test -- engine/reactions.test.ts` (10 passed), `npm run typecheck`, and `npm run format:check` passed. The thread has a fixing-SHA reply and is resolved. Codex: 1 round, 1 blocking / 0 minor / 0 refuted, 1 fix push. `claude-code-review.yml` is absent from both this new head and `main`, so Claude is not configured. CI: 2 completed runs / 0 reruns on the prior head; new-head CI and Codex review are pending. T55 remains held because it is major and requires operator merge authority.
+
+## Operator: T55 (PR #80) representative review, round 2 (2026-08-24)
+
+Round-1 budget fix verified on 7aa23ef: shared transaction-wide derived-event
+counter across reaction cascades and story consequences, checks on both sides,
+cascade tests added; thread verified-blocking, fixed, resolved. CI green and
+Codex reviewed the head — but its round posted a NEW valid P2: the
+discover-bash-regional-detachment reaction predicates only resulting machine
+state, so TUI-fix followed by ANY unrelated Bash cp awards the Bash-only
+ending without Bash performing the detachment (the round-1 negative test
+covered the TUI route alone, not TUI-then-innocent-copy). Provenance is the
+product semantics this hold protects; returned to the line for a generic
+event-predicate spec extension (copy source/destination) plus content and
+tests. Round 3 on the next hold; page Chris if a round-4 blocking appears.
