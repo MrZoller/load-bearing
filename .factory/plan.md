@@ -117,9 +117,10 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/story/actions.test.ts`, and focused goldens author rationed scope creep, victory summaries, real VFS litter, counted flail loops, test-gaming moves, and fantasy estimates through existing owner events; each is discoverable afterward where applicable, coherent with Git/tests/world, and neither universal nor repetitive (criteria 17, 18)
   - deps: T38, T45, T46
   - pr: 79
-- [~] T55 (major) — Integrate and prove four collectible endings
+- [R] T55 (major) — Integrate and prove four collectible endings
   - acceptance: `content/incidents/incident-001.json`, `engine/story/story.test.ts`, and four route goldens fully implement the approved T31 matrix; Bash-only, waiver-ledger, and compact-divergence routes are reachable, rediscovery is idempotent, multiple endings collect in one ordered session-only ledger, no ending is ranked or terminates TUI/Bash/model switching, and no browser/server persistence is added (criteria 14, 18; approved decisions Q1=A, Q3=A, Q4=B)
   - deps: T45, T47, T48, T49, T50, T51, T52, T53, T54
+  - pr: 80
 - [ ] T56 (standard) — Phase 2 headless replay and coherence gate
   - acceptance: `engine/__fixtures__/replay/` and focused matrices cover the ≤5-exchange arc, four personas, 12 handoffs, permissions/waiver, compact divergence, shell discovery, stages 0–4, rare isolation, habits, callbacks, and all endings; adversarial checks assert world/belief/permission/beat/ending consistency, Node/browser bytes match, fixture/schema diffs are reviewed, and `npm run typecheck`, `npm run format:check`, `npm run gate:purity`, `npm run test:coverage`, and `npm run test:timezones` pass (criteria 2, 4–18, 20)
   - deps: T47, T48, T49, T50, T55

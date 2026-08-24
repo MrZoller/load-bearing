@@ -163,3 +163,4 @@
 {"schemaVersion":1,"task":"T54","event":"ship","at":"2026-08-24T13:12:36Z","size":"standard","reclassifiedFrom":null,"internal":{"rounds":1,"findings":{"blocking":0,"minor":0,"invalid":0},"fixed":0}}
 {"schemaVersion":1,"task":"T54","event":"pr","at":"2026-08-24T13:23:52Z","by":"factory-git","pr":79,"openedAt":"2026-08-24T13:12:31Z","mergedAt":"2026-08-24T13:23:44Z","commits":18,"commitsAfterOpen":0,"reviews":{},"issueComments":{},"reactions":{"chatgpt-codex-connector":{"+1":1}},"threads":{},"checkRuns":{"total":2,"failed":0}}
 {"schemaVersion":1,"task":"T54","event":"merge","at":"2026-08-24T13:24:06Z","pr":79,"external":{"codex":{"rounds":1,"findings":{"blocking":0,"minor":0,"refuted":0},"fixPushes":0}},"ci":{"runs":2,"reruns":0}}
+{"schemaVersion":1,"task":"T55","event":"ship","at":"2026-08-24T14:00:55Z","size":"major","reclassifiedFrom":null,"internal":{"rounds":2,"findings":{"blocking":1,"minor":1,"invalid":0},"fixed":2}}

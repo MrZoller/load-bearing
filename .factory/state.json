@@ -5,7 +5,7 @@
   "plan_approved": true,
   "current_task": "T55",
   "branch": "factory/t55-collectible-endings",
-  "pr": null,
-  "hold": false,
-  "updated": "2026-08-24T13:25:13Z"
+  "pr": 80,
+  "hold": true,
+  "updated": "2026-08-24T14:00:55Z"
 }
