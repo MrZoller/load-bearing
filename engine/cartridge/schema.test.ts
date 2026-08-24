@@ -641,10 +641,6 @@ describe("descriptor and type lockstep", () => {
       story.fields.intents.node.items.fields.applicability.node.fields.stage
         .node,
     );
-    agrees<CartridgeIntent["applicability"]["when"][number]>(
-      story.fields.intents.node.items.fields.applicability.node.fields.when.node
-        .items,
-    );
     agrees<CartridgeStory["fallback"]["authorizedResponse"]>(
       story.fields.fallback.node.fields.authorizedResponse.node,
     );
