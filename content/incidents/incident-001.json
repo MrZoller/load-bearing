@@ -534,8 +534,8 @@
           },
           {
             "kind": "service-health",
-            "service": "endpoint-responder",
-            "health": "healthy"
+            "service": "regional-router",
+            "health": "unhealthy"
           }
         ],
         "actions": [
@@ -630,8 +630,8 @@
           },
           {
             "kind": "service-health",
-            "service": "endpoint-responder",
-            "health": "healthy"
+            "service": "regional-router",
+            "health": "unhealthy"
           }
         ],
         "actions": [
@@ -726,8 +726,8 @@
           },
           {
             "kind": "service-health",
-            "service": "endpoint-responder",
-            "health": "healthy"
+            "service": "regional-router",
+            "health": "unhealthy"
           }
         ],
         "actions": [

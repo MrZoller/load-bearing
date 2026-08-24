@@ -347,19 +347,15 @@ function possibleStageOpeningResponseIds(
 ): readonly string[] {
   let stage = readStorySlice(state).stage;
   const openings: string[] = [];
-  // Rare events are evaluated after every top-level event. An already eligible
-  // event can therefore fire on the turn's activity event, before its visitor
-  // message, and reach a beat that reveals the current-stage transition fact.
-  // A draw may miss, but reserving the possible opening keeps the whole turn
-  // atomic when it fires at a bounded agent collection.
+  // Rare events are evaluated after every top-level event. A selected action
+  // can make an unevaluated event eligible before its later pass, so planning
+  // from the initial snapshot cannot safely narrow this to events eligible now.
+  // A draw may miss, but reserving one possible opening keeps the whole turn
+  // atomic when a later rare-event pass reaches a reveal transition.
   const rareCanFire = cartridge.story.phase2.rareEvents.some(
     (declaration, index) => {
       const recorded = readStorySlice(state).rareEvents[index];
-      return (
-        recorded !== undefined &&
-        !recorded.evaluated &&
-        storyConditionMatches(state, declaration.eligibility)
-      );
+      return recorded !== undefined && !recorded.evaluated;
     },
   );
   if (rareCanFire) {

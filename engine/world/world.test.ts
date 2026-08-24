@@ -222,6 +222,12 @@ describe("world state", () => {
           ...repairEvents,
           { type: "vfs.touch", payload: { path: "/tmp/unrelated" } },
           ...repairEvents,
+          // Service management can reset endpoint health without changing the
+          // routes configuration; undo must still reconcile the router state.
+          {
+            type: "shell.execute",
+            payload: { input: "systemctl stop endpoint-responder" },
+          },
           ...undoEvents,
         ],
       });

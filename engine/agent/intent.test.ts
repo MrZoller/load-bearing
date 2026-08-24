@@ -903,11 +903,12 @@ describe("authored agent input", () => {
     );
     if (rareEvent === undefined || fireBeat === undefined)
       throw new Error("incident needs its first rare-event fire beat");
-    // This makes the event eligible before the visitor batch starts, while its
-    // fire beat reveals the fact that advances the stage-zero transition.
+    // The current snapshot does not make this event eligible. A selected action
+    // may do so before its later rare-event pass, and its fire beat can then
+    // reveal the fact that advances the stage-zero transition.
     rareEvent["eligibility"] = {
       kind: "file-exists",
-      path: "/production/load-balancer/config/routes.conf",
+      path: "/missing-before-the-turn",
       exists: true,
     };
     fireBeat["facts"] = ["bash-regional-detachment"];
@@ -919,9 +920,10 @@ describe("authored agent input", () => {
         createAgentMessageEvent(`rare-filler-${String(index)}`, "filler"),
       );
 
-    // The rare draw happens after the activity event, before the visitor
-    // message. A hit inserts this opening, so two free message slots are not
-    // sufficient for the visitor message, opening, and final response.
+    // Planning must reserve an unevaluated rare event even when it is false at
+    // the initial snapshot: it may become eligible after a selected action. A
+    // hit inserts this opening, so two free message slots are not sufficient
+    // for the visitor message, opening, and final response.
     expect(
       createAgentInputEvents(cartridge, state, "inspect routing"),
     ).toMatchObject([
