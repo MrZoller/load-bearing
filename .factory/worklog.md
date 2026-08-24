@@ -379,3 +379,22 @@ hung pass; opencode-factory follow-up to #61-class maintenance).
 - 2026-08-24 13:24 UTC - T54 PR #79 squash-merged at `c04205eed8aebf10e64e59a02a856812ef3371d8`. Marked T54 complete and cleared tracked task, branch, PR, and hold state. Codex's clean attributable head verdict carried 0 blocking / 0 minor / 0 refuted findings and needed 0 fix pushes; Claude was not configured. CI: 2 runs / 0 reruns.
 - 2026-08-24 14:00 UTC - T55 shipped as held PR #80: implemented all four approved unranked Incident #001 endings, including Bash-only copy provenance, exact waiver-ledger consent, compact-divergence status routing, callbacks, idempotent first-discovery order, and continued TUI/Bash/model use. Added a closed reaction-to-story owner action, synchronized its public schema, and regenerated the 36 affected production recordings plus four focused route goldens. Verification: final `npm run verify` passed both TypeScript programs, Prettier, purity (75 files), coverage (1,406 tests), UTC and Asia/Tokyo suites, production build, 41 desktop/mobile Playwright interactions, and Lighthouse accessibility. Two early full runs exposed loader diagnostic gating and a stale waiver callback assertion; debugger analysis resolved the remaining loader ancestor gate before green verification. Panel: 2 rounds; findings 1 blocking / 1 minor / 0 invalid; 2 fixed; shipped major (no reclassification). Specialized reviewer/verifier agents returned empty reports, so fallback refute-first audits confirmed and fixed a cross-boundary reaction/story cycle hole, then strengthened nested variant-cycle coverage on re-panel. The major hold remains for human review of ending equality and reachability.
 - 2026-08-24 14:03 UTC - T55 PR #80 shepherd pass on head `41b5b41a4025848ba1962fc2958c31f875d93692`: both Verify CI runs are in progress (2 runs / 0 reruns), and configured Codex has a current-head eyes reaction showing review in flight but no verdict. Paginated review, comment, and thread reads found no findings or threads. `claude-code-review.yml` is absent from both the head and `main`, so Claude is not a merge condition. The major PR is mergeable, 0 commits behind `main`, unlabeled, and deliberately held by `state.hold: true`; no merge was attempted. Waiting for green CI, Codex's head-bound verdict, and human merge authority. No code changes or additional verification commands were run in this pass.
+
+## Operator: T55 (PR #80) representative review, round 1 (2026-08-24)
+
+Substantive review of head 41b5b41 PASSES the held product questions: four
+endings equal and unranked in one ordered session-only ledger; each reachable
+by its focused route (new goldens 057-060); Bash-only provenance enforced (the
+byte-identical TUI repair does not claim europe-detached); waiver ledger fact
+asserted in full (id/version/phrase/capability); rediscovery idempotent; TUI,
+Bash, and model switching continue after all four; no persistence added; the
+status-family reorder is a reachability fix (divergence must outrank the
+waiver callback or a waiver-holding session could never reach summary-judgment);
+story-reach is closed vocabulary with transitive-closure cycle validation;
+golden 030's update is the task's intended behavior change, titled as such.
+NOT merged: Codex's post-hold verdict on 41b5b41 left one valid P2 —
+applyStoryConsequences runs on a fresh 1,024-event budget per story-reach
+reaction action while derivedEvents charges only the outer action, so a
+schema-valid cascade multiplies past the browser-freeze bound; load-bearing
+for Phase 5 generated cartridges. Returned to the line: rerun -> released-hold
+pass routes the thread to the shepherd; re-review the delta on the next hold.
