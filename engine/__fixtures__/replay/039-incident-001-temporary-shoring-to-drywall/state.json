@@ -1836,7 +1836,7 @@
                 "kind": "story-reach"
               }
             ],
-            "response": "fallback",
+            "response": "repaired-fallback",
             "when": []
           }
         ],
@@ -3366,6 +3366,13 @@
         {
           "id": "fallback",
           "text": "I widened the routing review while preserving the 500. The original failure is now supporting the investigation.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "repaired-fallback",
+          "text": "I widened the routing review around the healthy endpoint. Europe remains detached, so the investigation can proceed without restoring the failure.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
