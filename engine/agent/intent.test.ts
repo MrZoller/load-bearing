@@ -344,6 +344,7 @@ describe("authored agent input", () => {
     const fallbackAfterHabit = {
       ...fallbackSelection,
       actions: [{ kind: "story-reach", beat: "incident-open" }],
+      responseId: "repaired-fallback",
     };
     for (const input of ["guarded exact", "catalog routes"]) {
       expect(selectAgentIntent(cartridge, afterHabit, input)).toEqual(
