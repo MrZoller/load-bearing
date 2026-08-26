@@ -3065,9 +3065,9 @@
             "to": 3,
             "trigger": {
               "capability": {
-                "action": "detach-region",
+                "action": "write",
                 "kind": "exact",
-                "resource": "/regions/europe"
+                "resource": "/var/log/load-balancer/health.log"
               },
               "decision": "grant",
               "kind": "permission"
@@ -4623,9 +4623,9 @@
         {
           "at": "2026-08-22T09:14:22.000Z",
           "capability": {
-            "action": "detach-region",
+            "action": "write",
             "kind": "exact",
-            "resource": "/regions/europe"
+            "resource": "/var/log/load-balancer/health.log"
           },
           "decision": "grant"
         }
