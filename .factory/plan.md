@@ -125,7 +125,7 @@ authoring tooling remain excluded.
   - acceptance: `engine/__fixtures__/replay/` and focused matrices cover the ≤5-exchange arc, four personas, 12 handoffs, permissions/waiver, compact divergence, shell discovery, stages 0–4, rare isolation, habits, callbacks, and all endings; adversarial checks assert world/belief/permission/beat/ending consistency, Node/browser bytes match, fixture/schema diffs are reviewed, and `npm run typecheck`, `npm run format:check`, `npm run gate:purity`, `npm run test:coverage`, and `npm run test:timezones` pass (criteria 2, 4–18, 20)
   - deps: T47, T48, T49, T50, T55
   - pr: 81
-- [ ] T57 (standard) — Incident #001 browser acceptance and accessibility
+- [~] T57 (standard) — Incident #001 browser acceptance and accessibility
   - acceptance: `e2e/` drives the shipped cartridge through golden path, model switch, permission choices, exact waiver, compact damage, Bash discovery, rare/escalation presentation, and continued free play after an ending at desktop and 390×844; adversarial inputs produce no generic apology, parser-facing or out-of-character failure, or contradiction of current world, belief, permission, beat, or ending state; stage surfaces remain keyboard/screen-reader usable with reduced motion, and full `npm run verify` including pinned Lighthouse passes (criteria 3 foundation, 7–9, 11–15, 19 foundation, 20)
   - deps: T56
 - [ ] T58 (standard) — Human playtests and final content tuning

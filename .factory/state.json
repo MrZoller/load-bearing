@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": null,
-  "branch": null,
+  "current_task": "T57",
+  "branch": "factory/t57-browser-acceptance",
   "pr": null,
   "hold": false,
-  "updated": "2026-08-26T02:50:18Z"
+  "updated": "2026-08-26T02:51:39Z"
 }
