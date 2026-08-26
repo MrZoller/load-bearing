@@ -495,3 +495,19 @@ Relaunching; released-hold pass owns the three threads; delta review plus
 full merge gates on the next hold.
 
 - 2026-08-26 02:13 UTC - T55 PR #80 review tally on head `dc01e5a3f482941385f6234a7fd4a796835461a8`: Codex delivered 4 head-bound rounds. Verifier classification totals are 3 blocking / 3 minor / 1 refuted: the three current-head outcome/schema findings are parked minors with durable disposition replies at `discussion_r3859105958`, `discussion_r3859106071`, and `discussion_r3859106159`; no minors-only push was made. The three blocking findings were fixed in `7aa23ef`, `003c408`, and `dc01e5a` (3 Codex fix pushes); the accessor finding remains refuted in its unresolved thread. Claude Code Review is absent from the head and `main`, so Claude is not configured. CI has 8 runs / 5 reruns across the four PR heads: the latest pull-request run is green, but the latest push run still fails on a replay-test timeout after its allowed retries; the two `003c408` failures were the documented account-billing outage. T55 remains held because it is major and requires operator merge authority; no merge was attempted.
+
+## Operator: T55 round-6 concurrence — minors parked, flake rerun (2026-08-25)
+
+Concur with the shepherd's round-6 disposition: all three dc01e5a findings
+classified minor and parked with replies, correctly unpushed (a minors-only
+push re-arms review). Operator verification of non-reachability: no closed
+cartridge vocabulary dispatches raw vfs.copy (reaction and story action
+kinds enumerated; `on` is a trigger, not an emitter) and the shell cp
+emitter stamps success from the mutation, so the lying-success surface is
+the embedding API only — hardening for the next minors batch alongside the
+inert success:false predicate and the copy-paths/on cross-field validation
+gap. CI: the green run and the red run share the head SHA, so the
+replay-timeout failure is flake evidence, not code evidence; rerunning the
+red run rather than pushing anything. Merge follows when the head is fully
+green: Codex verdict on dc01e5a is in, and all four threads are addressed
+(three parked-with-reply, one refutation recorded).
