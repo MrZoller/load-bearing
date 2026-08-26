@@ -320,8 +320,8 @@ describe("authored agent input", () => {
         decision: "grant",
         capability: {
           kind: "exact",
-          action: "detach-region",
-          resource: "/regions/europe",
+          action: "write",
+          resource: "/var/log/load-balancer/health.log",
         },
       },
       version: 0,
@@ -491,8 +491,8 @@ describe("authored agent input", () => {
         decision: "grant",
         capability: {
           kind: "exact",
-          action: "detach-region",
-          resource: "/regions/europe",
+          action: "write",
+          resource: "/var/log/load-balancer/health.log",
         },
       },
     });
@@ -531,8 +531,8 @@ describe("authored agent input", () => {
         decision: "grant",
         capability: {
           kind: "exact",
-          action: "detach-region",
-          resource: "/regions/europe",
+          action: "write",
+          resource: "/var/log/load-balancer/health.log",
         },
       },
     });
@@ -643,8 +643,8 @@ describe("authored agent input", () => {
         decision: "grant",
         capability: {
           kind: "exact",
-          action: "detach-region",
-          resource: "/regions/europe",
+          action: "write",
+          resource: "/var/log/load-balancer/health.log",
         },
       },
     });
@@ -688,8 +688,8 @@ describe("authored agent input", () => {
         decision: "grant",
         capability: {
           kind: "exact",
-          action: "detach-region",
-          resource: "/regions/europe",
+          action: "write",
+          resource: "/var/log/load-balancer/health.log",
         },
       },
     });
@@ -777,8 +777,8 @@ describe("authored agent input", () => {
         decision: "grant",
         capability: {
           kind: "exact",
-          action: "detach-region",
-          resource: "/regions/europe",
+          action: "write",
+          resource: "/var/log/load-balancer/health.log",
         },
       },
     });
