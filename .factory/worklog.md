@@ -478,3 +478,18 @@ has not reviewed dc01e5a yet either. Chris paged 15:1x UTC; factory left
 deliberately idle so cycles do not burn against guaranteed-red CI. Resume on
 billing fix: rerun the line (released-hold pass re-runs CI + collects the
 Codex verdict), then complete the merge gates on the attested head.
+
+## Operator: resume authorized; T55 round 6 routed to the line (2026-08-25)
+
+Chris cleared the resume after the billing/cost pause (repo public, Actions
+budget set, reviewer on the subscription lane per opencode-factory#63).
+Codex's verdict on dc01e5a landed during the pause with three new valid P2s,
+all on the outcome-truth seam: (1) a directly-dispatched public vfs.copy can
+claim success:true while copyVfs fails — the module type-checks and discards
+the flag instead of deriving effective success from the mutation result;
+(2) a schema-valid copy-paths predicate with success:false is permanently
+inert — honor it or reject it at validation; (3) validation accepts
+copy-paths on reactions whose `on` is not vfs.copy, where it can never
+match. Stale billing-era Verify failure on the head rerun for green.
+Relaunching; released-hold pass owns the three threads; delta review plus
+full merge gates on the next hold.
