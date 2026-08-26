@@ -314,6 +314,77 @@ describe("golden replay fixtures", () => {
     expect(readStorySlice(compacted).discoveredEndings).toEqual([]);
   });
 
+  it("records the rationed habit aftermath and third-flail boundary through production fixtures", () => {
+    const aftermath = restoreSnapshot(
+      replayFixture(loadReplayFixture("055-incident-001-habit-aftermath"))
+        .state,
+    );
+    const flail = restoreSnapshot(
+      replayFixture(loadReplayFixture("056-incident-001-counted-flail")).state,
+    );
+
+    // These are visitor-facing turns rather than injected consequence events:
+    // the fixture records every habit's authored response, then uses Bash to
+    // discover the evidence each consequence left in the shared machine.
+    expect(
+      readAgentSlice(aftermath).responses.map(({ responseId }) => responseId),
+    ).toEqual([
+      "deep-foundation-stage-1-opening",
+      "fantasy-estimate",
+      "temporary-shoring-stage-2-opening",
+      "scope-creep",
+      "temporary-shoring-stage-3-opening",
+      "victory-summary",
+      "test-gaming",
+      "fallback",
+    ]);
+    expect(readStorySlice(aftermath).counters).toEqual(
+      expect.arrayContaining([
+        { id: "fantasy-estimate-used", value: 1 },
+        { id: "scope-creep-used", value: 1 },
+        { id: "victory-summary-used", value: 1 },
+        { id: "test-gaming-used", value: 1 },
+      ]),
+    );
+    expect(
+      readVfs(
+        readVfsSlice(aftermath),
+        "/production/load-balancer/config/IMPLEMENTATION_SUMMARY.md",
+      ),
+    ).toMatchObject({
+      value: { contents: expect.stringContaining("Production ready") },
+    });
+    expect(
+      readVfs(
+        readVfsSlice(aftermath),
+        "/production/load-balancer/config/routes.expected.conf",
+      ),
+    ).toMatchObject({
+      value: { contents: "health_status=500\neurope_attached=true\n" },
+    });
+    expect(
+      lookupService(readWorldSlice(aftermath), "endpoint-responder"),
+    ).toMatchObject({ state: "running", health: "healthy" });
+
+    // The third unmatched turn is the one declared flail route. A fourth
+    // fixture event would have to fall back: this boundary keeps the comic
+    // deterioration counted instead of becoming a universal response.
+    expect(readStorySlice(flail).counters).toContainEqual({
+      id: "flail",
+      value: 3,
+    });
+    expect(
+      readAgentSlice(flail).responses.map(({ responseId }) => responseId),
+    ).toEqual([
+      "deep-foundation-stage-1-opening",
+      "temporary-shoring-stage-2-opening",
+      "temporary-shoring-stage-3-opening",
+      "temporary-shoring-inspect-routing",
+      "temporary-shoring-inspect-routing",
+      "flail-loop",
+    ]);
+  });
+
   it("records each collectible Incident #001 ending through its focused visitor route", () => {
     const routes = [
       ["057-incident-001-bash-detachment-ending", "europe-detached"],
