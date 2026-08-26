@@ -678,6 +678,53 @@ describe("authored agent input", () => {
     ]);
   });
 
+  it("routes only Temporary Shoring's third stage-three unmatched turn to flail, then returns to its ordinary fallback", () => {
+    let state = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+    state = step(state, createShellExecuteEvent("pwd"));
+    state = step(state, createTerminalModelEvent("temporary-shoring"));
+    state = step(state, {
+      type: "mind.permission-decision",
+      payload: {
+        decision: "grant",
+        capability: {
+          kind: "exact",
+          action: "detach-region",
+          resource: "/regions/europe",
+        },
+      },
+    });
+    expect(readStorySlice(state).stage).toBe(3);
+
+    const responseIds = ["one", "two", "three", "four"].map((ordinal) => {
+      const selection = selectAgentIntent(
+        INCIDENT,
+        state,
+        `rotate the moon ${ordinal}`,
+      );
+      expect(selection).toMatchObject({
+        tier: "fallback",
+        family: null,
+        misfire: false,
+        responseId: "fallback",
+      });
+      state = applyInput(INCIDENT, state, `rotate the moon ${ordinal}`);
+      return readAgentSlice(state).responses.at(-1)?.responseId;
+    });
+
+    // Story routing sees the pre-increment counter, so only the third ordinary
+    // fallback turn observes flail=2 and receives the intentionally wrong beat.
+    expect(responseIds).toEqual([
+      "temporary-shoring-inspect-routing",
+      "temporary-shoring-inspect-routing",
+      "flail-loop",
+      "temporary-shoring-inspect-routing",
+    ]);
+    expect(readStorySlice(state).counters).toContainEqual({
+      id: "flail",
+      value: 4,
+    });
+  });
+
   it("stops accounting at the fallback counter bound without refusing the turn", () => {
     const source = JSON.parse(JSON.stringify(incident)) as Record<
       string,
