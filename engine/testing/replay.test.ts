@@ -323,9 +323,8 @@ describe("golden replay fixtures", () => {
       replayFixture(loadReplayFixture("056-incident-001-counted-flail")).state,
     );
 
-    // These are visitor-facing turns rather than injected consequence events:
-    // the fixture records every habit's authored response, then uses Bash to
-    // discover the evidence each consequence left in the shared machine.
+    // The habit fixture records the authored response sequence, then uses Bash
+    // to discover the evidence each consequence left in the shared machine.
     expect(
       readAgentSlice(aftermath).responses.map(({ responseId }) => responseId),
     ).toEqual([
@@ -366,9 +365,9 @@ describe("golden replay fixtures", () => {
       lookupService(readWorldSlice(aftermath), "endpoint-responder"),
     ).toMatchObject({ state: "running", health: "healthy" });
 
-    // The third unmatched turn is the one declared flail route. A fourth
-    // fixture event would have to fall back: this boundary keeps the comic
-    // deterioration counted instead of becoming a universal response.
+    // This fixture directly records the counter-gated third-flail response.
+    // `agent/intent.test.ts` separately drives real visitor input through the
+    // route and its following ordinary fallback.
     expect(readStorySlice(flail).counters).toContainEqual({
       id: "flail",
       value: 3,
