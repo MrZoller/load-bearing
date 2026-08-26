@@ -24,12 +24,22 @@ const searchParams = new URL(window.location.href).searchParams;
 // arbitrary content selection or changing the production Incident #001 path.
 const cartridgeDocument =
   searchParams.get("scenario") === "phase-1-demo" ? phaseOneDemo : incident001;
-const app = mountApp(document, mount, cartridgeDocument);
+const acceptanceEnabled = searchParams.get("acceptance") === "1";
+// The rare-hit route is a bounded acceptance fixture, not arbitrary seed input:
+// production sessions continue deriving their seed solely from cartridge data.
+const rareHitSeed =
+  acceptanceEnabled && searchParams.get("rare") === "hit"
+    ? "2026-08-23/53/callback-10"
+    : undefined;
+const app =
+  rareHitSeed === undefined
+    ? mountApp(document, mount, cartridgeDocument)
+    : mountApp(document, mount, cartridgeDocument, { seed: rareHitSeed });
 
 // This opt-in probe exposes canonical, read-only evidence to the production-
 // bundle acceptance test. It offers no dispatch path and is absent from normal
 // visits, so the runtime still owns the sole mutable event-log reference.
-if (searchParams.get("acceptance") === "1") {
+if (acceptanceEnabled) {
   window.__LOAD_BEARING_ACCEPTANCE__ = () => {
     const snapshot = app.current();
     const lines = renderTranscript(snapshot.state.transcript);

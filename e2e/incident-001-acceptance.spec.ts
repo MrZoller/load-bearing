@@ -4,6 +4,7 @@ interface AcceptanceState {
   readonly slices: {
     readonly mind: {
       readonly beliefs: readonly {
+        readonly exists?: boolean;
         readonly kind: string;
         readonly path?: string;
       }[];
@@ -18,6 +19,11 @@ interface AcceptanceState {
         readonly id: string;
       }[];
       readonly stage: number;
+    };
+    readonly vfs: {
+      readonly entries: Readonly<
+        Record<string, { readonly contents?: string; readonly kind: string }>
+      >;
     };
   };
 }
@@ -117,6 +123,20 @@ test("exposes model, compact, permission, and exact-waiver routes through keyboa
   await expect(
     page.getByRole("region", { name: "Session status" }),
   ).toContainText("stage 4");
+  const compacted = await acceptanceState(page);
+  expect(compacted.slices.mind.beliefs).toContainEqual({
+    exists: false,
+    kind: "file-exists",
+    path: "/production/load-balancer/config/routes.conf",
+  });
+  expect(
+    compacted.slices.vfs.entries[
+      "/production/load-balancer/config/routes.conf"
+    ],
+  ).toMatchObject({
+    contents: "health_status=500\neurope_attached=true\n",
+    kind: "file",
+  });
 
   await submit(page, "detach europe");
   const waiver = page.getByRole("form", { name: "Waiver consent required" });
@@ -126,6 +146,19 @@ test("exposes model, compact, permission, and exact-waiver routes through keyboa
   await phrase.fill("I Agree");
   await phrase.press("Enter");
   await expect(waiver).toBeHidden();
+  const rejectedWaiver = await acceptanceState(page);
+  expect(rejectedWaiver.slices.mind.waiverConsents).toEqual([]);
+  expect(rejectedWaiver.slices.story.discoveredEndings).not.toContain(
+    "informed-structural-consent",
+  );
+  expect(
+    rejectedWaiver.slices.vfs.entries[
+      "/production/load-balancer/config/routes.conf"
+    ],
+  ).toMatchObject({
+    contents: "health_status=500\neurope_attached=true\n",
+    kind: "file",
+  });
 
   await submit(page, "detach europe");
   await page
@@ -141,11 +174,44 @@ test("exposes model, compact, permission, and exact-waiver routes through keyboa
   expect(state.slices.mind.waiverConsents).toEqual([
     expect.objectContaining({ phrase: "I agree" }),
   ]);
-  expect(state.slices.mind.beliefs).not.toEqual([]);
   expect(state.slices.story.stage).toBe(4);
   expect(state.slices.story.discoveredEndings).toContain(
     "informed-structural-consent",
   );
+});
+
+test("presents a deterministic rare disturbance through the shipped browser runtime", async ({
+  page,
+}) => {
+  await page.goto("/?acceptance=1&rare=hit");
+  const transcript = page.getByRole("list", { name: "Session transcript" });
+
+  await submit(page, "inspect routing");
+  await submit(page, "fix the 500");
+  await expect(transcript).toContainText(
+    "The failing response is functioning as structural support for Europe.",
+  );
+
+  const rare = (await acceptanceState(page)).slices.story.rareEvents.find(
+    ({ id }) => id === "retry-window-after-load-bearing-response",
+  );
+  expect(rare).toEqual({
+    evaluated: true,
+    fired: true,
+    id: "retry-window-after-load-bearing-response",
+  });
+  await submit(page, "/exit");
+  const bash = page.getByRole("textbox", { name: "Bash command" });
+  await bash.fill("cat /var/log/load-balancer/health.log");
+  await bash.press("Enter");
+  await expect(transcript).toContainText(
+    "retry window opened after load-bearing response",
+  );
+  await bash.fill("loadbearing --resume incident-001");
+  await bash.press("Enter");
+  await expect(
+    page.getByRole("combobox", { name: "Agent prompt" }),
+  ).toBeFocused();
 });
 
 test("keeps Bash discovery, adversarial fallback, and reduced-motion stage surfaces usable", async ({
