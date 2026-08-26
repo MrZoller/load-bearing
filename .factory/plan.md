@@ -117,7 +117,7 @@ authoring tooling remain excluded.
   - acceptance: `content/incidents/incident-001.json`, `engine/story/actions.test.ts`, and focused goldens author rationed scope creep, victory summaries, real VFS litter, counted flail loops, test-gaming moves, and fantasy estimates through existing owner events; each is discoverable afterward where applicable, coherent with Git/tests/world, and neither universal nor repetitive (criteria 17, 18)
   - deps: T38, T45, T46
   - pr: 79
-- [R] T55 (major) — Integrate and prove four collectible endings
+- [x] T55 (major) — Integrate and prove four collectible endings
   - acceptance: `content/incidents/incident-001.json`, `engine/story/story.test.ts`, and four route goldens fully implement the approved T31 matrix; Bash-only, waiver-ledger, and compact-divergence routes are reachable, rediscovery is idempotent, multiple endings collect in one ordered session-only ledger, no ending is ranked or terminates TUI/Bash/model switching, and no browser/server persistence is added (criteria 14, 18; approved decisions Q1=A, Q3=A, Q4=B)
   - deps: T45, T47, T48, T49, T50, T51, T52, T53, T54
   - pr: 80
@@ -180,10 +180,13 @@ authoring tooling remain excluded.
   - PR #74: Consider multiple same-archetype/stage capitulation variants if the 1-in-8 deterministic repetition proves catchphrase-like in playtesting; the local T50 verifier classified this uncertain and minor, with cadence currently providing the documented rationing.
   - pr: 78
 
-- [!] T60 (trivial) — parked review minors (batch)
+- [ ] T60 (trivial) — parked review minors (batch)
   - PR #78: Preserve an envelope reaction when primary expansion fails before reactions run; Codex thread `discussion_r3839858007` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #78: Avoid conservative reveal-opening capacity fallbacks when a reached beat cannot reveal the stage trigger; Codex thread `discussion_r3839944202` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #78: Restore authored `agent.response-recorded` reactions for stage openings without recursive escalation; Codex thread `discussion_r3839944205` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #78: Match rare-opening reservations to each fire beat's reachable facts; Codex thread `discussion_r3843437526` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #78: Deduplicate one rare declaration across speculative visitor-turn passes; Codex thread `discussion_r3843542233` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #78: Emit one capacity fallback when a compact or handoff opening cannot fit; Codex thread `discussion_r3843542239` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #80: Derive `vfs.copy` reaction success from the actual mutation result for directly dispatched owner events; Codex thread `discussion_r3844735480` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #80: Reject or honor `copy-paths` predicates authored with `success: false`; Codex thread `discussion_r3844735493` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #80: Reject `copy-paths` predicates on reactions other than `vfs.copy`; Codex thread `discussion_r3844735500` was verifier-classified minor and dispositioned without a minors-only push.

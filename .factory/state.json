@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T55",
-  "branch": "factory/t55-collectible-endings",
-  "pr": 80,
-  "hold": true,
-  "updated": "2026-08-24T14:00:55Z"
+  "current_task": null,
+  "branch": null,
+  "pr": null,
+  "hold": false,
+  "updated": "2026-08-26T02:24:30Z"
 }
