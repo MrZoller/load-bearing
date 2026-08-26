@@ -65,6 +65,47 @@ describe("service health", () => {
 });
 
 describe("post-event reactions", () => {
+  it("reaches a story beat through its owner and applies that beat's normal consequences", () => {
+    const value = source();
+    (value["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "start",
+      counters: [{ id: "reached", initial: 0, maximum: 1 }],
+      facts: [{ id: "reaction-fact", kind: "reveal" }],
+      beats: [
+        { id: "start", ending: "" },
+        {
+          id: "reaction-target",
+          ending: "reaction-ending",
+          facts: ["reaction-fact"],
+          actions: [{ kind: "counter-add", counter: "reached", amount: 1 }],
+        },
+      ],
+      endings: [{ id: "reaction-ending", name: "Reaction ending" }],
+    };
+    repository(value)["reactions"] = [
+      {
+        id: "clock-reaches-story",
+        on: "clock.tick",
+        predicates: [],
+        actions: [{ kind: "story-reach", beat: "reaction-target" }],
+      },
+    ];
+
+    const state = step(
+      bootstrap({ cartridge: loadCartridge(value), seed: "reaction-story" }),
+      { type: "clock.tick", payload: { ms: 1 } },
+    );
+
+    expect(state.slices["story"]).toMatchObject({
+      currentBeat: "reaction-target",
+      facts: [{ id: "reaction-fact", kind: "reveal" }],
+      counters: [{ id: "reached", value: 1 }],
+      discoveredEndings: ["reaction-ending"],
+    });
+    expect(state.eventCount).toBe(1);
+    expect(state.transcript).toHaveLength(1);
+  });
+
   it("uses authored rule/action order, staged predicates and FIFO cascades", () => {
     const value = source();
     repository(value)["reactions"] = [
@@ -295,6 +336,58 @@ describe("post-event reactions", () => {
     const before = bootstrap({
       cartridge: loadCartridge(value),
       seed: "reaction-fan-out",
+    });
+    const bytes = snapshot(before);
+
+    expect(() =>
+      step(before, { type: "clock.tick", payload: { ms: 1 } }),
+    ).toThrow(/reaction cascade exceeds the 1024 derived-event limit/);
+    expect(snapshot(before)).toBe(bytes);
+  });
+
+  it("counts story consequences from reaction actions in the cascade limit", () => {
+    const value = source();
+    (value["story"] as Record<string, unknown>)["phase2"] = {
+      initialBeat: "start",
+      counters: [],
+      facts: [{ id: "reaction-fact", kind: "reveal" }],
+      beats: [
+        { id: "start", ending: "" },
+        {
+          id: "reaction-target",
+          ending: "",
+          actions: new Array(16).fill(undefined).map(() => ({
+            kind: "log-append",
+            log: "events",
+            entry: "reached",
+          })),
+        },
+      ],
+      endings: [],
+    };
+    repository(value)["reactions"] = [
+      {
+        id: "many-story-reaches-first",
+        on: "clock.tick",
+        predicates: [],
+        actions: new Array(32).fill(undefined).map(() => ({
+          kind: "story-reach",
+          beat: "reaction-target",
+        })),
+      },
+      {
+        id: "many-story-reaches-second",
+        on: "clock.tick",
+        predicates: [],
+        actions: new Array(32).fill(undefined).map(() => ({
+          kind: "story-reach",
+          beat: "reaction-target",
+        })),
+      },
+    ];
+    const before = bootstrap({
+      cartridge: loadCartridge(value),
+      seed: "reaction-story-work",
     });
     const bytes = snapshot(before);
 

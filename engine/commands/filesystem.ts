@@ -1025,7 +1025,9 @@ function transfer(
       event(name === "mv" ? "vfs.rename" : "vfs.copy", {
         source,
         destination,
-        ...(name === "cp" ? { recursive, preserve } : {}),
+        ...(name === "cp"
+          ? { recursive, preserve, success: mutation.result.ok }
+          : {}),
       }),
     );
     if (mutation.result.ok) shadow = mutation.slice;

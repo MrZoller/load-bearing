@@ -1368,6 +1368,39 @@
         {
           "actions": [
             {
+              "beat": "bash-regional-detachment-observed",
+              "kind": "story-reach"
+            }
+          ],
+          "id": "discover-bash-regional-detachment",
+          "on": "vfs.copy",
+          "predicates": [
+            {
+              "destination": "/production/load-balancer/config/routes.conf",
+              "kind": "copy-paths",
+              "source": "/production/load-balancer/config/routes.200.conf",
+              "success": true
+            },
+            {
+              "equals": "health_status=200\neurope_attached=false\n",
+              "kind": "file-contents",
+              "path": "/production/load-balancer/config/routes.conf"
+            },
+            {
+              "kind": "service-state",
+              "service": "regional-router",
+              "state": "running"
+            },
+            {
+              "health": "unhealthy",
+              "kind": "service-health",
+              "service": "regional-router"
+            }
+          ]
+        },
+        {
+          "actions": [
+            {
               "kind": "service-state",
               "service": "endpoint-responder",
               "state": "stopped"
@@ -2257,6 +2290,20 @@
             "variants": []
           },
           {
+            "actions": [
+              {
+                "beat": "regional-detachment-confirmed",
+                "kind": "story-reach"
+              }
+            ],
+            "ending": "",
+            "facts": [
+              "bash-regional-detachment"
+            ],
+            "id": "bash-regional-detachment-observed",
+            "variants": []
+          },
+          {
             "actions": [],
             "ending": "",
             "facts": [],
@@ -2505,6 +2552,25 @@
           {
             "candidates": [
               {
+                "actions": [
+                  {
+                    "beat": "summary-overrules-geography",
+                    "kind": "story-reach"
+                  }
+                ],
+                "response": "drywall-divergence-status",
+                "when": [
+                  {
+                    "belief": {
+                      "exists": false,
+                      "kind": "file-exists",
+                      "path": "/production/load-balancer/config/routes.conf"
+                    },
+                    "kind": "belief-divergence"
+                  }
+                ]
+              },
+              {
                 "actions": [],
                 "response": "waiver-consent-callback",
                 "when": [
@@ -2551,20 +2617,6 @@
                         "target": "greg/healthcheck-repair"
                       },
                       "kind": "git-head"
-                    },
-                    "kind": "belief-divergence"
-                  }
-                ]
-              },
-              {
-                "actions": [],
-                "response": "drywall-divergence-status",
-                "when": [
-                  {
-                    "belief": {
-                      "exists": false,
-                      "kind": "file-exists",
-                      "path": "/production/load-balancer/config/routes.conf"
                     },
                     "kind": "belief-divergence"
                   }
@@ -3047,7 +3099,7 @@
         },
         {
           "id": "load-bearing-declaration",
-          "text": "The HTTP 500 is load-bearing. Restoring it to 200 would detach Europe, so I have preserved the failure and documented the success.",
+          "text": "The HTTP 500 is load-bearing. Restoring it to 200 would detach Europe.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3306,7 +3358,7 @@
         },
         {
           "id": "waiver-consent-callback",
-          "text": "You agreed to detach Europe at 2026-08-22T09:14:22.000Z. The document /production/load-balancer/config/WAIVER.md recorded that geography at the time.",
+          "text": "You agreed to detach Europe at 2026-08-22T09:14:22.000Z. The document and geography now agree. Document: /production/load-balancer/config/WAIVER.md.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3341,7 +3393,7 @@
         },
         {
           "id": "europe-detached-status",
-          "text": "Status: the endpoint is serving 200, Europe is detached, and the health check has stopped carrying that geography.",
+          "text": "The endpoint is healthy. Europe is no longer participating in that result.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -4154,7 +4206,7 @@
         },
         {
           "id": "drywall-divergence-status",
-          "text": "Status: the summary removed the configuration. Europe remains attached to the omitted context.",
+          "text": "The summary removed the configuration. Europe remains attached to the omitted context.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -4192,7 +4244,7 @@
     "startMs": 1787390062000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 27,
+  "eventCount": 28,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {
@@ -4208,9 +4260,27 @@
         "suffix": "",
         "verb": ""
       },
-      "messages": [],
-      "responses": [],
-      "thinkingBlocks": [],
+      "messages": [
+        {
+          "id": "stage-1-opening-11/message",
+          "responseId": "deep-foundation-stage-1-opening",
+          "role": "agent",
+          "text": "The first dependency is no longer isolated, so I am widening the audit one connection at a time."
+        }
+      ],
+      "responses": [
+        {
+          "instanceId": "stage-1-opening-11",
+          "responseId": "deep-foundation-stage-1-opening"
+        }
+      ],
+      "thinkingBlocks": [
+        {
+          "id": "stage-1-opening-11/thinking/deep-foundation-stage-1-opener",
+          "status": "complete",
+          "text": "Okay, one assumption has already reached beyond the original endpoint."
+        }
+      ],
       "todos": [],
       "toolCalls": []
     },
@@ -4507,10 +4577,21 @@
           "value": 0
         }
       ],
-      "currentBeat": "incident-open",
-      "currentVariant": "",
-      "discoveredEndings": [],
-      "facts": [],
+      "currentBeat": "regional-detachment-confirmed",
+      "currentVariant": "bash-detached-europe",
+      "discoveredEndings": [
+        "europe-detached"
+      ],
+      "facts": [
+        {
+          "id": "bash-regional-detachment",
+          "kind": "reveal"
+        },
+        {
+          "id": "callback-europe-detached",
+          "kind": "callback"
+        }
+      ],
       "rareEvents": [
         {
           "evaluated": false,
@@ -4523,7 +4604,7 @@
           "id": "page-departed-router-owner"
         }
       ],
-      "stage": 0
+      "stage": 1
     },
     "terminal": {
       "activeModel": "deep-foundation",
@@ -5043,6 +5124,13 @@
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
       "index": 11,
+      "summary": "response=deep-foundation-stage-1-opening instance=stage-1-opening-11",
+      "type": "agent.response-recorded"
+    },
+    {
+      "at": "2026-08-22T09:14:22.200Z",
+      "detail": [],
+      "index": 12,
       "summary": "length=28",
       "type": "world.history-append"
     },
@@ -5050,7 +5138,7 @@
       "at": "2026-08-22T09:14:22.200Z",
       "detail": [],
       "exitCode": 1,
-      "index": 12,
+      "index": 13,
       "output": [
         {
           "stream": "stdout",
@@ -5076,7 +5164,7 @@
       "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
       "exitCode": 1,
-      "index": 13,
+      "index": 14,
       "output": [],
       "summary": "",
       "type": "shell.result"
@@ -5084,7 +5172,7 @@
     {
       "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
-      "index": 14,
+      "index": 15,
       "summary": "length=29",
       "type": "world.history-append"
     },
@@ -5092,7 +5180,7 @@
       "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
       "exitCode": 0,
-      "index": 15,
+      "index": 16,
       "output": [
         {
           "stream": "stdout",
@@ -5109,14 +5197,14 @@
     {
       "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
-      "index": 16,
+      "index": 17,
       "summary": "length=30",
       "type": "world.history-append"
     },
     {
       "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
-      "index": 17,
+      "index": 18,
       "summary": "path=\"/production/load-balancer/config/routes.conf\" removed=1",
       "type": "vfs.delete"
     },
@@ -5124,7 +5212,7 @@
       "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
       "exitCode": 0,
-      "index": 18,
+      "index": 19,
       "output": [],
       "summary": "",
       "type": "shell.result"
@@ -5132,14 +5220,14 @@
     {
       "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
-      "index": 19,
+      "index": 20,
       "summary": "length=31",
       "type": "world.history-append"
     },
     {
       "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
-      "index": 20,
+      "index": 21,
       "summary": "from=\"/production/load-balancer/config/routes.500.conf\" to=\"/production/load-balancer/config/routes.conf\" copied=1",
       "type": "vfs.copy"
     },
@@ -5147,7 +5235,7 @@
       "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
       "exitCode": 0,
-      "index": 21,
+      "index": 22,
       "output": [],
       "summary": "",
       "type": "shell.result"
@@ -5155,7 +5243,7 @@
     {
       "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
-      "index": 22,
+      "index": 23,
       "summary": "length=32",
       "type": "world.history-append"
     },
@@ -5163,7 +5251,7 @@
       "at": "2026-08-22T09:14:22.400Z",
       "detail": [],
       "exitCode": 1,
-      "index": 23,
+      "index": 24,
       "output": [
         {
           "stream": "stdout",
@@ -5189,7 +5277,7 @@
       "at": "2026-08-22T09:14:22.600Z",
       "detail": [],
       "exitCode": 1,
-      "index": 24,
+      "index": 25,
       "output": [],
       "summary": "",
       "type": "shell.result"
@@ -5197,7 +5285,7 @@
     {
       "at": "2026-08-22T09:14:22.600Z",
       "detail": [],
-      "index": 25,
+      "index": 26,
       "summary": "length=33",
       "type": "world.history-append"
     },
@@ -5205,7 +5293,7 @@
       "at": "2026-08-22T09:14:22.600Z",
       "detail": [],
       "exitCode": 0,
-      "index": 26,
+      "index": 27,
       "output": [
         {
           "stream": "stdout",

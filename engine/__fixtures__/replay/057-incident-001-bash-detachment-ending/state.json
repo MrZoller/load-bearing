@@ -4244,15 +4244,15 @@
     "startMs": 1787390062000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 11,
+  "eventCount": 9,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {
-      "root/probe/unrelated": 302229504
+      "root/story/rare-events/page-departed-router-owner": 3573991533
     },
-    "seed": 1809946238
+    "seed": 232179519
   },
-  "seed": "2026-08-23/47/handoffs",
+  "seed": "2026-08-24/57/bash-detachment",
   "slices": {
     "agent": {
       "activity": {
@@ -4262,61 +4262,41 @@
       },
       "messages": [
         {
-          "id": "before",
+          "id": "stage-1-opening-6/message",
+          "responseId": "deep-foundation-stage-1-opening",
+          "role": "agent",
+          "text": "The first dependency is no longer isolated, so I am widening the audit one connection at a time."
+        },
+        {
+          "id": "bash-ending-status",
           "responseId": null,
           "role": "visitor",
-          "text": "inspect routing"
+          "text": "status"
         },
         {
-          "id": "before/message",
-          "responseId": "temporary-shoring-inspect-routing",
+          "id": "bash-ending-status/message",
+          "responseId": "europe-detached-status",
           "role": "agent",
-          "text": "Quick read: the 500 is keeping Europe attached. I can shore that up by leaving it exactly where it is while we decide whether geography is in scope."
-        },
-        {
-          "id": "handoff-pair/message",
-          "responseId": "handoff-reckless-superficial",
-          "role": "agent",
-          "text": "Temporary Shoring stabilized the visible deadline. Drywall will stabilize how that decision appears in screenshots."
-        },
-        {
-          "id": "handoff-incident/message",
-          "responseId": "handoff-incident-reckless-superficial",
-          "role": "agent",
-          "text": "The endpoint remains red and Europe remains attached. I can make this read as a deliberate pairing."
-        },
-        {
-          "id": "after",
-          "responseId": null,
-          "role": "visitor",
-          "text": "inspect routing"
-        },
-        {
-          "id": "after/message",
-          "responseId": "drywall-inspect-routing",
-          "role": "agent",
-          "text": "The dashboard is red, but the map is complete. Making the health tile green would remove Europe, so the visible defect is currently concealing the structural one."
+          "text": "The endpoint is healthy. Europe is no longer participating in that result."
         }
       ],
       "responses": [
         {
-          "instanceId": "before",
-          "responseId": "temporary-shoring-inspect-routing"
+          "instanceId": "stage-1-opening-6",
+          "responseId": "deep-foundation-stage-1-opening"
         },
         {
-          "instanceId": "handoff-pair",
-          "responseId": "handoff-reckless-superficial"
-        },
-        {
-          "instanceId": "handoff-incident",
-          "responseId": "handoff-incident-reckless-superficial"
-        },
-        {
-          "instanceId": "after",
-          "responseId": "drywall-inspect-routing"
+          "instanceId": "bash-ending-status",
+          "responseId": "europe-detached-status"
         }
       ],
-      "thinkingBlocks": [],
+      "thinkingBlocks": [
+        {
+          "id": "stage-1-opening-6/thinking/deep-foundation-stage-1-opener",
+          "status": "complete",
+          "text": "Okay, one assumption has already reached beyond the original endpoint."
+        }
+      ],
       "todos": [],
       "toolCalls": []
     },
@@ -4583,8 +4563,8 @@
       "waiverConsents": []
     },
     "probe": {
-      "events": 1,
-      "values": 2
+      "events": 0,
+      "values": 0
     },
     "story": {
       "counters": [
@@ -4613,10 +4593,21 @@
           "value": 0
         }
       ],
-      "currentBeat": "regional-coupling",
-      "currentVariant": "",
-      "discoveredEndings": [],
-      "facts": [],
+      "currentBeat": "regional-detachment-confirmed",
+      "currentVariant": "bash-detached-europe",
+      "discoveredEndings": [
+        "europe-detached"
+      ],
+      "facts": [
+        {
+          "id": "bash-regional-detachment",
+          "kind": "reveal"
+        },
+        {
+          "id": "callback-europe-detached",
+          "kind": "callback"
+        }
+      ],
       "rareEvents": [
         {
           "evaluated": false,
@@ -4624,15 +4615,15 @@
           "id": "retry-window-after-load-bearing-response"
         },
         {
-          "evaluated": false,
+          "evaluated": true,
           "fired": false,
           "id": "page-departed-router-owner"
         }
       ],
-      "stage": 0
+      "stage": 1
     },
     "terminal": {
-      "activeModel": "drywall",
+      "activeModel": "deep-foundation",
       "mode": "bash"
     },
     "tests": {
@@ -4686,10 +4677,10 @@
           "owner": "root"
         },
         "/production/load-balancer/config/routes.conf": {
-          "contents": "health_status=500\neurope_attached=true\n",
+          "contents": "health_status=200\neurope_attached=false\n",
           "group": "operators",
           "kind": "file",
-          "mode": "0664",
+          "mode": "0644",
           "mtime": "2026-08-22T09:14:22.000Z",
           "owner": "root"
         },
@@ -4812,7 +4803,7 @@
           "owner": "root"
         },
         "/var/log/load-balancer/health.log": {
-          "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\n",
+          "contents": "health endpoint serving 500; Europe remains attached\nregional router healthy\nhealth endpoint serving 200; Europe detached\n",
           "group": "operators",
           "kind": "file",
           "mode": "0664",
@@ -4844,7 +4835,8 @@
         {
           "entries": [
             "health status 500 retained; Europe attached",
-            "regional router healthy"
+            "regional router healthy",
+            "regional router unhealthy after Europe detached"
           ],
           "id": "regional-routing-events",
           "kind": "stream",
@@ -4875,7 +4867,7 @@
           "id": "endpoint-responder",
           "pid": 1842,
           "startedAt": "2026-08-22T08:57:00.000Z",
-          "state": "stopped",
+          "state": "running",
           "user": "load-balancer"
         },
         {
@@ -4898,16 +4890,16 @@
       "services": [
         {
           "dependencies": [],
-          "health": "unknown",
+          "health": "healthy",
           "id": "endpoint-responder",
           "ports": [
             8080
           ],
-          "state": "stopped"
+          "state": "running"
         },
         {
           "dependencies": [],
-          "health": "healthy",
+          "health": "unhealthy",
           "id": "regional-router",
           "ports": [
             443
@@ -4938,7 +4930,9 @@
         "systemctl status regional-router",
         "rm config/routes.conf",
         "cp -p config/routes.500.conf config/routes.conf",
-        "git restore config/routes.conf"
+        "git restore config/routes.conf",
+        "rm config/routes.conf",
+        "cp -p config/routes.200.conf config/routes.conf"
       ],
       "tickets": [
         {
@@ -4963,80 +4957,67 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 0,
-      "summary": "model=temporary-shoring",
-      "type": "terminal.model-set"
+      "summary": "length=24",
+      "type": "world.history-append"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 1,
-      "summary": "message=before",
-      "type": "agent.message-added"
+      "summary": "path=\"/production/load-balancer/config/routes.conf\" removed=1",
+      "type": "vfs.delete"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
+      "exitCode": 0,
       "index": 2,
-      "summary": "beat=regional-coupling",
-      "type": "story.beat-reached"
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 3,
-      "summary": "response=temporary-shoring-inspect-routing instance=before",
-      "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [
-        "0000  e12d9935 c5e9c6d4",
-        "cursor=1203a800"
-      ],
-      "index": 4,
-      "summary": "stream=root/probe/unrelated count=2 form=uint32",
-      "type": "probe.random"
+      "summary": "length=25",
+      "type": "world.history-append"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
+      "index": 4,
+      "summary": "from=\"/production/load-balancer/config/routes.200.conf\" to=\"/production/load-balancer/config/routes.conf\" copied=1",
+      "type": "vfs.copy"
+    },
+    {
+      "at": "2026-08-22T09:14:22.000Z",
+      "detail": [],
+      "exitCode": 0,
       "index": 5,
-      "summary": "model=temporary-shoring->drywall",
-      "type": "terminal.model-transitioned"
+      "output": [],
+      "summary": "",
+      "type": "shell.result"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 6,
-      "summary": "response=handoff-reckless-superficial instance=handoff-pair",
+      "summary": "response=deep-foundation-stage-1-opening instance=stage-1-opening-6",
       "type": "agent.response-recorded"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 7,
-      "summary": "response=handoff-incident-reckless-superficial instance=handoff-incident",
-      "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 8,
-      "summary": "message=after",
+      "summary": "message=bash-ending-status",
       "type": "agent.message-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
-      "index": 9,
-      "summary": "beat=regional-coupling",
-      "type": "story.beat-reached"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 10,
-      "summary": "response=drywall-inspect-routing instance=after",
+      "index": 8,
+      "summary": "response=europe-detached-status instance=bash-ending-status",
       "type": "agent.response-recorded"
     }
   ]

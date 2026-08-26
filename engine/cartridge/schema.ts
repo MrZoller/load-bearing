@@ -934,6 +934,38 @@ const REACTION_PREDICATE = {
   variants: {
     "file-exists": FILE_EXISTS_PREDICATE,
     "file-contents": FILE_CONTENTS_PREDICATE,
+    "copy-paths": {
+      kind: "object",
+      description:
+        "The exact operands of a successful triggering virtual-file copy.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "The rule kind.",
+          values: ["copy-paths"],
+        }),
+        source: required({
+          kind: "string",
+          description: "The exact source operand carried by the copy event.",
+          pattern: SINGLE_LINE_PATTERN,
+          patternLabel: "a single-line string",
+          minLength: 1,
+        }),
+        destination: required({
+          kind: "string",
+          description:
+            "The exact destination operand carried by the copy event.",
+          pattern: SINGLE_LINE_PATTERN,
+          patternLabel: "a single-line string",
+          minLength: 1,
+        }),
+        success: required({
+          kind: "boolean",
+          description:
+            "Whether the triggering copy event reported a successful VFS mutation.",
+        }),
+      },
+    },
     "service-state": SERVICE_STATE,
     "service-health": SERVICE_HEALTH_RULE,
     "process-state": PROCESS_STATE,
@@ -945,6 +977,18 @@ const REACTION_ACTION = {
     "One registered owner-applied transition produced by a reaction.",
   discriminator: "kind",
   variants: {
+    "story-reach": {
+      kind: "object",
+      description: "Reach one authored shared story beat.",
+      fields: {
+        kind: required({
+          kind: "enum",
+          description: "The action kind.",
+          values: ["story-reach"],
+        }),
+        beat: required(WORLD_ID),
+      },
+    },
     "service-state": SERVICE_STATE,
     "service-health": SERVICE_HEALTH_RULE,
     "process-state": PROCESS_STATE,

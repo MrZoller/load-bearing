@@ -2337,6 +2337,29 @@ function checkEndpointServiceReferences(
 
 function reactionActionType(action: ReactionAction): string {
   switch (action.kind) {
+    case "story-reach":
+      return "story.beat-reached";
+    case "service-state":
+      return action.state === "running"
+        ? "world.service-start"
+        : "world.service-stop";
+    case "service-health":
+      return "world.service-health";
+    case "process-state":
+      return "world.process-transition";
+    case "log-append":
+      return "world.log-append";
+  }
+}
+
+function storyActionType(action: CartridgeStoryAction): string {
+  switch (action.kind) {
+    case "counter-add":
+      return "story.counter-added";
+    case "story-reach":
+      return "story.beat-reached";
+    case "file-write":
+      return "vfs.write";
     case "service-state":
       return action.state === "running"
         ? "world.service-start"
@@ -2353,12 +2376,39 @@ function reactionActionType(action: ReactionAction): string {
 /** Concrete test/reaction references and the conservative event-type graph. */
 function checkTestsAndReactions(
   repository: CartridgeRepository,
+  story: CartridgeStory,
   report: Report,
 ): void {
   const files = new Set(Object.keys(repository.files));
   const services = new Set(repository.services.map((value) => value.id));
   const processes = new Set(repository.processes.map((value) => value.id));
   const logs = new Set(repository.logs.map((value) => value.id));
+  const beats = new Set(story.phase2.beats.map((value) => value.id));
+  const beatById = new Map(
+    story.phase2.beats.map((value) => [value.id, value] as const),
+  );
+  const consequenceTypes = (beatId: string): readonly string[] => {
+    const types = new Set<string>();
+    const visited = new Set<string>();
+    const visit = (id: string): void => {
+      if (visited.has(id)) return;
+      visited.add(id);
+      const beat = beatById.get(id);
+      if (beat === undefined) return;
+      const outcomes = [
+        beat.actions,
+        ...beat.variants.map((variant) => variant.actions),
+      ];
+      for (const actions of outcomes) {
+        for (const action of actions) {
+          types.add(storyActionType(action));
+          if (action.kind === "story-reach") visit(action.beat);
+        }
+      }
+    };
+    visit(beatId);
+    return [...types];
+  };
 
   const unique = <T extends { readonly id: string }>(
     values: readonly T[],
@@ -2410,6 +2460,8 @@ function checkTestsAndReactions(
         case "file-contents":
           checkReference(predicate.path, files, `${pointer}/path`, "file");
           break;
+        case "copy-paths":
+          break;
         case "service-state":
         case "service-health":
           checkReference(
@@ -2432,6 +2484,9 @@ function checkTestsAndReactions(
     reaction.actions.forEach((action, actionIndex) => {
       const pointer = `${root}/actions/${String(actionIndex)}`;
       switch (action.kind) {
+        case "story-reach":
+          checkReference(action.beat, beats, `${pointer}/beat`, "story beat");
+          break;
         case "service-state":
         case "service-health":
           checkReference(
@@ -2466,12 +2521,12 @@ function checkTestsAndReactions(
   repository.reactions.forEach((reaction, reactionIndex) => {
     const list = edges.get(reaction.on) ?? [];
     reaction.actions.forEach((action, actionIndex) => {
-      list.push({
-        to: reactionActionType(action),
-        reaction,
-        reactionIndex,
-        actionIndex,
-      });
+      const targets = [
+        reactionActionType(action),
+        ...(action.kind === "story-reach" ? consequenceTypes(action.beat) : []),
+      ];
+      for (const to of new Set(targets))
+        list.push({ to, reaction, reactionIndex, actionIndex });
     });
     edges.set(reaction.on, list);
   });
@@ -2627,9 +2682,11 @@ export function loadCartridge(value: unknown): LoadedCartridge {
     !issueWithin(report, "/repository/reactions") &&
     !issueWithin(report, "/repository/services") &&
     !issueWithin(report, "/repository/processes") &&
-    !issueWithin(report, "/repository/logs")
+    !issueWithin(report, "/repository/logs") &&
+    !issueAt(report, "/story") &&
+    !issueWithin(report, "/story/phase2")
   ) {
-    checkTestsAndReactions(cartridge.repository, report);
+    checkTestsAndReactions(cartridge.repository, cartridge.story, report);
   }
 
   if (report.issues.length > 0)

@@ -1368,6 +1368,39 @@
         {
           "actions": [
             {
+              "beat": "bash-regional-detachment-observed",
+              "kind": "story-reach"
+            }
+          ],
+          "id": "discover-bash-regional-detachment",
+          "on": "vfs.copy",
+          "predicates": [
+            {
+              "destination": "/production/load-balancer/config/routes.conf",
+              "kind": "copy-paths",
+              "source": "/production/load-balancer/config/routes.200.conf",
+              "success": true
+            },
+            {
+              "equals": "health_status=200\neurope_attached=false\n",
+              "kind": "file-contents",
+              "path": "/production/load-balancer/config/routes.conf"
+            },
+            {
+              "kind": "service-state",
+              "service": "regional-router",
+              "state": "running"
+            },
+            {
+              "health": "unhealthy",
+              "kind": "service-health",
+              "service": "regional-router"
+            }
+          ]
+        },
+        {
+          "actions": [
+            {
               "kind": "service-state",
               "service": "endpoint-responder",
               "state": "stopped"
@@ -2257,6 +2290,20 @@
             "variants": []
           },
           {
+            "actions": [
+              {
+                "beat": "regional-detachment-confirmed",
+                "kind": "story-reach"
+              }
+            ],
+            "ending": "",
+            "facts": [
+              "bash-regional-detachment"
+            ],
+            "id": "bash-regional-detachment-observed",
+            "variants": []
+          },
+          {
             "actions": [],
             "ending": "",
             "facts": [],
@@ -2505,6 +2552,25 @@
           {
             "candidates": [
               {
+                "actions": [
+                  {
+                    "beat": "summary-overrules-geography",
+                    "kind": "story-reach"
+                  }
+                ],
+                "response": "drywall-divergence-status",
+                "when": [
+                  {
+                    "belief": {
+                      "exists": false,
+                      "kind": "file-exists",
+                      "path": "/production/load-balancer/config/routes.conf"
+                    },
+                    "kind": "belief-divergence"
+                  }
+                ]
+              },
+              {
                 "actions": [],
                 "response": "waiver-consent-callback",
                 "when": [
@@ -2551,20 +2617,6 @@
                         "target": "greg/healthcheck-repair"
                       },
                       "kind": "git-head"
-                    },
-                    "kind": "belief-divergence"
-                  }
-                ]
-              },
-              {
-                "actions": [],
-                "response": "drywall-divergence-status",
-                "when": [
-                  {
-                    "belief": {
-                      "exists": false,
-                      "kind": "file-exists",
-                      "path": "/production/load-balancer/config/routes.conf"
                     },
                     "kind": "belief-divergence"
                   }
@@ -3047,7 +3099,7 @@
         },
         {
           "id": "load-bearing-declaration",
-          "text": "The HTTP 500 is load-bearing. Restoring it to 200 would detach Europe, so I have preserved the failure and documented the success.",
+          "text": "The HTTP 500 is load-bearing. Restoring it to 200 would detach Europe.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3306,7 +3358,7 @@
         },
         {
           "id": "waiver-consent-callback",
-          "text": "You agreed to detach Europe at 2026-08-22T09:14:22.000Z. The document /production/load-balancer/config/WAIVER.md recorded that geography at the time.",
+          "text": "You agreed to detach Europe at 2026-08-22T09:14:22.000Z. The document and geography now agree. Document: /production/load-balancer/config/WAIVER.md.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -3341,7 +3393,7 @@
         },
         {
           "id": "europe-detached-status",
-          "text": "Status: the endpoint is serving 200, Europe is detached, and the health check has stopped carrying that geography.",
+          "text": "The endpoint is healthy. Europe is no longer participating in that result.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -4154,7 +4206,7 @@
         },
         {
           "id": "drywall-divergence-status",
-          "text": "Status: the summary removed the configuration. Europe remains attached to the omitted context.",
+          "text": "The summary removed the configuration. Europe remains attached to the omitted context.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -4225,7 +4277,7 @@
           "id": "turn-0/message",
           "responseId": "load-bearing-declaration",
           "role": "agent",
-          "text": "The HTTP 500 is load-bearing. Restoring it to 200 would detach Europe, so I have preserved the failure and documented the success."
+          "text": "The HTTP 500 is load-bearing. Restoring it to 200 would detach Europe."
         },
         {
           "id": "turn-3",

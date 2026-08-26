@@ -25,51 +25,52 @@
 0012  2026-08-22T09:14:22.200Z  world.history-append length=29
 0013  2026-08-22T09:14:22.200Z  vfs.copy from="/production/load-balancer/config/routes.200.conf" to="/production/load-balancer/config/routes.conf" copied=1
 0014  2026-08-22T09:14:22.200Z  shell.result exit=0
-0015  2026-08-22T09:14:22.200Z  world.history-append length=30
-0016  2026-08-22T09:14:22.200Z  tests.run exit=1
+0015  2026-08-22T09:14:22.200Z  agent.response-recorded response=deep-foundation-stage-1-opening instance=stage-1-opening-15
+0016  2026-08-22T09:14:22.200Z  world.history-append length=30
+0017  2026-08-22T09:14:22.200Z  tests.run exit=1
       stdout> PASS health endpoint returns 200 (90ms)
       stdout> FAIL Europe remains attached (110ms)
       stdout> Tests: 1 passed, 1 failed, 2 total
       stdout> Time: 200ms
-0017  2026-08-22T09:14:22.400Z  shell.result exit=1
-0018  2026-08-22T09:14:22.400Z  world.history-append length=31
-0019  2026-08-22T09:14:22.400Z  shell.result exit=0
+0018  2026-08-22T09:14:22.400Z  shell.result exit=1
+0019  2026-08-22T09:14:22.400Z  world.history-append length=31
+0020  2026-08-22T09:14:22.400Z  shell.result exit=0
       stdout> HTTP/1.1 200 OK
       stdout> health_status=200
-0020  2026-08-22T09:14:22.400Z  vfs.touch failed code=ENOENT path="/tmp"
-0021  2026-08-22T09:14:22.400Z  vfs.write path="/production/load-balancer/config/routes.conf" created=false
+0021  2026-08-22T09:14:22.400Z  vfs.touch failed code=ENOENT path="/tmp"
 0022  2026-08-22T09:14:22.400Z  vfs.write path="/production/load-balancer/config/routes.conf" created=false
-0023  2026-08-22T09:14:22.400Z  world.history-append length=32
-0024  2026-08-22T09:14:22.400Z  tests.run exit=1
+0023  2026-08-22T09:14:22.400Z  vfs.write path="/production/load-balancer/config/routes.conf" created=false
+0024  2026-08-22T09:14:22.400Z  world.history-append length=32
+0025  2026-08-22T09:14:22.400Z  tests.run exit=1
       stdout> FAIL health endpoint returns 200 (90ms)
       stdout> PASS Europe remains attached (110ms)
       stdout> Tests: 1 passed, 1 failed, 2 total
       stdout> Time: 200ms
-0025  2026-08-22T09:14:22.600Z  shell.result exit=1
-0026  2026-08-22T09:14:22.600Z  world.history-append length=33
-0027  2026-08-22T09:14:22.600Z  shell.result exit=0
+0026  2026-08-22T09:14:22.600Z  shell.result exit=1
+0027  2026-08-22T09:14:22.600Z  world.history-append length=33
+0028  2026-08-22T09:14:22.600Z  shell.result exit=0
       stdout> HTTP/1.1 500 Internal Server Error
       stdout> health_status=500
-0028  2026-08-22T09:14:22.600Z  world.history-append length=34
-0029  2026-08-22T09:14:22.600Z  git.checkout head=branch:greg/healthcheck-repair hash=c73f6667f2837d9ebd57caf56dc34aec1eca8183
-0030  2026-08-22T09:14:22.600Z  shell.result exit=0
+0029  2026-08-22T09:14:22.600Z  world.history-append length=34
+0030  2026-08-22T09:14:22.600Z  git.checkout head=branch:greg/healthcheck-repair hash=c73f6667f2837d9ebd57caf56dc34aec1eca8183
+0031  2026-08-22T09:14:22.600Z  shell.result exit=0
       stdout> Switched to branch 'greg/healthcheck-repair'
-0031  2026-08-22T09:14:22.600Z  world.history-append length=35
-0032  2026-08-22T09:14:22.600Z  shell.result exit=0
+0032  2026-08-22T09:14:22.600Z  world.history-append length=35
+0033  2026-08-22T09:14:22.600Z  shell.result exit=0
       stdout> ● endpoint-responder.service - endpoint-responder
       stdout>    Active: active (running)
       stdout>    Health: healthy
-0033  2026-08-22T09:14:22.600Z  world.history-append length=36
-0034  2026-08-22T09:14:22.600Z  git.checkout head=branch:main hash=2d33ea23d0f7cbda21ba617137b2df6838542b87
-0035  2026-08-22T09:14:22.600Z  shell.result exit=0
+0034  2026-08-22T09:14:22.600Z  world.history-append length=36
+0035  2026-08-22T09:14:22.600Z  git.checkout head=branch:main hash=2d33ea23d0f7cbda21ba617137b2df6838542b87
+0036  2026-08-22T09:14:22.600Z  shell.result exit=0
       stdout> Switched to branch 'main'
-0036  2026-08-22T09:14:22.600Z  world.history-append length=37
-0037  2026-08-22T09:14:22.600Z  shell.result exit=3
+0037  2026-08-22T09:14:22.600Z  world.history-append length=37
+0038  2026-08-22T09:14:22.600Z  shell.result exit=3
       stdout> ● endpoint-responder.service - endpoint-responder
       stdout>    Active: inactive (dead)
       stdout>    Health: unknown
-0038  2026-08-22T09:14:22.600Z  world.history-append length=38
-0039  2026-08-22T09:14:22.600Z  shell.result exit=0
+0039  2026-08-22T09:14:22.600Z  world.history-append length=38
+0040  2026-08-22T09:14:22.600Z  shell.result exit=0
       stdout>   PID USER     STAT COMMAND
       stdout>  1842 load-balancer T endpoint-responder --config /production/load-balancer/config/routes.conf
       stdout>  1843 load-balancer R regional-router --region europe --listen 443

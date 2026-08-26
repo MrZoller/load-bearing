@@ -1197,6 +1197,29 @@
                   "oneOf": [
                     {
                       "additionalProperties": false,
+                      "description": "Reach one authored shared story beat.",
+                      "properties": {
+                        "beat": {
+                          "description": "A stable, non-empty single-line cartridge-local identifier.",
+                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]+$",
+                          "type": "string"
+                        },
+                        "kind": {
+                          "description": "The action kind.",
+                          "enum": [
+                            "story-reach"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "beat"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
                       "description": "A service-state predicate or action.",
                       "properties": {
                         "kind": {
@@ -1394,6 +1417,42 @@
                         "kind",
                         "path",
                         "equals"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "description": "The exact operands of a successful triggering virtual-file copy.",
+                      "properties": {
+                        "destination": {
+                          "description": "The exact destination operand carried by the copy event.",
+                          "minLength": 1,
+                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                          "type": "string"
+                        },
+                        "kind": {
+                          "description": "The rule kind.",
+                          "enum": [
+                            "copy-paths"
+                          ],
+                          "type": "string"
+                        },
+                        "source": {
+                          "description": "The exact source operand carried by the copy event.",
+                          "minLength": 1,
+                          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029]*$",
+                          "type": "string"
+                        },
+                        "success": {
+                          "description": "Whether the triggering copy event reported a successful VFS mutation.",
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "source",
+                        "destination",
+                        "success"
                       ],
                       "type": "object"
                     },

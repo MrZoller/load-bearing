@@ -594,6 +594,13 @@ export interface CartridgeTest {
 export type ReactionPredicate =
   | FilePredicate
   | {
+      /** Match a successful triggering virtual-file copy by its operands. */
+      readonly kind: "copy-paths";
+      readonly source: string;
+      readonly destination: string;
+      readonly success: boolean;
+    }
+  | {
       readonly kind: "service-state";
       readonly service: string;
       readonly state: WorldUnitState;
@@ -610,6 +617,11 @@ export type ReactionPredicate =
     };
 
 export type ReactionAction =
+  | {
+      /** Reach a shared beat through its owner after the triggering transition. */
+      readonly kind: "story-reach";
+      readonly beat: string;
+    }
   | {
       readonly kind: "service-state";
       readonly service: string;

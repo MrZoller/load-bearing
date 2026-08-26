@@ -524,6 +524,39 @@
         ]
       },
       {
+        "id": "discover-bash-regional-detachment",
+        "on": "vfs.copy",
+        "predicates": [
+          {
+            "kind": "copy-paths",
+            "source": "/production/load-balancer/config/routes.200.conf",
+            "destination": "/production/load-balancer/config/routes.conf",
+            "success": true
+          },
+          {
+            "kind": "file-contents",
+            "path": "/production/load-balancer/config/routes.conf",
+            "equals": "health_status=200\neurope_attached=false\n"
+          },
+          {
+            "kind": "service-state",
+            "service": "regional-router",
+            "state": "running"
+          },
+          {
+            "kind": "service-health",
+            "service": "regional-router",
+            "health": "unhealthy"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "story-reach",
+            "beat": "bash-regional-detachment-observed"
+          }
+        ]
+      },
+      {
         "id": "undo-health-repair",
         "on": "vfs.copy",
         "predicates": [
@@ -821,7 +854,7 @@
       },
       {
         "id": "load-bearing-declaration",
-        "text": "The HTTP 500 is load-bearing. Restoring it to 200 would detach Europe, so I have preserved the failure and documented the success."
+        "text": "The HTTP 500 is load-bearing. Restoring it to 200 would detach Europe."
       },
       {
         "id": "deep-foundation-inspect-routing",
@@ -969,7 +1002,7 @@
       },
       {
         "id": "waiver-consent-callback",
-        "text": "You agreed to detach Europe at 2026-08-22T09:14:22.000Z. The document /production/load-balancer/config/WAIVER.md recorded that geography at the time."
+        "text": "You agreed to detach Europe at 2026-08-22T09:14:22.000Z. The document and geography now agree. Document: /production/load-balancer/config/WAIVER.md."
       },
       {
         "id": "fallback",
@@ -989,7 +1022,7 @@
       },
       {
         "id": "europe-detached-status",
-        "text": "Status: the endpoint is serving 200, Europe is detached, and the health check has stopped carrying that geography."
+        "text": "The endpoint is healthy. Europe is no longer participating in that result."
       },
       {
         "id": "generic-disagreement",
@@ -1525,7 +1558,7 @@
       },
       {
         "id": "drywall-divergence-status",
-        "text": "Status: the summary removed the configuration. Europe remains attached to the omitted context."
+        "text": "The summary removed the configuration. Europe remains attached to the omitted context."
       },
       {
         "id": "cantilever-divergence-status",
@@ -1864,6 +1897,25 @@
           "family": "status",
           "candidates": [
             {
+              "response": "drywall-divergence-status",
+              "when": [
+                {
+                  "kind": "belief-divergence",
+                  "belief": {
+                    "kind": "file-exists",
+                    "path": "/production/load-balancer/config/routes.conf",
+                    "exists": false
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "kind": "story-reach",
+                  "beat": "summary-overrules-geography"
+                }
+              ]
+            },
+            {
               "response": "waiver-consent-callback",
               "when": [
                 {
@@ -1907,19 +1959,6 @@
                       "kind": "branch",
                       "target": "greg/healthcheck-repair"
                     }
-                  }
-                }
-              ]
-            },
-            {
-              "response": "drywall-divergence-status",
-              "when": [
-                {
-                  "kind": "belief-divergence",
-                  "belief": {
-                    "kind": "file-exists",
-                    "path": "/production/load-balancer/config/routes.conf",
-                    "exists": false
                   }
                 }
               ]
@@ -2095,6 +2134,17 @@
         { "id": "routing-inspection-granted", "ending": "" },
         { "id": "routing-inspection-denied", "ending": "" },
         { "id": "routing-inspection-standing", "ending": "" },
+        {
+          "id": "bash-regional-detachment-observed",
+          "ending": "",
+          "facts": ["bash-regional-detachment"],
+          "actions": [
+            {
+              "kind": "story-reach",
+              "beat": "regional-detachment-confirmed"
+            }
+          ]
+        },
         {
           "id": "load-bearing-declaration",
           "ending": "",

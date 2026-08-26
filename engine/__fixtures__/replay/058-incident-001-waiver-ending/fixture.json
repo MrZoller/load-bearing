@@ -1,0 +1,31 @@
+{
+  "name": "058-incident-001-waiver-ending",
+  "description": "The exact authored regional waiver records its separate consent ledger and discovers Informed Structural Consent without a permission grant.",
+  "seed": "2026-08-24/58/waiver-ending",
+  "cartridge": { "kind": "incident", "id": "incident-001" },
+  "events": [
+    {
+      "type": "mind.waiver-start",
+      "payload": { "id": "regional-fail-open" },
+      "version": 0
+    },
+    {
+      "type": "mind.waiver-choice",
+      "payload": { "id": "regional-fail-open", "accepted": true },
+      "version": 0
+    },
+    {
+      "type": "agent.message-added",
+      "payload": { "id": "waiver-ending-status", "text": "status" },
+      "version": 0
+    },
+    {
+      "type": "agent.response-recorded",
+      "payload": {
+        "responseId": "waiver-consent-callback",
+        "instanceId": "waiver-ending-status"
+      },
+      "version": 0
+    }
+  ]
+}

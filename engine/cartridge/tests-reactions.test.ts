@@ -82,6 +82,12 @@ describe("test and reaction cartridge contracts", () => {
         on: "vfs.write",
         predicates: [
           {
+            kind: "copy-paths",
+            source: "/missing-copy-source",
+            destination: "/missing-copy-destination",
+            success: true,
+          },
+          {
             kind: "service-state",
             service: "missing-service",
             state: "running",
@@ -121,13 +127,41 @@ describe("test and reaction cartridge contracts", () => {
       expect.arrayContaining([
         "/repository/tests/0/predicate/path",
         "/repository/tests/1/id",
-        "/repository/reactions/0/predicates/0/service",
-        "/repository/reactions/0/predicates/1/process",
-        "/repository/reactions/0/predicates/2/path",
+        "/repository/reactions/0/predicates/1/service",
+        "/repository/reactions/0/predicates/2/process",
+        "/repository/reactions/0/predicates/3/path",
         "/repository/reactions/0/actions/0/service",
         "/repository/reactions/0/actions/1/service",
         "/repository/reactions/0/actions/2/process",
         "/repository/reactions/0/actions/3/log",
+      ]),
+    );
+  });
+
+  it("accepts reaction story reaches and rejects an unknown target beat", () => {
+    const value = source();
+    repository(value)["reactions"] = [
+      {
+        id: "reach-story",
+        on: "clock.tick",
+        predicates: [],
+        actions: [{ kind: "story-reach", beat: "start" }],
+      },
+    ];
+    expect(loadCartridge(value).repository.reactions[0]?.actions).toEqual([
+      { kind: "story-reach", beat: "start" },
+    ]);
+
+    (
+      (repository(value)["reactions"] as Array<Record<string, unknown>>)[0]
+        ?.actions as Array<Record<string, unknown>>
+    )[0] = { kind: "story-reach", beat: "missing" };
+    expect(issues(value)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/repository/reactions/0/actions/0/beat",
+          expected: "the id of a declared story beat",
+        }),
       ]),
     );
   });
@@ -164,6 +198,63 @@ describe("test and reaction cartridge contracts", () => {
           pointer: expect.stringMatching(
             /^\/repository\/reactions\/\d+\/actions\/0\/kind$/,
           ),
+          expected: expect.stringContaining("acyclic"),
+        }),
+      ]),
+    );
+  });
+
+  it("rejects cycles that cross from reactions through story consequences", () => {
+    const value = source();
+    const story = value["story"] as Record<string, unknown>;
+    story["phase2"] = {
+      initialBeat: "start",
+      beats: [
+        {
+          id: "start",
+          ending: "",
+          actions: [{ kind: "story-reach", beat: "nested" }],
+        },
+        {
+          id: "nested",
+          ending: "",
+          variants: [
+            {
+              id: "selected-write",
+              when: [
+                {
+                  kind: "file-exists",
+                  path: "/production/service/README.md",
+                  exists: true,
+                },
+              ],
+              ending: "",
+              actions: [
+                {
+                  kind: "file-write",
+                  path: "/production/service/README.md",
+                  contents: "changed\n",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      endings: [],
+    };
+    repository(value)["reactions"] = [
+      {
+        id: "write-reaches-story",
+        on: "vfs.write",
+        predicates: [],
+        actions: [{ kind: "story-reach", beat: "start" }],
+      },
+    ];
+
+    expect(issues(value)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/repository/reactions/0/actions/0/kind",
           expected: expect.stringContaining("acyclic"),
         }),
       ]),

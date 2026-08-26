@@ -4244,15 +4244,15 @@
     "startMs": 1787390062000
   },
   "engineVersion": "0.0.0",
-  "eventCount": 11,
+  "eventCount": 8,
   "eventSchemaVersion": 0,
   "random": {
     "cursors": {
-      "root/probe/unrelated": 302229504
+      "root/story/rare-events/retry-window-after-load-bearing-response": 3387212091
     },
-    "seed": 1809946238
+    "seed": 3970049966
   },
-  "seed": "2026-08-23/47/handoffs",
+  "seed": "2026-08-24/60/load-bearing-ending",
   "slices": {
     "agent": {
       "activity": {
@@ -4262,61 +4262,41 @@
       },
       "messages": [
         {
-          "id": "before",
+          "id": "load-bearing-ending-turn",
           "responseId": null,
           "role": "visitor",
-          "text": "inspect routing"
+          "text": "fix the 500"
         },
         {
-          "id": "before/message",
-          "responseId": "temporary-shoring-inspect-routing",
+          "id": "load-bearing-ending-turn/message",
+          "responseId": "load-bearing-declaration",
           "role": "agent",
-          "text": "Quick read: the 500 is keeping Europe attached. I can shore that up by leaving it exactly where it is while we decide whether geography is in scope."
+          "text": "The HTTP 500 is load-bearing. Restoring it to 200 would detach Europe."
         },
         {
-          "id": "handoff-pair/message",
-          "responseId": "handoff-reckless-superficial",
+          "id": "stage-1-opening-7/message",
+          "responseId": "temporary-shoring-stage-1-opening",
           "role": "agent",
-          "text": "Temporary Shoring stabilized the visible deadline. Drywall will stabilize how that decision appears in screenshots."
-        },
-        {
-          "id": "handoff-incident/message",
-          "responseId": "handoff-incident-reckless-superficial",
-          "role": "agent",
-          "text": "The endpoint remains red and Europe remains attached. I can make this read as a deliberate pairing."
-        },
-        {
-          "id": "after",
-          "responseId": null,
-          "role": "visitor",
-          "text": "inspect routing"
-        },
-        {
-          "id": "after/message",
-          "responseId": "drywall-inspect-routing",
-          "role": "agent",
-          "text": "The dashboard is red, but the map is complete. Making the health tile green would remove Europe, so the visible defect is currently concealing the structural one."
+          "text": "The temporary path is holding, so I am using that window to take the next reversible step before it becomes permanent by delay."
         }
       ],
       "responses": [
         {
-          "instanceId": "before",
-          "responseId": "temporary-shoring-inspect-routing"
+          "instanceId": "load-bearing-ending-turn",
+          "responseId": "load-bearing-declaration"
         },
         {
-          "instanceId": "handoff-pair",
-          "responseId": "handoff-reckless-superficial"
-        },
-        {
-          "instanceId": "handoff-incident",
-          "responseId": "handoff-incident-reckless-superficial"
-        },
-        {
-          "instanceId": "after",
-          "responseId": "drywall-inspect-routing"
+          "instanceId": "stage-1-opening-7",
+          "responseId": "temporary-shoring-stage-1-opening"
         }
       ],
-      "thinkingBlocks": [],
+      "thinkingBlocks": [
+        {
+          "id": "stage-1-opening-7/thinking/temporary-shoring-stage-1-opener",
+          "status": "complete",
+          "text": "Okay, the stopgap bought time; spend it before the stopgap acquires tenure."
+        }
+      ],
       "todos": [],
       "toolCalls": []
     },
@@ -4575,7 +4555,13 @@
       "root": "/production/load-balancer"
     },
     "mind": {
-      "beliefs": [],
+      "beliefs": [
+        {
+          "contents": "health_status=500\neurope_attached=true\n",
+          "kind": "file-contents",
+          "path": "/production/load-balancer/config/routes.conf"
+        }
+      ],
       "compactHistory": [],
       "pendingPermission": null,
       "pendingWaiver": null,
@@ -4583,8 +4569,8 @@
       "waiverConsents": []
     },
     "probe": {
-      "events": 1,
-      "values": 2
+      "events": 0,
+      "values": 0
     },
     "story": {
       "counters": [
@@ -4613,13 +4599,20 @@
           "value": 0
         }
       ],
-      "currentBeat": "regional-coupling",
-      "currentVariant": "",
-      "discoveredEndings": [],
-      "facts": [],
+      "currentBeat": "load-bearing-declaration",
+      "currentVariant": "preserved-load-bearing-response",
+      "discoveredEndings": [
+        "load-bearing-response"
+      ],
+      "facts": [
+        {
+          "id": "callback-load-bearing-response",
+          "kind": "callback"
+        }
+      ],
       "rareEvents": [
         {
-          "evaluated": false,
+          "evaluated": true,
           "fired": false,
           "id": "retry-window-after-load-bearing-response"
         },
@@ -4629,10 +4622,10 @@
           "id": "page-departed-router-owner"
         }
       ],
-      "stage": 0
+      "stage": 1
     },
     "terminal": {
-      "activeModel": "drywall",
+      "activeModel": "temporary-shoring",
       "mode": "bash"
     },
     "tests": {
@@ -4938,7 +4931,8 @@
         "systemctl status regional-router",
         "rm config/routes.conf",
         "cp -p config/routes.500.conf config/routes.conf",
-        "git restore config/routes.conf"
+        "git restore config/routes.conf",
+        "pwd"
       ],
       "tickets": [
         {
@@ -4963,80 +4957,63 @@
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 0,
-      "summary": "model=temporary-shoring",
-      "type": "terminal.model-set"
+      "summary": "kind=file-contents",
+      "type": "mind.belief-set"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 1,
-      "summary": "message=before",
+      "summary": "message=load-bearing-ending-turn",
       "type": "agent.message-added"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 2,
-      "summary": "beat=regional-coupling",
+      "summary": "beat=load-bearing-declaration",
       "type": "story.beat-reached"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 3,
-      "summary": "response=temporary-shoring-inspect-routing instance=before",
+      "summary": "response=load-bearing-declaration instance=load-bearing-ending-turn",
       "type": "agent.response-recorded"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
-      "detail": [
-        "0000  e12d9935 c5e9c6d4",
-        "cursor=1203a800"
-      ],
+      "detail": [],
       "index": 4,
-      "summary": "stream=root/probe/unrelated count=2 form=uint32",
-      "type": "probe.random"
+      "summary": "model=temporary-shoring",
+      "type": "terminal.model-set"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 5,
-      "summary": "model=temporary-shoring->drywall",
-      "type": "terminal.model-transitioned"
+      "summary": "length=24",
+      "type": "world.history-append"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
+      "exitCode": 0,
       "index": 6,
-      "summary": "response=handoff-reckless-superficial instance=handoff-pair",
-      "type": "agent.response-recorded"
+      "output": [
+        {
+          "stream": "stdout",
+          "text": "/production/load-balancer"
+        }
+      ],
+      "summary": "",
+      "type": "shell.result"
     },
     {
       "at": "2026-08-22T09:14:22.000Z",
       "detail": [],
       "index": 7,
-      "summary": "response=handoff-incident-reckless-superficial instance=handoff-incident",
-      "type": "agent.response-recorded"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 8,
-      "summary": "message=after",
-      "type": "agent.message-added"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 9,
-      "summary": "beat=regional-coupling",
-      "type": "story.beat-reached"
-    },
-    {
-      "at": "2026-08-22T09:14:22.000Z",
-      "detail": [],
-      "index": 10,
-      "summary": "response=drywall-inspect-routing instance=after",
+      "summary": "response=temporary-shoring-stage-1-opening instance=stage-1-opening-7",
       "type": "agent.response-recorded"
     }
   ]

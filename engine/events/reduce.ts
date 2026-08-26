@@ -278,7 +278,7 @@ function foldEvent(
   registry: EventRegistry,
   expansionAllowed: boolean,
   reactionsAllowed: boolean,
-  triggerSink?: string[],
+  triggerSink?: EngineEvent[],
 ): SessionState {
   // Every field of `state` read exactly once, here, and the returned state
   // built from these locals rather than from `{...state}`. `state` is a
@@ -415,10 +415,10 @@ function foldEvent(
       includeEnvelopeTrigger: boolean,
     ): SessionState => {
       let expanded = before;
-      const triggers: string[] = includeEnvelopeTrigger ? [envelope.type] : [];
+      const triggers: EngineEvent[] = includeEnvelopeTrigger ? [envelope] : [];
       for (const child of children) {
         const count = expanded.transcript.length;
-        const childTriggers: string[] = [];
+        const childTriggers: EngineEvent[] = [];
         expanded = foldEvent(
           expanded,
           child,
@@ -493,7 +493,7 @@ function foldEvent(
       makeEntry(index, at, envelope.type, outcome, where),
     ]),
   });
-  const triggers = [envelope.type];
+  const triggers = [envelope];
   const staged =
     envelope.type === "story.beat-reached"
       ? applyStoryConsequences(logged, registry, where, triggers)
@@ -640,12 +640,13 @@ function applyRareEvents(
       "story rare event",
     );
     if (fired) {
-      const triggers = ["story.beat-reached"];
+      const triggers: EngineEvent[] = [];
       // A fire beat is a distinct transition inside the outer transaction.
       // Keep its pre-beat state so reveal-based escalation can see facts the
       // beat introduced, just as it can for a visitor-reached beat.
       const beforeFireBeat = state;
       const fireBeat = createStoryBeatReachedEvent(declaration.fireBeat);
+      triggers.push(fireBeat);
       state = applyDerivedEvent(
         state,
         fireBeat,
@@ -676,7 +677,8 @@ function applyStoryConsequences(
   initial: SessionState,
   registry: EventRegistry,
   where: string,
-  triggers: string[],
+  triggers: EngineEvent[],
+  reactionWork?: { derivedEvents: number },
 ): SessionState {
   let state = initial;
   let work = 0;
@@ -689,6 +691,13 @@ function applyStoryConsequences(
         throw new Error(
           `${where}: story consequence chain exceeds the ${String(MAX_STORY_CONSEQUENCE_WORK)} derived-event limit`,
         );
+      if (
+        reactionWork !== undefined &&
+        reactionWork.derivedEvents >= MAX_STORY_CONSEQUENCE_WORK
+      )
+        throw new Error(
+          `${where}: reaction cascade exceeds the ${String(MAX_STORY_CONSEQUENCE_WORK)} derived-event limit`,
+        );
       const event = storyActionEvent(action);
       state = applyDerivedEvent(
         state,
@@ -698,7 +707,8 @@ function applyStoryConsequences(
         "story consequence",
       );
       work += 1;
-      triggers.push(event.type);
+      if (reactionWork !== undefined) reactionWork.derivedEvents += 1;
+      triggers.push(event);
       if (event.type === "story.beat-reached") dispatchSelected();
     }
   };
@@ -717,7 +727,7 @@ function applyStoryConsequences(
  */
 function applyReactions(
   initial: SessionState,
-  sourceTypes: readonly string[],
+  sourceEvents: readonly EngineEvent[],
   registry: EventRegistry,
   where: string,
 ): SessionState {
@@ -726,16 +736,16 @@ function applyReactions(
   // unbounded work or freeze a browser while staging state that never escapes.
   const maxDerivedEvents = 1024;
   let state = initial;
-  const queue = [...sourceTypes];
-  let derivedEvents = 0;
+  const queue = [...sourceEvents];
+  const reactionWork = { derivedEvents: 0 };
   for (let cursor = 0; cursor < queue.length; cursor += 1) {
-    const sourceType = queue[cursor];
-    if (sourceType === undefined) continue;
+    const source = queue[cursor];
+    if (source === undefined) continue;
     for (const reaction of state.cartridge.repository.reactions) {
-      if (reaction.on !== sourceType) continue;
+      if (reaction.on !== source.type) continue;
       if (
         !reaction.predicates.every((predicate) =>
-          reactionPredicateMatches(predicate, state),
+          reactionPredicateMatches(predicate, state, source),
         )
       )
         continue;
@@ -746,7 +756,7 @@ function applyReactions(
       ) {
         const action = reaction.actions[actionIndex];
         if (action === undefined) continue;
-        if (derivedEvents >= maxDerivedEvents) {
+        if (reactionWork.derivedEvents >= maxDerivedEvents) {
           throw new Error(
             `${where}: reaction cascade exceeds the ${String(maxDerivedEvents)} derived-event limit`,
           );
@@ -759,8 +769,17 @@ function applyReactions(
           `${where} reaction ${JSON.stringify(reaction.id)} action ${String(actionIndex)}`,
           "reaction",
         );
-        derivedEvents += 1;
-        queue.push(event.type);
+        reactionWork.derivedEvents += 1;
+        const actionTriggers = [event];
+        if (event.type === "story.beat-reached")
+          state = applyStoryConsequences(
+            state,
+            registry,
+            `${where} reaction ${JSON.stringify(reaction.id)} action ${String(actionIndex)}`,
+            actionTriggers,
+            reactionWork,
+          );
+        queue.push(...actionTriggers);
       }
     }
   }

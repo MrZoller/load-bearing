@@ -1,0 +1,9 @@
+0000  2026-08-22T09:14:22.000Z  mind.belief-set kind=file-contents
+0001  2026-08-22T09:14:22.000Z  agent.message-added message=load-bearing-ending-turn
+0002  2026-08-22T09:14:22.000Z  story.beat-reached beat=load-bearing-declaration
+0003  2026-08-22T09:14:22.000Z  agent.response-recorded response=load-bearing-declaration instance=load-bearing-ending-turn
+0004  2026-08-22T09:14:22.000Z  terminal.model-set model=temporary-shoring
+0005  2026-08-22T09:14:22.000Z  world.history-append length=24
+0006  2026-08-22T09:14:22.000Z  shell.result exit=0
+      stdout> /production/load-balancer
+0007  2026-08-22T09:14:22.000Z  agent.response-recorded response=temporary-shoring-stage-1-opening instance=stage-1-opening-7
