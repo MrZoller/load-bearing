@@ -201,6 +201,7 @@ authoring tooling remain excluded.
   - PR #83: Reserve the highest-cost opening across future reachable rare-stage alternatives rather than the first applicable stage; Codex thread `discussion_r3877740928` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #83: Align `copy-paths` JSDoc and emitted schema descriptions with its declared success-flag matching semantics; Codex thread `discussion_r3878192021` was verifier-classified minor and dispositioned without a minors-only push.
 
-- [~] T61 (standard) — Stabilize handoff replay CI timing
+- [R] T61 (standard) — Stabilize handoff replay CI timing
   - acceptance: `engine/testing/replay.test.ts`'s twelve-handoff coverage has a deliberate, evidence-based CI timing budget or a faster equivalent structure; repeated CI runs do not fail solely because the current 5-second per-test timeout is exceeded, while the full handoff assertions remain covered.
   - deps: T60
+  - pr: 84
