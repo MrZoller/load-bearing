@@ -182,7 +182,7 @@ authoring tooling remain excluded.
   - PR #74: Consider multiple same-archetype/stage capitulation variants if the 1-in-8 deterministic repetition proves catchphrase-like in playtesting; the local T50 verifier classified this uncertain and minor, with cadence currently providing the documented rationing.
   - pr: 78
 
-- [R] T60 (standard) — parked review minors (batch)
+- [x] T60 (standard) — parked review minors (batch)
   - PR #78: Preserve an envelope reaction when primary expansion fails before reactions run; Codex thread `discussion_r3839858007` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #78: Avoid conservative reveal-opening capacity fallbacks when a reached beat cannot reveal the stage trigger; Codex thread `discussion_r3839944202` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #78: Restore authored `agent.response-recorded` reactions for stage openings without recursive escalation; Codex thread `discussion_r3839944205` was verifier-classified minor and dispositioned without a minors-only push.
@@ -195,6 +195,11 @@ authoring tooling remain excluded.
   - PR #82: Move the Incident #001 rare-hit fixture seed out of `runtime/main.ts` into content or e2e-owned acceptance configuration; Codex thread `discussion_r3877550559` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #82: Constrain or neutralize the routing-state-unknown fallback so arbitrary replacement routing-file content is not described as absent; Codex thread `discussion_r3877550564` was verifier-classified minor and dispositioned without a minors-only push.
   - pr: 83
+
+- [!] T62 (trivial) — parked review minors (batch)
+  - PR #83: Preflight reaction-driven `story-reach` stage openings when capacity planning, including the direct replay-only `vfs.copy` path, so future interactive routing cannot lose an authored opening; Codex thread `discussion_r3877740924` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #83: Reserve the highest-cost opening across future reachable rare-stage alternatives rather than the first applicable stage; Codex thread `discussion_r3877740928` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #83: Align `copy-paths` JSDoc and emitted schema descriptions with its declared success-flag matching semantics; Codex thread `discussion_r3878192021` was verifier-classified minor and dispositioned without a minors-only push.
 
 - [ ] T61 (standard) — Stabilize handoff replay CI timing
   - acceptance: `engine/testing/replay.test.ts`'s twelve-handoff coverage has a deliberate, evidence-based CI timing budget or a faster equivalent structure; repeated CI runs do not fail solely because the current 5-second per-test timeout is exceeded, while the full handoff assertions remain covered.
