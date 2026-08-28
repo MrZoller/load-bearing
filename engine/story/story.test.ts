@@ -585,8 +585,8 @@ describe("shared story beats", () => {
         decision: "grant",
         capability: {
           kind: "exact",
-          action: "detach-region",
-          resource: "/regions/europe",
+          action: "write",
+          resource: "/var/log/load-balancer/health.log",
         },
       },
     });

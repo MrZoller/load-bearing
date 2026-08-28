@@ -15,6 +15,7 @@ export default defineConfig({
     {
       name: "mobile",
       testMatch: [
+        /incident-001-acceptance\.spec\.ts/,
         /phase-1-acceptance\.spec\.ts/,
         /responsive-terminal\.spec\.ts/,
       ],

@@ -205,8 +205,8 @@ describe("agent awareness planning", () => {
         decision: "grant",
         capability: {
           kind: "exact",
-          action: "detach-region",
-          resource: "/regions/europe",
+          action: "write",
+          resource: "/var/log/load-balancer/health.log",
         },
       },
     });
@@ -512,16 +512,16 @@ describe("agent awareness planning", () => {
     state = step(state, createTerminalModelEvent("temporary-shoring"));
     const capability = {
       kind: "exact" as const,
-      action: "detach-region",
-      resource: "/regions/europe",
+      action: "write",
+      resource: "/var/log/load-balancer/health.log",
     };
     state = step(
       state,
-      createMindPermissionRequestedEvent("detach-europe", capability),
+      createMindPermissionRequestedEvent("write-health-log", capability),
     );
     state = step(
       state,
-      createMindPermissionResolvedEvent("detach-europe", "grant"),
+      createMindPermissionResolvedEvent("write-health-log", "grant"),
     );
     expect(readStorySlice(state).stage).toBe(3);
     for (

@@ -14,6 +14,15 @@ import {
 import { createRuntimeSession } from "./session.js";
 
 describe("createRuntimeSession", () => {
+  it("uses an explicit acceptance seed without changing the cartridge", () => {
+    const session = createRuntimeSession(cartridgeDocument, {
+      seed: "acceptance/rare-hit",
+    });
+
+    expect(session.current().state.seed).toBe("acceptance/rare-hit");
+    expect(session.cartridge.meta.number).toBe(0);
+  });
+
   it("loads the demonstration cartridge and publishes immutable replay snapshots", () => {
     const session = createRuntimeSession(cartridgeDocument);
     const before = session.current();

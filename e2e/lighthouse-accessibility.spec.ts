@@ -50,7 +50,9 @@ test("Lighthouse reports a perfect accessibility score", async ({
       logLevel: "silent",
     });
 
-    const scenarioUrl = new URL("/?scenario=phase-1-demo", baseURL).href;
+    // Audit the shipped default cartridge, rather than the retained Phase 1
+    // compatibility scenario. The browser acceptance suite owns that surface.
+    const scenarioUrl = new URL("/", baseURL).href;
     const result = await lighthouse(scenarioUrl, {
       formFactor: "desktop",
       onlyCategories: ["accessibility"],

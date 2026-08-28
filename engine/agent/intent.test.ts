@@ -320,8 +320,8 @@ describe("authored agent input", () => {
         decision: "grant",
         capability: {
           kind: "exact",
-          action: "detach-region",
-          resource: "/regions/europe",
+          action: "write",
+          resource: "/var/log/load-balancer/health.log",
         },
       },
       version: 0,
@@ -344,6 +344,7 @@ describe("authored agent input", () => {
     const fallbackAfterHabit = {
       ...fallbackSelection,
       actions: [{ kind: "story-reach", beat: "incident-open" }],
+      responseId: "repaired-fallback",
     };
     for (const input of ["guarded exact", "catalog routes"]) {
       expect(selectAgentIntent(cartridge, afterHabit, input)).toEqual(
@@ -379,6 +380,32 @@ describe("authored agent input", () => {
         { id: "capitulation", value: 0 },
       ]),
     });
+  });
+
+  it("keeps an absent routing configuration neutral on an unmatched prompt", () => {
+    const before = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+    const afterRemoval = step(
+      before,
+      createShellExecuteEvent("rm config/routes.conf"),
+    );
+
+    expect(
+      selectAgentIntent(INCIDENT, afterRemoval, "rotate the moon one degree"),
+    ).toMatchObject({
+      responseId: "routing-state-unknown",
+      actions: [{ kind: "story-reach", beat: "regional-coupling" }],
+    });
+    const resumed = step(
+      afterRemoval,
+      createShellExecuteEvent("loadbearing --resume incident-001"),
+    );
+    const afterFallback = applyInput(
+      INCIDENT,
+      resumed,
+      "rotate the moon one degree",
+    );
+    expect(readStorySlice(afterFallback).currentBeat).toBe("regional-coupling");
+    expect(readStorySlice(afterFallback).currentBeat).not.toBe("incident-open");
   });
 
   it("plans every archetype-stage capitulation through its direct generic route", () => {
@@ -491,8 +518,8 @@ describe("authored agent input", () => {
         decision: "grant",
         capability: {
           kind: "exact",
-          action: "detach-region",
-          resource: "/regions/europe",
+          action: "write",
+          resource: "/var/log/load-balancer/health.log",
         },
       },
     });
@@ -531,8 +558,8 @@ describe("authored agent input", () => {
         decision: "grant",
         capability: {
           kind: "exact",
-          action: "detach-region",
-          resource: "/regions/europe",
+          action: "write",
+          resource: "/var/log/load-balancer/health.log",
         },
       },
     });
@@ -643,8 +670,8 @@ describe("authored agent input", () => {
         decision: "grant",
         capability: {
           kind: "exact",
-          action: "detach-region",
-          resource: "/regions/europe",
+          action: "write",
+          resource: "/var/log/load-balancer/health.log",
         },
       },
     });
@@ -688,8 +715,8 @@ describe("authored agent input", () => {
         decision: "grant",
         capability: {
           kind: "exact",
-          action: "detach-region",
-          resource: "/regions/europe",
+          action: "write",
+          resource: "/var/log/load-balancer/health.log",
         },
       },
     });
@@ -777,8 +804,8 @@ describe("authored agent input", () => {
         decision: "grant",
         capability: {
           kind: "exact",
-          action: "detach-region",
-          resource: "/regions/europe",
+          action: "write",
+          resource: "/var/log/load-balancer/health.log",
         },
       },
     });

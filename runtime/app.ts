@@ -35,8 +35,9 @@ export function mountApp(
   document: Document,
   mount: HTMLElement,
   cartridgeDocument: unknown,
+  options: { readonly seed?: string } = {},
 ): Pick<RuntimeSession, "cartridge" | "current"> {
-  const session = createRuntimeSession(cartridgeDocument);
+  const session = createRuntimeSession(cartridgeDocument, options);
   const incidentNumber = String(session.cartridge.meta.number).padStart(3, "0");
   const resumeCommand = `loadbearing --resume incident-${incidentNumber}`;
 

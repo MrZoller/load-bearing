@@ -24,22 +24,31 @@ export interface RuntimeSession {
   dispatchMany(events: readonly EngineEvent[]): RuntimeSessionSnapshot;
 }
 
+export interface RuntimeSessionOptions {
+  readonly seed?: string;
+}
+
 /**
  * Own the browser's sole mutable reference to the immutable engine history.
  * Presentation code receives snapshots, never a subsystem slice it could edit.
  */
-export function createRuntimeSession(document: unknown): RuntimeSession {
+export function createRuntimeSession(
+  document: unknown,
+  options: RuntimeSessionOptions = {},
+): RuntimeSession {
   const cartridge = loadCartridge(document);
   const model = cartridge.models[0];
   if (model === undefined) {
     throw new Error("A loaded cartridge must declare at least one model.");
   }
 
-  const seed = formatSeed({
-    incidentDate: cartridge.meta.date,
-    dailySeed: cartridge.meta.number,
-    model: model.id,
-  });
+  const seed =
+    options.seed ??
+    formatSeed({
+      incidentDate: cartridge.meta.date,
+      dailySeed: cartridge.meta.number,
+      model: model.id,
+    });
   let eventLog: readonly EngineEvent[] = EMPTY_EVENT_LOG;
   let state = bootstrap({ cartridge, seed });
 

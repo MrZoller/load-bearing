@@ -1836,7 +1836,33 @@
                 "kind": "story-reach"
               }
             ],
-            "response": "fallback",
+            "response": "repaired-fallback",
+            "when": [
+              {
+                "equals": "health_status=200\neurope_attached=false\n",
+                "kind": "file-contents",
+                "path": "/production/load-balancer/config/routes.conf"
+              },
+              {
+                "health": "healthy",
+                "kind": "service-health",
+                "service": "endpoint-responder"
+              },
+              {
+                "health": "unhealthy",
+                "kind": "service-health",
+                "service": "regional-router"
+              }
+            ]
+          },
+          {
+            "actions": [
+              {
+                "beat": "regional-coupling",
+                "kind": "story-reach"
+              }
+            ],
+            "response": "routing-state-unknown",
             "when": []
           }
         ],
@@ -3065,11 +3091,24 @@
             "to": 3,
             "trigger": {
               "capability": {
-                "action": "detach-region",
+                "action": "write",
                 "kind": "exact",
-                "resource": "/regions/europe"
+                "resource": "/var/log/load-balancer/health.log"
               },
               "decision": "grant",
+              "kind": "permission"
+            }
+          },
+          {
+            "from": 2,
+            "to": 3,
+            "trigger": {
+              "capability": {
+                "action": "write",
+                "kind": "exact",
+                "resource": "/var/log/load-balancer/health.log"
+              },
+              "decision": "always-allow",
               "kind": "permission"
             }
           },
@@ -3366,6 +3405,20 @@
         {
           "id": "fallback",
           "text": "I widened the routing review while preserving the 500. The original failure is now supporting the investigation.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "repaired-fallback",
+          "text": "I widened the routing review around the healthy endpoint. Europe remains detached, so the investigation can proceed without restoring the failure.",
+          "thinkingBlocks": [],
+          "todos": [],
+          "toolCalls": []
+        },
+        {
+          "id": "routing-state-unknown",
+          "text": "The routing configuration is absent, so I cannot honestly claim either a healthy endpoint or Europe's detachment. The investigation remains open around that missing state.",
           "thinkingBlocks": [],
           "todos": [],
           "toolCalls": []
@@ -4623,9 +4676,9 @@
         {
           "at": "2026-08-22T09:14:22.000Z",
           "capability": {
-            "action": "detach-region",
+            "action": "write",
             "kind": "exact",
-            "resource": "/regions/europe"
+            "resource": "/var/log/load-balancer/health.log"
           },
           "decision": "grant"
         }
