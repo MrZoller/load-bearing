@@ -13,6 +13,9 @@ declare global {
       readonly state: string;
       readonly transcript: string;
     };
+    __LOAD_BEARING_ACCEPTANCE_CONFIG__?: {
+      readonly seed?: string;
+    };
   }
 }
 
@@ -25,16 +28,15 @@ const searchParams = new URL(window.location.href).searchParams;
 const cartridgeDocument =
   searchParams.get("scenario") === "phase-1-demo" ? phaseOneDemo : incident001;
 const acceptanceEnabled = searchParams.get("acceptance") === "1";
-// The rare-hit route is a bounded acceptance fixture, not arbitrary seed input:
-// production sessions continue deriving their seed solely from cartridge data.
-const rareHitSeed =
-  acceptanceEnabled && searchParams.get("rare") === "hit"
-    ? "2026-08-23/53/callback-10"
-    : undefined;
+// Acceptance setup may pin deterministic inputs before this bundle executes.
+// Production sessions continue deriving their seed solely from cartridge data.
+const acceptanceSeed = acceptanceEnabled
+  ? window.__LOAD_BEARING_ACCEPTANCE_CONFIG__?.seed
+  : undefined;
 const app =
-  rareHitSeed === undefined
+  acceptanceSeed === undefined
     ? mountApp(document, mount, cartridgeDocument)
-    : mountApp(document, mount, cartridgeDocument, { seed: rareHitSeed });
+    : mountApp(document, mount, cartridgeDocument, { seed: acceptanceSeed });
 
 // This opt-in probe exposes canonical, read-only evidence to the production-
 // bundle acceptance test. It offers no dispatch path and is absent from normal

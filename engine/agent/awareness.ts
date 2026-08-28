@@ -110,6 +110,14 @@ export function createAgentCompactEvents(
           compact.response,
           `compact-${String(state.eventCount)}`,
         )
-      : createAgentCapacityEvent(cartridge.story.fallback.response),
-  ];
+      : transition === undefined
+        ? createAgentCapacityEvent(cartridge.story.fallback.response)
+        : canRecordAuthoredResponse(
+              cartridge,
+              state,
+              stageOpeningResponseId(cartridge, state, transition.to),
+            )
+          ? createAgentCapacityEvent(cartridge.story.fallback.response)
+          : [],
+  ].flat();
 }
