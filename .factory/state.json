@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": null,
-  "branch": null,
+  "current_task": "T58",
+  "branch": "factory/t58-human-playtests",
   "pr": null,
   "hold": false,
-  "updated": "2026-08-28T02:59:00Z"
+  "updated": "2026-08-28T03:00:50Z"
 }
