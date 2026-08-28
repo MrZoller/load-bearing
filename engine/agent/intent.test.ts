@@ -408,6 +408,27 @@ describe("authored agent input", () => {
     expect(readStorySlice(afterFallback).currentBeat).not.toBe("incident-open");
   });
 
+  it("describes an unrecognized replacement without claiming it is absent", () => {
+    let state = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
+    state = step(state, createShellExecuteEvent("rm config/routes.conf"));
+    state = step(
+      state,
+      createShellExecuteEvent("cp package.json config/routes.conf"),
+    );
+    const selection = selectAgentIntent(
+      INCIDENT,
+      state,
+      "rotate the moon one degree",
+    );
+    const response = INCIDENT.story.responses.find(
+      (candidate) => candidate.id === selection.responseId,
+    );
+
+    expect(selection.responseId).toBe("routing-state-unknown");
+    expect(response?.text).toContain("configuration is unrecognized");
+    expect(response?.text).not.toContain("configuration is absent");
+  });
+
   it("plans every archetype-stage capitulation through its direct generic route", () => {
     const archetypes = [
       "deep-foundation",
@@ -1107,7 +1128,7 @@ describe("authored agent input", () => {
     ]);
   });
 
-  it("reserves a stage-opening slot before planning a visitor turn", () => {
+  it("does not reserve a reveal opening its reached beat cannot produce", () => {
     let state = reduce({ cartridge: INCIDENT, seed: SEED, events: [] });
     for (let index = 0; index < MAX_AGENT_MESSAGES - 2; index += 1)
       state = step(
@@ -1115,13 +1136,9 @@ describe("authored agent input", () => {
         createAgentMessageEvent(`filler-${String(index)}`, "filler"),
       );
 
-    // A transition can insert its stage opening between this visitor message
-    // and its routed response, so two free slots are not a complete plan.
     expect(
       createAgentInputEvents(INCIDENT, state, "inspect routing"),
-    ).toMatchObject([
-      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
-    ]);
+    ).toHaveLength(5);
   });
 
   it("reserves an opening that an eligible rare event can insert", () => {
@@ -1167,7 +1184,37 @@ describe("authored agent input", () => {
     ]);
   });
 
-  it("reserves every unevaluated rare-event opening in a visitor batch", () => {
+  it("reserves one opening for a rare declaration across speculative passes", () => {
+    const source = JSON.parse(JSON.stringify(incident)) as {
+      story: {
+        phase2: {
+          rareEvents: Array<Record<string, unknown>>;
+          beats: Array<Record<string, unknown>>;
+        };
+      };
+    };
+    source.story.phase2.rareEvents = source.story.phase2.rareEvents.slice(0, 1);
+    const fireBeat = source.story.phase2.beats.find(
+      (beat) => beat["id"] === "retry-window-opened",
+    );
+    if (fireBeat === undefined) throw new Error("rare fire beat is missing");
+    fireBeat["facts"] = ["bash-regional-detachment"];
+    const cartridge = loadCartridge(source);
+    let state = reduce({ cartridge, seed: SEED, events: [] });
+    for (let index = 0; index < MAX_AGENT_MESSAGES - 3; index += 1)
+      state = step(
+        state,
+        createAgentMessageEvent(`dedupe-filler-${String(index)}`, "filler"),
+      );
+
+    // The declaration is considered before and after the reached-beat action,
+    // but it can fire only once and therefore consumes one opening slot.
+    expect(
+      createAgentInputEvents(cartridge, state, "inspect routing"),
+    ).toHaveLength(5);
+  });
+
+  it("reserves rare openings only for fire beats that can reveal their trigger", () => {
     const source = JSON.parse(JSON.stringify(incident)) as {
       story: { phase2: { transitions: Array<Record<string, unknown>> } };
     };
@@ -1184,14 +1231,11 @@ describe("authored agent input", () => {
         createAgentMessageEvent(`rare-batch-filler-${String(index)}`, "filler"),
       );
 
-    // Both production rare declarations remain unevaluated. Their separate
-    // later passes can each advance a reveal stage, so three free slots do not
-    // cover visitor message, two openings, and the completed-turn response.
+    // Neither production fire beat reveals this added trigger. Reserving both
+    // declarations would reject a turn that cannot actually insert an opening.
     expect(
       createAgentInputEvents(cartridge, state, "inspect routing"),
-    ).toMatchObject([
-      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
-    ]);
+    ).toHaveLength(5);
   });
 
   it("reserves a rare opening after an action advances the stage", () => {

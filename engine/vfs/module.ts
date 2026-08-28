@@ -435,24 +435,38 @@ export const VFS_MODULE = defineEventModule<VfsSlice>({
           "preserve",
           "success",
         ]);
+        const source = readString(data, "source", context.where);
+        const destination = readString(data, "destination", context.where);
+        const recursive = readBoolean(data, "recursive", false, context.where);
+        const preserve = readBoolean(data, "preserve", false, context.where);
         const mutation = copyVfs(
           slice,
-          readString(data, "source", context.where),
-          readString(data, "destination", context.where),
+          source,
+          destination,
           context.clock.timestamp(),
-          {
-            recursive: readBoolean(data, "recursive", false, context.where),
-            preserve: readBoolean(data, "preserve", false, context.where),
-          },
+          { recursive, preserve },
         );
-        // Command expansion records this result for generic reactions. Read it
-        // here too so a malformed public owner event cannot enter the log.
+        // Command expansion may carry its preflight result, but the owner is
+        // authoritative when a public event is dispatched directly.
         readBoolean(data, "success", false, context.where);
-        return mutationOutcome(
-          mutation,
-          (value) =>
-            `from=${summaryPath(value.from)} to=${summaryPath(value.to)} copied=${String(value.copied)}`,
-        );
+        return {
+          ...mutationOutcome(
+            mutation,
+            (value) =>
+              `from=${summaryPath(value.from)} to=${summaryPath(value.to)} copied=${String(value.copied)}`,
+          ),
+          reactionSource: {
+            type: "vfs.copy",
+            payload: {
+              source,
+              destination,
+              recursive,
+              preserve,
+              success: mutation.result.ok,
+            },
+            version: 0,
+          },
+        };
       },
     },
     "vfs.chmod": {

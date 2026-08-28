@@ -1,5 +1,6 @@
 import {
   canRecordAuthoredResponses,
+  canRecordAuthoredResponse,
   createAgentCapacityEvent,
   createAgentInputEvents,
   createAgentResponseEvent,
@@ -92,7 +93,20 @@ export function createModelHandoffEvents(
       selection.successor,
     ),
     ...(!canRecordAuthoredResponses(cartridge, state, responseIds)
-      ? [createAgentCapacityEvent(cartridge.story.fallback.response)]
+      ? stageTransition === undefined
+        ? [createAgentCapacityEvent(cartridge.story.fallback.response)]
+        : canRecordAuthoredResponse(
+              cartridge,
+              state,
+              stageOpeningResponseId(
+                cartridge,
+                state,
+                stageTransition.to,
+                selection.successor,
+              ),
+            )
+          ? [createAgentCapacityEvent(cartridge.story.fallback.response)]
+          : []
       : selection.responseId === ""
         ? []
         : [

@@ -487,6 +487,8 @@ describe("golden replay fixtures", () => {
     }
   });
 
+  // Twelve full fixture replays run under V8 coverage in CI; keep this budget
+  // local so ordinary unit tests still fail promptly when they hang.
   it("records all twelve Incident #001 handoffs as continuous sessions without perturbing shared state or unrelated probes", () => {
     const pairs = [
       [
@@ -650,7 +652,7 @@ describe("golden replay fixtures", () => {
       transcript.match(/.*probe\.random.*$/gm),
     );
     expect(probes).toEqual(pairs.map(() => probes[0]));
-  });
+  }, 10_000);
 
   it("records Incident #001's shared story outcome, waiver ledger, and resumable canonical snapshot", () => {
     const fixture = loadReplayFixture("020-incident-001-story");

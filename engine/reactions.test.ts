@@ -8,6 +8,7 @@ import { readVfsSlice } from "./vfs/module.js";
 import { readVfs } from "./vfs/vfs.js";
 import { readWorldSlice } from "./world/module.js";
 import { lookupProcess, lookupService, readWorldLog } from "./world/world.js";
+import incident001 from "../content/incidents/incident-001.json";
 
 function source(): Record<string, unknown> {
   const value = loadCartridgeFixture("minimal") as Record<string, unknown>;
@@ -65,6 +66,78 @@ describe("service health", () => {
 });
 
 describe("post-event reactions", () => {
+  it.each([
+    [true, false, "/production/service/README.md"],
+    [false, true, "/missing-copy-source"],
+  ])(
+    "matches copy success %s from the owner result instead of payload %s",
+    (expectedSuccess, claimedSuccess, copySource) => {
+      const value = source();
+      repository(value)["reactions"] = [
+        {
+          id: "copy-result",
+          on: "vfs.copy",
+          predicates: [
+            {
+              kind: "copy-paths",
+              source: copySource,
+              destination: "/copied.md",
+              success: expectedSuccess,
+            },
+          ],
+          actions: [
+            { kind: "service-state", service: "api", state: "running" },
+          ],
+        },
+      ];
+      const cartridge = loadCartridge(value);
+      const state = step(bootstrap({ cartridge, seed: "direct-copy" }), {
+        type: "vfs.copy",
+        payload: {
+          source: copySource,
+          destination: "/copied.md",
+          success: claimedSuccess,
+        },
+      });
+
+      expect(lookupService(readWorldSlice(state), "api")?.state).toBe(
+        "running",
+      );
+    },
+  );
+
+  it("runs stage-opening response reactions without recursively escalating", () => {
+    const value = JSON.parse(JSON.stringify(incident001)) as Record<
+      string,
+      unknown
+    >;
+    const repo = repository(value);
+    repo["reactions"] = [
+      ...(repo["reactions"] as unknown[]),
+      {
+        id: "opening-reaches-incident",
+        on: "agent.response-recorded",
+        predicates: [],
+        actions: [{ kind: "story-reach", beat: "incident-open" }],
+      },
+    ];
+    const cartridge = loadCartridge(value);
+    const state = step(
+      bootstrap({ cartridge, seed: "opening-reaction" }),
+      createShellExecuteEvent("pwd"),
+    );
+
+    expect(state.slices["story"]).toMatchObject({
+      currentBeat: "incident-open",
+      stage: 1,
+    });
+    expect(
+      state.transcript.filter(
+        (entry) => entry.type === "agent.response-recorded",
+      ),
+    ).toHaveLength(1);
+  });
+
   it("reaches a story beat through its owner and applies that beat's normal consequences", () => {
     const value = source();
     (value["story"] as Record<string, unknown>)["phase2"] = {

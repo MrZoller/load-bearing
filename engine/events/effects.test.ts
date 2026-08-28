@@ -226,11 +226,72 @@ describe("event expansion", () => {
     expect(after.transcript.at(-1)?.type).toBe("recover.fallback");
   });
 
+  it("preserves the envelope reaction when primary expansion fails first", () => {
+    const source = loadCartridgeFixture("minimal") as Record<string, unknown>;
+    const repository = source["repository"] as Record<string, unknown>;
+    repository["services"] = [
+      {
+        id: "api",
+        state: "stopped",
+        health: "unknown",
+        ports: [],
+        dependencies: [],
+      },
+    ];
+    repository["reactions"] = [
+      {
+        id: "recover-envelope",
+        on: "recover.outer",
+        predicates: [],
+        actions: [{ kind: "service-state", service: "api", state: "running" }],
+      },
+    ];
+    const recovery = defineEventModule<never>({
+      namespace: "recover",
+      description: "primary expansion failure regression",
+      events: {
+        "recover.primary": {
+          version: 0,
+          apply: () => {
+            throw new Error("primary failed");
+          },
+        },
+        "recover.fallback": {
+          version: 0,
+          apply: () => ({ summary: "fallback" }),
+        },
+        "recover.outer": {
+          version: 0,
+          apply: () => ({
+            expansion: [{ type: "recover.primary" }],
+            expansionFallback: [{ type: "recover.fallback" }],
+          }),
+        },
+      },
+    });
+    const registry = createRegistry([...ENGINE_EVENT_MODULES, recovery]);
+    const state = step(
+      bootstrap({
+        cartridge: loadCartridge(source),
+        seed: "primary-fallback-reaction",
+        registry,
+      }),
+      { type: "recover.outer" },
+      registry,
+    );
+
+    expect(state.slices["world"]).toMatchObject({
+      services: [{ id: "api", state: "running" }],
+    });
+    expect(state.transcript.at(-1)?.type).toBe("recover.fallback");
+  });
+
   it.each([
     ["a slice", { slice: {} }],
     ["a summary", { summary: "envelope" }],
     ["detail", { detail: ["envelope"] }],
     ["structured output and exit status", { output: [], exitCode: 0 }],
+    ["a reaction source", { reactionSource: { type: "forbidden.child" } }],
     ["effects", { effects: [{ type: "forbidden.child" }] }],
   ])("rejects an expansion combined with %s", (_case, forbidden) => {
     const registry = createRegistry([

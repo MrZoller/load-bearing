@@ -203,6 +203,13 @@ export interface EventOutcome<S> {
   /** Shell exit status. Must be paired with `output`. */
   readonly exitCode?: number;
   /**
+   * Owner-normalized source for post-event reactions.
+   *
+   * Use this when a reaction predicate needs an outcome known only after the
+   * owner applies the event. The type must remain the logged event's type.
+   */
+  readonly reactionSource?: EngineEvent;
+  /**
    * Additional module-owned transitions committed with this event.
    *
    * Effects are for atomic cross-slice mechanics such as Git checkout writing
