@@ -487,8 +487,10 @@ describe("golden replay fixtures", () => {
     }
   });
 
-  // Twelve full fixture replays run under V8 coverage in CI; keep this budget
-  // local so ordinary unit tests still fail promptly when they hang.
+  // The focused test takes about 1.6 seconds with V8 coverage on Node 22.19.
+  // CI has crossed Vitest's five-second default under shared-runner contention,
+  // so keep a greater-than-six-times measured budget local to these twelve full
+  // fixture replays while ordinary unit tests still fail promptly when they hang.
   it("records all twelve Incident #001 handoffs as continuous sessions without perturbing shared state or unrelated probes", () => {
     const pairs = [
       [

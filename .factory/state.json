@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T60",
-  "branch": "factory/t60-parked-review-minors",
-  "pr": 83,
+  "current_task": "T61",
+  "branch": "factory/t61-handoff-replay-timing",
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-28T03:40:22Z"
+  "updated": "2026-08-28T06:07:51Z"
 }
