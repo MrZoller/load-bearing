@@ -1,4 +1,8 @@
 import { expect, test } from "@playwright/test";
+import {
+  configureAcceptanceSeed,
+  INCIDENT_001_RARE_HIT_SEED,
+} from "./acceptance-config.js";
 
 interface AcceptanceState {
   readonly slices: {
@@ -222,7 +226,8 @@ test("advances standing permission into visible late-stage capitulation", async 
 test("presents a deterministic rare disturbance through the shipped browser runtime", async ({
   page,
 }) => {
-  await page.goto("/?acceptance=1&rare=hit");
+  await configureAcceptanceSeed(page, INCIDENT_001_RARE_HIT_SEED);
+  await page.goto("/?acceptance=1");
   const transcript = page.getByRole("list", { name: "Session transcript" });
 
   await submit(page, "inspect routing");
@@ -251,6 +256,27 @@ test("presents a deterministic rare disturbance through the shipped browser runt
   await expect(
     page.getByRole("combobox", { name: "Agent prompt" }),
   ).toBeFocused();
+});
+
+test("does not describe unrecognized replacement routing content as absent", async ({
+  page,
+}) => {
+  await page.goto("/?acceptance=1");
+  await submit(page, "/exit");
+  const bash = page.getByRole("textbox", { name: "Bash command" });
+  await bash.fill("rm config/routes.conf");
+  await bash.press("Enter");
+  await bash.fill("cp package.json config/routes.conf");
+  await bash.press("Enter");
+  await bash.fill("loadbearing --resume incident-001");
+  await bash.press("Enter");
+
+  await submit(page, "an unmatched routing request");
+  const transcript = page.getByRole("list", { name: "Session transcript" });
+  await expect(transcript).toContainText("The routing state changed");
+  await expect(transcript).not.toContainText(
+    "The routing configuration is absent",
+  );
 });
 
 test("keeps Bash discovery, adversarial fallback, and reduced-motion stage surfaces usable", async ({

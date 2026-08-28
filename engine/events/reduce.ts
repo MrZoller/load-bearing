@@ -395,6 +395,7 @@ function foldEvent(
       outcome.detail.length > 0 ||
       outcome.output !== undefined ||
       outcome.exitCode !== undefined ||
+      outcome.reactionSource !== undefined ||
       outcome.effects.length > 0
     ) {
       throw new Error(
@@ -413,7 +414,7 @@ function foldEvent(
     const stageExpansion = (
       children: readonly EngineEvent[],
       includeEnvelopeTrigger: boolean,
-    ): SessionState => {
+    ): { readonly state: SessionState; readonly triggers: EngineEvent[] } => {
       let expanded = before;
       const triggers: EngineEvent[] = includeEnvelopeTrigger ? [envelope] : [];
       for (const child of children) {
@@ -432,24 +433,40 @@ function foldEvent(
           throw new Error(`${where}: expansion child produced no logged entry`);
         triggers.push(...childTriggers);
       }
-      return reactionsAllowed
-        ? applyReactions(expanded, triggers, registry, where)
-        : expanded;
+      return { state: expanded, triggers };
     };
     // The envelope remains the authored trigger even though it is unlogged.
     // Queue it before its logged children, then evaluate the entire queue only
     // after every child is staged. This lets a cartridge react to the visitor's
     // `shell.execute` intent while predicates see the completed command, without
     // losing the child event types needed for narrower rules.
-    let staged: SessionState;
+    let stagedFrame:
+      | { readonly state: SessionState; readonly triggers: EngineEvent[] }
+      | undefined;
     try {
-      staged = stageExpansion(outcome.expansion, true);
+      stagedFrame = stageExpansion(outcome.expansion, true);
     } catch (error) {
       if (!outcome.hasExpansionFallback) throw error;
-      // The envelope reaction already failed while staging the primary frame.
-      // Retrying it against fallback state can reproduce the same failure and
-      // prevent the authored recovery from becoming the terminal outcome.
-      staged = stageExpansion(outcome.expansionFallback, false);
+      // No reaction ran yet, so the recovered transaction still owes the
+      // authored envelope trigger even though its primary children failed.
+      stagedFrame = stageExpansion(outcome.expansionFallback, true);
+    }
+    let staged = stagedFrame.state;
+    if (reactionsAllowed) {
+      try {
+        staged = applyReactions(staged, stagedFrame.triggers, registry, where);
+      } catch (error) {
+        if (!outcome.hasExpansionFallback) throw error;
+        // Here the envelope reaction itself failed. Do not replay it against
+        // fallback state; only the fallback children get their reaction pass.
+        const fallback = stageExpansion(outcome.expansionFallback, false);
+        staged = applyReactions(
+          fallback.state,
+          fallback.triggers,
+          registry,
+          where,
+        );
+      }
     }
     const completed = applyEscalation(
       before,
@@ -493,7 +510,12 @@ function foldEvent(
       makeEntry(index, at, envelope.type, outcome, where),
     ]),
   });
-  const triggers = [envelope];
+  const reactionSource = outcome.reactionSource ?? envelope;
+  if (reactionSource.type !== envelope.type)
+    throw new Error(
+      `${where}: reactionSource type ${JSON.stringify(reactionSource.type)} must match logged event type ${JSON.stringify(envelope.type)}`,
+    );
+  const triggers = [reactionSource];
   const staged =
     envelope.type === "story.beat-reached"
       ? applyStoryConsequences(logged, registry, where, triggers)
@@ -570,18 +592,28 @@ function applyEscalation(
     advanced.cartridge,
     advanced,
   ).openingResponse;
-  return foldEvent(
+  const openingEvent = canRecordAuthoredResponse(
+    advanced.cartridge,
     advanced,
-    canRecordAuthoredResponse(advanced.cartridge, advanced, responseId)
-      ? createAgentResponseEvent(
-          responseId,
-          `stage-${String(transition.to)}-opening-${String(advanced.eventCount)}`,
-        )
-      : createAgentCapacityEvent(advanced.cartridge.story.fallback.response),
+    responseId,
+  )
+    ? createAgentResponseEvent(
+        responseId,
+        `stage-${String(transition.to)}-opening-${String(advanced.eventCount)}`,
+      )
+    : createAgentCapacityEvent(advanced.cartridge.story.fallback.response);
+  const openingTriggers: EngineEvent[] = [];
+  const opened = foldEvent(
+    advanced,
+    openingEvent,
     registry,
     false,
     false,
+    openingTriggers,
   );
+  return openingEvent.type === "agent.response-recorded"
+    ? applyReactions(opened, openingTriggers, registry, `${where} escalation`)
+    : opened;
 }
 
 /** Evaluate each newly eligible rare event after the top-level transaction. */
@@ -879,6 +911,7 @@ interface CapturedOutcome {
   readonly detail: readonly string[];
   readonly output: readonly TranscriptOutput[] | undefined;
   readonly exitCode: number | undefined;
+  readonly reactionSource: EngineEvent | undefined;
   readonly effects: readonly EngineEvent[];
   readonly hasExpansion: boolean;
   readonly expansion: readonly EngineEvent[];
@@ -948,9 +981,24 @@ function captureOutcome(raw: unknown, where: string): CapturedOutcome {
   const detail: unknown = outcome.detail;
   const output: unknown = outcome.output;
   const exitCode: unknown = outcome.exitCode;
+  const reactionSource: unknown = outcome.reactionSource;
   const effects: unknown = outcome.effects;
   const expansion: unknown = outcome.expansion;
   const expansionFallback: unknown = outcome.expansionFallback;
+
+  let capturedReactionSource: EngineEvent | undefined;
+  if (reactionSource !== undefined) {
+    if (
+      typeof reactionSource !== "object" ||
+      reactionSource === null ||
+      Array.isArray(reactionSource)
+    )
+      throw new Error(`${where}: reactionSource must be an event object`);
+    capturedReactionSource = assertEventEnvelope(
+      reactionSource as EngineEvent,
+      `${where} reactionSource`,
+    );
+  }
 
   if (summary !== undefined && typeof summary !== "string") {
     throw new Error(
@@ -1162,6 +1210,7 @@ function captureOutcome(raw: unknown, where: string): CapturedOutcome {
     detail: lines,
     output: capturedOutput,
     exitCode: exitCode as number | undefined,
+    reactionSource: capturedReactionSource,
     effects: dispatched,
     hasExpansion: expansion !== undefined,
     expansion: expanded,
@@ -1236,6 +1285,7 @@ function applyEffects(
       outcome.output !== undefined ||
       outcome.exitCode !== undefined ||
       outcome.hasExpansion ||
+      outcome.reactionSource !== undefined ||
       outcome.effects.length > 0
     )
       throw new Error(

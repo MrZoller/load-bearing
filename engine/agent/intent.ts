@@ -343,6 +343,27 @@ export function stageOpeningResponseId(
   );
 }
 
+function beatCanReveal(
+  cartridge: LoadedCartridge,
+  beatId: string,
+  fact: string,
+  visited = new Set<string>(),
+): boolean {
+  if (visited.has(beatId)) return false;
+  visited.add(beatId);
+  const beat = cartridge.story.phase2.beats.find(
+    (candidate) => candidate.id === beatId,
+  );
+  return (
+    beat !== undefined &&
+    (beat.facts.includes(fact) ||
+      beat.variants.some((variant) => variant.facts.includes(fact)) ||
+      [...beat.actions, ...beat.variants.flatMap((variant) => variant.actions)]
+        .filter((action) => action.kind === "story-reach")
+        .some((action) => beatCanReveal(cartridge, action.beat, fact, visited)))
+  );
+}
+
 /**
  * Reserve each reveal stage an unevaluated rare event could advance during a
  * transaction. The reducer evaluates rare declarations in order, so predict
@@ -364,7 +385,9 @@ export function possibleRareStageOpeningResponseIds(
     if (recorded === undefined || recorded.evaluated) continue;
     const transition = (cartridge.story.phase2.transitions ?? []).find(
       (candidate) =>
-        candidate.from === stage && candidate.trigger.kind === "reveal",
+        candidate.from === stage &&
+        candidate.trigger.kind === "reveal" &&
+        beatCanReveal(cartridge, declaration.fireBeat, candidate.trigger.fact),
     );
     if (transition === undefined) continue;
     openings.push(
@@ -389,6 +412,7 @@ function possibleRareStageOpenings(
   cartridge: LoadedCartridge,
   state: SessionState,
   initialStages: readonly ReturnType<typeof readStorySlice>["stage"][],
+  reservedDeclarations: Set<string>,
 ): PossibleRareStageOpenings {
   let stages = [...initialStages];
   const responseIds: string[] = [];
@@ -399,13 +423,23 @@ function possibleRareStageOpenings(
     if (recorded === undefined || recorded.evaluated) continue;
     const nextStages = [...stages];
     for (const stage of stages) {
+      const reservation = `${declaration.id}\u0000${String(stage)}`;
+      if (reservedDeclarations.has(reservation)) continue;
       const transition = (cartridge.story.phase2.transitions ?? []).find(
         (candidate) =>
-          candidate.from === stage && candidate.trigger.kind === "reveal",
+          candidate.from === stage &&
+          candidate.trigger.kind === "reveal" &&
+          beatCanReveal(
+            cartridge,
+            declaration.fireBeat,
+            candidate.trigger.fact,
+          ),
       );
       if (transition === undefined) continue;
       responseIds.push(stageOpeningResponseId(cartridge, state, transition.to));
       nextStages.push(transition.to);
+      reservedDeclarations.add(reservation);
+      break;
     }
     stages = [...new Set(nextStages)];
   }
@@ -426,10 +460,12 @@ function possibleStageOpeningResponseIds(
   // A draw may miss, but reserve every stage each outstanding declaration
   // could advance so later rare-event passes cannot exceed this atomic plan.
   let stages = [readStorySlice(state).stage];
+  const reservedRareDeclarations = new Set<string>();
   const initialRareOpenings = possibleRareStageOpenings(
     cartridge,
     state,
     stages,
+    reservedRareDeclarations,
   );
   openings.push(...initialRareOpenings.responseIds);
   stages = [...initialRareOpenings.stages];
@@ -467,7 +503,8 @@ function possibleStageOpeningResponseIds(
             // exact fact is selected by the reducer, so reserve every eligible
             // reveal transition here rather than risk an unplanned insertion.
             (candidate.trigger.kind === "reveal" &&
-              action.kind === "story-reach")),
+              action.kind === "story-reach" &&
+              beatCanReveal(cartridge, action.beat, candidate.trigger.fact))),
       );
       if (transition === undefined) continue;
       openings.push(stageOpeningResponseId(cartridge, state, transition.to));
@@ -479,6 +516,7 @@ function possibleStageOpeningResponseIds(
       cartridge,
       state,
       [...new Set(actionStages)],
+      reservedRareDeclarations,
     );
     openings.push(...rareOpeningsAfterAction.responseIds);
     stages = [...rareOpeningsAfterAction.stages];

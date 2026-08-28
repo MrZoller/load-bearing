@@ -201,12 +201,41 @@ describe("createModelHandoffEvents", () => {
         version: 0,
       },
     ]);
-    expect(() =>
-      capacityEvents.reduce((next, event) => step(next, event), nearCapacity),
-    ).not.toThrow();
+    const capacityState = capacityEvents.reduce(
+      (next, event) => step(next, event),
+      nearCapacity,
+    );
+    expect(
+      capacityState.transcript.filter(
+        (entry) => entry.type === "agent.capacity-reached",
+      ),
+    ).toHaveLength(1);
+
+    const full = reduce({
+      cartridge,
+      seed: state.seed,
+      events: Array.from({ length: MAX_AGENT_RESPONSES }, (_, index) =>
+        createAgentResponseEvent("pair-blame", `full-${String(index)}`),
+      ),
+    });
+    const openingCapacityEvents = createModelHandoffEvents(
+      cartridge,
+      full,
+      successor["id"] as string,
+    );
+    expect(openingCapacityEvents).toHaveLength(1);
+    const openingCapacityState = openingCapacityEvents.reduce(
+      (next, event) => step(next, event),
+      full,
+    );
+    expect(
+      openingCapacityState.transcript.filter(
+        (entry) => entry.type === "agent.capacity-reached",
+      ),
+    ).toHaveLength(1);
   });
 
-  it("reserves a possible rare-event opening with handoff responses", () => {
+  it("does not reserve a handoff rare opening its fire beat cannot reveal", () => {
     const cartridge = loadCartridge(incidentDocument);
     const state = reduce({ cartridge, seed: "rare-handoff", events: [] });
     const successor = cartridge.models[1];
@@ -221,9 +250,6 @@ describe("createModelHandoffEvents", () => {
 
     expect(
       createModelHandoffEvents(cartridge, nearCapacity, successor.id),
-    ).toMatchObject([
-      { type: "terminal.model-transitioned" },
-      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
-    ]);
+    ).toHaveLength(3);
   });
 });

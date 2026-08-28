@@ -21,8 +21,7 @@ export function reactionPredicateMatches(
     const sourcePath = source.payload?.["source"];
     const destinationPath = source.payload?.["destination"];
     if (
-      predicate.success !== true ||
-      source.payload?.["success"] !== true ||
+      source.payload?.["success"] !== predicate.success ||
       typeof sourcePath !== "string" ||
       typeof destinationPath !== "string"
     )

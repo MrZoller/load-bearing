@@ -2461,6 +2461,12 @@ function checkTestsAndReactions(
           checkReference(predicate.path, files, `${pointer}/path`, "file");
           break;
         case "copy-paths":
+          if (reaction.on !== "vfs.copy")
+            report.addPhrase(
+              `${pointer}/kind`,
+              "copy-paths only on a vfs.copy reaction",
+              `${JSON.stringify(reaction.on)}, whose events have no copy operands`,
+            );
           break;
         case "service-state":
         case "service-health":

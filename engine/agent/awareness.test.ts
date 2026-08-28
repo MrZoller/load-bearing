@@ -526,7 +526,7 @@ describe("agent awareness planning", () => {
     expect(readStorySlice(state).stage).toBe(3);
     for (
       let index = readAgentSlice(state).messages.length;
-      index < MAX_AGENT_MESSAGES - 1;
+      index < MAX_AGENT_MESSAGES;
       index += 1
     )
       state = step(
@@ -535,14 +535,16 @@ describe("agent awareness planning", () => {
       );
 
     const events = createAgentCompactEvents(production, state);
-    expect(events).toMatchObject([
-      { type: "mind.compact" },
-      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
-    ]);
+    expect(events).toMatchObject([{ type: "mind.compact" }]);
     expect(() => fold(state, events)).not.toThrow();
+    expect(
+      fold(state, events).transcript.filter(
+        (entry) => entry.type === "agent.capacity-reached",
+      ),
+    ).toHaveLength(1);
   });
 
-  it("reserves a possible rare-event opening with compact acknowledgment", () => {
+  it("does not reserve a compact rare opening whose fire beat cannot reveal it", () => {
     const production = loadCartridge(incident);
     const state = reduce({ cartridge: production, seed: SEED, events: [] });
     const nearCapacity = fold(
@@ -554,7 +556,7 @@ describe("agent awareness planning", () => {
 
     expect(createAgentCompactEvents(production, nearCapacity)).toMatchObject([
       { type: "mind.compact" },
-      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+      { type: "agent.response-recorded" },
     ]);
   });
 
@@ -590,7 +592,7 @@ describe("agent awareness planning", () => {
     // therefore needs a third reserved slot, not a prediction from stage 0.
     expect(createAgentCompactEvents(production, nearCapacity)).toMatchObject([
       { type: "mind.compact" },
-      { type: "agent.capacity-reached", payload: { responseId: "fallback" } },
+      { type: "agent.response-recorded" },
     ]);
   });
 

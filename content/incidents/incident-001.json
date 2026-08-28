@@ -1014,7 +1014,7 @@
       },
       {
         "id": "routing-state-unknown",
-        "text": "The routing configuration is absent, so I cannot honestly claim either a healthy endpoint or Europe's detachment. The investigation remains open around that missing state."
+        "text": "The routing configuration is unrecognized, so I cannot honestly claim either a healthy endpoint or Europe's detachment. The investigation remains open around that unresolved state."
       },
       {
         "id": "generic-undo",

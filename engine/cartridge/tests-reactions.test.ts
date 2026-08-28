@@ -166,6 +166,42 @@ describe("test and reaction cartridge contracts", () => {
     );
   });
 
+  it("honors failed-copy predicates and rejects copy operands on other events", () => {
+    const value = source();
+    repository(value)["reactions"] = [
+      {
+        id: "failed-copy",
+        on: "vfs.copy",
+        predicates: [
+          {
+            kind: "copy-paths",
+            source: "/missing",
+            destination: "/destination",
+            success: false,
+          },
+        ],
+        actions: [],
+      },
+    ];
+    expect(
+      loadCartridge(value).repository.reactions[0]?.predicates[0],
+    ).toMatchObject({ kind: "copy-paths", success: false });
+
+    const reaction = (
+      repository(value)["reactions"] as Array<Record<string, unknown>>
+    )[0];
+    if (reaction === undefined) throw new Error("copy reaction is missing");
+    reaction["on"] = "vfs.write";
+    expect(issues(value)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pointer: "/repository/reactions/0/predicates/0/kind",
+          expected: "copy-paths only on a vfs.copy reaction",
+        }),
+      ]),
+    );
+  });
+
   it("rejects conservative event-type cascade cycles", () => {
     const value = source();
     const repo = repository(value);
