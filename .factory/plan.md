@@ -195,3 +195,7 @@ authoring tooling remain excluded.
   - PR #82: Move the Incident #001 rare-hit fixture seed out of `runtime/main.ts` into content or e2e-owned acceptance configuration; Codex thread `discussion_r3877550559` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #82: Constrain or neutralize the routing-state-unknown fallback so arbitrary replacement routing-file content is not described as absent; Codex thread `discussion_r3877550564` was verifier-classified minor and dispositioned without a minors-only push.
   - pr: 83
+
+- [ ] T61 (standard) — Stabilize handoff replay CI timing
+  - acceptance: `engine/testing/replay.test.ts`'s twelve-handoff coverage has a deliberate, evidence-based CI timing budget or a faster equivalent structure; repeated CI runs do not fail solely because the current 5-second per-test timeout is exceeded, while the full handoff assertions remain covered.
+  - deps: T60
