@@ -374,7 +374,7 @@ formalizes the shared-beat/fact/ending suppression coupling the re-panel
 flagged as the defect, and C discards authored phrase identity the voice bible
 depends on. No product-surface decision changes.)
 
-## Q13 (task T58, open) — Who will perform the required human playtests?
+## Q13 (task T58, consumed) — Who will perform the required human playtests?
 
 Context: T58 requires both a creator run and a no-extra-instructions run by a
 real first-time participant. The plan explicitly forbids substituting a
