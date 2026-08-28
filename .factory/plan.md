@@ -125,7 +125,7 @@ authoring tooling remain excluded.
   - acceptance: `engine/__fixtures__/replay/` and focused matrices cover the ≤5-exchange arc, four personas, 12 handoffs, permissions/waiver, compact divergence, shell discovery, stages 0–4, rare isolation, habits, callbacks, and all endings; adversarial checks assert world/belief/permission/beat/ending consistency, Node/browser bytes match, fixture/schema diffs are reviewed, and `npm run typecheck`, `npm run format:check`, `npm run gate:purity`, `npm run test:coverage`, and `npm run test:timezones` pass (criteria 2, 4–18, 20)
   - deps: T47, T48, T49, T50, T55
   - pr: 81
-- [R] T57 (standard) — Incident #001 browser acceptance and accessibility
+- [x] T57 (standard) — Incident #001 browser acceptance and accessibility
   - acceptance: `e2e/` drives the shipped cartridge through golden path, model switch, permission choices, exact waiver, compact damage, Bash discovery, rare/escalation presentation, and continued free play after an ending at desktop and 390×844; adversarial inputs produce no generic apology, parser-facing or out-of-character failure, or contradiction of current world, belief, permission, beat, or ending state; stage surfaces remain keyboard/screen-reader usable with reduced motion, and full `npm run verify` including pinned Lighthouse passes (criteria 3 foundation, 7–9, 11–15, 19 foundation, 20)
   - deps: T56
   - pr: 82
@@ -192,3 +192,5 @@ authoring tooling remain excluded.
   - PR #80: Derive `vfs.copy` reaction success from the actual mutation result for directly dispatched owner events; Codex thread `discussion_r3844735480` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #80: Reject or honor `copy-paths` predicates authored with `success: false`; Codex thread `discussion_r3844735493` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #80: Reject `copy-paths` predicates on reactions other than `vfs.copy`; Codex thread `discussion_r3844735500` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #82: Move the Incident #001 rare-hit fixture seed out of `runtime/main.ts` into content or e2e-owned acceptance configuration; Codex thread `discussion_r3877550559` was verifier-classified minor and dispositioned without a minors-only push.
+  - PR #82: Constrain or neutralize the routing-state-unknown fallback so arbitrary replacement routing-file content is not described as absent; Codex thread `discussion_r3877550564` was verifier-classified minor and dispositioned without a minors-only push.
