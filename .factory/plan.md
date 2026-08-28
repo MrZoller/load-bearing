@@ -182,7 +182,7 @@ authoring tooling remain excluded.
   - PR #74: Consider multiple same-archetype/stage capitulation variants if the 1-in-8 deterministic repetition proves catchphrase-like in playtesting; the local T50 verifier classified this uncertain and minor, with cadence currently providing the documented rationing.
   - pr: 78
 
-- [~] T60 (standard) — parked review minors (batch)
+- [R] T60 (standard) — parked review minors (batch)
   - PR #78: Preserve an envelope reaction when primary expansion fails before reactions run; Codex thread `discussion_r3839858007` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #78: Avoid conservative reveal-opening capacity fallbacks when a reached beat cannot reveal the stage trigger; Codex thread `discussion_r3839944202` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #78: Restore authored `agent.response-recorded` reactions for stage openings without recursive escalation; Codex thread `discussion_r3839944205` was verifier-classified minor and dispositioned without a minors-only push.
@@ -194,3 +194,4 @@ authoring tooling remain excluded.
   - PR #80: Reject `copy-paths` predicates on reactions other than `vfs.copy`; Codex thread `discussion_r3844735500` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #82: Move the Incident #001 rare-hit fixture seed out of `runtime/main.ts` into content or e2e-owned acceptance configuration; Codex thread `discussion_r3877550559` was verifier-classified minor and dispositioned without a minors-only push.
   - PR #82: Constrain or neutralize the routing-state-unknown fallback so arbitrary replacement routing-file content is not described as absent; Codex thread `discussion_r3877550564` was verifier-classified minor and dispositioned without a minors-only push.
+  - pr: 83
