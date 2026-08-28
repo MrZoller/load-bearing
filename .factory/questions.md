@@ -431,3 +431,19 @@ Creator-run findings, engine-verified, in priority order:
 Constraints: preserve approved ending/ledger/randomness contracts and the
 determinism invariants (seeded PRNG only, replay-safe); failure stays content
 (invariant 7); accessibility ships with any new affordance.
+
+## Q14 (task T58, open) — Can the tuned build receive the required creator re-run?
+
+Context: The parked branch `factory/t58-human-playtests` implements all nine
+creator-run findings from Q13, records the failed run and repeatable protocol in
+`docs/PLAYTEST.md`, passes full verification, and cleared its internal panel. T58
+still cannot satisfy acceptance without a real timed creator re-run; the
+no-extra-instructions first-time participant remains deliberately deferred until
+that re-run passes.
+Options considered: A — run the parked branch build on the creator's phone and
+provide route, elapsed time, confusion, evidence, ending/punchline reached, and
+requested tuning; B — provide a specific creator session window so the exact
+candidate and checklist can be prepared. If the creator run passes, the next
+cycle will request the one-shot first-time-participant run without extra
+instructions.
+**A:**
