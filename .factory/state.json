@@ -3,9 +3,9 @@
   "phase": "build",
   "spec_approved": true,
   "plan_approved": true,
-  "current_task": "T61",
-  "branch": "factory/t61-handoff-replay-timing",
-  "pr": 84,
+  "current_task": null,
+  "branch": null,
+  "pr": null,
   "hold": false,
-  "updated": "2026-08-28T06:18:35Z"
+  "updated": "2026-08-28T06:24:00Z"
 }
