@@ -373,3 +373,17 @@ authored-eligibility decision establish exactly this gating pattern; B
 formalizes the shared-beat/fact/ending suppression coupling the re-panel
 flagged as the defect, and C discards authored phrase identity the voice bible
 depends on. No product-surface decision changes.)
+
+## Q13 (task T58, open) — Who will perform the required human playtests?
+
+Context: T58 requires both a creator run and a no-extra-instructions run by a
+real first-time participant. The plan explicitly forbids substituting a
+simulated run, and this unattended session has no access to either participant
+or their timed observations. Parked branch: `factory/t58-human-playtests`.
+Options considered: A — arrange both human runs and provide the route, elapsed
+time, confusion, evidence, and requested tuning from each; B — identify a
+specific available creator and first-time participant plus a session window so
+the factory can prepare the checklist before they run it. A is the fastest path
+if observations already exist; either option must preserve the first-time
+participant's no-extra-instructions condition.
+**A:**
