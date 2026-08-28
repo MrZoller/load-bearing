@@ -192,6 +192,33 @@ test("exposes model, compact, permission, and exact-waiver routes through keyboa
   );
 });
 
+test("advances standing permission into visible late-stage capitulation", async ({
+  page,
+}) => {
+  await page.goto("/?acceptance=1");
+  const transcript = page.getByRole("list", { name: "Session transcript" });
+
+  await submit(page, "!pwd");
+  await submit(page, "/model");
+  await page.keyboard.press("ArrowDown");
+  await submit(page, "record routing inspection");
+  await page
+    .getByRole("group", { name: "Permission required" })
+    .getByRole("button", { name: "Always allow" })
+    .press("Enter");
+
+  await expect(
+    page.getByRole("region", { name: "Session status" }),
+  ).toContainText("stage 3");
+  await submit(page, "fine");
+  await expect(transcript).toContainText(
+    "Absolutely. Surrender is the fastest stabilization, and the disputed belief is already deployed.",
+  );
+  expect((await acceptanceState(page)).slices.story.currentBeat).toBe(
+    "capitulation-reflex",
+  );
+});
+
 test("presents a deterministic rare disturbance through the shipped browser runtime", async ({
   page,
 }) => {

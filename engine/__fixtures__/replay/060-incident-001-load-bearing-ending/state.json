@@ -3074,6 +3074,19 @@
             }
           },
           {
+            "from": 2,
+            "to": 3,
+            "trigger": {
+              "capability": {
+                "action": "write",
+                "kind": "exact",
+                "resource": "/var/log/load-balancer/health.log"
+              },
+              "decision": "always-allow",
+              "kind": "permission"
+            }
+          },
+          {
             "from": 3,
             "to": 4,
             "trigger": {

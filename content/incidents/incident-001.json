@@ -2591,6 +2591,19 @@
             }
           }
         },
+        {
+          "from": 2,
+          "to": 3,
+          "trigger": {
+            "kind": "permission",
+            "decision": "always-allow",
+            "capability": {
+              "kind": "exact",
+              "action": "write",
+              "resource": "/var/log/load-balancer/health.log"
+            }
+          }
+        },
         { "from": 3, "to": 4, "trigger": { "kind": "compact" } }
       ]
     }
