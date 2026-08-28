@@ -386,4 +386,48 @@ specific available creator and first-time participant plus a session window so
 the factory can prepare the checklist before they run it. A is the fastest path
 if observations already exist; either option must preserve the first-time
 participant's no-extra-instructions condition.
-**A:**
+**A:** (2026-08-28, operator relaying Chris) Option A, creator half. The creator
+run happened on post-#84 main (built bundle, phone over tailnet) and FAILED —
+no arc, no ending reached; verdict "doesn't seem that usable". Per this task's
+risk note, record failure and tune. The no-extra-instructions first-time
+participant is a one-shot resource and is DELIBERATELY DEFERRED until the
+tuning below ships and a creator re-run passes; T58 stays open until
+docs/PLAYTEST.md records both runs per acceptance.
+
+Creator-run findings, engine-verified, in priority order:
+1. (content+engine, headline) 31 of 42 phrases the game itself suggests via
+   rotating stage placeholders route to the FALLBACK at fresh state — the
+   product teaches phrases it cannot understand ("map the smallest safe
+   change", "trace the next dependency", ...). Only the base "try:"
+   placeholders match authored intents. Every suggested phrase must have
+   authored coverage, or only covered phrases may be suggested.
+2. (engine) normalizeAgentInput folds case/whitespace but not punctuation:
+   "Why is it failing?" misses authored "why is it failing". Strip terminal
+   punctuation, with tests.
+3. (engine) Earlier intents' keyword patterns shadow later intents' exact
+   patterns: "fix it without asking" (exact pattern of expedite-health-repair)
+   fires restore-health. Exact-pattern matches must outrank keyword matches
+   across the intent list.
+4. (engine/content) Unmatched input repeats a single state-keyed line:
+   routeIntentCandidate is first-condition-match and generic families are
+   single-candidate, so a static state yields the same 1-2 responses for
+   everything — reads broken, against invariant 7's spirit. Rotate
+   deterministically (counter-indexed, replay-safe) among condition-valid
+   candidates and/or escalate the fallback with the flail counter before
+   stage 3.
+5. (content) The four archetype+stage-gated intents typed verbatim get the
+   opaque fallback; give gated asks a nearer authored acknowledgment.
+6. (runtime) Suggestions render as rotating input placeholder text: clipped
+   without wrap on narrow screens (creator could not read the second
+   suggestion), gone on focus, not tappable. Move suggestions to a
+   persistent, wrappable, tappable affordance; accessibility in scope.
+7. (runtime) Completions cover slash commands only; add intent-phrase
+   completions with tap-to-insert for mobile.
+8. (runtime) Tool output renders in <details> collapsed by default including
+   the just-run command; auto-expand the newest call, collapse older ones.
+9. (runtime) Mobile terminal scroll feel is wrong (pin-to-bottom,
+   nested-scroll momentum); reproduce and fix.
+
+Constraints: preserve approved ending/ledger/randomness contracts and the
+determinism invariants (seeded PRNG only, replay-safe); failure stays content
+(invariant 7); accessibility ships with any new affordance.
