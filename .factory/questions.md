@@ -446,4 +446,47 @@ requested tuning; B — provide a specific creator session window so the exact
 candidate and checklist can be prepared. If the creator run passes, the next
 cycle will request the one-shot first-time-participant run without extra
 instructions.
-**A:**
+**A:** (2026-08-28, operator relaying Chris) Option A: the creator re-ran the
+tuned branch build on his phone and it FAILED again, on three specifics:
+
+1. Every suggested prompt returns the same exact response. Engine-verified on
+   the branch: 41 of 42 suggested phrases route to the single responseId
+   `inspect-routing` — the new inspect-routing-suggestions-* intents hold the
+   patterns but all reuse one response. This satisfied Q13's letter (no
+   suggestion hits fallback) while reproducing the reported experience
+   exactly. Upgraded requirement: suggestion responses must be DISTINCT and
+   stage-appropriate — each stage presentation's suggested phrase routes to a
+   response authored for that phrase's worldview line in the incident's voice
+   (escalation stages per DESIGN.md); no single responseId may absorb more
+   than 3 of the 42 suggested phrases. Encode as a test: route every
+   presentation placeholder through selectAgentIntent at representative
+   states, assert the responseId distribution AND that rendered response
+   texts differ. Content authoring, not routing plumbing.
+
+2. After sending, the creator must scroll up every time to see what he sent
+   and the response. Follow mode pins to the BOTTOM of the newest exchange;
+   with newest output auto-expanded (Q13 item 8) the exchange start sits
+   above a phone viewport. The branch's touch-cancel-for-follow is fine but
+   orthogonal. Requirement: after a submit, anchor the viewport to the START
+   of the newest exchange — submitted prompt line and first response lines
+   visible with no user scrolling at phone dimensions; expanded output reads
+   downward from there. Add a viewport test at mobile dimensions.
+
+3. With the phone keyboard open, most of the screen is lost (screenshot
+   provided): the page is taller than the visual viewport, so iOS Safari
+   scrolls the focused prompt to the very top, the transcript sits entirely
+   off-screen above it, and the region behind/above the keyboard renders as
+   an empty void. The layout is not visualViewport-aware. Requirement: with
+   the keyboard open, the prompt docks just above the keyboard and the
+   transcript fills and remains visible in the space above it — use
+   visualViewport geometry (or dvh units plus interactive-widget
+   resizes-content) rather than page-scroll-into-view; verify on a
+   phone-sized viewport with a simulated keyboard inset.
+
+Carried forward, still missing (post-Q13 creator findings): a Send button in
+the mobile key strip (runtime/components/mobile-keys.ts ships cursor keys but
+no submit) and enterkeyhint="send" on the agent input. Include both.
+
+The first-time participant remains deferred until a creator re-run passes.
+Same constraints as Q13: determinism invariants, invariant 7, accessibility
+in scope for every affordance touched.
