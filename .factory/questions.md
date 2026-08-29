@@ -732,4 +732,24 @@ would make presentation-only metrics part of replay and materially expand the
 contract. Recommendation: A; it preserves report persistence and replay purity
 with a bounded runtime projection fix. The one-shot first-time participant
 remains deferred until this clears verification and a fresh panel.
-**A:**
+**A:** A — resume T58 in a fresh cycle with the bounded projection fix. Record
+each runtime report's insertion position as the event-log index observed at its
+creation (the state's event count at the moment the report is produced), merge
+reports into the transcript projection at that position, and keep relative
+order stable for multiple reports at the same index (creation-order tiebreak).
+B is rejected, as recommended: presentation-only queries must never become
+replay events — that changes state = reduce(cartridge, seed, eventLog)
+semantics, invalidates golden fixtures, and moves metrics presentation inside
+the engine contract for no product gain. A migrating transcript entry is a
+consistency lie, so this is correctly treated as blocking.
+
+Requirements: (a) the chronology regression that replaces the report-last test
+must assert INTERLEAVING, not merely position — submit /cost, then at least one
+later exchange (an agent turn or a ! shell command), and assert the report
+renders between its true chronological neighbors and stays there across
+subsequent projections; (b) ordering must be stable under re-projection — the
+exact defect being fixed is migration on later renders; (c) every Q17
+requirement remains binding, including the mobile-viewport /cost-visibility
+e2e and two-decimal currency; (d) all pinned wins from Q13–Q17 remain binding.
+The one-shot first-time-participant request continues to wait until this
+clears full verification and a fresh panel.
