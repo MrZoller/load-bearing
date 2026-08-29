@@ -714,7 +714,7 @@ passes full verification, the next cycle may request the one-shot
 no-extra-instructions first-time-participant run — no further creator
 certification round is required unless the rail's observable criteria change.
 
-## Q18 (task T58, open) — Should T58 receive a fresh report-ordering fix cycle?
+## Q18 (task T58, consumed) — Should T58 receive a fresh report-ordering fix cycle?
 
 Context: The Q17 tuning on parked branch `factory/t58-human-playtests` passes
 full verification and implements felt deterministic pacing, held `/compact` and
