@@ -491,7 +491,7 @@ The first-time participant remains deferred until a creator re-run passes.
 Same constraints as Q13: determinism invariants, invariant 7, accessibility
 in scope for every affordance touched.
 
-## Q15 (task T58, open) — Can the fully tuned build receive creator run 3?
+## Q15 (task T58, consumed) — Can the fully tuned build receive creator run 3?
 
 Context: The parked branch `factory/t58-human-playtests` now addresses every
 Q14 failure. All 42 displayed suggestions record distinct stage-appropriate
