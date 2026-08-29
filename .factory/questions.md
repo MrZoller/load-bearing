@@ -559,7 +559,7 @@ CERTIFIED against the observable criterion from item 2. Same constraints:
 determinism invariants, invariant 7, no lab trademarks in product copy
 (ending cards included), accessibility in scope.
 
-## Q16 (task T58, open) — Can the observable-ending build receive creator run 4?
+## Q16 (task T58, consumed) — Can the observable-ending build receive creator run 4?
 
 Context: The parked branch `factory/t58-human-playtests` now renders each
 engine ending as an authored, screen-reader-announced payoff with the unranked
