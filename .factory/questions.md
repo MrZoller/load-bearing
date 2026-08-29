@@ -645,4 +645,71 @@ requested tuning; B — provide a specific creator session window so the candida
 and checklist in `docs/PLAYTEST.md` can be prepared. If the creator identifies
 completion without coaching in roughly 90 seconds, the next cycle will request
 the one-shot no-extra-instructions first-time-participant run.
-**A:**
+**A:** A — proceed. Creator run 5 happened on the parked round-5 build
+(bundle index-BfHKftiC): the creator reached an authored ending unaided and
+identified completion from the ending card, which is the progression-legibility
+floor holding. Operator corroboration on the served build: a full headless rail
+walk (suggestion chips → ! shell → /model handoff and back → permission
+deny/allow-once → /compact → final suggestion) ends at the ENDING DISCOVERED
+card ("The Load-Bearing Response"), "Endings discovered: 1 of 4", and a live
+prompt. Detailed route/timing fields were not captured this run; the rail is
+certified on completion evidence.
+
+HOWEVER — the run surfaced two new creator findings, operator-verified against
+the build, that must land as ONE more rework round BEFORE the one-shot
+first-time-participant run is spent. Both damage the core illusion or mobile
+usability, and the first-timer resource is not renewable.
+
+Finding 1 — response pacing. Creator: "there should probably be a slight delay
+before lb responds… ideally with an animation… right now it responds
+immediately after I send." The working presentation already exists —
+createAgentInputEvents opens every agent turn with agent.activity-set{working}
+and app.ts holds the rest of the batch behind the spinner/verb line — but
+ACTIVITY_PRESENTATION_MS = 300 makes the whole performance one blink (the
+{seconds} suffix can only ever read 0), and the two heaviest fiction moments
+bypass the hold entirely: slash commands including /compact, and the model
+handoff (both dispatch directly). Requirements:
+(1a) agent turns hold the working state for a felt duration — floor 900ms,
+varying per turn, derived deterministically from already-committed state (turn
+id hash or response length); no Math.random and no engine-state impact — the
+hold exists only when a browser is present, so headless replay, CI, and the
+acceptance probe stay exact.
+(1b) /compact and the model handoff get their own working boundaries, at least
+as long as an agent turn — they are the heavy-work beats.
+(1c) spinner glyph cycling respects prefers-reduced-motion; the verb plus
+ticking seconds/tokens text is fine under reduced motion.
+(1d) the screen-reader announcement fires when the response lands, never for
+the spinner state.
+(1e) e2e must verify the hold is real in the production path — a test-scoped
+skip is acceptable for speed elsewhere, but at least one production-shaped e2e
+asserts the working verb/spinner is observable between send and response.
+
+Finding 2 — /cost output is invisible on mobile in any real session. Creator:
+"'/cost' never displays anything." Verified and reproduced: the command
+executes and appends a .command-report into .tui-presentation, which mounts
+AFTER the form; on mobile .terminal is a fixed-height flex column
+(var(--visual-viewport-height)) with overflow:hidden, so once the transcript
+has real content the post-form area is pushed past the bottom edge — measured
+at 390×508 after 8 exchanges: report rect y=510.8 vs innerHeight 508,
+unscrollable. Clean-boot layouts show it fine, which is how it passed testing.
+The same container clips command-error reports fully and the /model selector's
+bottom ~100px (its radios stay usable, so the rail passes, degraded).
+Requirements:
+(2a) command REPORTS (/cost output, command errors) render into the transcript
+as scrollback output — persistent, announced, immune to this clipping class by
+construction, and the real-tool idiom; the current below-prompt report is also
+ephemeral (wiped by Escape or the next presentation), which scrollback fixes.
+(2b) interactive presentation (the model selector) is guaranteed fully
+on-screen when opened at mobile sizes.
+(2c) regression e2e at a mobile viewport: after at least 8 exchanges, submit
+/cost and assert the output's bounding rect lies inside the viewport.
+(2d) currency formatting renders two decimals ("$2,016.00", "$66.31"), not six
+("$2,016.000000").
+
+All pinned wins from Q13–Q16 remain binding: the rail and its e2e walk, ending
+card + counter + live prompt, suggestion grounding and distribution, tap-to-
+select completions, the Send key, visualViewport docking, transcript register,
+and no hidden-shell leakage in onboarding/suggestions/help. After this round
+passes full verification, the next cycle may request the one-shot
+no-extra-instructions first-time-participant run — no further creator
+certification round is required unless the rail's observable criteria change.
