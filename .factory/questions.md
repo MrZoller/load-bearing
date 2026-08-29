@@ -558,3 +558,23 @@ The first-time participant remains deferred until a creator run can be
 CERTIFIED against the observable criterion from item 2. Same constraints:
 determinism invariants, invariant 7, no lab trademarks in product copy
 (ending cards included), accessibility in scope.
+
+## Q16 (task T58, open) — Can the observable-ending build receive creator run 4?
+
+Context: The parked branch `factory/t58-human-playtests` now renders each
+engine ending as an authored, screen-reader-announced payoff with the unranked
+session collection and continued free play; it also flattens the transcript into
+one TUI gutter, makes fresh suggestions demonstrate real shell evidence, and
+signposts `! shell` through actionable idle guidance. `docs/PLAYTEST.md` defines
+the exact on-screen completion criterion. Full verification and a two-round
+internal panel are clear after fixing the mobile keyboard/ending-card collision,
+but T58 still needs a real timed creator run before the deliberately deferred
+first-time participant can be used.
+Options considered: A — run creator run 4 from the parked branch build and
+provide the route, elapsed time, confusion, visible ending title/payoff/count,
+whether the live prompt remained usable, exact participant evidence, and any
+requested tuning; B — provide a specific creator session window so the candidate
+and checklist can be prepared. If the creator can identify completion without
+coaching in roughly 90 seconds, the next cycle will request the one-shot
+no-extra-instructions first-time-participant run.
+**A:**
