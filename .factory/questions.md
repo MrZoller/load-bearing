@@ -507,4 +507,54 @@ and requested tuning; B — provide a specific creator session window so the
 candidate and checklist in `docs/PLAYTEST.md` can be prepared. If the creator
 run passes, the next cycle will request the one-shot no-extra-instructions
 first-time-participant run.
-**A:**
+**A:** (2026-08-28, operator relaying Chris) Option A: creator run 3 happened
+on the parked branch build. MIXED result — the Q14 mechanics held up: the
+creator played several prompts with no repeated-response wall, no viewport
+collapse, and no complaint about send/tap affordances; verdict on mechanics
+was "reasonably okay". But the run cannot be certified as reaching the arc,
+because completion is not observable: his verbatim question was "I honestly
+don't even know if I've completed this or not". Operator-verified root cause:
+the runtime contains ZERO ending rendering — the four collectible endings
+proven at the engine level (T55) never surface in the UI. No ending moment,
+no collected-endings indicator, no completion signal exists to reach.
+
+Required for the next round, in priority order:
+1. (runtime, flagship) Render the ending payoff: when the engine reaches an
+   ending, show an unmistakable ending moment (title/punchline card in the
+   incident's voice, in-register), plus a collected-endings indicator
+   (which of the four this session found; collection persists per T55's
+   contracts). This is the product's comedic payoff and replay hook — the
+   arc has no observable endpoint without it. Accessibility in scope
+   (focus management, reduced motion, screen-reader announcement).
+2. (docs) docs/PLAYTEST.md must define the OBSERVABLE completion criterion —
+   what a run that "reached the arc/punchline" looks like on screen — so a
+   human participant can self-report without coaching. Acceptance for T58
+   cannot be certified otherwise.
+3. (runtime, design-bar) Transcript layout breaks TUI genre fidelity:
+   .transcript__entry--visitor carries margin-left clamp(1rem,5vw,4rem)
+   (chat-bubble convention) while agent messages and thinking/tool artifacts
+   render as border-left nested boxes — past prompts read as nested UNDER
+   prior responses. Creator verbatim: "This doesn't really look anything at
+   all like a real claude code session." Fix shape: visitor lines at the
+   left gutter as prompt-glyph lines (no margin), flat vertical stream,
+   artifacts as gutter-aligned dimmed/collapsed rows. The shell register
+   must play it straight.
+4. (content+runtime) Post-suggestion guidance cliff: both stage-0
+   suggestions story-reach the same beat, then guidance goes silent — no
+   next suggestions until a stage advances, the 30s idle nudge is
+   flavor-only although the cartridge spec says it teaches, and the
+   terminal/! surface is never signposted. Fix shape: suggestion responses
+   demonstrate (agent visibly shell-executes), the idle nudge escalates to
+   actionable teaching once current suggestions are consumed, and ! gets
+   mobile discoverability.
+5. (carry-forward) enterkeyhint="send" on the agent input — required by Q14,
+   still absent from the branch.
+
+What went RIGHT and must not regress: distinct per-stage suggestion
+responses (keep the full-matrix test), VisualViewport keyboard handling,
+exchange-start anchoring, Send control, tap-to-select completions.
+
+The first-time participant remains deferred until a creator run can be
+CERTIFIED against the observable criterion from item 2. Same constraints:
+determinism invariants, invariant 7, no lab trademarks in product copy
+(ending cards included), accessibility in scope.
