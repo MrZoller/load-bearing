@@ -577,4 +577,53 @@ requested tuning; B — provide a specific creator session window so the candida
 and checklist can be prepared. If the creator can identify completion without
 coaching in roughly 90 seconds, the next cycle will request the one-shot
 no-extra-instructions first-time-participant run.
-**A:**
+**A:** (2026-08-28, operator relaying Chris) Option A: creator run 4 happened
+on the parked branch build and FAILED certification on the same cliff as run
+3, before any ending was reached. Creator verbatim: "it still eventually gets
+down to just two suggestions and I feel like I'm stuck. I'm not sure what I'm
+supposed to do." He could not identify completion without coaching, so the
+90-second certification question is answered NO.
+
+Root cause, operator-verified against the cartridge, and it is a DESIGN gap,
+not a missing patch:
+- The ONLY stage-0 exit is a shell interaction (transitions: stage 0->1 fires
+  on command `pwd` or the bash-regional-detachment reveal). Agent chat can
+  never advance past stage 0.
+- The shell teaching exists but is authored ONE STAGE TOO LATE: every
+  archetype's "type !cat config/routes.conf ... On mobile, use the ! shell
+  key" line lives in the STAGE-1 idle nudges, while stage-0 idle lines are
+  pure flavor. To be taught the mechanic, the player must already have used
+  the mechanic. Perfect catch-22.
+- The full spine (shell -> temporary-shoring model -> permission grant ->
+  compact) has no in-fiction pull at the moment each gate actually blocks
+  the player.
+
+Because three symptom-patch rounds have not fixed this, the next round must
+treat it per the working agreement: write the PROGRESSION LEGIBILITY design
+into docs/DESIGN.md (Open decisions -> resolved decision): what pulls the
+player from each stage to the next, and how each mechanic (shell, permission,
+compact) is taught in-fiction at the moment it becomes load-bearing. Implement
+only after that decision is written; file a question if it needs a product
+call the docs cannot answer.
+
+Floor requirements the design must satisfy (whatever shape it takes):
+1. Stage-0 exhaustion teaches the shell: when the current stage's suggestions
+   are consumed (or on the first stage-0 idle), the guidance must include the
+   ! shell affordance concretely — move/duplicate the existing "! shell key"
+   line to stage 0, or better, have the agent DEMONSTRATE (a visible
+   shell-execute of pwd/cat in its own response, teaching by doing).
+2. Each stage gate gets an in-fiction pull at block time: the agent asks for
+   the write permission it needs (stage 2->3), and surfaces compaction
+   pressure in-register when stage 3->4 is the door.
+3. The suggestion pool must never visibly run dry while a gate is unmet —
+   exhausted suggestions regenerate toward the gate mechanic.
+4. Keep everything that already passed: ending payoff card and counter,
+   distinct per-stage suggestions (full-matrix test), flat TUI transcript,
+   VisualViewport handling, Send/tap affordances, PLAYTEST.md criterion.
+5. Determinism invariants, invariant 7, accessibility, no lab trademarks.
+
+The creator has now been given the spine (pwd -> nudges -> grant -> compact)
+and may produce timing data on this build, but certification requires a
+FRESH creator run on the fixed build reaching an ENDING DISCOVERED card
+without coaching, in roughly 90 seconds. First-time participant stays
+deferred until that passes.
