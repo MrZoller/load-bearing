@@ -627,3 +627,22 @@ and may produce timing data on this build, but certification requires a
 FRESH creator run on the fixed build reaching an ENDING DISCOVERED card
 without coaching, in roughly 90 seconds. First-time participant stays
 deferred until that passes.
+
+## Q17 (task T58, open) — Can the progression-legible build receive creator run 5?
+
+Context: The parked branch `factory/t58-human-playtests` now records the
+progression-legibility decision and implements a persistent visible rail from
+the stage-0 shell demonstration through the Temporary Shoring handoff, exact
+write permission, `/compact`, and the authored ending card. Full verification
+and the two-round internal panel are clear after fixing model-switch paths that
+initially stranded non-Temporary-Shoring personas. T58 still requires a fresh
+real creator run before the deliberately deferred first-time participant can be
+used.
+Options considered: A — run creator run 5 from the parked branch build and
+provide route, elapsed time, confusion, visible ending title/payoff/count,
+whether the live prompt remained usable, exact participant evidence, and any
+requested tuning; B — provide a specific creator session window so the candidate
+and checklist in `docs/PLAYTEST.md` can be prepared. If the creator identifies
+completion without coaching in roughly 90 seconds, the next cycle will request
+the one-shot no-extra-instructions first-time-participant run.
+**A:**
