@@ -753,3 +753,20 @@ requirement remains binding, including the mobile-viewport /cost-visibility
 e2e and two-decimal currency; (d) all pinned wins from Q13–Q17 remain binding.
 The one-shot first-time-participant request continues to wait until this
 clears full verification and a fresh panel.
+
+## Q19 (task T58, open) — Can the tuned build receive the no-extra-instructions first-time-participant run?
+
+Context: Parked branch `factory/t58-human-playtests` now pins runtime command
+reports to their creation-time event-log boundary, so `/cost` remains between
+its true chronological neighbors across later projections. The full verification
+suite and fresh internal panel are clear, and Q17 explicitly permits the
+one-shot first-time-participant run once this fix passes. T58 still cannot meet
+acceptance without that real participant; the plan prohibits substituting a
+simulated run.
+Options considered: A — give a first-time participant the tuned build with no
+extra instructions and provide the route, elapsed observation, confusion,
+evidence, punchline/ending reached, and requested tuning; B — identify a
+specific first-time participant and session window so the existing checklist
+can be prepared without coaching them. If the run fails, record the failure and
+requested tuning rather than certifying acceptance.
+**A:**
