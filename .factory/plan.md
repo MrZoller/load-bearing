@@ -129,7 +129,7 @@ authoring tooling remain excluded.
   - acceptance: `e2e/` drives the shipped cartridge through golden path, model switch, permission choices, exact waiver, compact damage, Bash discovery, rare/escalation presentation, and continued free play after an ending at desktop and 390×844; adversarial inputs produce no generic apology, parser-facing or out-of-character failure, or contradiction of current world, belief, permission, beat, or ending state; stage surfaces remain keyboard/screen-reader usable with reduced motion, and full `npm run verify` including pinned Lighthouse passes (criteria 3 foundation, 7–9, 11–15, 19 foundation, 20)
   - deps: T56
   - pr: 82
-- [!] T58 (standard) — Human playtests and final content tuning
+- [~] T58 (standard) — Human playtests and final content tuning
   - acceptance: `docs/PLAYTEST.md` contains a repeatable Phase 2 checklist, one creator run reaching the arc in roughly 90 seconds, and one no-extra-instructions first-time-participant run reaching a punchline; each records route, elapsed observation, confusion, evidence, and resulting changes, tuning preserves approved ending/ledger/randomness contracts, and final `npm run verify` is green (criteria 2, 3, 19, 20)
   - deps: T57
 

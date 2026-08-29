@@ -628,7 +628,7 @@ FRESH creator run on the fixed build reaching an ENDING DISCOVERED card
 without coaching, in roughly 90 seconds. First-time participant stays
 deferred until that passes.
 
-## Q17 (task T58, open) — Can the progression-legible build receive creator run 5?
+## Q17 (task T58, consumed) — Can the progression-legible build receive creator run 5?
 
 Context: The parked branch `factory/t58-human-playtests` now records the
 progression-legibility decision and implements a persistent visible rail from
