@@ -713,3 +713,23 @@ and no hidden-shell leakage in onboarding/suggestions/help. After this round
 passes full verification, the next cycle may request the one-shot
 no-extra-instructions first-time-participant run — no further creator
 certification round is required unless the rail's observable criteria change.
+
+## Q18 (task T58, open) — Should T58 receive a fresh report-ordering fix cycle?
+
+Context: The Q17 tuning on parked branch `factory/t58-human-playtests` passes
+full verification and implements felt deterministic pacing, held `/compact` and
+model handoffs, reduced-motion activity, transcript-owned command reports,
+mobile selector containment, and exact two-decimal `/cost` output. The required
+re-panel confirmed one remaining blocking defect: runtime reports are appended
+after every replay-derived entry on each projection, so `/cost` submitted before
+a later `!pwd` moves below that command and falsely appears newer. The review
+rubric requires parking rather than a second fix after a blocking re-panel.
+Options considered: A — resume T58 in a fresh cycle, record each runtime report's
+event-log insertion position, merge reports into transcript projection at that
+position, and replace the test that currently pins report-last ordering with a
+chronology regression; B — redesign command reports as engine events, which
+would make presentation-only metrics part of replay and materially expand the
+contract. Recommendation: A; it preserves report persistence and replay purity
+with a bounded runtime projection fix. The one-shot first-time participant
+remains deferred until this clears verification and a fresh panel.
+**A:**
