@@ -432,7 +432,7 @@ Constraints: preserve approved ending/ledger/randomness contracts and the
 determinism invariants (seeded PRNG only, replay-safe); failure stays content
 (invariant 7); accessibility ships with any new affordance.
 
-## Q14 (task T58, open) — Can the tuned build receive the required creator re-run?
+## Q14 (task T58, consumed) — Can the tuned build receive the required creator re-run?
 
 Context: The parked branch `factory/t58-human-playtests` implements all nine
 creator-run findings from Q13, records the failed run and repeatable protocol in
