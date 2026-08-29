@@ -490,3 +490,21 @@ no submit) and enterkeyhint="send" on the agent input. Include both.
 The first-time participant remains deferred until a creator re-run passes.
 Same constraints as Q13: determinism invariants, invariant 7, accessibility
 in scope for every affordance touched.
+
+## Q15 (task T58, open) — Can the fully tuned build receive creator run 3?
+
+Context: The parked branch `factory/t58-human-playtests` now addresses every
+Q14 failure. All 42 displayed suggestions record distinct stage-appropriate
+authored responses; submits anchor the newest exchange at its start without
+overriding readers who disengage; the mobile shell follows VisualViewport
+keyboard geometry; and mobile has a Send control plus `enterkeyhint="send"`.
+Full verification and the two-round internal panel are clear after fixes, but
+T58 still requires a real timed creator run before the deliberately deferred
+first-time participant can be used.
+Options considered: A — run creator run 3 from the parked branch build and
+provide the route, elapsed time, confusion, evidence, ending/punchline reached,
+and requested tuning; B — provide a specific creator session window so the
+candidate and checklist in `docs/PLAYTEST.md` can be prepared. If the creator
+run passes, the next cycle will request the one-shot no-extra-instructions
+first-time-participant run.
+**A:**
