@@ -770,3 +770,5 @@ specific first-time participant and session window so the existing checklist
 can be prepared without coaching them. If the run fails, record the failure and
 requested tuning rather than certifying acceptance.
 **A:**
+
+<!-- factory-question-timestamps-required-below -->
