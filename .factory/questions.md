@@ -772,3 +772,20 @@ requested tuning rather than certifying acceptance.
 **A:** A — give a first-time participant the tuned build with no extra instructions and provide the route, elapsed observation, confusion, evidence, punchline/ending reached, and requested tuning; B — identify a specific first-time participant and session window so the existing checklist can be prepared without coaching them. If the run fails, record the failure and requested tuning rather than certifying acceptance. Answered by Chris via factory-ui. [factory-answer-intake: ae516b8a-d583-4639-aacf-a356311ba802]
 
 <!-- factory-question-timestamps-required-below -->
+
+## Q20 (task T58, open, filed-at 2026-09-04T10:29:36Z) — How should the missing first-time-participant evidence reach the factory?
+
+Context:
+Observable failure: A first-time participant is meant to try the tuned build with no coaching, but the answer to Q19 only authorized that run and contains none of the observed route, timing, confusion, ending, or comments. A maintainer therefore still cannot tell whether the required punchline was reached or record the run in `docs/PLAYTEST.md`.
+Engine detail: T58's acceptance requires a real no-extra-instructions participant and explicitly forbids replacing that evidence with a simulated run. Parked branch: `factory/t58-human-playtests`.
+Options considered: A — conduct the no-extra-instructions run and return the complete observation record in this answer (recommended) / B — name an available first-time participant and an exact session window so the operator can arrange the existing checklist
+Option A: The returned record includes the route, elapsed observation, confusion, visible evidence, punchline or ending reached, exact participant comments, and requested tuning; a failed run is recorded as a failure rather than certified.
+Owner: operator and first-time participant.
+Day-to-day consequence: one unattended factory cycle can apply the evidence, tune any concrete failures, and finish verification.
+Cost or risk: the participant is a one-shot resource and must receive no coaching beyond the product.
+Option B: The named participant receives the unchanged checklist during the named window, while T58 remains parked until the resulting observation record is returned.
+Owner: operator coordinating the participant.
+Day-to-day consequence: the factory waits through another blocker cycle before it can assess acceptance.
+Cost or risk: scheduling delay, while preserving the no-extra-instructions condition.
+Recommendation rationale: A supplies the only acceptance evidence still missing and avoids spending another cycle solely on scheduling.
+**A:**
