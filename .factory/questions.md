@@ -754,7 +754,7 @@ e2e and two-decimal currency; (d) all pinned wins from Q13–Q17 remain binding.
 The one-shot first-time-participant request continues to wait until this
 clears full verification and a fresh panel.
 
-## Q19 (task T58, open) — Can the tuned build receive the no-extra-instructions first-time-participant run?
+## Q19 (task T58, consumed) — Can the tuned build receive the no-extra-instructions first-time-participant run?
 
 Context: Parked branch `factory/t58-human-playtests` now pins runtime command
 reports to their creation-time event-log boundary, so `/cost` remains between
@@ -769,6 +769,6 @@ evidence, punchline/ending reached, and requested tuning; B — identify a
 specific first-time participant and session window so the existing checklist
 can be prepared without coaching them. If the run fails, record the failure and
 requested tuning rather than certifying acceptance.
-**A:**
+**A:** A — give a first-time participant the tuned build with no extra instructions and provide the route, elapsed observation, confusion, evidence, punchline/ending reached, and requested tuning; B — identify a specific first-time participant and session window so the existing checklist can be prepared without coaching them. If the run fails, record the failure and requested tuning rather than certifying acceptance. Answered by Chris via factory-ui. [factory-answer-intake: ae516b8a-d583-4639-aacf-a356311ba802]
 
 <!-- factory-question-timestamps-required-below -->
