@@ -773,7 +773,7 @@ requested tuning rather than certifying acceptance.
 
 <!-- factory-question-timestamps-required-below -->
 
-## Q20 (task T58, open, filed-at 2026-09-04T10:29:36Z) — How should the missing first-time-participant evidence reach the factory?
+## Q20 (task T58, consumed, filed-at 2026-09-04T10:29:36Z) — How should the missing first-time-participant evidence reach the factory?
 
 Context:
 Observable failure: A first-time participant is meant to try the tuned build with no coaching, but the answer to Q19 only authorized that run and contains none of the observed route, timing, confusion, ending, or comments. A maintainer therefore still cannot tell whether the required punchline was reached or record the run in `docs/PLAYTEST.md`.
@@ -788,4 +788,4 @@ Owner: operator coordinating the participant.
 Day-to-day consequence: the factory waits through another blocker cycle before it can assess acceptance.
 Cost or risk: scheduling delay, while preserving the no-extra-instructions condition.
 Recommendation rationale: A supplies the only acceptance evidence still missing and avoids spending another cycle solely on scheduling.
-**A:**
+**A:** A — conduct the no-extra-instructions run and return the complete observation record in this answer Answered by Chris via factory-ui. [factory-answer-intake: 8724c4dd-edf0-4855-9a7d-d1113b2b120f]
