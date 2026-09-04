@@ -789,3 +789,20 @@ Day-to-day consequence: the factory waits through another blocker cycle before i
 Cost or risk: scheduling delay, while preserving the no-extra-instructions condition.
 Recommendation rationale: A supplies the only acceptance evidence still missing and avoids spending another cycle solely on scheduling.
 **A:** A — conduct the no-extra-instructions run and return the complete observation record in this answer Answered by Chris via factory-ui. [factory-answer-intake: 8724c4dd-edf0-4855-9a7d-d1113b2b120f]
+
+## Q21 (task T58, open, filed-at 2026-09-04T21:17:31Z) — What happened in the no-extra-instructions participant run?
+
+Context:
+Observable failure: The factory was told to conduct the first-time-participant run, but no run observations were returned. A maintainer still cannot see whether anyone used the build, reached a punchline, became confused, or requested a change, so the final playtest cannot be recorded or certified.
+Engine detail: T58 requires a real first-time participant with no extra instructions; a simulated route or another authorization to run it cannot satisfy acceptance. Parked branch: `factory/t58-human-playtests`.
+Options considered: A — return the completed participant observation record, including a failed run if that is what occurred (recommended) / B — provide a named participant and exact session window because the run has not occurred yet
+Option A: The record includes the route, elapsed observation, confusion, visible evidence, punchline or ending reached, exact participant comments, and requested tuning; an unsuccessful run remains explicitly unsuccessful.
+Owner: operator who observed the participant run.
+Day-to-day consequence: the factory can record the human evidence and either tune concrete failures or complete T58.
+Cost or risk: incomplete or coached recollections cannot certify the no-extra-instructions acceptance condition.
+Option B: The named first-time participant receives the unchanged build and checklist during the exact window, without coaching beyond the product itself.
+Owner: operator coordinating the participant.
+Day-to-day consequence: T58 remains parked until the resulting observation record is returned.
+Cost or risk: another scheduling delay preserves the one-shot participant condition but does not itself satisfy acceptance.
+Recommendation rationale: A provides the only evidence needed to decide whether the required run passed and avoids another authorization-only cycle.
+**A:**
